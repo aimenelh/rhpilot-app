@@ -72,12 +72,12 @@ body {
 }
 
 @keyframes auth-float-slow {
-  0%, 100% { transform: scale(0.8) rotate(-9deg) translateY(0px); }
-  50% { transform: scale(0.8) rotate(-9deg) translateY(-7px); }
+  0%, 100% { transform: scale(0.8) rotate(-11deg) translateY(0px); }
+  50% { transform: scale(0.8) rotate(-11deg) translateY(-7px); }
 }
 @keyframes auth-float-slower {
-  0%, 100% { transform: scale(0.75) rotate(8deg) translateY(0px); }
-  50% { transform: scale(0.75) rotate(8deg) translateY(6px); }
+  0%, 100% { transform: scale(0.75) rotate(10deg) translateY(0px); }
+  50% { transform: scale(0.75) rotate(10deg) translateY(6px); }
 }
 
 .auth-float-slow {
@@ -89,7 +89,8 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .auth-float-slow,
-  .auth-float-slower {
+  .auth-float-slower,
+  .auth-pulse-dot {
     animation: none;
   }
 }
