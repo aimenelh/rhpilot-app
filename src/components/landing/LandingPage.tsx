@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { ProductPreview } from "@/components/landing/ProductPreview";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
+import { Reveal } from "@/components/landing/Reveal";
 
 const PROCESS_STEPS = [
   {
@@ -87,52 +88,62 @@ export function LandingPage() {
 
       <section className="border-y border-surface-border bg-white py-16">
         <div className="mx-auto max-w-6xl px-6">
-          <h2 className="text-center text-2xl font-semibold text-ink">Comment ça marche</h2>
+          <Reveal>
+            <h2 className="text-center text-2xl font-semibold text-ink">Comment ça marche</h2>
+          </Reveal>
           <div className="mt-10 grid grid-cols-1 gap-10 md:grid-cols-3">
-            {PROCESS_STEPS.map((step) => (
-              <div key={step.number}>
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-gradient text-sm font-semibold text-white">
-                  {step.number}
-                </span>
-                <h3 className="mt-4 text-base font-semibold text-ink">{step.title}</h3>
-                <p className="mt-2 text-sm text-ink-soft">{step.description}</p>
-              </div>
+            {PROCESS_STEPS.map((step, index) => (
+              <Reveal key={step.number} delay={index * 150}>
+                <div>
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-gradient text-sm font-semibold text-white">
+                    {step.number}
+                  </span>
+                  <h3 className="mt-4 text-base font-semibold text-ink">{step.title}</h3>
+                  <p className="mt-2 text-sm text-ink-soft">{step.description}</p>
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>
       </section>
 
       <section className="mx-auto max-w-6xl px-6 py-16">
-        <h2 className="text-center text-2xl font-semibold text-ink">
-          Pourquoi les RH choisissent RH Pilot
-        </h2>
+        <Reveal>
+          <h2 className="text-center text-2xl font-semibold text-ink">
+            Pourquoi les RH choisissent RH Pilot
+          </h2>
+        </Reveal>
         <div className="mt-10 grid grid-cols-1 gap-8 sm:grid-cols-2">
-          {BENEFITS.map((benefit) => (
-            <div key={benefit.title} className="flex gap-4">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue">
-                <benefit.icon size={18} />
-              </span>
-              <div>
-                <h3 className="text-sm font-semibold text-ink">{benefit.title}</h3>
-                <p className="mt-1 text-sm text-ink-soft">{benefit.description}</p>
+          {BENEFITS.map((benefit, index) => (
+            <Reveal key={benefit.title} delay={(index % 2) * 150}>
+              <div className="flex gap-4">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue">
+                  <benefit.icon size={18} />
+                </span>
+                <div>
+                  <h3 className="text-sm font-semibold text-ink">{benefit.title}</h3>
+                  <p className="mt-1 text-sm text-ink-soft">{benefit.description}</p>
+                </div>
               </div>
-            </div>
+            </Reveal>
           ))}
         </div>
       </section>
 
       <section className="bg-ink py-16">
-        <div className="mx-auto max-w-2xl px-6 text-center">
-          <h2 className="text-2xl font-semibold text-white">
-            Prêt à ne plus rien oublier ?
-          </h2>
-          <p className="mt-3 text-sm text-white/70">
-            Créez votre espace en quelques minutes, sans engagement.
-          </p>
-          <Link href="/sign-up" className="mt-6 inline-block">
-            <Button className="px-6 py-3 text-base">Essayer gratuitement</Button>
-          </Link>
-        </div>
+        <Reveal>
+          <div className="mx-auto max-w-2xl px-6 text-center">
+            <h2 className="text-2xl font-semibold text-white">
+              Prêt à ne plus rien oublier ?
+            </h2>
+            <p className="mt-3 text-sm text-white/70">
+              Créez votre espace en quelques minutes, sans engagement.
+            </p>
+            <Link href="/sign-up" className="mt-6 inline-block">
+              <Button className="px-6 py-3 text-base">Essayer gratuitement</Button>
+            </Link>
+          </div>
+        </Reveal>
       </section>
 
       <MarketingFooter />
