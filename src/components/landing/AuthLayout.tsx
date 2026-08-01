@@ -1,4 +1,5 @@
 import { Logomark, Wordmark } from "@/components/Brand";
+import { AuthCardStack } from "@/components/landing/AuthCardStack";
 
 export function AuthLayout({
   title,
@@ -36,7 +37,9 @@ export function AuthLayout({
         <div className="relative">
           <h1 className="max-w-md text-3xl font-semibold leading-tight text-white">{title}</h1>
           <p className="mt-3 max-w-sm text-sm text-white/60">{subtitle}</p>
-          <div className="mt-10 max-w-md">{preview}</div>
+          <div className="mt-10 max-w-md">
+            <AuthCardStack>{preview}</AuthCardStack>
+          </div>
         </div>
 
         <p className="relative text-xs text-white/40">Votre copilote d&apos;organisation RH</p>
