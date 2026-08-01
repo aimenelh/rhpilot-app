@@ -3,9 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
+import { Mail } from "lucide-react";
 import { Logomark, Wordmark } from "./Brand";
 import { FlashToast } from "./ui/FlashToast";
 import { Assistant } from "./assistant/Assistant";
+import { OnboardingGuide } from "./OnboardingGuide";
 
 type NavItem = {
   href: string;
@@ -79,6 +81,16 @@ export function AppShell({
             );
           })}
         </nav>
+
+        <div className="mt-auto pt-4">
+          <a
+            href="mailto:aimenoffi@gmail.com?subject=Retour%20b%C3%AAta%20RH%20Pilot"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-faint transition-colors hover:bg-surface-subtle hover:text-ink-soft"
+          >
+            <Mail size={15} />
+            Envoyer un retour
+          </a>
+        </div>
       </aside>
 
       <div className="flex flex-1 flex-col">
@@ -99,6 +111,7 @@ export function AppShell({
 
       <FlashToast />
       <Assistant summary={assistantSummary} />
+      <OnboardingGuide />
     </div>
   );
 }
