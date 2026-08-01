@@ -67,7 +67,7 @@ export default async function EmployeesPage({
             <ArchiveAllButton action={archiveAllEmployees} count={employees.length} />
           )}
           <Link href="/dashboard/employees/new">
-            <Button>Ajouter un salarié</Button>
+            <Button data-tour="add-employee">Ajouter un salarié</Button>
           </Link>
         </div>
       </div>
