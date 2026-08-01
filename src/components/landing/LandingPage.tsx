@@ -103,6 +103,32 @@ export function LandingPage() {
         </div>
       </section>
 
+      <section className="mx-auto max-w-4xl px-6 py-14">
+        <Reveal>
+          <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
+            <div className="text-center">
+              <p className="text-4xl font-semibold text-brand-blue">45%</p>
+              <p className="mt-2 text-sm text-ink-soft">
+                des salariés français travaillent dans une TPE ou une PME — RH Pilot a été
+                pensé spécifiquement pour ces entreprises-là.
+              </p>
+              <p className="mt-2 text-xs text-ink-faint">Source : Insee, 2025</p>
+            </div>
+            <div className="text-center">
+              <p className="text-4xl font-semibold text-brand-blue">60%</p>
+              <p className="mt-2 text-sm text-ink-soft">
+                des RH passent au moins la moitié de leur journée sur des tâches
+                administratives — RH Pilot ne remplace pas ce travail, il évite d&apos;y
+                perdre du temps sur les rappels et les échéances.
+              </p>
+              <p className="mt-2 text-xs text-ink-faint">
+                Source : Baromètre RH au quotidien, Éditions Tissot / PayFit, 2026
+              </p>
+            </div>
+          </div>
+        </Reveal>
+      </section>
+
       <section className="mx-auto max-w-6xl px-6 py-16">
         <Reveal>
           <h2 className="text-center text-2xl font-semibold text-ink">
