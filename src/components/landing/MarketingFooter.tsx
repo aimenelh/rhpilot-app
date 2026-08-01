@@ -15,6 +15,15 @@ export function MarketingFooter() {
       <Link href="/pourquoi" className="text-xs font-medium text-brand-blue hover:underline">
         Pourquoi RH Pilot ?
       </Link>
+      <div className="flex items-center gap-3 text-xs text-ink-faint">
+        <Link href="/cgu" className="hover:text-ink-soft hover:underline">
+          CGU
+        </Link>
+        <span>·</span>
+        <Link href="/confidentialite" className="hover:text-ink-soft hover:underline">
+          Confidentialité
+        </Link>
+      </div>
     </footer>
   );
 }
