@@ -2,9 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { usePathname } from "next/navigation";
-
-const STORAGE_KEY = "rhpilot_tour_step";
-const DONE_VALUE = "done";
+import { TOUR_STORAGE_KEY as STORAGE_KEY, TOUR_DONE_VALUE as DONE_VALUE } from "@/lib/tourStorage";
 
 type TourStep = {
   selector: string;
@@ -39,8 +37,8 @@ const STEPS: TourStep[] = [
   {
     selector: '[data-tour="dashboard-attention"]',
     matches: (p) => p === "/dashboard",
-    title: "Vous y êtes 👋",
-    text: "C'est ici que RH Pilot vous dira toujours, en premier, ce qui mérite votre attention. Bonne découverte !",
+    title: "🎉 Bravo, vous avez créé votre premier parcours RH !",
+    text: "Vous pouvez maintenant consulter les tâches générées, revenir ici à tout moment, et voir les rappels arriver automatiquement le moment venu.",
     placement: "bottom",
   },
 ];
@@ -159,9 +157,10 @@ export function TourGuide() {
 
   return (
     <>
-      {/* Halo autour de la cible réelle */}
+      {/* Halo autour de la cible réelle — pulse une fois à l'apparition de chaque étape */}
       <div
-        className="pointer-events-none fixed z-[60] rounded-lg ring-4 ring-brand-blue/50 transition-all duration-300"
+        key={`halo-${stepIndex}`}
+        className="pointer-events-none fixed z-[60] rounded-lg ring-4 ring-brand-blue/50 tour-pulse-once transition-[top,left,width,height] duration-200"
         style={{
           top: rect.top - 4,
           left: rect.left - 4,
@@ -170,9 +169,10 @@ export function TourGuide() {
         }}
       />
 
-      {/* Bulle d'explication avec flèche */}
+      {/* Bulle d'explication avec flèche — rejoue son apparition à chaque étape */}
       <div
-        className={`fixed z-[60] w-72 rounded-xl border border-surface-border bg-white p-4 shadow-lg transition-all duration-300 ${
+        key={`bubble-${stepIndex}`}
+        className={`tour-fade-in fixed z-[60] w-72 rounded-xl border border-surface-border bg-white p-4 shadow-lg transition-[top,left] duration-200 ${
           step.placement === "top" ? "-translate-y-full" : ""
         }`}
         style={{ top: bubbleTop, left: bubbleLeft }}
@@ -184,7 +184,10 @@ export function TourGuide() {
           <span className="absolute -bottom-1.5 left-6 h-3 w-3 rotate-45 border-b border-r border-surface-border bg-white" />
         )}
 
-        <p className="text-sm font-semibold text-ink">{step.title}</p>
+        <p className="text-[11px] font-medium uppercase tracking-wide text-ink-faint">
+          Étape {stepIndex + 1} sur {STEPS.length}
+        </p>
+        <p className="mt-1 text-sm font-semibold text-ink">{step.title}</p>
         <p className="mt-1.5 text-sm text-ink-soft">{step.text}</p>
 
         <div className="mt-3 flex items-center justify-between">
@@ -199,7 +202,7 @@ export function TourGuide() {
               onClick={skip}
               className="text-xs font-medium text-brand-blue hover:underline"
             >
-              Terminer
+              Terminer la découverte
             </button>
           )}
         </div>
