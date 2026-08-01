@@ -172,7 +172,7 @@ export default async function DashboardPage({
 
   return (
     <div className="max-w-4xl">
-      <h1 className="text-2xl font-semibold text-ink">Aujourd&apos;hui</h1>
+      <h1 data-tour="dashboard-attention" className="text-2xl font-semibold text-ink">Aujourd&apos;hui</h1>
       <p className="mt-1 text-sm text-ink-soft">
         Ce qui mérite votre attention, avant le reste.
       </p>

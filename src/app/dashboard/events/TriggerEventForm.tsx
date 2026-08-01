@@ -11,7 +11,7 @@ import type { TriggerEventFormState } from "./actions";
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending}>
+    <Button type="submit" data-tour="trigger-event" disabled={pending}>
       {pending ? "Génération..." : "Générer le plan d'action"}
     </Button>
   );

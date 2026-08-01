@@ -7,7 +7,7 @@ import { Mail } from "lucide-react";
 import { Logomark, Wordmark } from "./Brand";
 import { FlashToast } from "./ui/FlashToast";
 import { Assistant } from "./assistant/Assistant";
-import { OnboardingGuide } from "./OnboardingGuide";
+import { TourGuide } from "./tour/TourGuide";
 
 type NavItem = {
   href: string;
@@ -111,7 +111,7 @@ export function AppShell({
 
       <FlashToast />
       <Assistant summary={assistantSummary} />
-      <OnboardingGuide />
+      <TourGuide />
     </div>
   );
 }

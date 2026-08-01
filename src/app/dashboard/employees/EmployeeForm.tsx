@@ -25,7 +25,7 @@ type DefaultValues = {
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" disabled={pending}>
+    <Button type="submit" data-tour="submit-employee" disabled={pending}>
       {pending ? "Enregistrement..." : label}
     </Button>
   );
