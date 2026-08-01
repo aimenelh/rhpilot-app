@@ -1,31 +1,11 @@
 import Link from "next/link";
-import { TriangleAlert, Sparkles, Send, CircleCheck } from "lucide-react";
+import { TriangleAlert, Sparkles, Send, CircleCheck, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { ProductPreview } from "@/components/landing/ProductPreview";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import { Reveal } from "@/components/landing/Reveal";
-
-const PROCESS_STEPS = [
-  {
-    number: "1",
-    title: "Déclenchez un événement",
-    description:
-      "Embauche, fin de période d'essai... en un clic depuis la fiche d'un salarié, sans remplir de longue liste.",
-  },
-  {
-    number: "2",
-    title: "Le plan d'action se génère",
-    description:
-      "Tâches, échéances calculées et responsables assignés automatiquement — ou signalés « à assigner » plutôt qu'une mauvaise affectation silencieuse.",
-  },
-  {
-    number: "3",
-    title: "Vous êtes alerté avant l'oubli",
-    description:
-      "Tableau de bord priorisé par urgence, résumés par email, suggestions proactives dès qu'une situation le mérite.",
-  },
-];
+import { StoryStep1, StoryStep2, StoryStep3 } from "@/components/landing/StorySteps";
 
 const BENEFITS = [
   {
@@ -87,22 +67,38 @@ export function LandingPage() {
       </section>
 
       <section className="border-y border-surface-border bg-white py-16">
-        <div className="mx-auto max-w-6xl px-6">
+        <div className="mx-auto max-w-2xl px-6">
           <Reveal>
-            <h2 className="text-center text-2xl font-semibold text-ink">Comment ça marche</h2>
+            <h2 className="text-center text-2xl font-semibold text-ink">
+              Comment un simple événement devient un parcours complet
+            </h2>
           </Reveal>
-          <div className="mt-10 grid grid-cols-1 gap-10 md:grid-cols-3">
-            {PROCESS_STEPS.map((step, index) => (
-              <Reveal key={step.number} delay={index * 150}>
-                <div>
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-gradient text-sm font-semibold text-white">
-                    {step.number}
-                  </span>
-                  <h3 className="mt-4 text-base font-semibold text-ink">{step.title}</h3>
-                  <p className="mt-2 text-sm text-ink-soft">{step.description}</p>
-                </div>
-              </Reveal>
-            ))}
+
+          <div className="mx-auto mt-10 flex max-w-xs flex-col items-center gap-3">
+            <Reveal>
+              <div className="flex flex-col items-center gap-3">
+                <p className="text-sm text-ink-soft">Vous embauchez Julie Martin.</p>
+                <StoryStep1 />
+              </div>
+            </Reveal>
+
+            <ArrowDown size={18} className="text-ink-faint" aria-hidden />
+
+            <Reveal delay={150}>
+              <div className="flex flex-col items-center gap-3">
+                <p className="text-sm text-ink-soft">RH Pilot génère automatiquement le plan d&apos;action.</p>
+                <StoryStep2 />
+              </div>
+            </Reveal>
+
+            <ArrowDown size={18} className="text-ink-faint" aria-hidden />
+
+            <Reveal delay={300}>
+              <div className="flex flex-col items-center gap-3">
+                <p className="text-sm text-ink-soft">Les rappels arrivent naturellement, sans y penser.</p>
+                <StoryStep3 />
+              </div>
+            </Reveal>
           </div>
         </div>
       </section>
