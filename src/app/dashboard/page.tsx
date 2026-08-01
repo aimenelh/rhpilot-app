@@ -148,8 +148,16 @@ export default async function DashboardPage({
     return a.earliestDue.getTime() - b.earliestDue.getTime();
   });
 
-  const visibleAnomalies = anomalies.filter((a) => a.severity !== "low");
-  const hiddenAnomalies = anomalies.filter((a) => a.severity === "low");
+  // Plafonné au total, peu importe le niveau — l'ancienne règle
+  // ("critique/moyen toujours visibles, seul le faible se replie")
+  // ne tenait plus à l'échelle réelle : une entreprise de 50 salariés
+  // importés peut légitimement avoir des dizaines d'alertes moyennes
+  // en même temps (plusieurs périodes d'essai en cours simultanément,
+  // par exemple). anomalies est déjà trié par sévérité, donc les 8
+  // premières restent bien les plus urgentes.
+  const SUGGESTIONS_LIMIT = 8;
+  const visibleAnomalies = anomalies.slice(0, SUGGESTIONS_LIMIT);
+  const hiddenAnomalies = anomalies.slice(SUGGESTIONS_LIMIT);
   const hiddenAnomaliesCount = hiddenAnomalies.length;
 
   const SEVERITY_DOT: Record<string, string> = {
@@ -213,7 +221,7 @@ export default async function DashboardPage({
           {hiddenAnomaliesCount > 0 && (
             <details className="mt-1">
               <summary className="cursor-pointer py-2 text-sm font-medium text-brand-blue">
-                Afficher {hiddenAnomaliesCount} suggestion{hiddenAnomaliesCount > 1 ? "s" : ""} secondaire{hiddenAnomaliesCount > 1 ? "s" : ""} (données à compléter, non urgentes)
+                Afficher {hiddenAnomaliesCount} suggestion{hiddenAnomaliesCount > 1 ? "s" : ""} de plus
               </summary>
               <ul className="flex flex-col divide-y divide-surface-border border-t border-surface-border">
                 {hiddenAnomalies.map((anomaly) => (

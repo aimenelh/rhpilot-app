@@ -31,6 +31,14 @@ const SEVERITY_ORDER: Record<AnomalySeverity, number> = { critical: 0, medium: 1
  * aucun événement "Fin de période d'essai" n'a jamais été déclenché.
  * Déjà dépassée = critique (échéance ratée) ; approche encore = moyen
  * (à préparer, pas encore un oubli).
+ *
+ * Limité aux salariés embauchés dans les 365 derniers jours : au-delà,
+ * l'absence de parcours déclenché dans RH Pilot ne veut plus rien dire
+ * — l'entreprise n'utilisait probablement pas encore l'outil à
+ * l'époque (cas réel rencontré : import CSV de salariés déjà en
+ * poste depuis des années, tous signalés "dépassés" par centaines de
+ * jours, ce qui n'a aucun sens). L'ancienneté ne doit jamais être
+ * confondue avec "période d'essai jamais faite".
  */
 async function detectProbationEndingWithoutEvent(organizationId: string): Promise<Anomaly[]> {
   const employees = await prisma.employee.findMany({
@@ -44,6 +52,8 @@ async function detectProbationEndingWithoutEvent(organizationId: string): Promis
 
   const anomalies: Anomaly[] = [];
   for (const employee of employees) {
+    if (daysUntil(employee.hireDate) < -365) continue;
+
     const alreadyTriggered = await prisma.employeeEvent.findFirst({
       where: {
         organizationId,
@@ -81,6 +91,18 @@ async function detectProbationEndingWithoutEvent(organizationId: string): Promis
  * sur un cas récent, donc critique (contrairement aux données
  * manquantes, ce n'est pas juste "à compléter un jour").
  */
+/**
+ * Un salarié embauché depuis plus de 7 jours sans qu'aucun événement
+ * "Embauche" n'ait jamais été déclenché pour lui — un oubli plausible
+ * sur un cas récent, donc critique (contrairement aux données
+ * manquantes, ce n'est pas juste "à compléter un jour").
+ *
+ * Limité à 365 jours après l'embauche, pour la même raison que le
+ * détecteur de période d'essai juste au-dessus : un salarié ancien
+ * importé via CSV n'a normalement jamais eu de parcours RH Pilot
+ * puisque l'entreprise ne l'utilisait pas encore à l'époque — ce
+ * n'est pas un oubli, c'est juste antérieur à l'outil.
+ */
 async function detectMissingOnboardingEvent(organizationId: string): Promise<Anomaly[]> {
   const employees = await prisma.employee.findMany({
     where: { organizationId, deletedAt: null },
@@ -88,18 +110,19 @@ async function detectMissingOnboardingEvent(organizationId: string): Promise<Ano
 
   const anomalies: Anomaly[] = [];
   for (const employee of employees) {
+    const daysSinceHire = Math.abs(daysUntil(employee.hireDate));
     if (daysUntil(employee.hireDate) > -7) continue;
+    if (daysSinceHire > 365) continue;
 
     const alreadyTriggered = await prisma.employeeEvent.findFirst({
       where: { organizationId, employeeId: employee.id, eventTemplate: { key: "embauche" } },
     });
     if (alreadyTriggered) continue;
 
-    const daysAgo = Math.abs(daysUntil(employee.hireDate));
     anomalies.push({
       key: `onboarding-${employee.id}`,
       severity: "critical",
-      message: `${employee.firstName} ${employee.lastName} a été embauché·e il y a ${daysAgo} jours sans qu'aucun parcours d'embauche n'ait été déclenché.`,
+      message: `${employee.firstName} ${employee.lastName} a été embauché·e il y a ${daysSinceHire} jours sans qu'aucun parcours d'embauche n'ait été déclenché.`,
       action: {
         label: "Créer le parcours",
         employeeId: employee.id,
