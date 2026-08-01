@@ -286,22 +286,32 @@ export default function WhyPage() {
           </div>
         </Reveal>
 
-        {/* Schéma terrain → produit */}
+        {/* Schéma terrain → produit, dans un fond léger pour qu'il respire */}
         <Reveal>
-          <div className="mx-auto mt-10 flex max-w-lg flex-col items-center gap-2">
-            <div className="flex flex-col items-center gap-1.5 text-center">
-              <span className="text-sm font-medium text-ink">Professionnels RH</span>
-              <span className="text-xs text-ink-faint">interrogés sur le terrain</span>
-            </div>
-            <ArrowDown size={18} className="text-ink-faint" aria-hidden />
-            <div className="flex flex-col items-center gap-1.5 text-center">
-              <span className="text-sm font-medium text-ink">Besoins remontés</span>
-              <span className="text-xs text-ink-faint">oublis, rappels, responsabilités</span>
-            </div>
-            <ArrowDown size={18} className="text-ink-faint" aria-hidden />
-            <div className="flex flex-col items-center gap-1.5 text-center">
-              <span className="text-sm font-semibold text-brand-blue">RH Pilot</span>
-              <span className="text-xs text-ink-faint">transforme ces besoins en fonctionnalités</span>
+          <div className="mx-auto mt-10 max-w-lg rounded-2xl border border-brand-blue/10 bg-brand-blue/[0.03] px-8 py-8">
+            <div className="flex flex-col items-center gap-2">
+              <Reveal>
+                <div className="flex flex-col items-center gap-1.5 text-center">
+                  <span className="text-sm font-medium text-ink">Professionnels RH</span>
+                  <span className="text-xs text-ink-faint">interrogés sur le terrain</span>
+                </div>
+              </Reveal>
+              <ArrowDown size={18} className="text-ink-faint" aria-hidden />
+              <Reveal delay={150}>
+                <div className="flex flex-col items-center gap-1.5 text-center">
+                  <span className="text-sm font-medium text-ink">Besoins remontés</span>
+                  <span className="text-xs text-ink-faint">oublis, rappels, responsabilités</span>
+                </div>
+              </Reveal>
+              <ArrowDown size={18} className="text-ink-faint" aria-hidden />
+              <Reveal delay={300}>
+                <div className="flex flex-col items-center gap-1.5 text-center">
+                  <span className="text-sm font-semibold text-brand-blue">RH Pilot</span>
+                  <span className="text-xs text-ink-faint">
+                    transforme ces besoins en fonctionnalités
+                  </span>
+                </div>
+              </Reveal>
             </div>
           </div>
         </Reveal>
@@ -309,7 +319,7 @@ export default function WhyPage() {
         {/* Tableau besoin → fonctionnalité, sans citation attribuée */}
         <div className="mt-10 flex flex-col gap-2">
           {NEEDS_TO_FEATURES.map((item, index) => (
-            <Reveal key={item.need} delay={index * 80}>
+            <Reveal key={item.need} delay={index * 100}>
               <div className="flex flex-col items-center gap-3 rounded-xl border border-surface-border bg-white p-4 sm:flex-row">
                 <div className="flex flex-1 items-center gap-3">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-subtle text-ink-faint">
@@ -317,7 +327,10 @@ export default function WhyPage() {
                   </span>
                   <span className="text-sm text-ink-soft">{item.need}</span>
                 </div>
-                <ArrowRight size={16} className="hidden shrink-0 text-ink-faint sm:block" aria-hidden />
+                <div className="hidden shrink-0 items-center sm:flex" aria-hidden>
+                  <span className="h-px w-6 bg-brand-blue/30" />
+                  <ArrowRight size={18} strokeWidth={2.5} className="text-brand-blue" />
+                </div>
                 <div className="flex flex-1 items-center gap-2 sm:justify-end">
                   <CheckCircle2 size={16} className="shrink-0 text-accent-teal" aria-hidden />
                   <span className="text-sm font-medium text-ink">{item.feature}</span>
@@ -327,7 +340,8 @@ export default function WhyPage() {
           ))}
         </div>
 
-        {/* Besoins pas encore construits */}
+        {/* Besoins pas encore construits — distincts visuellement pour
+            qu'on ne les confonde jamais avec une fonctionnalité disponible */}
         <Reveal>
           <h3 className="mt-14 text-center text-sm font-semibold uppercase tracking-wide text-ink-faint">
             Les besoins qui reviennent le plus souvent
@@ -336,9 +350,12 @@ export default function WhyPage() {
         <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
           {UPCOMING_NEEDS.map((item, index) => (
             <Reveal key={item.label} delay={(index % 2) * 100}>
-              <Card className="border-ink-faint/10 bg-white/60">
-                <div className="flex items-center gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-subtle text-ink-faint">
+              <Card className="relative border-dashed border-ink-faint/20 bg-surface-subtle">
+                <span className="absolute right-3 top-3 rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
+                  Sujet observé
+                </span>
+                <div className="flex items-center gap-3 pr-16">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-ink-faint">
                     <item.icon size={16} />
                   </span>
                   <span className="text-sm text-ink-soft">{item.label}</span>
@@ -349,11 +366,15 @@ export default function WhyPage() {
         </div>
 
         <Reveal>
-          <p className="mx-auto mt-10 max-w-xl text-center text-base font-medium text-ink">
-            Nous ne construisons pas les fonctionnalités qui nous paraissent intéressantes.
-            Nous construisons celles qui reviennent le plus souvent chez les professionnels
-            RH.
-          </p>
+          <div className="mx-auto mt-10 max-w-xl text-center">
+            <p className="text-base font-medium text-ink">
+              Chaque fonctionnalité de RH Pilot commence par un besoin observé sur le terrain.
+            </p>
+            <p className="mt-2 text-sm text-ink-soft">
+              Nous ne construisons pas ce qui nous semble intéressant. Nous construisons ce
+              qui revient le plus souvent chez les professionnels RH.
+            </p>
+          </div>
         </Reveal>
       </section>
 
