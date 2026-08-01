@@ -255,7 +255,11 @@ export default async function DashboardPage({
         </Card>
       )}
 
-      <div className="mt-6 grid grid-cols-3 gap-3">
+      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Card className="border-brand-blue/20">
+          <p className="text-3xl font-semibold text-brand-blue">{anomalies.length}</p>
+          <p className="mt-1 text-xs font-medium text-ink-faint">suggestions</p>
+        </Card>
         <Card className="border-accent-rose/20">
           <p className="text-3xl font-semibold text-accent-rose">{overdueCount}</p>
           <p className="mt-1 text-xs font-medium text-ink-faint">en retard</p>
