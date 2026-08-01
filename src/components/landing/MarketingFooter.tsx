@@ -23,6 +23,10 @@ export function MarketingFooter() {
         <Link href="/confidentialite" className="hover:text-ink-soft hover:underline">
           Confidentialité
         </Link>
+        <span>·</span>
+        <Link href="/cookies" className="hover:text-ink-soft hover:underline">
+          Cookies
+        </Link>
       </div>
     </footer>
   );
