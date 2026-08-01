@@ -1,0 +1,353 @@
+// ============================================================
+// RH Pilot — Schéma de données MVP (v4)
+// ============================================================
+// Ajouts par rapport à la v3 :
+// - DeadlineType (LEGAL_DEADLINE / ORGANIZATIONAL_DEFAULT /
+//   USER_DEFINED) sur TaskTemplate, copié sur Task. Distingue
+//   une échéance réglementaire vérifiée d'une recommandation
+//   interne modifiable. Au MVP, aucune tâche n'est classée
+//   LEGAL_DEADLINE tant qu'il n'existe pas de moteur juridique
+//   vérifié et contextualisé — toutes sont ORGANIZATIONAL_DEFAULT.
+// - TaskTemplate.key : clé technique stable et unique par tâche
+//   type (ex. "embauche_dpae"), pour permettre des seeds
+//   rejouables par upsert plutôt que par deleteMany/createMany.
+// ============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ------------------------------------------------------------
+// Organisations et accès
+// ------------------------------------------------------------
+
+model Organization {
+  id        String    @id @default(cuid())
+  name      String
+  siret     String?   // facultatif, jamais bloquant à l'inscription — voir CreateOrganizationForm
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  memberships    Membership[]
+  employees      Employee[]
+  employeeEvents EmployeeEvent[]
+  auditLogs      AuditLog[]
+  notifications  Notification[]
+
+  @@map("organizations")
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique // remplacé par un placeholder généré lors de la désactivation
+  firstName      String?   // reçu depuis Clerk (webhook user.created/user.updated)
+  lastName       String?   // idem — nullable : peut manquer selon la méthode d'inscription
+  authProviderId String?   @unique // nullable : vidé lors de la désactivation (coupe l'accès immédiatement)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime? // désactivation (temps 1) — la suppression physique (temps 3) est un job séparé
+
+  memberships       Membership[]
+  auditLogs         AuditLog[]
+  sentNotifications Notification[]
+
+  @@map("users")
+}
+
+enum AccessRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+// Rôles globaux à l'organisation uniquement. Le manager direct
+// n'est PAS ici : il est propre à chaque salarié via
+// Employee.managerMembershipId.
+enum FunctionalRole {
+  RH
+  DIRIGEANT
+}
+
+enum NotificationFrequency {
+  DAILY
+  WEEKLY
+  OFF
+}
+
+model Membership {
+  id                    String                @id @default(cuid())
+  userId                String
+  organizationId        String
+  accessRole            AccessRole
+  functionalRole        FunctionalRole?
+  notificationFrequency NotificationFrequency @default(DAILY)
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  deletedAt             DateTime?
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  managedEmployees     Employee[]     @relation("EmployeeManager")
+  assignedTasks        Task[]
+  uploadedAttachments  Attachment[]
+  receivedNotifications Notification[]
+
+  @@unique([userId, organizationId])
+  @@unique([organizationId, id])
+  @@index([organizationId, functionalRole])
+  @@map("memberships")
+}
+
+// ------------------------------------------------------------
+// Salariés
+// ------------------------------------------------------------
+
+enum ContractType {
+  CDI
+  CDD
+  APPRENTISSAGE
+  PROFESSIONNALISATION
+}
+
+enum Civility {
+  MME
+  M
+  AUTRE
+}
+
+enum DurationUnit {
+  DAYS
+  WEEKS
+  MONTHS
+}
+
+model Employee {
+  id                      String        @id @default(cuid())
+  organizationId          String
+  firstName               String
+  lastName                String
+  civility                Civility?
+  position                String?
+  hireDate                DateTime
+  contractType            ContractType?
+  probationDuration       Int?          // quantité, à interpréter avec probationDurationUnit — jamais imposé, juste une pré-saisie modifiable
+  probationDurationUnit   DurationUnit? // ex. 45 jours (apprentissage) plutôt que de forcer un raisonnement en mois
+  nextMedicalVisitDate    DateTime?     // renseignée via l'étape "Mettre à jour la fiche" du parcours Visite médicale ; alimente les futurs détecteurs (visite dépassée, visite proche...)
+  managerMembershipId     String?
+  createdAt               DateTime      @default(now())
+  updatedAt               DateTime      @updatedAt
+  deletedAt               DateTime?
+
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  managerMembership Membership?  @relation("EmployeeManager", fields: [organizationId, managerMembershipId], references: [organizationId, id], onDelete: Restrict)
+
+  events EmployeeEvent[]
+
+  @@unique([organizationId, id])
+  @@index([organizationId])
+  @@map("employees")
+}
+
+// ------------------------------------------------------------
+// Gabarits
+// ------------------------------------------------------------
+
+model EventTemplate {
+  id          String    @id @default(cuid())
+  key         String    @unique
+  label       String
+  description String?
+  archivedAt  DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  taskTemplates  TaskTemplate[]
+  employeeEvents EmployeeEvent[]
+
+  @@map("event_templates")
+}
+
+enum FunctionalRoleResolution {
+  RH
+  DIRIGEANT
+  MANAGER_DIRECT // résolu via Employee.managerMembershipId
+}
+
+// LEGAL_DEADLINE : délai réglementaire issu d'une règle vérifiée (aucune au MVP).
+// ORGANIZATIONAL_DEFAULT : recommandation interne, modifiable (toutes les tâches du MVP).
+// USER_DEFINED : échéance choisie librement par l'entreprise (usage futur).
+enum DeadlineType {
+  LEGAL_DEADLINE
+  ORGANIZATIONAL_DEFAULT
+  USER_DEFINED
+}
+
+model TaskTemplate {
+  id                    String                   @id @default(cuid())
+  key                   String                   @unique // ex: "embauche_dpae" — cible stable pour les upserts de seed
+  eventTemplateId       String
+  label                 String
+  stepOrder             Int
+  dueOffsetDays         Int
+  deadlineType          DeadlineType             @default(ORGANIZATIONAL_DEFAULT)
+  defaultFunctionalRole FunctionalRoleResolution
+  proofRequired         Boolean                  @default(false)
+  proofLabel            String?
+  archivedAt            DateTime?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+
+  eventTemplate EventTemplate @relation(fields: [eventTemplateId], references: [id], onDelete: Restrict)
+  tasks         Task[]
+
+  @@index([eventTemplateId])
+  @@map("task_templates")
+}
+
+// ------------------------------------------------------------
+// Instances réelles
+// ------------------------------------------------------------
+
+model EmployeeEvent {
+  id              String   @id @default(cuid())
+  organizationId  String
+  employeeId      String
+  eventTemplateId String
+  triggerDate     DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  employee      Employee      @relation(fields: [organizationId, employeeId], references: [organizationId, id], onDelete: Restrict)
+  eventTemplate EventTemplate @relation(fields: [eventTemplateId], references: [id], onDelete: Restrict)
+
+  tasks Task[]
+
+  @@unique([organizationId, id])
+  @@index([organizationId])
+  @@index([employeeId])
+  @@map("employee_events")
+}
+
+enum TaskStatus {
+  TO_PREPARE
+  TODO
+  IN_PROGRESS
+  WAITING_EXTERNAL
+  DONE
+  CANCELLED
+}
+
+model Task {
+  id                   String                   @id @default(cuid())
+  organizationId       String
+  employeeEventId      String
+  taskTemplateId       String
+  label                String                   // copié du template
+  stepOrder            Int                      // copié
+  dueDate              DateTime                 // calculée
+  deadlineType         DeadlineType             // copié — ne change jamais rétroactivement si le template évolue
+  resolutionRole       FunctionalRoleResolution // copié
+  assignedMembershipId String?
+  status               TaskStatus               @default(TO_PREPARE)
+  completedAt          DateTime?
+  proofRequired        Boolean                  @default(false)
+  proofLabel           String?                  // copié
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+
+  employeeEvent      EmployeeEvent @relation(fields: [organizationId, employeeEventId], references: [organizationId, id], onDelete: Cascade)
+  taskTemplate       TaskTemplate  @relation(fields: [taskTemplateId], references: [id], onDelete: Restrict)
+  assignedMembership Membership?   @relation(fields: [organizationId, assignedMembershipId], references: [organizationId, id], onDelete: Restrict)
+
+  attachments Attachment[]
+
+  @@unique([organizationId, id])
+  @@index([employeeEventId])
+  @@index([assignedMembershipId])
+  @@index([status, dueDate])
+  @@map("tasks")
+}
+
+// Pièces justificatives — stockage privé uniquement.
+model Attachment {
+  id                     String   @id @default(cuid())
+  organizationId         String
+  taskId                 String
+  storageKey             String
+  fileName               String?
+  mimeType               String
+  sizeBytes              Int
+  uploadedByMembershipId String?
+  createdAt              DateTime @default(now())
+
+  task                 Task        @relation(fields: [organizationId, taskId], references: [organizationId, id], onDelete: Cascade)
+  uploadedByMembership Membership? @relation(fields: [organizationId, uploadedByMembershipId], references: [organizationId, id], onDelete: Restrict)
+
+  @@index([taskId])
+  @@map("attachments")
+}
+
+// ------------------------------------------------------------
+// Traçabilité
+// ------------------------------------------------------------
+
+// ------------------------------------------------------------
+// Notifications
+// ------------------------------------------------------------
+
+// Journal des notifications envoyées — pas un doublon du calcul
+// "Votre attention est requise" (qui reflète l'état actuel), mais un
+// historique : qui a été prévenu, de quoi, quand, par qui (ou
+// automatiquement). Répond au besoin concret remonté par le fondateur :
+// savoir si quelqu'un a déjà été relancé, sans avoir à deviner.
+//
+// taskId / employeeEventId : identifiants informatifs, PAS des clés
+// étrangères strictes. Un journal d'envoi n'a pas besoin d'intégrité
+// référentielle forte (aucune suppression physique de Task n'existe
+// dans l'application) ; les garder en scalaire simple évite la
+// complexité des clés composites pour une table qui n'est qu'un
+// historique de lecture.
+model Notification {
+  id                    String   @id @default(cuid())
+  organizationId        String
+  recipientMembershipId String
+  type                  String   // "digest_daily" | "digest_weekly" | "manual_reminder"
+  subject               String
+  taskId                String?
+  employeeEventId       String?
+  sentByUserId          String?  // null = envoi automatique (résumé programmé)
+  delivered             Boolean  @default(true) // reflète le vrai résultat Resend, pas seulement la tentative
+  sentAt                DateTime @default(now())
+
+  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  recipientMembership  Membership   @relation(fields: [organizationId, recipientMembershipId], references: [organizationId, id], onDelete: Restrict)
+  sentByUser           User?        @relation(fields: [sentByUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, sentAt])
+  @@map("notifications")
+}
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  actorUserId    String?
+  action         String
+  entityType     String
+  entityId       String
+  metadata       Json?
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  actor        User?        @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([organizationId, createdAt])
+  @@map("audit_logs")
+}

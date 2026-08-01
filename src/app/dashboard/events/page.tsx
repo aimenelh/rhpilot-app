@@ -1,0 +1,140 @@
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { TriangleAlert, Clock, CircleCheck } from "lucide-react";
+import { getCurrentMembership } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { ProgressBar } from "@/components/ui/ProgressBar";
+import { Input } from "@/components/ui/Field";
+import { formatDate } from "@/lib/format";
+import { getEventTemplateDotColor } from "@/lib/eventTemplateStyle";
+import { summarizeParcours } from "@/lib/parcoursSummary";
+
+export const dynamic = "force-dynamic";
+
+export default async function EventsPage({
+  searchParams,
+}: {
+  searchParams: { q?: string };
+}) {
+  const membership = await getCurrentMembership();
+  if (!membership) redirect("/dashboard");
+
+  const query = searchParams.q?.trim() ?? "";
+
+  const events = await prisma.employeeEvent.findMany({
+    where: {
+      organizationId: membership.organizationId,
+      employee: { deletedAt: null },
+      ...(query
+        ? {
+            OR: [
+              { employee: { firstName: { contains: query, mode: "insensitive" } } },
+              { employee: { lastName: { contains: query, mode: "insensitive" } } },
+              { eventTemplate: { label: { contains: query, mode: "insensitive" } } },
+            ],
+          }
+        : {}),
+    },
+    include: { employee: true, eventTemplate: true, tasks: true },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return (
+    <div className="max-w-4xl">
+      <h1 className="text-2xl font-semibold text-ink">Parcours RH actifs</h1>
+      <p className="mt-1 text-sm text-ink-soft">
+        {events.length === 0
+          ? query
+            ? "Aucun parcours ne correspond à cette recherche."
+            : "Aucun parcours déclenché pour l'instant."
+          : `${events.length} parcours en cours de suivi.`}
+      </p>
+
+      <form method="get" className="mt-4 max-w-xs">
+        <Input
+          type="search"
+          name="q"
+          defaultValue={query}
+          placeholder="Rechercher un salarié ou un type de parcours..."
+        />
+      </form>
+
+      <div className="mt-6">
+        {events.length === 0 ? (
+          query ? null : (
+            <EmptyState
+              title="Aucun parcours RH pour l'instant"
+              description="Déclenchez un événement (embauche, fin de période d'essai...) depuis la fiche d'un salarié pour générer automatiquement son plan d'action."
+              action={
+                <Link
+                  href="/dashboard/employees"
+                  className="text-sm font-medium text-brand-blue hover:underline"
+                >
+                  Voir les salariés →
+                </Link>
+              }
+            />
+          )
+        ) : (
+          <div className="flex flex-col gap-3">
+            {events.map((event) => {
+              const doneCount = event.tasks.filter((task) => task.status === "DONE").length;
+              const summary = summarizeParcours(event.tasks);
+
+              return (
+                <Link key={event.id} href={`/dashboard/events/${event.id}`}>
+                  <Card className="transition-colors hover:border-brand-blue/40">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className={`h-2.5 w-2.5 shrink-0 rounded-full ${getEventTemplateDotColor(event.eventTemplate.key)}`}
+                        />
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-ink">
+                              {event.employee.firstName} {event.employee.lastName}
+                            </p>
+                            <Badge tone="neutral">{event.eventTemplate.label}</Badge>
+                          </div>
+                          <p className="mt-0.5 text-xs text-ink-soft">
+                            Déclenché le {formatDate(event.triggerDate)}
+                          </p>
+                          <p className="mt-1 flex items-center gap-1.5 text-xs">
+                            {summary.overdueCount > 0 ? (
+                              <span className="flex items-center gap-1 font-medium text-accent-rose">
+                                <TriangleAlert size={12} />
+                                {summary.overdueCount} tâche{summary.overdueCount > 1 ? "s" : ""} en
+                                retard
+                              </span>
+                            ) : summary.isUpToDate && doneCount === event.tasks.length ? (
+                              <span className="flex items-center gap-1 text-accent-teal">
+                                <CircleCheck size={12} />
+                                Toutes les tâches sont à jour
+                              </span>
+                            ) : summary.nextDueLabel ? (
+                              <span className="flex items-center gap-1 text-ink-faint">
+                                <Clock size={12} />
+                                Prochaine échéance : {summary.nextDueLabel.toLowerCase()}
+                              </span>
+                            ) : null}
+                            <span className="text-ink-faint">· {summary.lastActivityLabel}</span>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="w-32 shrink-0">
+                        <ProgressBar value={doneCount} max={event.tasks.length} />
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
