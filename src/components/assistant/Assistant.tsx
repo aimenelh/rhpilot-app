@@ -44,22 +44,6 @@ export function Assistant({ summary }: { summary: AssistantSummary }) {
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // Premier lancement uniquement : l'Assistant s'ouvre de lui-même sur
-  // le tableau de bord pour proposer la découverte guidée — jamais un
-  // robot, jamais imposé, un simple choix une seule fois.
-  useEffect(() => {
-    if (pathname !== "/dashboard") return;
-    try {
-      if (!localStorage.getItem(WELCOME_SEEN_KEY)) {
-        setShowWelcome(true);
-        setOpen(true);
-      }
-    } catch {
-      // Stockage indisponible — on n'affiche simplement pas l'accueil.
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
   function markWelcomeSeen() {
     try {
       localStorage.setItem(WELCOME_SEEN_KEY, "1");
@@ -89,15 +73,34 @@ export function Assistant({ summary }: { summary: AssistantSummary }) {
   }
 
   const isFirstRender = useRef(true);
+  const hasCheckedWelcome = useRef(false);
 
   useEffect(() => {
     if (open) inputRef.current?.focus();
   }, [open]);
 
-  // Se referme et vide sa recherche à chaque changement de page — sauf
-  // au tout premier rendu, sinon ça annulerait l'ouverture automatique
-  // de l'accueil de bienvenue juste au-dessus.
+  // Un seul effet, une seule décision par changement de page — pour
+  // éliminer tout risque de conflit d'ordre entre "faut-il montrer
+  // l'accueil ici ?" et "faut-il fermer le panneau ?". Les avoir
+  // séparés provoquait une fermeture immédiate de l'accueil dans
+  // certains cas (redirection après connexion pas encore stabilisée).
   useEffect(() => {
+    if (!hasCheckedWelcome.current && pathname === "/dashboard") {
+      hasCheckedWelcome.current = true;
+      let alreadySeen = true;
+      try {
+        alreadySeen = Boolean(localStorage.getItem(WELCOME_SEEN_KEY));
+      } catch {
+        // Stockage indisponible — on considère l'accueil déjà "vu".
+      }
+      if (!alreadySeen) {
+        setShowWelcome(true);
+        setOpen(true);
+        setQuery("");
+        return; // ne pas enchaîner sur la fermeture ci-dessous
+      }
+    }
+
     if (isFirstRender.current) {
       isFirstRender.current = false;
       return;
