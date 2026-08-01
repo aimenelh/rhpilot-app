@@ -27,18 +27,20 @@ const SEVERITY_ORDER: Record<AnomalySeverity, number> = { critical: 0, medium: 1
 
 /**
  * Un salarié dont on connaît la durée de période d'essai, dont la fin
- * calculée approche (30 jours) ou est déjà dépassée, et pour lequel
- * aucun événement "Fin de période d'essai" n'a jamais été déclenché.
- * Déjà dépassée = critique (échéance ratée) ; approche encore = moyen
- * (à préparer, pas encore un oubli).
+ * calculée approche (30 jours) ou est dépassée depuis peu (45 jours
+ * maximum), et pour lequel aucun événement "Fin de période d'essai"
+ * n'a jamais été déclenché. Déjà dépassée = critique (échéance
+ * ratée) ; approche encore = moyen (à préparer, pas encore un oubli).
  *
- * Limité aux salariés embauchés dans les 365 derniers jours : au-delà,
- * l'absence de parcours déclenché dans RH Pilot ne veut plus rien dire
- * — l'entreprise n'utilisait probablement pas encore l'outil à
- * l'époque (cas réel rencontré : import CSV de salariés déjà en
- * poste depuis des années, tous signalés "dépassés" par centaines de
- * jours, ce qui n'a aucun sens). L'ancienneté ne doit jamais être
- * confondue avec "période d'essai jamais faite".
+ * Deux garde-fous, pas un seul : le salarié doit avoir été embauché
+ * dans les 365 derniers jours, ET le dépassement ne doit pas remonter
+ * à plus de 45 jours. Le premier ne suffisait pas : un import CSV ne
+ * crée jamais d'historique de parcours, donc même un salarié embauché
+ * récemment (150-280 jours) sans aucun événement déclenché se
+ * retrouvait signalé — alors qu'un dépassement aussi ancien sans
+ * qu'aucun signe d'action n'existe est presque toujours soit déjà
+ * traité en dehors de RH Pilot, soit une simple donnée d'import, pas
+ * un oubli à traiter aujourd'hui.
  */
 async function detectProbationEndingWithoutEvent(organizationId: string): Promise<Anomaly[]> {
   const employees = await prisma.employee.findMany({
@@ -66,6 +68,7 @@ async function detectProbationEndingWithoutEvent(organizationId: string): Promis
     const endDate = addDuration(employee.hireDate, employee.probationDuration!, employee.probationDurationUnit!);
     const diff = daysUntil(endDate);
     if (diff > 30) continue;
+    if (diff < -45) continue;
 
     anomalies.push({
       key: `probation-${employee.id}`,
@@ -97,11 +100,13 @@ async function detectProbationEndingWithoutEvent(organizationId: string): Promis
  * sur un cas récent, donc critique (contrairement aux données
  * manquantes, ce n'est pas juste "à compléter un jour").
  *
- * Limité à 365 jours après l'embauche, pour la même raison que le
- * détecteur de période d'essai juste au-dessus : un salarié ancien
- * importé via CSV n'a normalement jamais eu de parcours RH Pilot
- * puisque l'entreprise ne l'utilisait pas encore à l'époque — ce
- * n'est pas un oubli, c'est juste antérieur à l'outil.
+ * Limité aux salariés embauchés dans les 60 derniers jours — pas 365.
+ * Le même défaut que le détecteur de période d'essai touchait
+ * celui-ci aussi : un import CSV ne crée jamais d'événement, donc
+ * n'importe quel salarié embauché "récemment" au sens large (jusqu'à
+ * un an) se retrouvait signalé, même à 300 jours. Passé 60 jours sans
+ * aucun signe d'action, ce n'est plus un oubli à traiter aujourd'hui
+ * — soit c'est déjà géré ailleurs, soit c'est une donnée historique.
  */
 async function detectMissingOnboardingEvent(organizationId: string): Promise<Anomaly[]> {
   const employees = await prisma.employee.findMany({
@@ -112,7 +117,7 @@ async function detectMissingOnboardingEvent(organizationId: string): Promise<Ano
   for (const employee of employees) {
     const daysSinceHire = Math.abs(daysUntil(employee.hireDate));
     if (daysUntil(employee.hireDate) > -7) continue;
-    if (daysSinceHire > 365) continue;
+    if (daysSinceHire > 60) continue;
 
     const alreadyTriggered = await prisma.employeeEvent.findFirst({
       where: { organizationId, employeeId: employee.id, eventTemplate: { key: "embauche" } },
