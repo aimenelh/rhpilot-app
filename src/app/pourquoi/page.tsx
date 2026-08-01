@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { UserRoundX, Send, Clock, Info, CircleCheck, ArrowRight } from "lucide-react";
+import { UserRoundX, Send, Clock, Info, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
@@ -35,13 +35,6 @@ const PHILOSOPHY = [
     title: "Une information manquante est signalée",
     description: "Pas masquée derrière un silence qui donnerait une fausse impression d'ordre.",
   },
-];
-
-const TERRAIN_ITEMS = [
-  { label: "Suivi des visites médicales", status: "built" as const },
-  { label: "Clarté des responsabilités sur chaque dossier", status: "built" as const },
-  { label: "Suivi des périodes d'essai", status: "built" as const },
-  { label: "Échéances liées à la paie", status: "planned" as const },
 ];
 
 export default function WhyPage() {
@@ -181,32 +174,57 @@ export default function WhyPage() {
         </div>
       </section>
 
-      {/* Bloc 7 — Ce que le terrain nous a montré, honnêtement */}
+      {/* Bloc 7 — Observatoire RH Pilot : ce que le terrain nous montre,
+          sans jamais citer ni nommer personne (accord non obtenu). */}
       <section className="mx-auto max-w-2xl px-6 py-16">
-        <h2 className="text-center text-2xl font-semibold text-ink">
-          Ce que le terrain nous a montré
-        </h2>
-        <p className="mt-3 text-center text-sm text-ink-soft">
-          Des échanges avec des professionnels RH, avant même le lancement du produit.
+        <p className="text-center text-xs font-semibold uppercase tracking-wide text-brand-blue">
+          Observatoire RH Pilot
         </p>
-        <div className="mt-8 flex flex-col gap-2">
-          {TERRAIN_ITEMS.map((item) => (
-            <div
-              key={item.label}
-              className="flex items-center justify-between rounded-lg border border-surface-border bg-white px-4 py-3"
-            >
-              <span className="text-sm text-ink">{item.label}</span>
-              {item.status === "built" ? (
-                <span className="flex items-center gap-1.5 text-xs font-medium text-accent-teal">
-                  <CircleCheck size={14} />
-                  Déjà construit
-                </span>
-              ) : (
-                <span className="text-xs font-medium text-ink-faint">Prochaine étape</span>
-              )}
-            </div>
-          ))}
+        <h2 className="mt-2 text-center text-2xl font-semibold text-ink">
+          Ce que le terrain nous montre
+        </h2>
+        <p className="mt-4 text-center text-sm leading-relaxed text-ink-soft">
+          Avant même son lancement, RH Pilot a été confronté à une question simple, posée
+          directement à des professionnels RH : quelle est la tâche ou l&apos;échéance que
+          vous avez le plus peur d&apos;oublier ? Les réponses n&apos;ont jamais parlé de
+          logiciel manquant — elles parlaient d&apos;oublis, d&apos;échéances, de rappels, de
+          responsabilités. C&apos;est directement ce qui a guidé le positionnement de RH
+          Pilot : ne pas remplacer les outils RH existants, mais aider à anticiper les
+          échéances et rendre les responsabilités visibles.
+        </p>
+
+        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2">
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-accent-teal">
+              Déjà disponible
+            </h3>
+            <ul className="mt-3 flex flex-col gap-2 text-sm text-ink-soft">
+              <li>Parcours Embauche</li>
+              <li>Parcours Fin de période d&apos;essai</li>
+              <li>Parcours Visite médicale</li>
+              <li>Détecteurs d&apos;anomalies proactifs</li>
+              <li>Assistant RH Pilot</li>
+              <li>Notifications automatiques</li>
+            </ul>
+          </div>
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+              Les besoins qui reviennent le plus souvent
+            </h3>
+            <ul className="mt-3 flex flex-col gap-2 text-sm text-ink-soft">
+              <li>Échéances liées à la paie</li>
+              <li>Suivi documentaire (CNI, titres de séjour...)</li>
+              <li>Suivi post-recrutement et fidélisation</li>
+              <li>Entretiens obligatoires</li>
+              <li>Formations et leur renouvellement</li>
+            </ul>
+          </div>
         </div>
+
+        <p className="mt-8 text-center text-base font-medium text-ink">
+          Nous ne construisons pas les fonctionnalités qui nous paraissent intéressantes.
+          Nous construisons celles qui reviennent le plus souvent chez les professionnels RH.
+        </p>
       </section>
 
       {/* Bloc 8 — D'où vient RH Pilot */}
