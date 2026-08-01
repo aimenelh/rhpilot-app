@@ -107,19 +107,28 @@ export function LandingPage() {
         <Reveal>
           <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
             <div className="text-center">
-              <p className="text-4xl font-semibold text-brand-blue">45%</p>
+              <span className="text-2xl">📊</span>
+              <p className="mt-2 text-4xl font-semibold text-brand-blue">45%</p>
               <p className="mt-2 text-sm text-ink-soft">
-                des salariés français travaillent dans une TPE ou une PME — RH Pilot a été
-                pensé spécifiquement pour ces entreprises-là.
+                des salariés français travaillent dans une TPE ou une PME.
               </p>
-              <p className="mt-2 text-xs text-ink-faint">Source : Insee, 2025</p>
+              <p className="mt-1 text-sm font-medium text-ink">
+                → RH Pilot a été pensé pour elles.
+              </p>
+              <p className="mt-2 text-xs text-ink-faint">
+                Source : Insee (TPE-PME, micro-entreprises incluses)
+              </p>
             </div>
             <div className="text-center">
-              <p className="text-4xl font-semibold text-brand-blue">60%</p>
+              <span className="text-2xl">⏱️</span>
+              <p className="mt-2 text-4xl font-semibold text-brand-blue">60%</p>
               <p className="mt-2 text-sm text-ink-soft">
                 des RH passent au moins la moitié de leur journée sur des tâches
-                administratives — RH Pilot ne remplace pas ce travail, il évite d&apos;y
-                perdre du temps sur les rappels et les échéances.
+                administratives.
+              </p>
+              <p className="mt-1 text-sm font-medium text-ink">
+                → RH Pilot ne fait pas ce travail à leur place. Il veille simplement à ce
+                que rien ne soit oublié.
               </p>
               <p className="mt-2 text-xs text-ink-faint">
                 Source : Baromètre RH au quotidien, Éditions Tissot / PayFit, 2026
