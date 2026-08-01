@@ -256,10 +256,6 @@ export default async function DashboardPage({
       )}
 
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card className="border-brand-blue/20">
-          <p className="text-3xl font-semibold text-brand-blue">{anomalies.length}</p>
-          <p className="mt-1 text-xs font-medium text-ink-faint">suggestions</p>
-        </Card>
         <Card className="border-accent-rose/20">
           <p className="text-3xl font-semibold text-accent-rose">{overdueCount}</p>
           <p className="mt-1 text-xs font-medium text-ink-faint">en retard</p>
@@ -267,6 +263,10 @@ export default async function DashboardPage({
         <Card className="border-accent-amber/20">
           <p className="text-3xl font-semibold text-accent-amber">{soonCount}</p>
           <p className="mt-1 text-xs font-medium text-ink-faint">cette semaine</p>
+        </Card>
+        <Card className="border-brand-blue/20">
+          <p className="text-3xl font-semibold text-brand-blue">{anomalies.length}</p>
+          <p className="mt-1 text-xs font-medium text-ink-faint">à analyser</p>
         </Card>
         <Card className="border-accent-teal/20">
           <p className="text-3xl font-semibold text-accent-teal">{doneCount}</p>
