@@ -1,11 +1,27 @@
 import Link from "next/link";
-import { UserRoundX, Send, Clock, Info, ArrowRight } from "lucide-react";
+import {
+  UserRoundX,
+  Send,
+  Clock,
+  Info,
+  ArrowRight,
+  ArrowDown,
+  Stethoscope,
+  UserPlus,
+  CircleDollarSign,
+  FileText,
+  GraduationCap,
+  HeartHandshake,
+  ClipboardList,
+  CheckCircle2,
+} from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import { AttentionPreview } from "@/components/landing/AttentionPreview";
 import { MessyPreview } from "@/components/landing/MessyPreview";
+import { Reveal } from "@/components/landing/Reveal";
 
 const QUOTES = [
   "« Je pensais que c'était toi. »",
@@ -37,6 +53,47 @@ const PHILOSOPHY = [
   },
 ];
 
+// Le lien terrain → fonctionnalité, en formulations courtes plutôt
+// qu'en citations — aucune de ces phrases n'est présentée comme dite
+// mot pour mot par quelqu'un (accord non obtenu pour publier de
+// vraies citations, même anonymisées). Le fond reste fidèle aux
+// retours réels ; la forme reste honnête sur ce qu'elle est.
+const NEEDS_TO_FEATURES = [
+  {
+    icon: Stethoscope,
+    need: "Ne pas oublier une visite médicale",
+    feature: "Parcours Visite médicale",
+  },
+  {
+    icon: UserRoundX,
+    need: "Savoir qui doit s'occuper de quoi",
+    feature: "Responsabilités visibles (« À assigner »)",
+  },
+  {
+    icon: Send,
+    need: "Être relancé avant l'oubli",
+    feature: "Notifications automatiques",
+  },
+  {
+    icon: Clock,
+    need: "Suivre les périodes d'essai en cours",
+    feature: "Parcours Fin de période d'essai",
+  },
+  {
+    icon: UserPlus,
+    need: "Bien accompagner une nouvelle recrue",
+    feature: "Parcours Embauche",
+  },
+];
+
+const UPCOMING_NEEDS = [
+  { icon: CircleDollarSign, label: "Échéances liées à la paie" },
+  { icon: FileText, label: "Suivi documentaire (CNI, titres de séjour...)" },
+  { icon: HeartHandshake, label: "Suivi post-recrutement et fidélisation" },
+  { icon: ClipboardList, label: "Entretiens obligatoires" },
+  { icon: GraduationCap, label: "Formations et leur renouvellement" },
+];
+
 export default function WhyPage() {
   return (
     <div className="min-h-screen bg-surface-subtle">
@@ -60,67 +117,82 @@ export default function WhyPage() {
       {/* Bloc 2 — Le problème, en peu de mots */}
       <section className="border-y border-surface-border bg-white py-16">
         <div className="mx-auto grid max-w-5xl grid-cols-1 items-center gap-10 px-6 md:grid-cols-2">
-          <div>
-            <h2 className="text-2xl font-semibold text-ink">Le problème</h2>
-            <p className="mt-3 text-ink-soft">
-              Dans beaucoup de PME, les équipes RH sont compétentes et impliquées. Pourtant,
-              les mêmes situations reviennent, sprint après sprint, dossier après dossier.
-            </p>
-          </div>
+          <Reveal>
+            <div>
+              <h2 className="text-2xl font-semibold text-ink">Le problème</h2>
+              <p className="mt-3 text-ink-soft">
+                Dans beaucoup de PME, les équipes RH sont compétentes et impliquées. Pourtant,
+                les mêmes situations reviennent, sprint après sprint, dossier après dossier.
+              </p>
+            </div>
+          </Reveal>
           <div className="flex flex-col gap-3">
-            {QUOTES.map((quote) => (
-              <div
-                key={quote}
-                className="rounded-xl rounded-tl-none border border-surface-border bg-surface-subtle px-4 py-3 text-sm text-ink-soft"
-              >
-                {quote}
-              </div>
+            {QUOTES.map((quote, index) => (
+              <Reveal key={quote} delay={index * 100}>
+                <div className="rounded-xl rounded-tl-none border border-surface-border bg-surface-subtle px-4 py-3 text-sm text-ink-soft">
+                  {quote}
+                </div>
+              </Reveal>
             ))}
           </div>
         </div>
-        <p className="mx-auto mt-10 max-w-2xl px-6 text-center text-lg font-medium text-ink">
-          Les oublis ne sont pas la cause. Ils sont la conséquence d&apos;un manque de
-          structuration.
-        </p>
+        <Reveal>
+          <p className="mx-auto mt-10 max-w-2xl px-6 text-center text-lg font-medium text-ink">
+            Les oublis ne sont pas la cause. Ils sont la conséquence d&apos;un manque de
+            structuration.
+          </p>
+        </Reveal>
       </section>
 
       {/* Bloc 3 — Avant / Après */}
       <section className="mx-auto max-w-5xl px-6 py-16">
-        <h2 className="text-center text-2xl font-semibold text-ink">
-          Avant RH Pilot, après RH Pilot
-        </h2>
+        <Reveal>
+          <h2 className="text-center text-2xl font-semibold text-ink">
+            Avant RH Pilot, après RH Pilot
+          </h2>
+        </Reveal>
         <div className="mt-10 grid grid-cols-1 items-center gap-8 md:grid-cols-[1fr_auto_1fr]">
-          <div className="flex justify-center">
-            <MessyPreview />
-          </div>
+          <Reveal>
+            <div className="flex justify-center">
+              <MessyPreview />
+            </div>
+          </Reveal>
           <ArrowRight
             size={28}
             className="mx-auto rotate-90 text-ink-faint md:rotate-0"
             aria-hidden
           />
-          <div className="flex justify-center">
-            <AttentionPreview />
-          </div>
+          <Reveal delay={150}>
+            <div className="flex justify-center">
+              <AttentionPreview />
+            </div>
+          </Reveal>
         </div>
       </section>
 
       {/* Bloc 4 — Notre philosophie */}
       <section className="border-y border-surface-border bg-white py-16">
         <div className="mx-auto max-w-5xl px-6">
-          <h2 className="text-center text-2xl font-semibold text-ink">Notre philosophie</h2>
-          <p className="mx-auto mt-3 max-w-xl text-center text-ink-soft">
-            RH Pilot préfère montrer un problème plutôt que de le cacher. Ce n&apos;est pas un
-            slogan — c&apos;est comment le logiciel est construit, à chaque décision.
-          </p>
+          <Reveal>
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold text-ink">Notre philosophie</h2>
+              <p className="mx-auto mt-3 max-w-xl text-ink-soft">
+                RH Pilot préfère montrer un problème plutôt que de le cacher. Ce n&apos;est pas
+                un slogan — c&apos;est comment le logiciel est construit, à chaque décision.
+              </p>
+            </div>
+          </Reveal>
           <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2">
-            {PHILOSOPHY.map((item) => (
-              <Card key={item.title}>
-                <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue">
-                  <item.icon size={18} />
-                </span>
-                <h3 className="mt-3 text-sm font-semibold text-ink">{item.title}</h3>
-                <p className="mt-1 text-sm text-ink-soft">{item.description}</p>
-              </Card>
+            {PHILOSOPHY.map((item, index) => (
+              <Reveal key={item.title} delay={(index % 2) * 120}>
+                <Card>
+                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue">
+                    <item.icon size={18} />
+                  </span>
+                  <h3 className="mt-3 text-sm font-semibold text-ink">{item.title}</h3>
+                  <p className="mt-1 text-sm text-ink-soft">{item.description}</p>
+                </Card>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -128,130 +200,192 @@ export default function WhyPage() {
 
       {/* Bloc 5 — Pas un SIRH, en colonnes */}
       <section className="mx-auto max-w-3xl px-6 py-16">
-        <h2 className="text-center text-2xl font-semibold text-ink">
-          RH Pilot n&apos;est pas un SIRH de plus
-        </h2>
+        <Reveal>
+          <h2 className="text-center text-2xl font-semibold text-ink">
+            RH Pilot n&apos;est pas un SIRH de plus
+          </h2>
+        </Reveal>
         <div className="mt-10 grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Card className="bg-surface-subtle">
-            <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
-              Un SIRH
-            </p>
-            <ul className="mt-3 flex flex-col gap-2 text-sm text-ink-soft">
-              <li>Stocke</li>
-              <li>Archive</li>
-              <li>Centralise</li>
-            </ul>
-          </Card>
-          <Card className="border-brand-blue/20 bg-brand-blue/5">
-            <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue">
-              RH Pilot
-            </p>
-            <ul className="mt-3 flex flex-col gap-2 text-sm text-ink">
-              <li>Organise</li>
-              <li>Anticipe</li>
-              <li>Coordonne</li>
-            </ul>
-          </Card>
+          <Reveal>
+            <Card className="bg-surface-subtle">
+              <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
+                Un SIRH
+              </p>
+              <ul className="mt-3 flex flex-col gap-2 text-sm text-ink-soft">
+                <li>Stocke</li>
+                <li>Archive</li>
+                <li>Centralise</li>
+              </ul>
+            </Card>
+          </Reveal>
+          <Reveal delay={120}>
+            <Card className="border-brand-blue/20 bg-brand-blue/5">
+              <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue">
+                RH Pilot
+              </p>
+              <ul className="mt-3 flex flex-col gap-2 text-sm text-ink">
+                <li>Organise</li>
+                <li>Anticipe</li>
+                <li>Coordonne</li>
+              </ul>
+            </Card>
+          </Reveal>
         </div>
-        <p className="mx-auto mt-6 max-w-xl text-center text-sm text-ink-soft">
-          RH Pilot ne remplace aucun de vos outils existants. Il rend visible ce qui, sinon,
-          resterait dans la tête de quelqu&apos;un.
-        </p>
+        <Reveal>
+          <p className="mx-auto mt-6 max-w-xl text-center text-sm text-ink-soft">
+            RH Pilot ne remplace aucun de vos outils existants. Il rend visible ce qui, sinon,
+            resterait dans la tête de quelqu&apos;un.
+          </p>
+        </Reveal>
       </section>
 
       {/* Bloc 6 — L'émotion, en peu de mots */}
       <section className="bg-ink py-16">
-        <div className="mx-auto max-w-2xl px-6 text-center">
-          <p className="text-lg leading-relaxed text-white">
-            Une visite médicale oubliée. Une période d&apos;essai dépassée. Une DPAE envoyée
-            trop tard. Ce ne sont jamais de simples tâches — ce sont des situations qui créent
-            du stress et de l&apos;incertitude, pour l&apos;équipe RH comme pour le salarié.
-          </p>
-          <p className="mt-4 text-lg font-medium text-white">
-            RH Pilot existe pour que ça ne dépende jamais uniquement de la mémoire de
-            quelqu&apos;un.
-          </p>
-        </div>
+        <Reveal>
+          <div className="mx-auto max-w-2xl px-6 text-center">
+            <p className="text-lg leading-relaxed text-white">
+              Une visite médicale oubliée. Une période d&apos;essai dépassée. Une DPAE envoyée
+              trop tard. Ce ne sont jamais de simples tâches — ce sont des situations qui
+              créent du stress et de l&apos;incertitude, pour l&apos;équipe RH comme pour le
+              salarié.
+            </p>
+            <p className="mt-4 text-lg font-medium text-white">
+              RH Pilot existe pour que ça ne dépende jamais uniquement de la mémoire de
+              quelqu&apos;un.
+            </p>
+          </div>
+        </Reveal>
       </section>
 
-      {/* Bloc 7 — Observatoire RH Pilot : ce que le terrain nous montre,
-          sans jamais citer ni nommer personne (accord non obtenu). */}
-      <section className="mx-auto max-w-2xl px-6 py-16">
-        <p className="text-center text-xs font-semibold uppercase tracking-wide text-brand-blue">
-          Observatoire RH Pilot
-        </p>
-        <h2 className="mt-2 text-center text-2xl font-semibold text-ink">
-          Ce que le terrain nous montre
-        </h2>
-        <p className="mt-4 text-center text-sm leading-relaxed text-ink-soft">
-          Avant même son lancement, RH Pilot a été confronté à une question simple, posée
-          directement à des professionnels RH : quelle est la tâche ou l&apos;échéance que
-          vous avez le plus peur d&apos;oublier ? Les réponses n&apos;ont jamais parlé de
-          logiciel manquant — elles parlaient d&apos;oublis, d&apos;échéances, de rappels, de
-          responsabilités. C&apos;est directement ce qui a guidé le positionnement de RH
-          Pilot : ne pas remplacer les outils RH existants, mais aider à anticiper les
-          échéances et rendre les responsabilités visibles.
-        </p>
+      {/* Bloc 7 — Observatoire RH Pilot */}
+      <section className="mx-auto max-w-4xl px-6 py-16">
+        <Reveal>
+          <div className="text-center">
+            <span className="inline-block rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-blue">
+              Observatoire RH Pilot
+            </span>
+            <h2 className="mt-3 text-2xl font-semibold text-ink">Ce que le terrain nous montre</h2>
+          </div>
+        </Reveal>
 
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2">
-          <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-accent-teal">
-              Déjà disponible
-            </h3>
-            <ul className="mt-3 flex flex-col gap-2 text-sm text-ink-soft">
-              <li>Parcours Embauche</li>
-              <li>Parcours Fin de période d&apos;essai</li>
-              <li>Parcours Visite médicale</li>
-              <li>Détecteurs d&apos;anomalies proactifs</li>
-              <li>Assistant RH Pilot</li>
-              <li>Notifications automatiques</li>
-            </ul>
+        <Reveal>
+          <div className="mx-auto mt-6 max-w-xl text-center text-sm leading-relaxed text-ink-soft">
+            <p>
+              Avant même son lancement, RH Pilot a posé une question simple à plusieurs
+              professionnels RH :
+            </p>
+            <p className="mt-2 font-medium text-ink">
+              « En tant que professionnel RH, quelle est la tâche ou l&apos;échéance que
+              vous avez le plus peur d&apos;oublier dans votre quotidien ? »
+            </p>
+            <p className="mt-3">
+              Les réponses n&apos;ont jamais parlé d&apos;un logiciel manquant. Elles parlaient
+              d&apos;oublis, de rappels, d&apos;échéances, de responsabilités — c&apos;est
+              exactement ce qui a guidé la conception de RH Pilot.
+            </p>
           </div>
-          <div>
-            <h3 className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
-              Les besoins qui reviennent le plus souvent
-            </h3>
-            <ul className="mt-3 flex flex-col gap-2 text-sm text-ink-soft">
-              <li>Échéances liées à la paie</li>
-              <li>Suivi documentaire (CNI, titres de séjour...)</li>
-              <li>Suivi post-recrutement et fidélisation</li>
-              <li>Entretiens obligatoires</li>
-              <li>Formations et leur renouvellement</li>
-            </ul>
+        </Reveal>
+
+        {/* Schéma terrain → produit */}
+        <Reveal>
+          <div className="mx-auto mt-10 flex max-w-lg flex-col items-center gap-2">
+            <div className="flex flex-col items-center gap-1.5 text-center">
+              <span className="text-sm font-medium text-ink">Professionnels RH</span>
+              <span className="text-xs text-ink-faint">interrogés sur le terrain</span>
+            </div>
+            <ArrowDown size={18} className="text-ink-faint" aria-hidden />
+            <div className="flex flex-col items-center gap-1.5 text-center">
+              <span className="text-sm font-medium text-ink">Besoins remontés</span>
+              <span className="text-xs text-ink-faint">oublis, rappels, responsabilités</span>
+            </div>
+            <ArrowDown size={18} className="text-ink-faint" aria-hidden />
+            <div className="flex flex-col items-center gap-1.5 text-center">
+              <span className="text-sm font-semibold text-brand-blue">RH Pilot</span>
+              <span className="text-xs text-ink-faint">transforme ces besoins en fonctionnalités</span>
+            </div>
           </div>
+        </Reveal>
+
+        {/* Tableau besoin → fonctionnalité, sans citation attribuée */}
+        <div className="mt-10 flex flex-col gap-2">
+          {NEEDS_TO_FEATURES.map((item, index) => (
+            <Reveal key={item.need} delay={index * 80}>
+              <div className="flex flex-col items-center gap-3 rounded-xl border border-surface-border bg-white p-4 sm:flex-row">
+                <div className="flex flex-1 items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-subtle text-ink-faint">
+                    <item.icon size={16} />
+                  </span>
+                  <span className="text-sm text-ink-soft">{item.need}</span>
+                </div>
+                <ArrowRight size={16} className="hidden shrink-0 text-ink-faint sm:block" aria-hidden />
+                <div className="flex flex-1 items-center gap-2 sm:justify-end">
+                  <CheckCircle2 size={16} className="shrink-0 text-accent-teal" aria-hidden />
+                  <span className="text-sm font-medium text-ink">{item.feature}</span>
+                </div>
+              </div>
+            </Reveal>
+          ))}
         </div>
 
-        <p className="mt-8 text-center text-base font-medium text-ink">
-          Nous ne construisons pas les fonctionnalités qui nous paraissent intéressantes.
-          Nous construisons celles qui reviennent le plus souvent chez les professionnels RH.
-        </p>
+        {/* Besoins pas encore construits */}
+        <Reveal>
+          <h3 className="mt-14 text-center text-sm font-semibold uppercase tracking-wide text-ink-faint">
+            Les besoins qui reviennent le plus souvent
+          </h3>
+        </Reveal>
+        <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {UPCOMING_NEEDS.map((item, index) => (
+            <Reveal key={item.label} delay={(index % 2) * 100}>
+              <Card className="border-ink-faint/10 bg-white/60">
+                <div className="flex items-center gap-3">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-subtle text-ink-faint">
+                    <item.icon size={16} />
+                  </span>
+                  <span className="text-sm text-ink-soft">{item.label}</span>
+                </div>
+              </Card>
+            </Reveal>
+          ))}
+        </div>
+
+        <Reveal>
+          <p className="mx-auto mt-10 max-w-xl text-center text-base font-medium text-ink">
+            Nous ne construisons pas les fonctionnalités qui nous paraissent intéressantes.
+            Nous construisons celles qui reviennent le plus souvent chez les professionnels
+            RH.
+          </p>
+        </Reveal>
       </section>
 
       {/* Bloc 8 — D'où vient RH Pilot */}
       <section className="border-t border-surface-border bg-white py-16">
-        <div className="mx-auto max-w-2xl px-6 text-center">
-          <h2 className="text-2xl font-semibold text-ink">D&apos;où vient RH Pilot</h2>
-          <p className="mt-4 leading-relaxed text-ink-soft">
-            RH Pilot est né d&apos;un constat partagé. Des observations de terrain, un travail
-            de recherche approfondi et de nombreux échanges avec des professionnels RH ont
-            progressivement fait émerger la même idée : les équipes RH n&apos;ont pas besoin
-            qu&apos;on leur explique leur métier. Elles ont besoin d&apos;un outil qui leur
-            permette de l&apos;exercer avec davantage de visibilité, de sérénité et de
-            continuité.
-          </p>
-        </div>
+        <Reveal>
+          <div className="mx-auto max-w-2xl px-6 text-center">
+            <h2 className="text-2xl font-semibold text-ink">D&apos;où vient RH Pilot</h2>
+            <p className="mt-4 leading-relaxed text-ink-soft">
+              RH Pilot est né d&apos;un constat partagé. Des observations de terrain, un
+              travail de recherche approfondi et de nombreux échanges avec des professionnels
+              RH ont progressivement fait émerger la même idée : les équipes RH n&apos;ont pas
+              besoin qu&apos;on leur explique leur métier. Elles ont besoin d&apos;un outil qui
+              leur permette de l&apos;exercer avec davantage de visibilité, de sérénité et de
+              continuité.
+            </p>
+          </div>
+        </Reveal>
       </section>
 
       {/* Bloc 9 — CTA */}
       <section className="py-16">
-        <div className="mx-auto max-w-2xl px-6 text-center">
-          <p className="text-base font-medium text-ink">
-            Exactement le problème que vous rencontrez au quotidien ?
-          </p>
-          <Link href="/sign-up" className="mt-5 inline-block">
-            <Button className="px-6 py-3 text-base">Essayer gratuitement</Button>
-          </Link>
-        </div>
+        <Reveal>
+          <div className="mx-auto max-w-2xl px-6 text-center">
+            <p className="text-base font-medium text-ink">
+              Exactement le problème que vous rencontrez au quotidien ?
+            </p>
+            <Link href="/sign-up" className="mt-5 inline-block">
+              <Button className="px-6 py-3 text-base">Essayer gratuitement</Button>
+            </Link>
+          </div>
+        </Reveal>
       </section>
 
       <MarketingFooter />
