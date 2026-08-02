@@ -20,6 +20,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/employees", label: "Salariés", available: true },
   { href: "/dashboard/events", label: "Parcours RH", available: true },
   { href: "/dashboard/notifications", label: "Notifications", available: true },
+  { href: "/dashboard/team", label: "Équipe", available: true },
   { href: "/dashboard/help", label: "Aide", available: true },
   { href: "/dashboard/settings", label: "Paramètres", available: true },
 ];

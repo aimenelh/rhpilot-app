@@ -39,8 +39,31 @@ model Organization {
   employeeEvents EmployeeEvent[]
   auditLogs      AuditLog[]
   notifications  Notification[]
+  invitations    Invitation[]
 
   @@map("organizations")
+}
+
+// Invitation à rejoindre une organisation existante — sans ça, la
+// seule porte d'entrée était "créer sa propre organisation", ce qui
+// cassait complètement l'usage en équipe (un DRH ne peut pas montrer
+// RH Pilot à son assistante). Un jeton à usage unique, avec
+// expiration, plutôt qu'un lien permanent partageable indéfiniment.
+model Invitation {
+  id              String     @id @default(cuid())
+  organizationId  String
+  email           String
+  accessRole      AccessRole
+  token           String     @unique
+  createdByUserId String
+  createdAt       DateTime   @default(now())
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId])
+  @@map("invitations")
 }
 
 model User {
