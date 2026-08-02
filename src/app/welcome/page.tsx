@@ -1,7 +1,37 @@
-import { Rocket, MessageCircleHeart, ArrowRight, ListChecks, BellRing } from "lucide-react";
+import { Rocket, FlaskConical, MessageCircleHeart, Heart, ArrowRight, ListChecks, BellRing } from "lucide-react";
 import { Logomark } from "@/components/Brand";
 import { Button } from "@/components/ui/Button";
 import { acknowledgeWelcome } from "./actions";
+
+const POINTS = [
+  {
+    icon: FlaskConical,
+    text: (
+      <>
+        Le logiciel est déjà pleinement utilisable. Certaines fonctionnalités
+        évolueront encore pendant la bêta.
+      </>
+    ),
+  },
+  {
+    icon: MessageCircleHeart,
+    text: (
+      <>
+        Votre retour est la partie la plus importante de cette phase — une remarque,
+        une incompréhension ou un bug nous aide à améliorer RH Pilot.
+      </>
+    ),
+  },
+  {
+    icon: Heart,
+    text: (
+      <>
+        Vous n&apos;avez pas besoin de « tout tester ». Utilisez simplement RH Pilot
+        comme vous le feriez dans votre quotidien.
+      </>
+    ),
+  },
+];
 
 export default function WelcomePage({
   searchParams,
@@ -12,7 +42,6 @@ export default function WelcomePage({
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-surface-subtle via-white to-brand-blue/5 px-6 py-16">
-      {/* Formes discrètes en arrière-plan, très floues, mouvement lent */}
       <div
         aria-hidden
         className="welcome-shape-1 pointer-events-none absolute h-72 w-72 rounded-full bg-brand-blue/10 blur-3xl"
@@ -29,9 +58,6 @@ export default function WelcomePage({
         style={{ top: "55%", left: "16%" }}
       />
 
-      {/* Cartes RH Pilot très transparentes, au loin — on ne les
-          remarque pas consciemment, mais elles donnent l'impression
-          que le logiciel existe déjà, pas juste une page d'attente */}
       <div
         aria-hidden
         className="welcome-shape-2 pointer-events-none absolute hidden w-48 rounded-xl border border-ink/10 bg-white/10 px-4 py-3 opacity-[0.12] backdrop-blur-sm sm:block"
@@ -54,7 +80,6 @@ export default function WelcomePage({
       </div>
 
       <div className="relative z-10 flex w-full max-w-lg flex-col items-center">
-        {/* Logo, plus grand, avec halo lumineux et un point qui pulse */}
         <div className="welcome-logo-float relative mb-10">
           <div
             aria-hidden
@@ -83,26 +108,25 @@ export default function WelcomePage({
             Votre regard aujourd&apos;hui contribuera directement aux évolutions de demain.
           </p>
 
-          <p className="mt-4 text-sm leading-relaxed text-ink-soft">
-            Avant toute chose, merci de nous accorder un peu de votre temps. RH Pilot est
-            encore en phase de bêta. Cette version est déjà pleinement utilisable, mais elle
-            continuera d&apos;évoluer grâce à vos retours. Chaque remarque, chaque idée ou
-            chaque difficulté rencontrée nous aide à construire un outil plus simple, plus
-            fiable et réellement utile pour les professionnels RH.
-          </p>
+          <ul className="mt-8 flex flex-col gap-5 text-left">
+            {POINTS.map((point, index) => (
+              <li key={index} className="flex items-start gap-3">
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-blue/10 text-brand-blue">
+                  <point.icon size={15} />
+                </span>
+                <p className="pt-1 text-sm leading-relaxed text-ink-soft">{point.text}</p>
+              </li>
+            ))}
+          </ul>
 
-          <div className="mt-6 flex items-start gap-2.5 rounded-xl bg-surface-subtle px-4 py-3.5 text-left">
-            <MessageCircleHeart size={18} className="mt-0.5 shrink-0 text-brand-violet" />
-            <p className="text-sm text-ink-soft">
+          <div className="mt-7 border-t border-surface-border pt-6">
+            <p className="text-sm leading-relaxed text-ink-soft">
               <span className="font-medium text-ink">Votre avis compte réellement.</span> Cette
-              bêta n&apos;a pas pour objectif de prouver que le logiciel est parfait — elle a
-              pour objectif de comprendre ce qui peut encore être amélioré.
+              bêta n&apos;a pas pour objectif de démontrer que RH Pilot est parfait — elle a
+              pour objectif de construire le meilleur copilote RH possible avec ceux qui
+              l&apos;utiliseront demain.
             </p>
           </div>
-
-          <p className="mt-5 text-xs text-ink-faint">
-            Merci de participer à cette aventure dès ses premiers jours.
-          </p>
 
           <form action={acknowledgeWelcome} className="mt-7">
             <input type="hidden" name="next" value={next} />
@@ -114,16 +138,12 @@ export default function WelcomePage({
             </Button>
             <p className="mt-2 text-xs text-ink-faint">≈ 2 minutes pour découvrir votre espace</p>
           </form>
-
-          <p className="mt-4 text-xs text-ink-faint">
-            Version bêta — certaines fonctionnalités continueront d&apos;évoluer au fil des
-            prochaines semaines.
-          </p>
         </div>
 
         <p className="relative z-10 mt-8 max-w-sm text-center text-sm leading-relaxed text-ink-faint">
-          Chaque retour reçu est lu et pris en compte. Merci de contribuer aux premières
-          étapes de RH Pilot.
+          RH Pilot ne se construit pas seulement avec du code. Il se construit aussi grâce
+          aux professionnels RH qui prennent le temps de partager leur expérience. Merci
+          d&apos;en faire partie.
         </p>
       </div>
     </div>
