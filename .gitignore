@@ -2,3 +2,5 @@ node_modules
 .next
 .env
 *.log
+src/components/landing/JourneyStrip.tsx
+src/components/landing/HeroVisual.tsx
