@@ -15,6 +15,7 @@ import { isOverdue, daysUntil } from "@/lib/urgency";
 import { Stethoscope, TriangleAlert } from "lucide-react";
 import { getEventTemplateDotColor } from "@/lib/eventTemplateStyle";
 import { summarizeParcours } from "@/lib/parcoursSummary";
+import { CcnHint } from "@/components/CcnHint";
 
 export const dynamic = "force-dynamic";
 
@@ -40,7 +41,7 @@ export default async function EmployeeDetailPage({
 
   if (!employee) notFound();
 
-  const [memberships, eventTemplates, employeeEvents] = await Promise.all([
+  const [memberships, eventTemplates, employeeEvents, organization] = await Promise.all([
     prisma.membership.findMany({
       where: { organizationId: membership.organizationId, deletedAt: null },
       include: { user: true },
@@ -55,6 +56,7 @@ export default async function EmployeeDetailPage({
       include: { eventTemplate: true, tasks: true },
       orderBy: { triggerDate: "desc" },
     }),
+    prisma.organization.findUnique({ where: { id: membership.organizationId } }),
   ]);
 
   const potentialManagers = memberships.map((m) => ({
@@ -76,6 +78,12 @@ export default async function EmployeeDetailPage({
         {employee.firstName} {employee.lastName}
       </h1>
 
+      {organization?.conventionCollective && (
+        <div className="mt-4">
+          <CcnHint conventionCollective={organization.conventionCollective} context="fiche_salarie" />
+        </div>
+      )}
+
       <div className="mt-6">
         <TriggerEventForm
           action={triggerEventForEmployee}
@@ -85,6 +93,7 @@ export default async function EmployeeDetailPage({
             probationDuration: employee.probationDuration,
             probationDurationUnit: employee.probationDurationUnit,
           }}
+          conventionCollective={organization?.conventionCollective}
         />
       </div>
 

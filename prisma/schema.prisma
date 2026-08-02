@@ -27,12 +27,13 @@ datasource db {
 // ------------------------------------------------------------
 
 model Organization {
-  id        String    @id @default(cuid())
-  name      String
-  siret     String?   // facultatif, jamais bloquant à l'inscription — voir CreateOrganizationForm
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  deletedAt DateTime?
+  id                   String    @id @default(cuid())
+  name                 String
+  siret                String?   // facultatif, jamais bloquant à l'inscription — voir CreateOrganizationForm
+  conventionCollective String?   // nom libre, renseigné dans les paramètres (jamais à l'inscription, pour ne pas alourdir le premier contact) — sert uniquement à orienter vers la bonne source officielle, jamais à déduire une règle nous-mêmes
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+  deletedAt            DateTime?
 
   memberships    Membership[]
   employees      Employee[]

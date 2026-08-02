@@ -6,6 +6,7 @@ import { Rocket } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Field";
+import { CcnHint } from "@/components/CcnHint";
 import type { TriggerEventFormState } from "./actions";
 
 function SubmitButton() {
@@ -17,10 +18,17 @@ function SubmitButton() {
   );
 }
 
+const TEMPLATE_TO_CCN_CONTEXT: Record<string, "embauche" | "fin_periode_essai" | "visite_medicale"> = {
+  embauche: "embauche",
+  fin_periode_essai: "fin_periode_essai",
+  visite_medicale: "visite_medicale",
+};
+
 export function TriggerEventForm({
   action,
   eventTemplates,
   employee,
+  conventionCollective,
 }: {
   action: (state: TriggerEventFormState, formData: FormData) => Promise<TriggerEventFormState>;
   eventTemplates: { key: string; label: string }[];
@@ -29,16 +37,19 @@ export function TriggerEventForm({
     probationDuration: number | null;
     probationDurationUnit: "DAYS" | "WEEKS" | "MONTHS" | null;
   };
+  conventionCollective?: string | null;
 }) {
   const [state, formAction] = useFormState<TriggerEventFormState, FormData>(action, undefined);
   const today = new Date().toISOString().slice(0, 10);
   const [triggerDate, setTriggerDate] = useState(today);
+  const [selectedTemplate, setSelectedTemplate] = useState("");
 
   // Pré-remplit une date suggérée selon le type d'événement choisi et
   // les informations déjà connues du salarié — une suggestion
   // modifiable, jamais une valeur imposée ni un calcul juridique
   // garanti (cf. décision prise au moment des seeds).
   function handleTemplateChange(key: string) {
+    setSelectedTemplate(key);
     if (key === "embauche") {
       setTriggerDate(employee.hireDate.slice(0, 10));
       return;
@@ -112,6 +123,15 @@ export function TriggerEventForm({
           <SubmitButton />
         </div>
       </form>
+
+      {selectedTemplate && TEMPLATE_TO_CCN_CONTEXT[selectedTemplate] && (
+        <div className="mt-4">
+          <CcnHint
+            conventionCollective={conventionCollective}
+            context={TEMPLATE_TO_CCN_CONTEXT[selectedTemplate]}
+          />
+        </div>
+      )}
     </Card>
   );
 }

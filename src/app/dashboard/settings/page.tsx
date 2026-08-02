@@ -1,14 +1,54 @@
 import { redirect } from "next/navigation";
 import { Download } from "lucide-react";
 import { getCurrentMembership } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Label, Select, FieldHint } from "@/components/ui/Field";
+import { Input, Label, Select, FieldHint } from "@/components/ui/Field";
 import { updateNotificationPreference } from "../notifications/actions";
+import { updateConventionCollective } from "./organizationActions";
+
+const COMMON_CCN = [
+  "Syntec",
+  "Métallurgie",
+  "Commerce de gros",
+  "Commerce de détail et de gros à prédominance alimentaire",
+  "HCR (Hôtels, cafés, restaurants)",
+  "Bâtiment et travaux publics (BTP)",
+  "Pharmacie d'officine",
+  "Banque",
+  "Assurance",
+  "Transport routier",
+  "Immobilier",
+  "Bureaux d'études techniques",
+  "Cabinets d'avocats",
+  "Cabinets d'experts-comptables",
+  "Coiffure",
+  "Aide à domicile",
+  "Sport",
+  "Animation",
+  "Publicité",
+  "Industrie pharmaceutique",
+  "Automobile (services)",
+  "Bricolage",
+  "Restauration rapide",
+  "Propreté",
+  "Sécurité privée",
+  "Textile",
+  "Notariat",
+  "Optique-lunetterie",
+  "Import-export",
+  "Édition",
+];
 
 export default async function SettingsPage() {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
+
+  const canEditOrganization = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
+  const organization = await prisma.organization.findUnique({
+    where: { id: membership.organizationId },
+  });
 
   return (
     <div className="max-w-xl">
@@ -42,6 +82,42 @@ export default async function SettingsPage() {
           </Button>
         </form>
       </Card>
+
+      {canEditOrganization && (
+        <Card className="mt-4">
+          <h2 className="text-sm font-semibold text-ink">Convention collective</h2>
+          <p className="mt-1 text-sm text-ink-soft">
+            Renseignez celle applicable à votre organisation — RH Pilot vous orientera alors
+            vers la bonne source officielle au bon moment (embauche, période d&apos;essai,
+            visite médicale), sans jamais interpréter ses règles à votre place.
+          </p>
+
+          <form action={updateConventionCollective} className="mt-4">
+            <Label htmlFor="conventionCollective">Nom de la convention collective</Label>
+            <Input
+              id="conventionCollective"
+              name="conventionCollective"
+              list="ccn-suggestions"
+              defaultValue={organization?.conventionCollective ?? ""}
+              placeholder="Ex. Syntec"
+            />
+            <datalist id="ccn-suggestions">
+              {COMMON_CCN.map((ccn) => (
+                <option key={ccn} value={ccn} />
+              ))}
+            </datalist>
+            <FieldHint>
+              Tapez pour voir des suggestions parmi les conventions les plus courantes, ou
+              indiquez la vôtre librement si elle n&apos;y figure pas. Laissez vide pour ne
+              rien afficher.
+            </FieldHint>
+
+            <Button type="submit" className="mt-4">
+              Enregistrer
+            </Button>
+          </form>
+        </Card>
+      )}
 
       <Card className="mt-4">
         <h2 className="text-sm font-semibold text-ink">Export de vos données</h2>
