@@ -94,3 +94,47 @@ body {
     animation: none;
   }
 }
+
+/* Page de bienvenue bêta — mouvements lents et discrets uniquement,
+   jamais spectaculaires (esprit Stripe/Linear, pas "gadget"). */
+
+@keyframes welcome-logo-float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-6px); }
+}
+.welcome-logo-float {
+  animation: welcome-logo-float 4s ease-in-out infinite;
+}
+
+@keyframes welcome-card-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.welcome-card-in {
+  animation: welcome-card-in 0.5s ease-out;
+}
+
+@keyframes welcome-shape-drift-1 {
+  0%, 100% { transform: translate(0px, 0px); }
+  50% { transform: translate(14px, -10px); }
+}
+@keyframes welcome-shape-drift-2 {
+  0%, 100% { transform: translate(0px, 0px); }
+  50% { transform: translate(-12px, 10px); }
+}
+.welcome-shape-1 {
+  animation: welcome-shape-drift-1 9s ease-in-out infinite;
+}
+.welcome-shape-2 {
+  animation: welcome-shape-drift-2 11s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-logo-float,
+  .welcome-card-in,
+  .welcome-shape-1,
+  .welcome-shape-2,
+  .welcome-pulse-dot {
+    animation: none;
+  }
+}
