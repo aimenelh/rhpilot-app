@@ -7,6 +7,13 @@ export const metadata: Metadata = {
   title: "RH Pilot — Votre copilote d'organisation RH",
   description:
     "RH Pilot transforme chaque événement RH en plan d'action complet : tâches, échéances, responsables et preuves.",
+  // Bêta fermée : le site ne doit pas apparaître dans les résultats de
+  // recherche. À retirer explicitement le jour d'une ouverture publique
+  // — ce n'est pas quelque chose qui doit rester "par oubli".
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 // Habille les écrans Clerk (connexion, inscription, gestion du
@@ -39,7 +46,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider localization={frFR} appearance={clerkAppearance}>
+    <ClerkProvider localization={frFR as any} appearance={clerkAppearance}>
       <html lang="fr">
         <body className="font-sans antialiased">{children}</body>
       </html>
