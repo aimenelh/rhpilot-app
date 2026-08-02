@@ -251,6 +251,39 @@ async function detectMedicalVisitOverdue(organizationId: string): Promise<Anomal
   return anomalies;
 }
 
+/**
+ * Un CDD, un apprentissage ou une professionnalisation dont la date
+ * de fin approche (30 jours) ou est dépassée. Volontairement sans
+ * "action" de type "Générer le parcours" — il n'existe pas encore de
+ * parcours "Fin de contrat" dans RH Pilot (certificat de travail,
+ * solde de tout compte...), et on ne veut surtout pas laisser croire
+ * le contraire. Juste un constat factuel, avec un lien vers la fiche.
+ */
+async function detectContractEndingApproaching(organizationId: string): Promise<Anomaly[]> {
+  const employees = await prisma.employee.findMany({
+    where: { organizationId, deletedAt: null, contractEndDate: { not: null } },
+  });
+
+  const anomalies: Anomaly[] = [];
+  for (const employee of employees) {
+    if (!employee.contractEndDate) continue;
+    const diff = daysUntil(employee.contractEndDate);
+    if (diff > 30) continue;
+
+    anomalies.push({
+      key: `contract-ending-${employee.id}`,
+      severity: diff < 0 ? "critical" : "medium",
+      message:
+        diff < 0
+          ? `Le contrat de ${employee.firstName} ${employee.lastName} est arrivé à échéance il y a ${Math.abs(diff)} jour${Math.abs(diff) > 1 ? "s" : ""}.`
+          : `Le contrat de ${employee.firstName} ${employee.lastName} arrive à échéance dans ${diff} jour${diff > 1 ? "s" : ""}.`,
+      action: null,
+      link: { label: "Voir la fiche", href: `/dashboard/employees/${employee.id}` },
+    });
+  }
+  return anomalies;
+}
+
 // Registre extensible : chaque nouvelle règle d'anomalie (visite
 // médicale bientôt due, document obligatoire manquant...) s'ajoute ici
 // comme une fonction supplémentaire, sans toucher à la façon dont les
@@ -262,6 +295,7 @@ const DETECTORS: AnomalyDetector[] = [
   detectEmployeeMissingContractInfo,
   detectMedicalVisitNeverScheduled,
   detectMedicalVisitOverdue,
+  detectContractEndingApproaching,
 ];
 
 export async function getAnomalies(organizationId: string): Promise<Anomaly[]> {

@@ -128,6 +128,14 @@ enum DurationUnit {
   MONTHS
 }
 
+enum ProfessionalCategory {
+  CADRE
+  AGENT_DE_MAITRISE
+  EMPLOYE
+  OUVRIER
+  AUTRE
+}
+
 model Employee {
   id                      String        @id @default(cuid())
   organizationId          String
@@ -135,8 +143,10 @@ model Employee {
   lastName                String
   civility                Civility?
   position                String?
+  professionalCategory    ProfessionalCategory? // cadre, agent de maîtrise... — donnée d'identité, pas encore exploitée par des règles automatiques (ça viendrait avec la convention collective, volontairement pas construit tant qu'on n'a pas de source fiable)
   hireDate                DateTime
   contractType            ContractType?
+  contractEndDate         DateTime?     // pertinent pour CDD/apprentissage/professionnalisation — jamais pour un CDI. Alimente un détecteur simple ("contrat arrivant à échéance"), pas un parcours automatisé.
   probationDuration       Int?          // quantité, à interpréter avec probationDurationUnit — jamais imposé, juste une pré-saisie modifiable
   probationDurationUnit   DurationUnit? // ex. 45 jours (apprentissage) plutôt que de forcer un raisonnement en mois
   nextMedicalVisitDate    DateTime?     // renseignée via l'étape "Mettre à jour la fiche" du parcours Visite médicale ; alimente les futurs détecteurs (visite dépassée, visite proche...)

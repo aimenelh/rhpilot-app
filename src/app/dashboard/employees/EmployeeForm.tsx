@@ -13,9 +13,11 @@ type DefaultValues = {
   firstName: string;
   lastName: string;
   civility: string; // "" | "MME" | "M" | "AUTRE"
+  professionalCategory: string; // "" | "CADRE" | "AGENT_DE_MAITRISE" | "EMPLOYE" | "OUVRIER" | "AUTRE"
   position: string;
   hireDate: string; // format YYYY-MM-DD
   contractType: string; // "" | "CDI" | "CDD" | "APPRENTISSAGE" | "PROFESSIONNALISATION"
+  contractEndDate: string; // "" ou YYYY-MM-DD — pertinent pour CDD/apprentissage/professionnalisation
   probationDuration: string; // "" ou un nombre en chaîne
   probationDurationUnit: string; // "" | "DAYS" | "WEEKS" | "MONTHS"
   nextMedicalVisitDate: string; // "" ou YYYY-MM-DD
@@ -76,14 +78,31 @@ export function EmployeeForm({
           </div>
         </div>
 
-        <div>
-          <Label htmlFor="position">Poste</Label>
-          <Input
-            id="position"
-            name="position"
-            defaultValue={defaultValues.position}
-            placeholder="Ex. Secrétaire médicale"
-          />
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="position">Poste</Label>
+            <Input
+              id="position"
+              name="position"
+              defaultValue={defaultValues.position}
+              placeholder="Ex. Secrétaire médicale"
+            />
+          </div>
+          <div>
+            <Label htmlFor="professionalCategory">Catégorie professionnelle</Label>
+            <Select
+              id="professionalCategory"
+              name="professionalCategory"
+              defaultValue={defaultValues.professionalCategory}
+            >
+              <option value="">Non renseigné</option>
+              <option value="CADRE">Cadre</option>
+              <option value="AGENT_DE_MAITRISE">Agent de maîtrise</option>
+              <option value="EMPLOYE">Employé</option>
+              <option value="OUVRIER">Ouvrier</option>
+              <option value="AUTRE">Autre</option>
+            </Select>
+          </div>
         </div>
 
         <div>
@@ -106,6 +125,21 @@ export function EmployeeForm({
             <option value="APPRENTISSAGE">Contrat d&apos;apprentissage</option>
             <option value="PROFESSIONNALISATION">Contrat de professionnalisation</option>
           </Select>
+        </div>
+
+        <div>
+          <Label htmlFor="contractEndDate">Date de fin de contrat</Label>
+          <Input
+            id="contractEndDate"
+            name="contractEndDate"
+            type="date"
+            defaultValue={defaultValues.contractEndDate}
+          />
+          <FieldHint>
+            À renseigner pour un CDD ou un contrat d&apos;apprentissage/professionnalisation —
+            sans objet pour un CDI. RH Pilot vous préviendra simplement quand cette date
+            approche, sans rien déclencher automatiquement.
+          </FieldHint>
         </div>
 
         <div>

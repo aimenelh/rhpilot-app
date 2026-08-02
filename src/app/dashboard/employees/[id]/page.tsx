@@ -174,9 +174,13 @@ export default async function EmployeeDetailPage({
               firstName: employee.firstName,
               lastName: employee.lastName,
               civility: employee.civility ?? "",
+              professionalCategory: employee.professionalCategory ?? "",
               position: employee.position ?? "",
               hireDate: employee.hireDate.toISOString().slice(0, 10),
               contractType: employee.contractType ?? "",
+              contractEndDate: employee.contractEndDate
+                ? employee.contractEndDate.toISOString().slice(0, 10)
+                : "",
               probationDuration: employee.probationDuration?.toString() ?? "",
               probationDurationUnit: employee.probationDurationUnit ?? "",
               nextMedicalVisitDate: employee.nextMedicalVisitDate

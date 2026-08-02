@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import type { ContractType, Civility, DurationUnit } from "@prisma/client";
+import type { ContractType, Civility, DurationUnit, ProfessionalCategory } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 
@@ -21,24 +21,31 @@ function parseOptionalManagerId(value: FormDataEntryValue | null) {
 
 function readEmployeeFields(formData: FormData) {
   const civilityRaw = String(formData.get("civility") ?? "");
+  const professionalCategoryRaw = String(formData.get("professionalCategory") ?? "");
   const contractTypeRaw = String(formData.get("contractType") ?? "");
+  const contractEndDateRaw = String(formData.get("contractEndDate") ?? "");
   const probationRaw = String(formData.get("probationDuration") ?? "");
   const probationUnitRaw = String(formData.get("probationDurationUnit") ?? "");
   const nextMedicalVisitDateRaw = String(formData.get("nextMedicalVisitDate") ?? "");
 
   const validContractTypes = ["CDI", "CDD", "APPRENTISSAGE", "PROFESSIONNALISATION"];
   const validCivilities = ["MME", "M", "AUTRE"];
+  const validCategories = ["CADRE", "AGENT_DE_MAITRISE", "EMPLOYE", "OUVRIER", "AUTRE"];
   const validUnits = ["DAYS", "WEEKS", "MONTHS"];
 
   return {
     firstName: String(formData.get("firstName") ?? "").trim(),
     lastName: String(formData.get("lastName") ?? "").trim(),
     civility: (validCivilities.includes(civilityRaw) ? civilityRaw : null) as Civility | null,
+    professionalCategory: (validCategories.includes(professionalCategoryRaw)
+      ? professionalCategoryRaw
+      : null) as ProfessionalCategory | null,
     position: String(formData.get("position") ?? "").trim(),
     hireDateRaw: String(formData.get("hireDate") ?? ""),
     contractType: (validContractTypes.includes(contractTypeRaw)
       ? contractTypeRaw
       : null) as ContractType | null,
+    contractEndDateRaw: contractEndDateRaw === "" ? null : contractEndDateRaw,
     probationDuration: probationRaw === "" ? null : Number(probationRaw),
     probationDurationUnit: (probationRaw === ""
       ? null
@@ -56,6 +63,12 @@ function validateEmployeeFields(fields: ReturnType<typeof readEmployeeFields>): 
   if (!fields.hireDateRaw) return "La date d'embauche est obligatoire.";
   if (Number.isNaN(new Date(fields.hireDateRaw).getTime())) {
     return "La date d'embauche n'est pas valide.";
+  }
+  if (
+    fields.contractEndDateRaw !== null &&
+    Number.isNaN(new Date(fields.contractEndDateRaw).getTime())
+  ) {
+    return "La date de fin de contrat n'est pas valide.";
   }
   if (
     fields.probationDuration !== null &&
@@ -93,9 +106,11 @@ export async function createEmployee(
         firstName: fields.firstName,
         lastName: fields.lastName,
         civility: fields.civility,
+        professionalCategory: fields.professionalCategory,
         position: fields.position || null,
         hireDate: new Date(fields.hireDateRaw),
         contractType: fields.contractType,
+        contractEndDate: fields.contractEndDateRaw ? new Date(fields.contractEndDateRaw) : null,
         probationDuration: fields.probationDuration,
         probationDurationUnit: fields.probationDurationUnit,
         nextMedicalVisitDate: fields.nextMedicalVisitDateRaw ? new Date(fields.nextMedicalVisitDateRaw) : null,
@@ -155,9 +170,11 @@ export async function updateEmployee(
         firstName: fields.firstName,
         lastName: fields.lastName,
         civility: fields.civility,
+        professionalCategory: fields.professionalCategory,
         position: fields.position || null,
         hireDate: new Date(fields.hireDateRaw),
         contractType: fields.contractType,
+        contractEndDate: fields.contractEndDateRaw ? new Date(fields.contractEndDateRaw) : null,
         probationDuration: fields.probationDuration,
         probationDurationUnit: fields.probationDurationUnit,
         nextMedicalVisitDate: fields.nextMedicalVisitDateRaw ? new Date(fields.nextMedicalVisitDateRaw) : null,
