@@ -6,30 +6,18 @@ import { acknowledgeWelcome } from "./actions";
 const POINTS = [
   {
     icon: FlaskConical,
-    text: (
-      <>
-        Le logiciel est déjà pleinement utilisable. Certaines fonctionnalités
-        évolueront encore pendant la bêta.
-      </>
-    ),
+    title: "Déjà pleinement utilisable",
+    text: "Certaines fonctionnalités évolueront encore pendant la bêta.",
   },
   {
     icon: MessageCircleHeart,
-    text: (
-      <>
-        Votre retour est la partie la plus importante de cette phase — une remarque,
-        une incompréhension ou un bug nous aide à améliorer RH Pilot.
-      </>
-    ),
+    title: "Votre retour guide les prochaines évolutions",
+    text: "Une remarque, une incompréhension ou un bug nous aide à améliorer RH Pilot.",
   },
   {
     icon: Heart,
-    text: (
-      <>
-        Vous n&apos;avez pas besoin de « tout tester ». Utilisez simplement RH Pilot
-        comme vous le feriez dans votre quotidien.
-      </>
-    ),
+    title: "Utilisez RH Pilot naturellement",
+    text: "Pas besoin de « tout tester » — faites comme dans votre quotidien.",
   },
 ];
 
@@ -104,22 +92,25 @@ export default function WelcomePage({
             Merci d&apos;être parmi les premiers à tester RH Pilot.
           </h1>
 
-          <p className="mt-3 text-sm font-medium text-brand-blue">
+          <p className="mt-4 text-sm font-medium text-brand-blue">
             Votre regard aujourd&apos;hui contribuera directement aux évolutions de demain.
           </p>
 
-          <ul className="mt-8 flex flex-col gap-5 text-left">
+          <ul className="mt-10 flex flex-col gap-6 text-left">
             {POINTS.map((point, index) => (
               <li key={index} className="flex items-start gap-3">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-blue/10 text-brand-blue">
                   <point.icon size={15} />
                 </span>
-                <p className="pt-1 text-sm leading-relaxed text-ink-soft">{point.text}</p>
+                <div className="pt-0.5">
+                  <p className="text-sm font-semibold text-ink">{point.title}</p>
+                  <p className="mt-0.5 text-sm leading-relaxed text-ink-soft">{point.text}</p>
+                </div>
               </li>
             ))}
           </ul>
 
-          <div className="mt-7 border-t border-surface-border pt-6">
+          <div className="mt-9 border-t border-surface-border pt-7">
             <p className="text-sm leading-relaxed text-ink-soft">
               <span className="font-medium text-ink">Votre avis compte réellement.</span> Cette
               bêta n&apos;a pas pour objectif de démontrer que RH Pilot est parfait — elle a
