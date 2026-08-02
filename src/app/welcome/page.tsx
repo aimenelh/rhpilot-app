@@ -90,8 +90,8 @@ export default function WelcomePage({
         <Check size={14} className="ml-auto shrink-0 text-accent-teal" />
       </div>
 
-      <div className="relative z-10 flex w-full max-w-lg flex-col items-center">
-        <div className="welcome-logo-float relative mb-10">
+      <div className="relative z-10 flex w-full max-w-2xl flex-col items-center">
+        <div className="welcome-logo-float relative mb-8">
           <div
             aria-hidden
             className="absolute inset-0 -z-10 scale-[2.2] rounded-full bg-brand-gradient opacity-20 blur-2xl"
@@ -133,7 +133,7 @@ export default function WelcomePage({
           </span>
         </div>
 
-        <div className="welcome-card-in w-full rounded-2xl border border-surface-border bg-white p-8 text-center shadow-lg sm:p-10">
+        <div className="welcome-card-in w-full rounded-2xl border border-surface-border bg-white p-8 text-center shadow-lg sm:p-9">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-semibold text-brand-blue">
             <Rocket size={13} />
             Bienvenue dans la bêta
@@ -153,7 +153,7 @@ export default function WelcomePage({
             <span className="hidden h-px w-6 bg-brand-blue/25 sm:inline-block" />
           </p>
 
-          <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-3">
+          <div className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-3">
             {POINTS.map((point, index) => (
               <div key={index} className="flex flex-col items-center text-center">
                 <span className="flex h-11 w-11 items-center justify-center rounded-full bg-brand-blue/10 text-brand-blue">
@@ -164,7 +164,7 @@ export default function WelcomePage({
             ))}
           </div>
 
-          <div className="mt-9 flex items-start gap-3 rounded-xl bg-surface-subtle/70 p-5 text-left">
+          <div className="mt-7 flex items-start gap-3 rounded-xl bg-surface-subtle/70 p-5 text-left">
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand-blue text-white">
               <MessageCircleHeart size={16} />
             </span>
@@ -177,12 +177,12 @@ export default function WelcomePage({
             </div>
           </div>
 
-          <p className="mt-6 flex items-center justify-center gap-1.5 text-sm text-ink-soft">
+          <p className="mt-5 flex items-center justify-center gap-1.5 text-sm text-ink-soft">
             <Heart size={13} className="text-brand-violet" />
             Merci de participer à cette aventure dès ses premiers jours.
           </p>
 
-          <form action={acknowledgeWelcome} className="mt-7">
+          <form action={acknowledgeWelcome} className="mt-6">
             <input type="hidden" name="next" value={next} />
             <Button type="submit" className="w-full py-3 text-base">
               <span className="inline-flex items-center justify-center gap-2">
