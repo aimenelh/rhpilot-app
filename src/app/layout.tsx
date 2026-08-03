@@ -4,7 +4,7 @@ import { frFR } from "@clerk/localizations";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "RH Pilot — Votre copilote d'organisation RH",
+  title: "RH Pilot, votre copilote d'organisation RH",
   description:
     "RH Pilot transforme chaque événement RH en plan d'action complet : tâches, échéances, responsables et preuves.",
   // Bêta fermée : le site ne doit pas apparaître dans les résultats de

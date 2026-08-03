@@ -99,7 +99,7 @@ export default async function EmployeesPage({
           query ? null : status === "archived" ? (
             <EmptyState
               title="Aucun salarié archivé"
-              description="Les salariés archivés depuis leur fiche apparaîtront ici — rien n'est jamais supprimé définitivement."
+              description="Les salariés archivés depuis leur fiche apparaîtront ici, rien n'est jamais supprimé définitivement."
             />
           ) : (
             <EmptyState
@@ -108,7 +108,7 @@ export default async function EmployeesPage({
               action={
                 <div className="flex flex-wrap items-center justify-center gap-3">
                   <Link href="/dashboard/employees/new">
-                    <Button>Ajouter mon premier salarié</Button>
+                    <Button data-tour="add-employee">Ajouter mon premier salarié</Button>
                   </Link>
                   <Link href="/dashboard/employees/import">
                     <Button variant="secondary">Importer depuis un fichier CSV</Button>

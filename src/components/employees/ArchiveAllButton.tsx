@@ -18,7 +18,7 @@ export function ArchiveAllButton({
         </Button>
       }
       title={`Archiver les ${count} salarié${count > 1 ? "s" : ""} actif${count > 1 ? "s" : ""} ?`}
-      description="Ils disparaîtront de toutes les listes actives (tableau de bord, suggestions, parcours) — rien n'est supprimé définitivement, vous pourrez les réactiver individuellement depuis l'onglet Archivés."
+      description="Ils disparaîtront de toutes les listes actives (tableau de bord, suggestions, parcours), sans rien supprimer définitivement : vous pourrez les réactiver individuellement depuis l'onglet Archivés."
       confirmLabel="Archiver tout"
       onConfirm={action}
     />

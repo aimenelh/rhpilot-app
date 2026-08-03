@@ -305,7 +305,7 @@ export default async function DashboardPage({
         {flagged.length === 0 ? (
           <div className="mt-4 flex items-center gap-2 text-sm text-ink-soft">
             <CircleCheck size={16} className="text-accent-teal" />
-            Rien d&apos;urgent pour l&apos;instant — tout est sous contrôle.
+            Rien d&apos;urgent pour l&apos;instant, tout est sous contrôle.
           </div>
         ) : view === "employee" ? (
           <>
@@ -347,7 +347,7 @@ export default async function DashboardPage({
             {hiddenEmployeeGroupsCount > 0 && (
               <p className="mt-3 text-xs text-ink-faint">
                 + {hiddenEmployeeGroupsCount} autre{hiddenEmployeeGroupsCount > 1 ? "s" : ""}{" "}
-                salarié{hiddenEmployeeGroupsCount > 1 ? "s" : ""} nécessitant votre attention —
+                salarié{hiddenEmployeeGroupsCount > 1 ? "s" : ""} nécessitant votre attention,
                 affinez via{" "}
                 <Link href="/dashboard?view=tasks" className="text-brand-blue hover:underline">
                   Toutes les tâches
@@ -373,8 +373,8 @@ export default async function DashboardPage({
                   {reason === "soon" && <Clock size={16} className="shrink-0 text-accent-amber" />}
                   <div>
                     <p className="text-sm font-medium text-ink hover:text-brand-blue">
-                      {task.label} — {task.employeeEvent.employee.firstName}{" "}
-                      {task.employeeEvent.employee.lastName}
+                      {task.label} ({task.employeeEvent.employee.firstName}{" "}
+                      {task.employeeEvent.employee.lastName})
                     </p>
                     <p className="mt-0.5 text-xs text-ink-faint">
                       {reason === "unassigned" ? "À assigner" : formatRelativeDueDate(task.dueDate)}

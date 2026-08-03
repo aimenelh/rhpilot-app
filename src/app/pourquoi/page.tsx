@@ -34,7 +34,7 @@ const PHILOSOPHY = [
   {
     icon: UserRoundX,
     title: "Une tâche sans responsable clair reste « À assigner »",
-    description: "Visible de tous — jamais devinée, jamais attribuée au hasard.",
+    description: "Visible de tous, jamais devinée, jamais attribuée au hasard.",
   },
   {
     icon: Send,
@@ -87,7 +87,11 @@ const NEEDS_TO_FEATURES = [
 ];
 
 const UPCOMING_NEEDS = [
-  { icon: CircleDollarSign, label: "Échéances liées à la paie" },
+  {
+    icon: CircleDollarSign,
+    label: "Échéances liées à la paie",
+    quote: "« La gestion de la paie est ce que j'ai le plus peur d'oublier. »",
+  },
   { icon: FileText, label: "Suivi documentaire (CNI, titres de séjour...)" },
   { icon: HeartHandshake, label: "Suivi post-recrutement et fidélisation" },
   { icon: ClipboardList, label: "Entretiens obligatoires" },
@@ -109,7 +113,7 @@ export default function WhyPage() {
         <p className="mt-5 text-lg text-ink-soft">
           Les équipes RH doivent aujourd&apos;hui gérer toujours plus d&apos;obligations,
           d&apos;interlocuteurs et de dossiers en parallèle. La difficulté n&apos;est plus de
-          connaître les procédures — c&apos;est de garder une vision claire de tout ce qui
+          connaître les procédures, c&apos;est de garder une vision claire de tout ce qui
           est en cours.
         </p>
       </section>
@@ -178,7 +182,7 @@ export default function WhyPage() {
               <h2 className="text-2xl font-semibold text-ink">Notre philosophie</h2>
               <p className="mx-auto mt-3 max-w-xl text-ink-soft">
                 RH Pilot préfère montrer un problème plutôt que de le cacher. Ce n&apos;est pas
-                un slogan — c&apos;est comment le logiciel est construit, à chaque décision.
+                un slogan, c&apos;est comment le logiciel est construit, à chaque décision.
               </p>
             </div>
           </Reveal>
@@ -245,7 +249,7 @@ export default function WhyPage() {
           <div className="mx-auto max-w-2xl px-6 text-center">
             <p className="text-lg leading-relaxed text-white">
               Une visite médicale oubliée. Une période d&apos;essai dépassée. Une DPAE envoyée
-              trop tard. Ce ne sont jamais de simples tâches — ce sont des situations qui
+              trop tard. Ce ne sont jamais de simples tâches, ce sont des situations qui
               créent du stress et de l&apos;incertitude, pour l&apos;équipe RH comme pour le
               salarié.
             </p>
@@ -280,7 +284,7 @@ export default function WhyPage() {
             </p>
             <p className="mt-3">
               Les réponses n&apos;ont jamais parlé d&apos;un logiciel manquant. Elles parlaient
-              d&apos;oublis, de rappels, d&apos;échéances, de responsabilités — c&apos;est
+              d&apos;oublis, de rappels, d&apos;échéances, de responsabilités. C&apos;est
               exactement ce qui a guidé la conception de RH Pilot.
             </p>
           </div>
@@ -360,6 +364,12 @@ export default function WhyPage() {
                   </span>
                   <span className="text-sm text-ink-soft">{item.label}</span>
                 </div>
+                {item.quote && (
+                  <p className="mt-2.5 border-t border-ink-faint/10 pt-2.5 text-xs italic text-ink-faint">
+                    {item.quote}
+                    <span className="not-italic"> (professionnelle RH, anonymisé)</span>
+                  </p>
+                )}
               </Card>
             </Reveal>
           ))}

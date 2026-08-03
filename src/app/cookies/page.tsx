@@ -14,7 +14,7 @@ export default function CookiesPage() {
             RH Pilot utilise uniquement des cookies <strong className="text-ink">strictement
             nécessaires</strong> au fonctionnement de l&apos;application : authentification,
             maintien de votre session, et sécurité. Ces cookies ne servent qu&apos;à vous
-            permettre de rester connecté et d&apos;utiliser le Service en toute sécurité — ils
+            permettre de rester connecté et d&apos;utiliser le Service en toute sécurité. Ils
             ne suivent pas votre navigation à des fins publicitaires ou statistiques.
           </p>
 
@@ -24,7 +24,7 @@ export default function CookiesPage() {
             </h2>
             <ul className="mt-3 flex flex-col gap-2">
               <li>
-                <strong className="text-ink">Authentification et session</strong> (Clerk) —
+                <strong className="text-ink">Authentification et session</strong> (Clerk) :
                 permet de vous garder connecté et de sécuriser votre accès à votre espace RH
                 Pilot.
               </li>
@@ -35,7 +35,7 @@ export default function CookiesPage() {
             <strong className="text-ink">Aucun cookie publicitaire ou de suivi</strong> (Google
             Analytics, Meta Pixel, ou équivalent) n&apos;est déposé sans votre consentement
             préalable. Si RH Pilot venait à en utiliser un jour, cette page serait mise à jour
-            et un bandeau de consentement serait ajouté avant tout dépôt de ce type de cookie —
+            et un bandeau de consentement serait ajouté avant tout dépôt de ce type de cookie,
             pas après.
           </p>
 

@@ -83,7 +83,7 @@ export default async function JoinPage({ params }: { params: { token: string } }
     return (
       <ErrorScreen
         title="Cette invitation ne vous est pas destinée"
-        description={`Ce lien a été envoyé à ${invitation.email}. Vous êtes actuellement connecté·e avec ${user.email} — déconnectez-vous puis reconnectez-vous avec la bonne adresse.`}
+        description={`Ce lien a été envoyé à ${invitation.email}. Vous êtes actuellement connecté·e avec ${user.email} : déconnectez-vous puis reconnectez-vous avec la bonne adresse.`}
       />
     );
   }
@@ -110,7 +110,7 @@ export default async function JoinPage({ params }: { params: { token: string } }
         return (
           <ErrorScreen
             title="Impossible de rejoindre cette organisation"
-            description={`Vous êtes propriétaire de ${alreadyMember.organization.name}, qui compte d'autres membres. Transférez la propriété avant de la quitter — contactez-nous si besoin.`}
+            description={`Vous êtes propriétaire de ${alreadyMember.organization.name}, qui compte d'autres membres. Transférez la propriété avant de la quitter, contactez-nous si besoin.`}
           />
         );
       }

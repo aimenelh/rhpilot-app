@@ -84,7 +84,7 @@ export function parseEmployeeCsv(text: string): CsvParseResult {
         {
           line: 1,
           message:
-            "En-têtes manquants — au minimum : prenom, nom, date_embauche (première ligne du fichier).",
+            "En-têtes manquants (au minimum : prenom, nom, date_embauche, première ligne du fichier).",
         },
       ],
     };
@@ -103,7 +103,7 @@ export function parseEmployeeCsv(text: string): CsvParseResult {
     const hireDateRaw = get(idx.hireDate);
 
     if (!firstName || !lastName) {
-      errors.push({ line: lineNumber, message: "Prénom ou nom manquant — ligne ignorée." });
+      errors.push({ line: lineNumber, message: "Prénom ou nom manquant, ligne ignorée." });
       continue;
     }
 
@@ -111,7 +111,7 @@ export function parseEmployeeCsv(text: string): CsvParseResult {
     if (!hireDateRaw || Number.isNaN(hireDate.getTime())) {
       errors.push({
         line: lineNumber,
-        message: `Date d'embauche invalide ("${hireDateRaw}") — ligne ignorée.`,
+        message: `Date d'embauche invalide ("${hireDateRaw}"), ligne ignorée.`,
       });
       continue;
     }
@@ -128,7 +128,7 @@ export function parseEmployeeCsv(text: string): CsvParseResult {
       if (Number.isNaN(parsed.getTime())) {
         errors.push({
           line: lineNumber,
-          message: `Date de visite médicale invalide ("${medicalRaw}") — ignorée, salarié importé sans cette date.`,
+          message: `Date de visite médicale invalide ("${medicalRaw}"), ignorée : salarié importé sans cette date.`,
         });
       } else {
         nextMedicalVisitDate = parsed;

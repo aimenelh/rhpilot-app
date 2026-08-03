@@ -8,7 +8,7 @@ export default function ConfidentialitePage() {
 
       <div className="mx-auto max-w-2xl px-6 py-16">
         <p className="text-xs font-medium uppercase tracking-wide text-brand-blue">
-          Version bêta — document en cours de finalisation
+          Version bêta, document en cours de finalisation
         </p>
         <h1 className="mt-2 text-3xl font-semibold text-ink">Politique de confidentialité</h1>
         <p className="mt-4 text-sm leading-relaxed text-ink-soft">
@@ -60,10 +60,10 @@ export default function ConfidentialitePage() {
             <h2 className="text-base font-semibold text-ink">4. Sous-traitants ultérieurs</h2>
             <p className="mt-2">Les données peuvent être transmises à :</p>
             <ul className="mt-2 flex flex-col gap-1.5">
-              <li>• <strong className="text-ink">Neon</strong> — hébergement de la base de données (Union européenne).</li>
-              <li>• <strong className="text-ink">Clerk</strong> — authentification et gestion des comptes.</li>
-              <li>• <strong className="text-ink">Resend</strong> — envoi des emails transactionnels.</li>
-              <li>• <strong className="text-ink">Vercel</strong> — hébergement de l&apos;application.</li>
+              <li>• <strong className="text-ink">Neon</strong> : hébergement de la base de données (Union européenne).</li>
+              <li>• <strong className="text-ink">Clerk</strong> : authentification et gestion des comptes.</li>
+              <li>• <strong className="text-ink">Resend</strong> : envoi des emails transactionnels.</li>
+              <li>• <strong className="text-ink">Vercel</strong> : hébergement de l&apos;application.</li>
             </ul>
           </section>
 

@@ -24,7 +24,7 @@ export async function sendEmail({
 
   if (!apiKey || !from) {
     const message =
-      "RESEND_API_KEY ou RESEND_FROM_EMAIL manquant dans .env — email non envoyé.";
+      "RESEND_API_KEY ou RESEND_FROM_EMAIL manquant dans .env : email non envoyé.";
     console.error(message);
     return { ok: false, error: message };
   }
@@ -112,6 +112,6 @@ export function renderNotificationEmail({
         ? `<a href="${ctaUrl}" style="display: inline-block; margin-top: 24px; background: linear-gradient(135deg, #2F6FED, #7C5CFC); color: white; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600;">${ctaLabel}</a>`
         : ""
     }
-    <p style="color: #8A93AB; font-size: 12px; margin-top: 32px;">RH Pilot — votre copilote d'organisation RH</p>
+    <p style="color: #8A93AB; font-size: 12px; margin-top: 32px;">RH Pilot, votre copilote d'organisation RH</p>
   </div>`;
 }

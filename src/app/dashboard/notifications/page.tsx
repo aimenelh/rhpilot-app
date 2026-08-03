@@ -39,7 +39,7 @@ export default async function NotificationsPage() {
         <div>
           <h1 className="text-2xl font-semibold text-ink">Notifications</h1>
           <p className="mt-1 text-sm text-ink-soft">
-            Historique des rappels et résumés envoyés — pour savoir qui a déjà été relancé.
+            Historique des rappels et résumés envoyés, pour savoir qui a déjà été relancé.
           </p>
         </div>
         <form action={sendDigestsNow}>
@@ -50,7 +50,7 @@ export default async function NotificationsPage() {
         </form>
       </div>
       <p className="mt-2 text-xs text-ink-faint">
-        Déclenchement manuel pour l&apos;instant (utile pour tester) — l&apos;envoi automatique
+        Déclenchement manuel pour l&apos;instant (utile pour tester). L&apos;envoi automatique
         quotidien/hebdomadaire selon la préférence de chacun sera activé au moment du
         déploiement en ligne.
       </p>

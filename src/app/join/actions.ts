@@ -48,7 +48,7 @@ export async function switchOrganization(token: string) {
     });
     if (otherMembersCount > 0) {
       throw new Error(
-        "Vous êtes propriétaire de votre organisation actuelle, qui compte d'autres membres. Transférez la propriété avant de la quitter — contactez-nous si besoin."
+        "Vous êtes propriétaire de votre organisation actuelle, qui compte d'autres membres. Transférez la propriété avant de la quitter, contactez-nous si besoin."
       );
     }
   }

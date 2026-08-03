@@ -19,7 +19,7 @@ export function ProductPreview() {
       <div className="flex items-center gap-2.5">
         <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-accent-teal" />
         <div>
-          <p className="text-sm font-semibold text-ink">Embauche — Aimen El Housseini</p>
+          <p className="text-sm font-semibold text-ink">Embauche de Aimen El Housseini</p>
           <p className="text-xs text-ink-faint">Déclenché le 10 juillet</p>
         </div>
       </div>

@@ -67,7 +67,7 @@ export async function triggerEventQuick(formData: FormData) {
   const triggerDateRaw = String(formData.get("triggerDate") ?? "");
 
   if (!employeeId || !eventTemplateKey || !triggerDateRaw) {
-    throw new Error("Suggestion invalide — données manquantes.");
+    throw new Error("Suggestion invalide : données manquantes.");
   }
 
   const employeeEvent = await triggerEmployeeEvent({

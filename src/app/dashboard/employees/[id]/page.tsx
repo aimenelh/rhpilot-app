@@ -206,7 +206,7 @@ export default async function EmployeeDetailPage({
               <h2 className="text-sm font-semibold text-ink">Archiver ce salarié</h2>
               <p className="mt-1 text-sm text-ink-soft">
                 Le salarié disparaît des listes actives mais reste conservé pour
-                l&apos;historique — rien n&apos;est supprimé définitivement.
+                l&apos;historique, rien n&apos;est supprimé définitivement.
               </p>
             </div>
             <ConfirmArchiveButton

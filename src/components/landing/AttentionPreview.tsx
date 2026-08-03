@@ -5,13 +5,13 @@ const SAMPLE_ITEMS = [
   {
     icon: TriangleAlert,
     tone: "text-accent-rose",
-    label: "Préparer le contrat de travail — Aimen El Housseini",
+    label: "Préparer le contrat de travail (Aimen El Housseini)",
     meta: "En retard depuis 2 jours",
   },
   {
     icon: UserRoundX,
     tone: "text-brand-blue",
-    label: "Programmer la visite médicale — Camille Vidal",
+    label: "Programmer la visite médicale (Camille Vidal)",
     meta: "À assigner",
   },
   {

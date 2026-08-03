@@ -27,7 +27,7 @@ export default function ImportEmployeesPage() {
     <div className="max-w-2xl">
       <h1 className="text-2xl font-semibold text-ink">Importer des salariés</h1>
       <p className="mt-1 text-sm text-ink-soft">
-        Collez le contenu d&apos;un fichier CSV au format RH Pilot — pratique pour démarrer
+        Collez le contenu d&apos;un fichier CSV au format RH Pilot, pratique pour démarrer
         avec plusieurs salariés d&apos;un coup plutôt que de créer chaque fiche
         individuellement.
       </p>
@@ -39,7 +39,7 @@ export default function ImportEmployeesPage() {
           <code className="rounded bg-surface-subtle px-1 py-0.5 text-xs">prenom</code>,{" "}
           <code className="rounded bg-surface-subtle px-1 py-0.5 text-xs">nom</code> et{" "}
           <code className="rounded bg-surface-subtle px-1 py-0.5 text-xs">date_embauche</code>{" "}
-          (format AAAA-MM-JJ) sont obligatoires — le reste peut rester vide.
+          (format AAAA-MM-JJ) sont obligatoires, le reste peut rester vide.
         </p>
         <pre className="mt-3 overflow-x-auto rounded-lg bg-ink px-4 py-3 text-xs text-white">
           {EXAMPLE}
@@ -47,7 +47,7 @@ export default function ImportEmployeesPage() {
         <p className="mt-2 text-xs text-ink-faint">
           civilite : MME, M ou AUTRE · type_contrat : CDI, CDD, APPRENTISSAGE ou
           PROFESSIONNALISATION · unite_duree : DAYS, WEEKS ou MONTHS. Une ligne mal formée est
-          ignorée individuellement — le reste de l&apos;import continue normalement.
+          ignorée individuellement, le reste de l&apos;import continue normalement.
         </p>
       </Card>
 

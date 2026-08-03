@@ -62,7 +62,7 @@ export async function sendManualReminder({
 
   if (!task) return { ok: false, error: "Tâche introuvable dans cette organisation." };
   if (!task.assignedMembership) {
-    return { ok: false, error: "Cette tâche n'est assignée à personne — assignez-la d'abord." };
+    return { ok: false, error: "Cette tâche n'est assignée à personne : assignez-la d'abord." };
   }
 
   const appUrl = getAppUrl();
@@ -124,10 +124,10 @@ async function sendDigestToMembership(
 
   const appUrl = getAppUrl();
   const frequencyLabel = type === "digest_daily" ? "quotidien" : "hebdomadaire";
-  const subject = `RH Pilot — ${tasks.length} action${tasks.length > 1 ? "s" : ""} à surveiller`;
+  const subject = `RH Pilot : ${tasks.length} action${tasks.length > 1 ? "s" : ""} à surveiller`;
 
   const toItem = (task: (typeof tasks)[number]) => ({
-    label: `${task.label} — ${task.employeeEvent.employee.firstName} ${task.employeeEvent.employee.lastName}`,
+    label: `${task.label} (${task.employeeEvent.employee.firstName} ${task.employeeEvent.employee.lastName})`,
     meta: formatRelativeDueDate(task.dueDate),
     url: `${appUrl}/dashboard/events/${task.employeeEventId}#task-${task.id}`,
   });

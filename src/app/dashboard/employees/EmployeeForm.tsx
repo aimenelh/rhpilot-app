@@ -136,7 +136,7 @@ export function EmployeeForm({
             defaultValue={defaultValues.contractEndDate}
           />
           <FieldHint>
-            À renseigner pour un CDD ou un contrat d&apos;apprentissage/professionnalisation —
+            À renseigner pour un CDD ou un contrat d&apos;apprentissage/professionnalisation,
             sans objet pour un CDI. RH Pilot vous préviendra simplement quand cette date
             approche, sans rien déclencher automatiquement.
           </FieldHint>
@@ -166,8 +166,8 @@ export function EmployeeForm({
           </div>
           <FieldHint>
             Sert uniquement à pré-remplir (jamais imposer) la date suggérée lors du
-            déclenchement de l&apos;événement correspondant — par exemple 45 jours pour un
-            contrat d&apos;apprentissage, plutôt qu&apos;un raisonnement forcé en mois.
+            déclenchement de l&apos;événement correspondant (par exemple 45 jours pour un
+            contrat d&apos;apprentissage, plutôt qu&apos;un raisonnement forcé en mois).
           </FieldHint>
         </div>
 
@@ -200,7 +200,7 @@ export function EmployeeForm({
             defaultValue={defaultValues.nextMedicalVisitDate}
           />
           <FieldHint>
-            Renseignée généralement à la fin d&apos;un parcours "Visite médicale" — mais
+            Renseignée généralement à la fin d&apos;un parcours "Visite médicale", mais
             modifiable directement ici à tout moment.
           </FieldHint>
         </div>

@@ -6,22 +6,22 @@ import { ChevronLeft, ChevronRight, Quote } from "lucide-react";
 const TESTIMONIALS = [
   {
     quote:
-      "Ce qui demande le plus de vigilance, c'est le suivi des périodes d'essai — les délais de prévenance, les entretiens à organiser, les décisions à formaliser, et les absences qui peuvent la prolonger. Il faut vérifier régulièrement les échéances pour ne rien oublier.",
-    role: "Responsable RH",
+      "Ce qui demande le plus de vigilance, c'est le suivi des périodes d'essai : les délais de prévenance, les entretiens à organiser, les décisions à formaliser, et les absences qui peuvent la prolonger. Il faut vérifier régulièrement les échéances pour ne rien oublier.",
+    role: "Professionnelle RH, anonymisé",
   },
   {
     quote: "Les échéances liées à la paie, chaque fin de mois, mettent les équipes RH sous tension.",
-    role: "Chargée RH en alternance",
+    role: "Chargée RH en alternance, anonymisé",
   },
   {
     quote:
-      "Le suivi des échéances RH — contrats, visites médicales, entretiens obligatoires — demande beaucoup de rigueur. Un oubli peut vite avoir des conséquences.",
-    role: "Assistant RH",
+      "Le suivi des échéances RH (contrats, visites médicales, entretiens obligatoires) demande beaucoup de rigueur. Un oubli peut vite avoir des conséquences.",
+    role: "Professionnelle RH, anonymisé",
   },
   {
     quote:
       "Il manquait parfois un simple rappel : une visite médicale, une pièce d'identité arrivée à expiration, ou un bon suivi après le recrutement.",
-    role: "Gestionnaire RH",
+    role: "Professionnelle RH, anonymisé",
   },
 ];
 
@@ -40,7 +40,7 @@ export function TestimonialsCarousel() {
         {isConclusion ? (
           <div className="text-center">
             <p className="text-base leading-relaxed text-ink">
-              Un constat revenait systématiquement — moins un manque d&apos;informations qu&apos;un
+              Un constat revenait systématiquement : moins un manque d&apos;informations qu&apos;un
               manque de temps, d&apos;anticipation et de rappels.
             </p>
             <p className="mt-3 text-sm font-medium text-brand-blue">

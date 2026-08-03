@@ -20,7 +20,7 @@ const BENEFITS = [
     icon: Sparkles,
     title: "Des suggestions, pas seulement des données",
     description:
-      "RH Pilot détecte les oublis probables — une période d'essai qui approche, un parcours jamais créé — et propose l'action en un clic.",
+      "RH Pilot détecte les oublis probables, comme une période d'essai qui approche ou un parcours jamais créé, et propose l'action en un clic.",
   },
   {
     icon: Send,
@@ -32,7 +32,7 @@ const BENEFITS = [
     icon: CircleCheck,
     title: "Un vrai parcours, pas une case à cocher",
     description:
-      "Chaque événement RH devient un plan complet — tâches, échéances, preuves attendues — pas juste un rappel isolé.",
+      "Chaque événement RH devient un plan complet (tâches, échéances, preuves attendues), pas juste un rappel isolé.",
   },
 ];
 
@@ -67,7 +67,7 @@ export function LandingPage() {
               être le principal outil d&apos;une équipe RH.
             </h1>
             <p className="mt-5 max-w-lg text-lg text-ink-soft">
-              RH Pilot transforme chaque événement RH en plan d&apos;action clair — les bonnes
+              RH Pilot transforme chaque événement RH en plan d&apos;action clair : les bonnes
               échéances, les bons responsables, une vue d&apos;ensemble de ce qui reste à
               faire.
             </p>

@@ -323,7 +323,7 @@ export async function generateDemoOrganization() {
   revalidatePath("/dashboard/events");
   redirect(
     `/dashboard/employees?flash=${encodeURIComponent(
-      "Entreprise de démonstration générée — 15 salariés, plusieurs parcours"
+      "Entreprise de démonstration générée (15 salariés, plusieurs parcours)"
     )}`
   );
 }

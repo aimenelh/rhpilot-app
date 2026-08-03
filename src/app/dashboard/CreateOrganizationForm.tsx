@@ -120,27 +120,28 @@ export function CreateOrganizationForm() {
 
       {mode === "join" ? (
         <>
-          <h1 className="mt-6 text-lg font-semibold text-ink">Rejoindre avec un code</h1>
+          <h1 className="mt-6 text-lg font-semibold text-ink">Rejoindre avec une invitation</h1>
           <p className="mt-1.5 text-sm text-ink-soft">
             Si quelqu&apos;un vous a invité·e à rejoindre son organisation, collez ici le lien
-            ou le code reçu par email.
+            complet reçu par email.
           </p>
 
           <form onSubmit={handleJoinSubmit} className="mt-6 flex flex-col gap-5">
             <div>
-              <Label htmlFor="join-code">Lien ou code d&apos;invitation</Label>
+              <Label htmlFor="join-code">Lien d&apos;invitation</Label>
               <Input
                 id="join-code"
                 type="text"
                 value={joinCode}
                 onChange={(event) => setJoinCode(event.target.value)}
-                placeholder="https://rhpilot.fr/join/... ou le code seul"
+                placeholder="https://rhpilot.fr/join/..."
                 required
                 disabled={isJoining}
               />
               <FieldHint>
-                L&apos;invitation doit avoir été envoyée à la même adresse email que celle
-                utilisée pour vous connecter ici.
+                Collez le lien tel qu&apos;il apparaît dans l&apos;email reçu. L&apos;invitation
+                doit avoir été envoyée à la même adresse email que celle utilisée pour vous
+                connecter ici.
               </FieldHint>
             </div>
 
@@ -188,13 +189,13 @@ export function CreateOrganizationForm() {
               </div>
               <FieldHint>
                 Permet de pré-remplir automatiquement le nom de votre entreprise. Totalement
-                facultatif — vous pouvez créer votre espace sans, y compris pour un test avec un
+                facultatif, vous pouvez créer votre espace sans, y compris pour un test avec un
                 nom fictif.
               </FieldHint>
               {lookupResult && (
                 <p className="mt-2 rounded-lg bg-brand-blue/5 px-3 py-2 text-xs text-ink-soft">
                   <strong className="text-ink">{lookupResult.name}</strong>
-                  {lookupResult.address && <> — {lookupResult.address}</>}
+                  {lookupResult.address && <>, {lookupResult.address}</>}
                   {lookupResult.city && <>, {lookupResult.city}</>}
                   {lookupResult.apeCode && <> · APE {lookupResult.apeCode}</>}
                   <br />

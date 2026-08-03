@@ -17,7 +17,7 @@ const STEPS: TourStep[] = [
     selector: '[data-tour="add-employee"]',
     matches: (p) => p === "/dashboard/employees",
     title: "1. Ajoutez votre premier salarié",
-    text: "Cliquez ici pour créer votre première fiche — ça prend moins d'une minute.",
+    text: "Cliquez ici pour créer votre première fiche, ça prend moins d'une minute.",
     placement: "bottom",
   },
   {
@@ -31,7 +31,7 @@ const STEPS: TourStep[] = [
     selector: '[data-tour="trigger-event"]',
     matches: (p) => /^\/dashboard\/employees\/[^/]+$/.test(p),
     title: "3. Déclenchez un parcours RH",
-    text: "Choisissez un événement (par exemple Embauche) — RH Pilot génère automatiquement le plan d'action complet.",
+    text: "Choisissez un événement (par exemple Embauche) : RH Pilot génère automatiquement le plan d'action complet.",
     placement: "bottom",
   },
   {

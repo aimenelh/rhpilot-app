@@ -8,7 +8,7 @@ export default function CguPage() {
 
       <div className="mx-auto max-w-2xl px-6 py-16">
         <p className="text-xs font-medium uppercase tracking-wide text-brand-blue">
-          Version bêta — document en cours de finalisation
+          Version bêta, document en cours de finalisation
         </p>
         <h1 className="mt-2 text-3xl font-semibold text-ink">
           Conditions Générales d&apos;Utilisation
@@ -51,7 +51,7 @@ export default function CguPage() {
 
           <section>
             <h2 className="text-base font-semibold text-ink">
-              3. Bêta fermée — conditions particulières
+              3. Bêta fermée : conditions particulières
             </h2>
             <p className="mt-2">
               Le Service est actuellement fourni à titre gratuit, dans le cadre d&apos;une
@@ -67,7 +67,7 @@ export default function CguPage() {
             <p className="mt-2">
               Le Client s&apos;engage à utiliser le Service conformément à sa destination
               professionnelle, à ne saisir que des données qu&apos;il est légalement autorisé
-              à traiter, et à respecter ses propres obligations d&apos;employeur — RH Pilot
+              à traiter, et à respecter ses propres obligations d&apos;employeur. RH Pilot
               est un outil d&apos;organisation, pas un substitut à ces obligations.
             </p>
           </section>

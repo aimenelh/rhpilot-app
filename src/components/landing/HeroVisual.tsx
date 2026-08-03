@@ -108,7 +108,7 @@ export function HeroVisual() {
             <div className="flex items-center gap-2.5">
               <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-accent-teal" />
               <div>
-                <p className="text-sm font-semibold text-ink">Embauche — Julie Martin</p>
+                <p className="text-sm font-semibold text-ink">Embauche de Julie Martin</p>
                 <p className="text-xs text-ink-faint">Déclenché aujourd&apos;hui</p>
               </div>
             </div>

@@ -179,7 +179,7 @@ async function detectEmployeeMissingContractInfo(organizationId: string): Promis
     .map((employee) => ({
       key: `missing-contract-${employee.id}`,
       severity: "low",
-      message: `${employee.firstName} ${employee.lastName} n'a pas de type de contrat ou de durée de période d'essai renseignés — les suggestions de fin de période d'essai ne peuvent pas être calculées pour cette personne.`,
+      message: `${employee.firstName} ${employee.lastName} n'a pas de type de contrat ou de durée de période d'essai renseignés : les suggestions de fin de période d'essai ne peuvent pas être calculées pour cette personne.`,
       action: null,
       link: { label: "Compléter la fiche", href: `/dashboard/employees/${employee.id}` },
     }));

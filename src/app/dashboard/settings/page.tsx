@@ -60,7 +60,7 @@ export default async function SettingsPage() {
         <p className="mt-1 text-sm text-ink-soft">
           Certaines tâches des parcours RH sont conçues pour être assignées automatiquement
           à &laquo;&nbsp;la personne RH&nbsp;&raquo; de l&apos;organisation. RH Pilot ne
-          devine jamais qui occupe ce rôle — sans cette information, ces tâches restent
+          devine jamais qui occupe ce rôle. Sans cette information, ces tâches restent
           volontairement &laquo;&nbsp;À assigner&nbsp;&raquo;.
         </p>
 
@@ -77,7 +77,7 @@ export default async function SettingsPage() {
           </Select>
           <FieldHint>
             Si plusieurs personnes de votre organisation sont marquées &laquo;&nbsp;RH&nbsp;&raquo;,
-            l&apos;assignation automatique reste également désactivée — l&apos;ambiguïté
+            l&apos;assignation automatique reste également désactivée : l&apos;ambiguïté
             n&apos;est jamais résolue au hasard.
           </FieldHint>
 
@@ -119,7 +119,7 @@ export default async function SettingsPage() {
         <Card className="mt-4">
           <h2 className="text-sm font-semibold text-ink">Convention collective</h2>
           <p className="mt-1 text-sm text-ink-soft">
-            Renseignez celle applicable à votre organisation — RH Pilot vous orientera alors
+            Renseignez celle applicable à votre organisation. RH Pilot vous orientera alors
             vers la bonne source officielle au bon moment (embauche, période d&apos;essai,
             visite médicale), sans jamais interpréter ses règles à votre place.
           </p>
