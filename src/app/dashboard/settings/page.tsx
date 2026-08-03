@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select, FieldHint } from "@/components/ui/Field";
 import { updateNotificationPreference } from "../notifications/actions";
-import { updateConventionCollective } from "./organizationActions";
+import { updateConventionCollective, updateFunctionalRole } from "./organizationActions";
 
 const COMMON_CCN = [
   "Syntec",
@@ -56,6 +56,38 @@ export default async function SettingsPage() {
       <p className="mt-1 text-sm text-ink-soft">Vos préférences personnelles sur RH Pilot.</p>
 
       <Card className="mt-6">
+        <h2 className="text-sm font-semibold text-ink">Votre rôle dans l&apos;organisation</h2>
+        <p className="mt-1 text-sm text-ink-soft">
+          Certaines tâches des parcours RH sont conçues pour être assignées automatiquement
+          à &laquo;&nbsp;la personne RH&nbsp;&raquo; de l&apos;organisation. RH Pilot ne
+          devine jamais qui occupe ce rôle — sans cette information, ces tâches restent
+          volontairement &laquo;&nbsp;À assigner&nbsp;&raquo;.
+        </p>
+
+        <form action={updateFunctionalRole} className="mt-4">
+          <Label htmlFor="functionalRole">Mon rôle</Label>
+          <Select
+            id="functionalRole"
+            name="functionalRole"
+            defaultValue={membership.functionalRole ?? ""}
+          >
+            <option value="">Non renseigné</option>
+            <option value="RH">RH</option>
+            <option value="DIRIGEANT">Dirigeant</option>
+          </Select>
+          <FieldHint>
+            Si plusieurs personnes de votre organisation sont marquées &laquo;&nbsp;RH&nbsp;&raquo;,
+            l&apos;assignation automatique reste également désactivée — l&apos;ambiguïté
+            n&apos;est jamais résolue au hasard.
+          </FieldHint>
+
+          <Button type="submit" className="mt-4">
+            Enregistrer
+          </Button>
+        </form>
+      </Card>
+
+      <Card className="mt-4">
         <h2 className="text-sm font-semibold text-ink">Notifications par email</h2>
         <p className="mt-1 text-sm text-ink-soft">
           À quelle fréquence souhaitez-vous recevoir un résumé de vos actions urgentes ?
