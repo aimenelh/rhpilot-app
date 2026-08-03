@@ -7,6 +7,7 @@ import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import { Reveal } from "@/components/landing/Reveal";
 import { StoryStep1, StoryStep2, StoryStep3 } from "@/components/landing/StorySteps";
+import { TestimonialsCarousel } from "@/components/landing/TestimonialsCarousel";
 
 const BENEFITS = [
   {
@@ -170,6 +171,26 @@ export function LandingPage() {
             </div>
           </div>
         </Reveal>
+      </section>
+
+      <section className="border-y border-surface-border bg-white py-16">
+        <div className="mx-auto max-w-2xl px-6">
+          <Reveal>
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold text-ink">Ils en parlent</h2>
+              <p className="mt-3 text-sm text-ink-soft">
+                Avant même la première version de RH Pilot, nous avons interrogé des
+                professionnels RH sur les tâches qui leur demandaient le plus de vigilance.
+                Voici ce qu&apos;ils nous ont répondu.
+              </p>
+            </div>
+          </Reveal>
+          <Reveal delay={150}>
+            <div className="mt-8">
+              <TestimonialsCarousel />
+            </div>
+          </Reveal>
+        </div>
       </section>
 
       <section className="mx-auto max-w-6xl px-6 py-16">
