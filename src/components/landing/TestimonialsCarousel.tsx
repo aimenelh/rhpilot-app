@@ -39,9 +39,9 @@ export function TestimonialsCarousel() {
       <div className="min-h-[220px] rounded-2xl border border-surface-border bg-white p-8 shadow-sm sm:p-10">
         {isConclusion ? (
           <div className="text-center">
-            <p className="text-base leading-relaxed text-ink">
-              Un constat revenait systématiquement : moins un manque d&apos;informations qu&apos;un
-              manque de temps, d&apos;anticipation et de rappels.
+           <p className="text-base leading-relaxed text-ink">
+              Un constat revenait systématiquement : ce n&apos;est pas un manque d&apos;informations,
+              mais un manque de temps, d&apos;anticipation et de rappels.
             </p>
             <p className="mt-3 text-sm font-medium text-brand-blue">
               C&apos;est précisément de ce constat qu&apos;est né RH Pilot.
