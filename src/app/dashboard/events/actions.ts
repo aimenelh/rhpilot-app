@@ -127,3 +127,54 @@ export async function updateTaskStatus(taskId: string, formData: FormData) {
     `/dashboard/events/${task.employeeEventId}?flash=${encodeURIComponent("Statut mis à jour")}`
   );
 }
+
+/**
+ * Assignation manuelle d'une tâche restée "À assigner" — par exemple
+ * parce qu'aucun manager n'était renseigné, ou qu'aucune/plusieurs
+ * personnes étaient marquées "RH" au moment de la génération du
+ * parcours. RH Pilot ne recalcule jamais automatiquement après coup
+ * (voir resolveAssignedMembershipId) — c'est une vraie personne qui
+ * choisit explicitement, jamais une déduction silencieuse.
+ */
+export async function assignTask(taskId: string, formData: FormData) {
+  const membership = await getCurrentMembership();
+  const user = await getCurrentUser();
+  if (!membership || !user) {
+    throw new Error("Non authentifié ou aucune organisation active");
+  }
+
+  const task = await prisma.task.findFirst({
+    where: { id: taskId, organizationId: membership.organizationId },
+  });
+  if (!task) throw new Error("Tâche introuvable dans cette organisation");
+
+  const assignedMembershipId = String(formData.get("assignedMembershipId") ?? "").trim();
+  if (!assignedMembershipId) throw new Error("Veuillez choisir une personne.");
+
+  // Vérifie que la personne choisie appartient bien à cette organisation.
+  const targetMembership = await prisma.membership.findFirst({
+    where: { id: assignedMembershipId, organizationId: membership.organizationId, deletedAt: null },
+  });
+  if (!targetMembership) throw new Error("Cette personne ne fait pas partie de votre organisation.");
+
+  await prisma.$transaction([
+    prisma.task.update({
+      where: { id: taskId },
+      data: { assignedMembershipId },
+    }),
+    prisma.auditLog.create({
+      data: {
+        organizationId: membership.organizationId,
+        actorUserId: user.id,
+        action: "task.assigned_manually",
+        entityType: "Task",
+        entityId: taskId,
+        metadata: { assignedMembershipId },
+      },
+    }),
+  ]);
+
+  redirect(
+    `/dashboard/events/${task.employeeEventId}?flash=${encodeURIComponent("Tâche assignée")}`
+  );
+}

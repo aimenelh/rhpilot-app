@@ -5,9 +5,10 @@ import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Select } from "@/components/ui/Field";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { TaskStatusForm } from "../TaskStatusForm";
-import { updateTaskStatus } from "../actions";
+import { updateTaskStatus, assignTask } from "../actions";
 import { sendManualReminder } from "../../notifications/actions";
 import { getUserDisplayName } from "@/lib/displayName";
 import { formatDate } from "@/lib/format";
@@ -30,17 +31,24 @@ export default async function EventDetailPage({
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
 
-  const employeeEvent = await prisma.employeeEvent.findFirst({
-    where: { id: params.id, organizationId: membership.organizationId },
-    include: {
-      employee: true,
-      eventTemplate: true,
-      tasks: {
-        orderBy: { stepOrder: "asc" },
-        include: { assignedMembership: { include: { user: true } } },
+  const [employeeEvent, members] = await Promise.all([
+    prisma.employeeEvent.findFirst({
+      where: { id: params.id, organizationId: membership.organizationId },
+      include: {
+        employee: true,
+        eventTemplate: true,
+        tasks: {
+          orderBy: { stepOrder: "asc" },
+          include: { assignedMembership: { include: { user: true } } },
+        },
       },
-    },
-  });
+    }),
+    prisma.membership.findMany({
+      where: { organizationId: membership.organizationId, deletedAt: null },
+      include: { user: true },
+      orderBy: { createdAt: "asc" },
+    }),
+  ]);
 
   if (!employeeEvent) notFound();
 
@@ -112,9 +120,34 @@ export default async function EventDetailPage({
                         )}
                       </>
                     ) : (
-                      <span className="flex items-center gap-1.5">
-                        {RESOLUTION_ROLE_LABELS[task.resolutionRole]}
+                      <span className="flex flex-1 items-center gap-2">
+                        <span className="text-ink-faint">{RESOLUTION_ROLE_LABELS[task.resolutionRole]}</span>
                         <Badge tone="neutral">À assigner</Badge>
+                        <form
+                          action={assignTask.bind(null, task.id)}
+                          className="flex items-center gap-1.5"
+                        >
+                          <Select
+                            name="assignedMembershipId"
+                            defaultValue=""
+                            className="!w-auto py-1 text-xs"
+                          >
+                            <option value="" disabled>
+                              Assigner à...
+                            </option>
+                            {members.map((m) => (
+                              <option key={m.id} value={m.id}>
+                                {getUserDisplayName(m.user)}
+                              </option>
+                            ))}
+                          </Select>
+                          <button
+                            type="submit"
+                            className="text-brand-blue hover:underline"
+                          >
+                            OK
+                          </button>
+                        </form>
                       </span>
                     )}
                   </p>
