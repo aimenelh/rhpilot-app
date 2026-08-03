@@ -7,21 +7,21 @@ const TESTIMONIALS = [
   {
     quote:
       "Ce qui demande le plus de vigilance, c'est le suivi des périodes d'essai : les délais de prévenance, les entretiens à organiser, les décisions à formaliser, et les absences qui peuvent la prolonger. Il faut vérifier régulièrement les échéances pour ne rien oublier.",
-    role: "Professionnelle RH, anonymisé",
+    role: "Responsable RH.",
   },
   {
     quote: "Les échéances liées à la paie, chaque fin de mois, mettent les équipes RH sous tension.",
-    role: "Chargée RH en alternance, anonymisé",
+    role: "Chargé RH en alternance.",
   },
   {
     quote:
       "Le suivi des échéances RH (contrats, visites médicales, entretiens obligatoires) demande beaucoup de rigueur. Un oubli peut vite avoir des conséquences.",
-    role: "Professionnelle RH, anonymisé",
+    role: "Gestionnaire RH.",
   },
   {
     quote:
       "Il manquait parfois un simple rappel : une visite médicale, une pièce d'identité arrivée à expiration, ou un bon suivi après le recrutement.",
-    role: "Professionnelle RH, anonymisé",
+    role: "Assistant RH.",
   },
 ];
 
