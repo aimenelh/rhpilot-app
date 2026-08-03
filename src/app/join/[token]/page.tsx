@@ -5,6 +5,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Logomark, Wordmark } from "@/components/Brand";
+import { switchOrganization } from "../actions";
 import Link from "next/link";
 
 function ErrorScreen({ title, description }: { title: string; description: string }) {
@@ -89,13 +90,60 @@ export default async function JoinPage({ params }: { params: { token: string } }
 
   const alreadyMember = await prisma.membership.findFirst({
     where: { userId: user.id, deletedAt: null },
+    include: { organization: true },
   });
+
   if (alreadyMember) {
+    // Un Owner qui n'est pas seul dans son organisation actuelle ne
+    // peut pas la quitter tant que la propriété n'a pas été
+    // transférée — fonctionnalité qui n'existe pas encore. On bloque
+    // clairement plutôt que de créer une organisation orpheline.
+    if (alreadyMember.accessRole === "OWNER") {
+      const otherMembersCount = await prisma.membership.count({
+        where: {
+          organizationId: alreadyMember.organizationId,
+          deletedAt: null,
+          id: { not: alreadyMember.id },
+        },
+      });
+      if (otherMembersCount > 0) {
+        return (
+          <ErrorScreen
+            title="Impossible de rejoindre cette organisation"
+            description={`Vous êtes propriétaire de ${alreadyMember.organization.name}, qui compte d'autres membres. Transférez la propriété avant de la quitter — contactez-nous si besoin.`}
+          />
+        );
+      }
+    }
+
     return (
-      <ErrorScreen
-        title="Vous appartenez déjà à une organisation"
-        description="RH Pilot ne permet pas encore d'appartenir à plusieurs organisations. Contactez-nous si vous devez en changer."
-      />
+      <div className="flex min-h-screen flex-col items-center justify-center bg-surface-subtle px-6">
+        <div className="mb-6 flex items-center gap-2">
+          <Logomark size={24} />
+          <Wordmark />
+        </div>
+        <Card className="w-full max-w-sm text-center">
+          <h1 className="text-base font-semibold text-ink">Vous appartenez déjà à une organisation</h1>
+          <p className="mt-2 text-sm text-ink-soft">
+            Vous faites actuellement partie de <strong>{alreadyMember.organization.name}</strong>.
+            RH Pilot ne permet pas encore d&apos;appartenir à plusieurs organisations à la fois.
+          </p>
+          <p className="mt-2 text-sm text-ink-soft">
+            Voulez-vous quitter <strong>{alreadyMember.organization.name}</strong> pour rejoindre{" "}
+            <strong>{invitation.organization.name}</strong> à la place&nbsp;?
+          </p>
+          <form action={switchOrganization.bind(null, params.token)} className="mt-5">
+            <Button type="submit" className="w-full">
+              Quitter {alreadyMember.organization.name} et rejoindre {invitation.organization.name}
+            </Button>
+          </form>
+          <Link href="/dashboard" className="mt-3 inline-block">
+            <Button variant="secondary" className="w-full">
+              Annuler, rester sur mon organisation actuelle
+            </Button>
+          </Link>
+        </Card>
+      </div>
     );
   }
 
