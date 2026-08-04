@@ -47,6 +47,11 @@ export default async function EventsPage({
     <div className="max-w-4xl">
       <h1 className="text-2xl font-semibold text-ink">Parcours RH actifs</h1>
       <p className="mt-1 text-sm text-ink-soft">
+        RH Pilot génère un plan d&apos;action complet pour chaque événement, mais chaque
+        entreprise s&apos;organise à sa façon : ajoutez une étape ou changez l&apos;ordre
+        directement depuis la fiche d&apos;un parcours.
+      </p>
+      <p className="mt-1 text-sm text-ink-soft">
         {events.length === 0
           ? query
             ? "Aucun parcours ne correspond à cette recherche."

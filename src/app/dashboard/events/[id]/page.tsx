@@ -164,17 +164,19 @@ export default async function EventDetailPage({
                   )}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
-                  <div className="flex flex-col">
+                  <div className="flex flex-col overflow-hidden rounded-lg border border-surface-border">
                     <form action={moveTask.bind(null, task.id, "up")}>
                       <button
                         type="submit"
                         disabled={task.stepOrder === employeeEvent.tasks[0]?.stepOrder}
                         aria-label="Monter cette tâche"
-                        className="flex h-5 w-5 items-center justify-center text-ink-faint hover:text-ink disabled:opacity-30"
+                        title="Monter cette tâche"
+                        className="flex h-7 w-7 items-center justify-center text-ink-soft hover:bg-surface-subtle hover:text-brand-blue disabled:opacity-30 disabled:hover:bg-transparent"
                       >
-                        <ChevronUp size={14} />
+                        <ChevronUp size={16} />
                       </button>
                     </form>
+                    <div className="h-px bg-surface-border" />
                     <form action={moveTask.bind(null, task.id, "down")}>
                       <button
                         type="submit"
@@ -182,9 +184,10 @@ export default async function EventDetailPage({
                           task.stepOrder === employeeEvent.tasks[employeeEvent.tasks.length - 1]?.stepOrder
                         }
                         aria-label="Descendre cette tâche"
-                        className="flex h-5 w-5 items-center justify-center text-ink-faint hover:text-ink disabled:opacity-30"
+                        title="Descendre cette tâche"
+                        className="flex h-7 w-7 items-center justify-center text-ink-soft hover:bg-surface-subtle hover:text-brand-blue disabled:opacity-30 disabled:hover:bg-transparent"
                       >
-                        <ChevronDown size={14} />
+                        <ChevronDown size={16} />
                       </button>
                     </form>
                   </div>
