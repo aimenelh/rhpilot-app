@@ -4,11 +4,16 @@ import {
   Clock,
   UserRoundX,
   CircleCheck,
+  Circle,
   Sparkles,
-  Rocket,
   History,
   Lightbulb,
   CalendarDays,
+  Users,
+  ClipboardCheck,
+  ShieldCheck,
+  Plus,
+  Play,
 } from "lucide-react";
 import { getCurrentMemberships } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -19,7 +24,6 @@ import { formatRelativeDueDate, isOverdue } from "@/lib/urgency";
 import { getAnomalies } from "@/lib/anomalies";
 import { triggerEventQuick } from "./events/actions";
 import { getUserDisplayName } from "@/lib/displayName";
-import { WEEKDAY_LABELS } from "@/lib/calendar";
 
 // Le tableau de bord change à chaque action (créer un parcours,
 // changer un statut...) — il ne doit jamais servir une version mise en
@@ -251,42 +255,43 @@ export default async function DashboardPage({
   ];
   const doneStepsCount = onboardingSteps.filter((s) => s.done).length;
   const allStepsDone = doneStepsCount === onboardingSteps.length;
-  const progressPercent = Math.round((doneStepsCount / onboardingSteps.length) * 100);
-  const nextStep = onboardingSteps.find((s) => !s.done);
 
-  // Un seul conseil à la fois, jamais plusieurs en même temps.
-  let tip: string | null = null;
+  // Un seul conseil à la fois, jamais plusieurs en même temps — chacun
+  // avec une vraie destination dans le produit, jamais un lien inventé.
+  let tip: { heading: string; description: string; ctaLabel: string; ctaHref: string } | null = null;
   if (!organization.conventionCollective) {
-    tip =
-      "Renseignez votre convention collective pour que RH Pilot vous oriente vers les bonnes ressources lors des embauches et périodes d'essai.";
+    tip = {
+      heading: "Renseignez votre convention collective",
+      description:
+        "Cela permet à RH Pilot de vous orienter vers les bonnes sources officielles lors des embauches, périodes d'essai et visites médicales.",
+      ctaLabel: "Configurer maintenant",
+      // TODO Aimen : vérifier que c'est bien la route de la page où se
+      // configure la convention collective dans Configuration.
+      ctaHref: "/dashboard/configuration",
+    };
   } else if (membersInOrgCount === 1) {
-    tip = "Invitez un collègue afin de pouvoir lui assigner automatiquement des tâches.";
+    tip = {
+      heading: "Invitez votre équipe",
+      description: "Ajoutez un collègue afin de pouvoir lui assigner automatiquement des tâches.",
+      ctaLabel: "Inviter un collègue",
+      ctaHref: "/dashboard/team",
+    };
   } else if (employeeCount > 0 && eventCount === 0) {
-    tip = "Déclenchez votre premier parcours RH depuis la fiche d'un salarié pour voir RH Pilot en action.";
+    tip = {
+      heading: "Lancez votre premier parcours",
+      description: "Déclenchez un parcours RH depuis la fiche d'un salarié pour voir RH Pilot en action.",
+      ctaLabel: "Voir mes salariés",
+      ctaHref: "/dashboard/employees",
+    };
   }
 
-  // "Cette semaine" — un vrai mini-planning des 7 prochains jours,
-  // dérivé des tâches déjà chargées (reason "soon"), aucune requête
-  // supplémentaire.
-  const weekAheadByDay = new Map<string, { label: string; employeeName: string }[]>();
-  for (const { task, reason } of flagged) {
-    if (reason !== "soon") continue;
-    const dayLabel = WEEKDAY_LABELS[(task.dueDate.getDay() + 6) % 7];
-    if (!weekAheadByDay.has(dayLabel)) weekAheadByDay.set(dayLabel, []);
-    weekAheadByDay.get(dayLabel)!.push({
-      label: task.label,
-      employeeName: task.employeeEvent.employee.firstName,
-    });
-  }
-  const weekAheadEntries = Array.from(weekAheadByDay.entries()).slice(0, 4);
 
-  // Météo RH et phrase de synthèse — jamais un chiffre brut, toujours
-  // une phrase qui dit directement ce qui compte.
-  const weatherEmoji = overdueCount > 0 ? "🔴" : soonCount > 0 ? "🟠" : "🟢";
+  // Phrase de synthèse — jamais un chiffre brut, toujours une phrase qui
+  // dit directement ce qui compte.
   let synthesis: string;
   if (isEmpty) {
     synthesis =
-      "Votre organisation est prête. Il vous reste quelques étapes pour profiter pleinement de RH Pilot.";
+      "Votre espace RH Pilot est prêt à vous accompagner. Commencez par ajouter votre premier salarié ou explorez les fonctionnalités.";
   } else if (overdueCount > 0) {
     synthesis = `${overdueCount} tâche${overdueCount > 1 ? "s" : ""} en retard nécessite${overdueCount > 1 ? "nt" : ""} votre attention.`;
   } else if (soonCount > 0) {
@@ -299,9 +304,6 @@ export default async function DashboardPage({
   const todayTip = DID_YOU_KNOW_TIPS[dayIndex % DID_YOU_KNOW_TIPS.length];
 
   const firstName = user!.firstName || user!.email.split("@")[0];
-  const todayLabel = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(
-    new Date()
-  );
 
   return (
     <div className="max-w-5xl">
@@ -310,109 +312,106 @@ export default async function DashboardPage({
           <h1 data-tour="dashboard-attention" className="text-2xl font-semibold text-ink">
             Bonjour {firstName} 👋
           </h1>
-          <p className="mt-1 text-sm text-ink-soft">
-            <span className="mr-1.5">{weatherEmoji}</span>
-            {synthesis}
-          </p>
+          <p className="mt-1 max-w-xl text-sm text-ink-soft">{synthesis}</p>
         </div>
-        <p className="shrink-0 text-sm capitalize text-ink-faint">{todayLabel}</p>
+        <div className="flex shrink-0 flex-wrap gap-3">
+          {employeeCount === 0 && (
+            <Link href="/dashboard/employees/new">
+              <Button data-tour="add-employee">
+                <span className="inline-flex items-center gap-1.5">
+                  <Plus size={16} /> Ajouter un salarié
+                </span>
+              </Button>
+            </Link>
+          )}
+          {isEmpty && (
+            <Link href="/dashboard/employees">
+              <Button variant="secondary">
+                <span className="inline-flex items-center gap-1.5">
+                  <Play size={14} /> Découvrir RH Pilot
+                </span>
+              </Button>
+            </Link>
+          )}
+        </div>
       </div>
 
-      {!allStepsDone && (
-        <Card className="mt-5 border-brand-blue/20 bg-gradient-to-br from-brand-blue/[0.04] to-brand-violet/[0.04]">
-          <div className="flex items-start gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
-              <Rocket size={20} className="text-brand-blue" />
+      <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <Card>
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-violet/10 text-brand-violet">
+              <Users size={20} />
             </span>
-            <div className="flex-1">
-              <h2 className="text-base font-semibold text-ink">
-                {isEmpty ? "Votre espace RH Pilot est opérationnel." : "Votre espace RH Pilot prend forme."}
-              </h2>
-              <p className="mt-1 text-sm text-ink-soft">
-                Encore {onboardingSteps.length - doneStepsCount} étape
-                {onboardingSteps.length - doneStepsCount > 1 ? "s" : ""} pour profiter de toutes les
-                fonctionnalités.
-              </p>
-              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-surface-subtle">
-                <div
-                  className="h-full rounded-full bg-brand-gradient transition-all"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-              <div className="mt-4 flex flex-wrap gap-3">
-                {employeeCount === 0 && (
-                  <Link href="/dashboard/employees/new">
-                    <Button data-tour="add-employee">Ajouter un salarié</Button>
-                  </Link>
-                )}
-                {membersInOrgCount === 1 && (
-                  <Link href="/dashboard/team">
-                    <Button variant="secondary">Inviter un collègue</Button>
-                  </Link>
-                )}
-                {isEmpty && (
-                  <Link href="/dashboard/employees">
-                    <Button variant="secondary">Découvrir RH Pilot</Button>
-                  </Link>
-                )}
-              </div>
+            <div>
+              <p className="text-2xl font-semibold text-ink">{employeeCount}</p>
+              <p className="text-xs text-ink-faint">Salariés</p>
             </div>
           </div>
-        </Card>
-      )}
-
-      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card>
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Aujourd&apos;hui</p>
-          {flagged.length === 0 ? (
-            <div className="mt-3 flex items-center gap-2">
-              <CircleCheck size={18} className="text-accent-teal" />
-              <p className="text-sm text-ink-soft">Rien d&apos;urgent</p>
-            </div>
-          ) : (
-            <div className="mt-3">
-              <p className="flex items-center gap-2 text-sm text-ink">
-                <TriangleAlert size={16} className="text-accent-amber" />
-                {flagged.length} action{flagged.length > 1 ? "s" : ""} importante
-                {flagged.length > 1 ? "s" : ""}
-              </p>
-              <Link
-                href="/dashboard?view=tasks"
-                className="mt-2 inline-block text-xs font-medium text-brand-blue hover:underline"
-              >
-                Voir →
-              </Link>
-            </div>
-          )}
+          <Link
+            href={isEmpty ? "/dashboard/employees/new" : "/dashboard/employees"}
+            className="mt-3 inline-block text-xs font-medium text-brand-blue hover:underline"
+          >
+            {isEmpty ? "Ajouter un salarié →" : "Voir les salariés →"}
+          </Link>
         </Card>
 
         <Card>
-          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ink-faint">
-            <CalendarDays size={13} /> Cette semaine
-          </p>
-          {weekAheadEntries.length === 0 ? (
-            <p className="mt-3 text-sm text-ink-soft">Aucune échéance.</p>
-          ) : (
-            <ul className="mt-3 flex flex-col gap-1.5">
-              {weekAheadEntries.map(([day, items]) => (
-                <li key={day} className="flex items-start gap-2 text-xs">
-                  <span className="w-7 shrink-0 font-medium text-ink-faint">{day}</span>
-                  <span className="text-ink-soft">
-                    {items[0].label} ({items[0].employeeName})
-                    {items.length > 1 && <> +{items.length - 1}</>}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-teal/10 text-accent-teal">
+              <ClipboardCheck size={20} />
+            </span>
+            <div>
+              <p className="text-2xl font-semibold text-ink">{eventCount}</p>
+              <p className="text-xs text-ink-faint">Parcours actifs</p>
+            </div>
+          </div>
+          <Link
+            href="/dashboard/events"
+            className="mt-3 inline-block text-xs font-medium text-brand-blue hover:underline"
+          >
+            Voir les parcours →
+          </Link>
         </Card>
 
-        <Card className="border-brand-violet/20 bg-brand-violet/5">
-          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-brand-violet">
-            <Sparkles size={13} /> RH Pilot vous conseille
-          </p>
-          <p className="mt-3 text-sm text-ink-soft">
-            {tip ?? "Aucun conseil aujourd'hui. Votre organisation est bien configurée."}
+        <Card>
+          <div className="flex items-center gap-3">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-amber/10 text-accent-amber">
+              <CalendarDays size={20} />
+            </span>
+            <div>
+              <p className="text-2xl font-semibold text-ink">{soonCount}</p>
+              <p className="text-xs text-ink-faint">Échéances cette semaine</p>
+            </div>
+          </div>
+          {/* TODO Aimen : vérifier que c'est bien la route de la page Calendrier */}
+          <Link
+            href="/dashboard/calendar"
+            className="mt-3 inline-block text-xs font-medium text-brand-blue hover:underline"
+          >
+            Voir le calendrier →
+          </Link>
+        </Card>
+
+        <Card>
+          <div className="flex items-center gap-3">
+            <span
+              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
+                percentUpToDate === 100 ? "bg-accent-teal/10 text-accent-teal" : "bg-accent-amber/10 text-accent-amber"
+              }`}
+            >
+              <ShieldCheck size={20} />
+            </span>
+            <div>
+              <p className="text-2xl font-semibold text-ink">{percentUpToDate}%</p>
+              <p className="text-xs text-ink-faint">Parcours à jour</p>
+            </div>
+          </div>
+          <p
+            className={`mt-3 text-xs font-medium ${
+              percentUpToDate === 100 ? "text-ink-soft" : "text-accent-amber"
+            }`}
+          >
+            {percentUpToDate === 100 ? "Très bien !" : "À surveiller"}
           </p>
         </Card>
       </div>
@@ -513,164 +512,222 @@ export default async function DashboardPage({
             {newTasksThisWeek > 1 ? "s" : ""} · {completedThisWeek} terminée
             {completedThisWeek > 1 ? "s" : ""} · {percentUpToDate}% des parcours à jour
           </p>
+        </>
+      )}
 
-          <Card className="mt-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TriangleAlert size={18} className="text-accent-amber" />
-                <h2 className="text-sm font-semibold text-ink">Priorités du jour</h2>
-              </div>
-              <div className="flex gap-1 rounded-lg bg-surface-subtle p-1 text-xs font-medium">
-                <Link
-                  href="/dashboard?view=employee"
-                  className={`rounded-md px-2.5 py-1 ${view === "employee" ? "bg-white text-ink shadow-sm" : "text-ink-faint"}`}
-                >
-                  Par salarié
-                </Link>
-                <Link
-                  href="/dashboard?view=tasks"
-                  className={`rounded-md px-2.5 py-1 ${view === "tasks" ? "bg-white text-ink shadow-sm" : "text-ink-faint"}`}
-                >
-                  Toutes les tâches
-                </Link>
+      {flagged.length === 0 ? (
+        <Card className="mt-4">
+          <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent-teal/10 text-accent-teal">
+                <CircleCheck size={22} />
+              </span>
+              <div>
+                <h2 className="text-base font-semibold text-ink">Tout est sous contrôle</h2>
+                <p className="mt-1 text-sm text-ink-soft">
+                  {isEmpty ? "Aucun événement RH en cours." : "Aucune action urgente aujourd'hui."}
+                </p>
+                <p className="mt-2 max-w-sm text-sm text-ink-faint">
+                  Lorsque vous ajouterez un salarié ou déclencherez un parcours, RH Pilot centralisera
+                  automatiquement toutes les échéances ici.
+                </p>
               </div>
             </div>
-
-            {flagged.length === 0 ? (
-              <div className="mt-4 flex items-center gap-2 text-sm text-ink-soft">
-                <CircleCheck size={16} className="text-accent-teal" />
-                Tout est sous contrôle. Aucune action urgente aujourd&apos;hui.
+            <div className="relative hidden h-28 w-40 shrink-0 sm:block" aria-hidden>
+              <div className="absolute inset-0 rounded-xl border border-surface-border bg-surface-subtle shadow-sm">
+                <div className="flex gap-1 border-b border-surface-border px-2 py-1.5">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent-rose/40" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent-amber/40" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent-teal/40" />
+                </div>
+                <div className="space-y-1.5 px-3 py-3">
+                  <div className="h-1.5 w-3/4 rounded-full bg-brand-blue/15" />
+                  <div className="h-1.5 w-1/2 rounded-full bg-surface-border" />
+                  <div className="h-1.5 w-2/3 rounded-full bg-surface-border" />
+                </div>
               </div>
-            ) : view === "employee" ? (
-              <>
-                <ul className="mt-4 flex flex-col divide-y divide-surface-border">
-                  {visibleEmployeeGroups.map((group) => (
-                    <li key={group.employeeId} className="flex items-center justify-between gap-4 py-3">
-                      <Link
-                        href={`/dashboard/employees/${group.employeeId}`}
-                        className="flex-1 hover:text-brand-blue"
-                      >
-                        <p className="text-sm font-medium text-ink">{group.employeeName}</p>
-                        <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-faint">
-                          {group.overdueCount > 0 && (
-                            <span className="flex items-center gap-1 text-accent-rose">
-                              <TriangleAlert size={12} /> {group.overdueCount} en retard
-                            </span>
-                          )}
-                          {group.unassignedCount > 0 && (
-                            <span className="flex items-center gap-1 text-brand-blue">
-                              <UserRoundX size={12} /> {group.unassignedCount} à assigner
-                            </span>
-                          )}
-                          {group.soonCount > 0 && (
-                            <span className="flex items-center gap-1 text-accent-amber">
-                              <Clock size={12} /> {group.soonCount} cette semaine
-                            </span>
-                          )}
-                        </p>
-                      </Link>
-                      <Link
-                        href={`/dashboard/employees/${group.employeeId}`}
-                        className="shrink-0 text-xs font-medium text-brand-blue hover:underline"
-                      >
-                        Voir le parcours →
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-                {hiddenEmployeeGroupsCount > 0 && (
-                  <p className="mt-3 text-xs text-ink-faint">
-                    + {hiddenEmployeeGroupsCount} autre{hiddenEmployeeGroupsCount > 1 ? "s" : ""}{" "}
-                    salarié{hiddenEmployeeGroupsCount > 1 ? "s" : ""} nécessitant votre attention,
-                    affinez via{" "}
-                    <Link href="/dashboard?view=tasks" className="text-brand-blue hover:underline">
-                      Toutes les tâches
-                    </Link>
-                    .
-                  </p>
-                )}
-              </>
-            ) : (
+              <span className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-accent-teal text-white shadow-md">
+                <CircleCheck size={16} />
+              </span>
+            </div>
+          </div>
+        </Card>
+      ) : (
+        <Card className="mt-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <TriangleAlert size={18} className="text-accent-amber" />
+              <h2 className="text-sm font-semibold text-ink">Priorités du jour</h2>
+            </div>
+            <div className="flex gap-1 rounded-lg bg-surface-subtle p-1 text-xs font-medium">
+              <Link
+                href="/dashboard?view=employee"
+                className={`rounded-md px-2.5 py-1 ${view === "employee" ? "bg-white text-ink shadow-sm" : "text-ink-faint"}`}
+              >
+                Par salarié
+              </Link>
+              <Link
+                href="/dashboard?view=tasks"
+                className={`rounded-md px-2.5 py-1 ${view === "tasks" ? "bg-white text-ink shadow-sm" : "text-ink-faint"}`}
+              >
+                Toutes les tâches
+              </Link>
+            </div>
+          </div>
+
+          {view === "employee" ? (
+            <>
               <ul className="mt-4 flex flex-col divide-y divide-surface-border">
-                {attentionTasks.map(({ task, reason }) => (
-                  <li key={task.id} className="flex items-center justify-between gap-4 py-3">
+                {visibleEmployeeGroups.map((group) => (
+                  <li key={group.employeeId} className="flex items-center justify-between gap-4 py-3">
                     <Link
-                      href={`/dashboard/events/${task.employeeEventId}`}
-                      className="flex items-center gap-3"
+                      href={`/dashboard/employees/${group.employeeId}`}
+                      className="flex-1 hover:text-brand-blue"
                     >
-                      {reason === "overdue" && (
-                        <TriangleAlert size={16} className="shrink-0 text-accent-rose" />
-                      )}
-                      {reason === "unassigned" && (
-                        <UserRoundX size={16} className="shrink-0 text-brand-blue" />
-                      )}
-                      {reason === "soon" && <Clock size={16} className="shrink-0 text-accent-amber" />}
-                      <div>
-                        <p className="text-sm font-medium text-ink hover:text-brand-blue">
-                          {task.label} ({task.employeeEvent.employee.firstName}{" "}
-                          {task.employeeEvent.employee.lastName})
-                        </p>
-                        <p className="mt-0.5 text-xs text-ink-faint">
-                          {reason === "unassigned" ? "À assigner" : formatRelativeDueDate(task.dueDate)}
-                        </p>
-                      </div>
+                      <p className="text-sm font-medium text-ink">{group.employeeName}</p>
+                      <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-faint">
+                        {group.overdueCount > 0 && (
+                          <span className="flex items-center gap-1 text-accent-rose">
+                            <TriangleAlert size={12} /> {group.overdueCount} en retard
+                          </span>
+                        )}
+                        {group.unassignedCount > 0 && (
+                          <span className="flex items-center gap-1 text-brand-blue">
+                            <UserRoundX size={12} /> {group.unassignedCount} à assigner
+                          </span>
+                        )}
+                        {group.soonCount > 0 && (
+                          <span className="flex items-center gap-1 text-accent-amber">
+                            <Clock size={12} /> {group.soonCount} cette semaine
+                          </span>
+                        )}
+                      </p>
+                    </Link>
+                    <Link
+                      href={`/dashboard/employees/${group.employeeId}`}
+                      className="shrink-0 text-xs font-medium text-brand-blue hover:underline"
+                    >
+                      Voir le parcours →
                     </Link>
                   </li>
                 ))}
               </ul>
-            )}
-          </Card>
-        </>
-      )}
-
-      {recentActivity.length > 0 && (
-        <Card className="mt-5">
-          <div className="flex items-center gap-2">
-            <History size={16} className="text-ink-faint" />
-            <h2 className="text-sm font-semibold text-ink">Activité récente</h2>
-          </div>
-          <ul className="mt-4 flex flex-col">
-            {recentActivity.map((entry, index) => {
-              const label = AUDIT_LABELS[entry.action]?.(entry.metadata) ?? entry.action;
-              const isLast = index === recentActivity.length - 1;
-              return (
-                <li key={entry.id} className="relative flex gap-3 pb-5 last:pb-0">
-                  {!isLast && (
-                    <span className="absolute left-[5px] top-3 h-full w-px bg-surface-border" />
-                  )}
-                  <span className="relative mt-1.5 h-[11px] w-[11px] shrink-0 rounded-full border-2 border-brand-blue bg-white" />
-                  <div className="flex-1">
-                    <p className="text-sm text-ink-soft">{label}</p>
-                    <p className="mt-0.5 text-xs text-ink-faint">
-                      {timeAgo(entry.createdAt)}
-                      {entry.actor && <> · {getUserDisplayName(entry.actor)}</>}
-                    </p>
-                  </div>
+              {hiddenEmployeeGroupsCount > 0 && (
+                <p className="mt-3 text-xs text-ink-faint">
+                  + {hiddenEmployeeGroupsCount} autre{hiddenEmployeeGroupsCount > 1 ? "s" : ""}{" "}
+                  salarié{hiddenEmployeeGroupsCount > 1 ? "s" : ""} nécessitant votre attention,
+                  affinez via{" "}
+                  <Link href="/dashboard?view=tasks" className="text-brand-blue hover:underline">
+                    Toutes les tâches
+                  </Link>
+                  .
+                </p>
+              )}
+            </>
+          ) : (
+            <ul className="mt-4 flex flex-col divide-y divide-surface-border">
+              {attentionTasks.map(({ task, reason }) => (
+                <li key={task.id} className="flex items-center justify-between gap-4 py-3">
+                  <Link
+                    href={`/dashboard/events/${task.employeeEventId}`}
+                    className="flex items-center gap-3"
+                  >
+                    {reason === "overdue" && (
+                      <TriangleAlert size={16} className="shrink-0 text-accent-rose" />
+                    )}
+                    {reason === "unassigned" && (
+                      <UserRoundX size={16} className="shrink-0 text-brand-blue" />
+                    )}
+                    {reason === "soon" && <Clock size={16} className="shrink-0 text-accent-amber" />}
+                    <div>
+                      <p className="text-sm font-medium text-ink hover:text-brand-blue">
+                        {task.label} ({task.employeeEvent.employee.firstName}{" "}
+                        {task.employeeEvent.employee.lastName})
+                      </p>
+                      <p className="mt-0.5 text-xs text-ink-faint">
+                        {reason === "unassigned" ? "À assigner" : formatRelativeDueDate(task.dueDate)}
+                      </p>
+                    </div>
+                  </Link>
                 </li>
-              );
-            })}
-          </ul>
+              ))}
+            </ul>
+          )}
         </Card>
       )}
 
-      {!isEmpty && (
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <Link href="/dashboard/employees">
-            <Card className="transition-colors hover:border-brand-blue/40" compact>
-              <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">Salariés</p>
-              <p className="mt-1 text-xl font-semibold text-ink">{employeeCount}</p>
-            </Card>
-          </Link>
-          <Link href="/dashboard/events">
-            <Card className="transition-colors hover:border-brand-blue/40" compact>
-              <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-                Parcours RH actifs
-              </p>
-              <p className="mt-1 text-xl font-semibold text-ink">{eventCount}</p>
-            </Card>
-          </Link>
-        </div>
-      )}
+      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        {!allStepsDone && (
+          <Card>
+            <h2 className="text-sm font-semibold text-ink">Premiers pas</h2>
+            <ul className="mt-3 flex flex-col gap-2.5">
+              {onboardingSteps.map((step) => (
+                <li key={step.label} className="flex items-center gap-2.5 text-sm">
+                  {step.done ? (
+                    <CircleCheck size={16} className="shrink-0 text-accent-teal" />
+                  ) : (
+                    <Circle size={16} className="shrink-0 text-ink-faint" />
+                  )}
+                  <span className={step.done ? "text-ink-faint line-through" : "text-ink"}>
+                    {step.label}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        )}
+
+        <Card>
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+            <Sparkles size={15} className="text-brand-violet" /> RH Pilot vous conseille
+          </p>
+          {tip ? (
+            <div className="mt-3 rounded-lg bg-brand-violet/5 p-3">
+              <p className="text-sm font-medium text-ink">{tip.heading}</p>
+              <p className="mt-1 text-sm text-ink-soft">{tip.description}</p>
+              <Link href={tip.ctaHref} className="mt-3 inline-block">
+                <Button variant="secondary" className="text-xs">
+                  {tip.ctaLabel}
+                </Button>
+              </Link>
+            </div>
+          ) : (
+            <p className="mt-3 text-sm text-ink-soft">
+              Aucun conseil aujourd&apos;hui. Votre organisation est bien configurée.
+            </p>
+          )}
+        </Card>
+
+        {recentActivity.length > 0 && (
+          <Card>
+            <div className="flex items-center gap-2">
+              <History size={15} className="text-ink-faint" />
+              <h2 className="text-sm font-semibold text-ink">Activité récente</h2>
+            </div>
+            <ul className="mt-3 flex flex-col">
+              {recentActivity.map((entry, index) => {
+                const label = AUDIT_LABELS[entry.action]?.(entry.metadata) ?? entry.action;
+                const isLast = index === recentActivity.length - 1;
+                return (
+                  <li key={entry.id} className="relative flex gap-3 pb-4 last:pb-0">
+                    {!isLast && (
+                      <span className="absolute left-[4px] top-3 h-full w-px bg-surface-border" />
+                    )}
+                    <span className="relative mt-1.5 h-[9px] w-[9px] shrink-0 rounded-full border-2 border-brand-blue bg-white" />
+                    <div className="flex-1">
+                      <p className="text-xs text-ink-soft">{label}</p>
+                      <p className="mt-0.5 text-[11px] text-ink-faint">
+                        {timeAgo(entry.createdAt)}
+                        {entry.actor && <> · {getUserDisplayName(entry.actor)}</>}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          </Card>
+        )}
+      </div>
 
       <Card className="mt-5 flex items-start gap-2.5 bg-surface-subtle">
         <Lightbulb size={16} className="mt-0.5 shrink-0 text-accent-amber" />
