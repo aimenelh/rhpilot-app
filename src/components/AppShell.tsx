@@ -18,8 +18,9 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Tableau de bord", available: true },
   { href: "/dashboard/employees", label: "Salariés", available: true },
-  { href: "/dashboard/events", label: "Parcours RH", available: true },
+  { href: "/dashboard/events", label: "Parcours", available: true },
   { href: "/dashboard/calendar", label: "Calendrier", available: true },
+  { href: "/dashboard/templates", label: "Modèles", available: true },
   { href: "/dashboard/notifications", label: "Notifications", available: true },
   { href: "/dashboard/team", label: "Équipe", available: true },
   { href: "/dashboard/help", label: "Aide", available: true },

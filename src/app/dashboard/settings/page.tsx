@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select, FieldHint } from "@/components/ui/Field";
 import { updateNotificationPreference } from "../notifications/actions";
-import { updateConventionCollective, updateFunctionalRole, revertTaskTemplateOverride } from "./organizationActions";
+import { updateConventionCollective, updateFunctionalRole } from "./organizationActions";
 
 const COMMON_CCN = [
   "Syntec",
@@ -46,14 +46,9 @@ export default async function SettingsPage() {
   if (!membership) redirect("/dashboard");
 
   const canEditOrganization = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
-  const [organization, taskTemplateOverrides] = await Promise.all([
-    prisma.organization.findUnique({ where: { id: membership.organizationId } }),
-    prisma.taskTemplateOverride.findMany({
-      where: { organizationId: membership.organizationId },
-      include: { taskTemplate: { include: { eventTemplate: true } } },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
+  const organization = await prisma.organization.findUnique({
+    where: { id: membership.organizationId },
+  });
 
   return (
     <div className="max-w-xl">
@@ -153,42 +148,6 @@ export default async function SettingsPage() {
               Enregistrer
             </Button>
           </form>
-        </Card>
-      )}
-
-      {canEditOrganization && taskTemplateOverrides.length > 0 && (
-        <Card className="mt-4">
-          <h2 className="text-sm font-semibold text-ink">Étapes personnalisées</h2>
-          <p className="mt-1 text-sm text-ink-soft">
-            Ces personnalisations s&apos;appliquent automatiquement à tous les futurs parcours
-            de ce type, pour toute votre organisation — sans jamais affecter les parcours déjà
-            générés.
-          </p>
-          <ul className="mt-3 flex flex-col divide-y divide-surface-border">
-            {taskTemplateOverrides.map((override) => (
-              <li key={override.id} className="flex items-center justify-between gap-3 py-3">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-ink">
-                    {override.taskTemplate.eventTemplate.label} — {override.taskTemplate.label}
-                  </p>
-                  <p className="mt-0.5 text-xs text-ink-faint">
-                    {override.action === "REMOVED"
-                      ? "Ne sera plus jamais générée"
-                      : `Renommée "${override.label}"${
-                          override.dueOffsetDays !== null
-                            ? `, à ${override.dueOffsetDays} jour${Math.abs(override.dueOffsetDays) > 1 ? "s" : ""} du déclenchement`
-                            : ""
-                        }`}
-                  </p>
-                </div>
-                <form action={revertTaskTemplateOverride.bind(null, override.id)}>
-                  <Button type="submit" variant="secondary" className="shrink-0 text-xs">
-                    Revenir au standard
-                  </Button>
-                </form>
-              </li>
-            ))}
-          </ul>
         </Card>
       )}
 
