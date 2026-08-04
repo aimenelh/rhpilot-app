@@ -13,6 +13,7 @@ import {
   Settings,
   Bell,
   HelpCircle,
+  type LucideIcon,
 } from "lucide-react";
 import { Logomark, Wordmark } from "./Brand";
 import { FlashToast } from "./ui/FlashToast";
@@ -23,7 +24,7 @@ type NavItem = {
   href: string;
   label: string;
   available: boolean;
-  icon: React.ComponentType<{ size?: number }>;
+  icon: LucideIcon;
   section?: string; // affiche un séparateur avec ce titre juste avant cette entrée
 };
 
