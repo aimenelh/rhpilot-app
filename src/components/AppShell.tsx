@@ -3,7 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
-import { Mail } from "lucide-react";
+import {
+  Mail,
+  LayoutDashboard,
+  Users,
+  ListChecks,
+  CalendarDays,
+  UsersRound,
+  Settings,
+  Bell,
+  HelpCircle,
+} from "lucide-react";
 import { Logomark, Wordmark } from "./Brand";
 import { FlashToast } from "./ui/FlashToast";
 import { Assistant } from "./assistant/Assistant";
@@ -13,19 +23,29 @@ type NavItem = {
   href: string;
   label: string;
   available: boolean;
+  icon: React.ComponentType<{ size?: number }>;
   section?: string; // affiche un séparateur avec ce titre juste avant cette entrée
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard", label: "Tableau de bord", available: true },
-  { href: "/dashboard/employees", label: "Salariés", available: true },
-  { href: "/dashboard/events", label: "Parcours", available: true },
-  { href: "/dashboard/calendar", label: "Calendrier", available: true },
-  { href: "/dashboard/team", label: "Équipe", available: true, section: "Administration" },
-  { href: "/dashboard/configuration", label: "Configuration", available: true },
-  { href: "/dashboard/notifications", label: "Notifications", available: true },
-  { href: "/dashboard/help", label: "Aide", available: true },
+  { href: "/dashboard", label: "Tableau de bord", available: true, icon: LayoutDashboard },
+  { href: "/dashboard/employees", label: "Salariés", available: true, icon: Users },
+  { href: "/dashboard/events", label: "Parcours", available: true, icon: ListChecks },
+  { href: "/dashboard/calendar", label: "Calendrier", available: true, icon: CalendarDays },
+  {
+    href: "/dashboard/team",
+    label: "Équipe",
+    available: true,
+    icon: UsersRound,
+    section: "Administration",
+  },
+  { href: "/dashboard/configuration", label: "Configuration", available: true, icon: Settings },
+  { href: "/dashboard/notifications", label: "Notifications", available: true, icon: Bell },
 ];
+
+// Aide n'est pas de l'administration — elle reste disponible partout,
+// tout en bas, à côté du lien de retour.
+const HELP_ITEM: NavItem = { href: "/dashboard/help", label: "Aide", available: true, icon: HelpCircle };
 
 export function AppShell({
   organizationName,
@@ -55,39 +75,22 @@ export function AppShell({
                 ? pathname === "/dashboard"
                 : pathname.startsWith(item.href);
 
-            if (!item.available) {
-              return (
-                <span key={item.href}>
-                  {item.section && (
-                    <p className="mb-1 mt-4 px-3 text-[11px] font-medium uppercase tracking-wide text-ink-faint">
-                      {item.section}
-                    </p>
-                  )}
-                  <span className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-ink-faint">
-                    {item.label}
-                    <span className="rounded-full bg-surface-subtle px-2 py-0.5 text-[11px]">
-                      Bientôt
-                    </span>
-                  </span>
-                </span>
-              );
-            }
-
             return (
               <div key={item.href}>
                 {item.section && (
-                  <p className="mb-1 mt-4 px-3 text-[11px] font-medium uppercase tracking-wide text-ink-faint">
+                  <p className="mb-1.5 mt-5 px-3 text-[10px] font-normal uppercase tracking-wider text-ink-faint/70">
                     {item.section}
                   </p>
                 )}
                 <Link
                   href={item.href}
-                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-brand-blue/10 text-brand-blue"
-                    : "text-ink-soft hover:bg-surface-subtle hover:text-ink"
-                }`}
+                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-brand-blue/10 text-brand-blue"
+                      : "text-ink-soft hover:bg-surface-subtle hover:text-ink"
+                  }`}
                 >
+                  <item.icon size={16} />
                   {item.label}
                 </Link>
               </div>
@@ -95,7 +98,18 @@ export function AppShell({
           })}
         </nav>
 
-        <div className="mt-auto pt-4">
+        <div className="mt-auto flex flex-col gap-1 pt-4">
+          <Link
+            href={HELP_ITEM.href}
+            className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              pathname.startsWith(HELP_ITEM.href)
+                ? "bg-brand-blue/10 text-brand-blue"
+                : "text-ink-faint hover:bg-surface-subtle hover:text-ink-soft"
+            }`}
+          >
+            <HELP_ITEM.icon size={16} />
+            {HELP_ITEM.label}
+          </Link>
           <a
             href="mailto:aimenoffi@gmail.com?subject=Retour%20b%C3%AAta%20RH%20Pilot"
             className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-faint transition-colors hover:bg-surface-subtle hover:text-ink-soft"
