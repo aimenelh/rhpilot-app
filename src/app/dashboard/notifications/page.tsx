@@ -5,9 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
+import { Label, Select, FieldHint } from "@/components/ui/Field";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { getUserDisplayName } from "@/lib/displayName";
-import { sendDigestsNow } from "./actions";
+import { sendDigestsNow, updateNotificationPreference } from "./actions";
 
 const TYPE_LABELS: Record<string, string> = {
   digest_daily: "Résumé quotidien",
@@ -50,10 +51,35 @@ export default async function NotificationsPage() {
         </form>
       </div>
       <p className="mt-2 text-xs text-ink-faint">
-        Déclenchement manuel pour l&apos;instant (utile pour tester). L&apos;envoi automatique
-        quotidien/hebdomadaire selon la préférence de chacun sera activé au moment du
-        déploiement en ligne.
+        Le bouton ci-dessus déclenche un envoi immédiat. L&apos;envoi automatique
+        quotidien/hebdomadaire suit la préférence choisie ci-dessous, pour chacun.
       </p>
+
+      <Card className="mt-4 max-w-sm">
+        <h2 className="text-sm font-semibold text-ink">Votre fréquence de résumé</h2>
+        <p className="mt-1 text-sm text-ink-soft">
+          À quelle fréquence souhaitez-vous recevoir un résumé de vos actions urgentes ?
+        </p>
+        <form action={updateNotificationPreference} className="mt-3">
+          <Label htmlFor="notificationFrequency">Fréquence</Label>
+          <Select
+            id="notificationFrequency"
+            name="notificationFrequency"
+            defaultValue={membership.notificationFrequency}
+          >
+            <option value="DAILY">Quotidien</option>
+            <option value="WEEKLY">Hebdomadaire</option>
+            <option value="OFF">Désactivé</option>
+          </Select>
+          <FieldHint>
+            Ne s&apos;applique qu&apos;aux tâches qui vous sont directement assignées. Un
+            rappel manuel ponctuel reste toujours possible, quelle que soit cette préférence.
+          </FieldHint>
+          <Button type="submit" className="mt-3">
+            Enregistrer
+          </Button>
+        </form>
+      </Card>
 
       <div className="mt-6">
         {notifications.length === 0 ? (

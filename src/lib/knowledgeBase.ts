@@ -61,7 +61,7 @@ const QUICK_ACTIONS: KnowledgeEntry[] = [
     description: "Régler la fréquence de vos résumés par email.",
     category: "Actions rapides",
     keywords: ["paramètres", "préférences", "fréquence", "notifications"],
-    href: "/dashboard/settings",
+    href: "/dashboard/notifications",
   },
 ];
 
@@ -135,11 +135,7 @@ const CONTEXTUAL_ENTRY_IDS: { prefix: string; ids: string[] }[] = [
   },
   {
     prefix: "/dashboard/notifications",
-    ids: ["faq-notifications-work", "faq-notifications-history"],
-  },
-  {
-    prefix: "/dashboard/settings",
-    ids: ["faq-notifications-work", "action-settings"],
+    ids: ["faq-notifications-work", "faq-notifications-history", "action-settings"],
   },
 ];
 

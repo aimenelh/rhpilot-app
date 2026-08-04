@@ -23,7 +23,7 @@ export async function updateNotificationPreference(formData: FormData) {
   });
 
   redirect(
-    `/dashboard/settings?flash=${encodeURIComponent("Préférence enregistrée")}`
+    `/dashboard/notifications?flash=${encodeURIComponent("Préférence enregistrée")}`
   );
 }
 
