@@ -178,6 +178,7 @@ export default async function EventDetailPage({
                       label: task.label,
                       dueDate: task.dueDate.toISOString().slice(0, 10),
                       assignedMembershipId: task.assignedMembershipId,
+                      taskTemplateId: task.taskTemplateId,
                     }}
                     members={members}
                   />

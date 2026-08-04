@@ -41,6 +41,7 @@ model Organization {
   auditLogs      AuditLog[]
   notifications  Notification[]
   invitations    Invitation[]
+  taskTemplateOverrides TaskTemplateOverride[]
 
   @@map("organizations")
 }
@@ -223,6 +224,35 @@ enum DeadlineType {
   USER_DEFINED
 }
 
+enum OverrideAction {
+  MODIFIED
+  REMOVED
+}
+
+// Mémorise qu'une organisation a personnalisé une étape d'un gabarit
+// standard — soit en changeant son libellé/délai, soit en décidant
+// qu'elle ne s'applique jamais chez elle. Jamais imposé : uniquement
+// créé quand un RH modifie ou supprime une étape et choisit
+// explicitement "appliquer aussi aux futurs parcours". Le gabarit
+// global reste inchangé pour toutes les autres organisations.
+model TaskTemplateOverride {
+  id             String         @id @default(cuid())
+  organizationId String
+  taskTemplateId String
+  action         OverrideAction
+  label          String? // nouveau libellé, uniquement si action = MODIFIED
+  dueOffsetDays  Int? // nouveau délai en jours après le déclenchement, uniquement si action = MODIFIED
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  taskTemplate TaskTemplate @relation(fields: [taskTemplateId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, taskTemplateId])
+  @@index([organizationId])
+  @@map("task_template_overrides")
+}
+
 model TaskTemplate {
   id                    String                   @id @default(cuid())
   key                   String                   @unique // ex: "embauche_dpae" — cible stable pour les upserts de seed
@@ -240,6 +270,7 @@ model TaskTemplate {
 
   eventTemplate EventTemplate @relation(fields: [eventTemplateId], references: [id], onDelete: Restrict)
   tasks         Task[]
+  overrides     TaskTemplateOverride[]
 
   @@index([eventTemplateId])
   @@map("task_templates")

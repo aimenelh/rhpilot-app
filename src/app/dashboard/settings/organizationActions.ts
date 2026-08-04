@@ -45,3 +45,19 @@ export async function updateFunctionalRole(formData: FormData) {
 
   revalidatePath("/dashboard/settings");
 }
+
+/**
+ * Annule une personnalisation mémorisée — l'étape concernée revient
+ * exactement au comportement du gabarit standard pour les futurs
+ * parcours. Ne touche jamais aux parcours déjà générés.
+ */
+export async function revertTaskTemplateOverride(overrideId: string) {
+  const membership = await getCurrentMembership();
+  if (!membership) throw new Error("Non authentifié ou aucune organisation active");
+
+  await prisma.taskTemplateOverride.deleteMany({
+    where: { id: overrideId, organizationId: membership.organizationId },
+  });
+
+  revalidatePath("/dashboard/settings");
+}

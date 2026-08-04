@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { triggerEmployeeEvent } from "@/lib/eventEngine";
-import type { TaskStatus } from "@prisma/client";
+import type { TaskStatus, Prisma } from "@prisma/client";
 
 export type TriggerEventFormState = { error: string } | undefined;
 
@@ -337,12 +337,14 @@ export async function updateCustomTask(taskId: string, formData: FormData) {
 
   const task = await prisma.task.findFirst({
     where: { id: taskId, organizationId: membership.organizationId },
+    include: { employeeEvent: true },
   });
   if (!task) throw new Error("Tâche introuvable dans cette organisation");
 
   const label = String(formData.get("label") ?? "").trim();
   const dueDateRaw = String(formData.get("dueDate") ?? "");
   const assignedMembershipId = String(formData.get("assignedMembershipId") ?? "").trim();
+  const rememberForFuture = formData.get("rememberForFuture") === "on";
 
   if (!label) throw new Error("Le libellé de la tâche est obligatoire.");
   if (!dueDateRaw || Number.isNaN(new Date(dueDateRaw).getTime())) {
@@ -355,10 +357,12 @@ export async function updateCustomTask(taskId: string, formData: FormData) {
   });
   if (!assignedMember) throw new Error("Cette personne ne fait pas partie de votre organisation.");
 
-  await prisma.$transaction([
+  const newDueDate = new Date(dueDateRaw);
+
+  const operations: Prisma.PrismaPromise<unknown>[] = [
     prisma.task.update({
       where: { id: taskId },
-      data: { label, dueDate: new Date(dueDateRaw), assignedMembershipId },
+      data: { label, dueDate: newDueDate, assignedMembershipId },
     }),
     prisma.auditLog.create({
       data: {
@@ -370,7 +374,37 @@ export async function updateCustomTask(taskId: string, formData: FormData) {
         metadata: { newLabel: label },
       },
     }),
-  ]);
+  ];
+
+  // Mémoriser cette personnalisation pour les futurs parcours de ce
+  // type — uniquement possible pour une étape issue d'un vrai gabarit
+  // (une étape déjà manuelle n'a aucun gabarit à personnaliser), et
+  // uniquement si le RH l'a explicitement demandé.
+  if (rememberForFuture && task.taskTemplateId) {
+    const offsetDays = Math.round(
+      (newDueDate.getTime() - task.employeeEvent.triggerDate.getTime()) / (1000 * 60 * 60 * 24)
+    );
+    operations.push(
+      prisma.taskTemplateOverride.upsert({
+        where: {
+          organizationId_taskTemplateId: {
+            organizationId: membership.organizationId,
+            taskTemplateId: task.taskTemplateId,
+          },
+        },
+        create: {
+          organizationId: membership.organizationId,
+          taskTemplateId: task.taskTemplateId,
+          action: "MODIFIED",
+          label,
+          dueOffsetDays: offsetDays,
+        },
+        update: { action: "MODIFIED", label, dueOffsetDays: offsetDays },
+      })
+    );
+  }
+
+  await prisma.$transaction(operations);
 
   revalidatePath(`/dashboard/events/${task.employeeEventId}`);
 }
@@ -382,7 +416,7 @@ export async function updateCustomTask(taskId: string, formData: FormData) {
  * Le journal d'audit garde le libellé supprimé, pour ne jamais perdre
  * complètement la trace de ce qui a été retiré.
  */
-export async function deleteCustomTask(taskId: string) {
+export async function deleteCustomTask(taskId: string, rememberForFuture: boolean) {
   const membership = await getCurrentMembership();
   const user = await getCurrentUser();
   if (!membership || !user) throw new Error("Non authentifié ou aucune organisation active");
@@ -392,7 +426,7 @@ export async function deleteCustomTask(taskId: string) {
   });
   if (!task) throw new Error("Tâche introuvable dans cette organisation");
 
-  await prisma.$transaction([
+  const operations: Prisma.PrismaPromise<unknown>[] = [
     prisma.task.delete({ where: { id: taskId } }),
     prisma.auditLog.create({
       data: {
@@ -404,7 +438,31 @@ export async function deleteCustomTask(taskId: string) {
         metadata: { deletedLabel: task.label },
       },
     }),
-  ]);
+  ];
+
+  // Ne plus jamais générer cette étape pour les futurs parcours de ce
+  // type — uniquement pour une étape issue d'un vrai gabarit, et
+  // uniquement si le RH l'a explicitement demandé.
+  if (rememberForFuture && task.taskTemplateId) {
+    operations.push(
+      prisma.taskTemplateOverride.upsert({
+        where: {
+          organizationId_taskTemplateId: {
+            organizationId: membership.organizationId,
+            taskTemplateId: task.taskTemplateId,
+          },
+        },
+        create: {
+          organizationId: membership.organizationId,
+          taskTemplateId: task.taskTemplateId,
+          action: "REMOVED",
+        },
+        update: { action: "REMOVED", label: null, dueOffsetDays: null },
+      })
+    );
+  }
+
+  await prisma.$transaction(operations);
 
   revalidatePath(`/dashboard/events/${task.employeeEventId}`);
 }

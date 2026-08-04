@@ -76,9 +76,30 @@ export async function triggerEmployeeEvent({
       },
     });
 
+    // Personnalisations mémorisées par cette organisation précise —
+    // jamais partagées avec les autres, jamais appliquées au gabarit
+    // global. Chargées une fois, indexées par taskTemplateId pour un
+    // accès rapide dans la boucle de génération.
+    const overrides = await tx.taskTemplateOverride.findMany({
+      where: { organizationId, taskTemplateId: { in: eventTemplate.taskTemplates.map((t) => t.id) } },
+    });
+    const overrideByTemplateId = new Map(overrides.map((o) => [o.taskTemplateId, o]));
+
     for (const taskTemplate of eventTemplate.taskTemplates) {
+      const override = overrideByTemplateId.get(taskTemplate.id);
+
+      // Étape que cette organisation a explicitement choisi de ne
+      // jamais générer — on passe simplement à la suivante.
+      if (override?.action === "REMOVED") continue;
+
+      const effectiveLabel = override?.action === "MODIFIED" && override.label ? override.label : taskTemplate.label;
+      const effectiveOffsetDays =
+        override?.action === "MODIFIED" && override.dueOffsetDays !== null
+          ? override.dueOffsetDays
+          : taskTemplate.dueOffsetDays;
+
       const dueDate = new Date(triggerDate);
-      dueDate.setDate(dueDate.getDate() + taskTemplate.dueOffsetDays);
+      dueDate.setDate(dueDate.getDate() + effectiveOffsetDays);
 
       const assignedMembershipId = await resolveAssignedMembershipId(
         tx,
@@ -90,13 +111,15 @@ export async function triggerEmployeeEvent({
       // Champs copiés du gabarit vers l'instance (label, stepOrder,
       // deadlineType, proofRequired, proofLabel) : un plan déjà généré
       // ne doit jamais changer rétroactivement si le gabarit évolue
-      // ensuite — principe posé dès la conception du schéma.
+      // ensuite — principe posé dès la conception du schéma. Seuls le
+      // libellé et le délai tiennent compte d'une personnalisation
+      // mémorisée, jamais les autres champs.
       await tx.task.create({
         data: {
           organizationId,
           employeeEventId: employeeEvent.id,
           taskTemplateId: taskTemplate.id,
-          label: taskTemplate.label,
+          label: effectiveLabel,
           stepOrder: taskTemplate.stepOrder,
           dueDate,
           deadlineType: taskTemplate.deadlineType,
