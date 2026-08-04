@@ -323,11 +323,12 @@ export async function moveTask(taskId: string, direction: "up" | "down") {
 }
 
 /**
- * Modifier ou supprimer une étape ajoutée manuellement — réservé aux
- * tâches sans gabarit d'origine (taskTemplateId vide). Une tâche
- * issue d'un gabarit standard garde son statut "Annulée" comme
- * équivalent de suppression, pour ne jamais perdre la trace de ce
- * que le parcours standard prévoyait.
+ * Modifier une étape, qu'elle vienne d'un gabarit standard ou d'un
+ * ajout manuel — l'esprit copilote signifie qu'aucun parcours n'est
+ * figé : si "Entretien d'intégration +30j" ne correspond pas à la
+ * façon de faire d'une entreprise, le RH garde toujours la main pour
+ * l'ajuster. Ne modifie jamais le gabarit lui-même, seulement cette
+ * tâche précise, pour ce salarié précis.
  */
 export async function updateCustomTask(taskId: string, formData: FormData) {
   const membership = await getCurrentMembership();
@@ -338,9 +339,6 @@ export async function updateCustomTask(taskId: string, formData: FormData) {
     where: { id: taskId, organizationId: membership.organizationId },
   });
   if (!task) throw new Error("Tâche introuvable dans cette organisation");
-  if (task.taskTemplateId !== null) {
-    throw new Error("Seules les étapes ajoutées manuellement peuvent être modifiées.");
-  }
 
   const label = String(formData.get("label") ?? "").trim();
   const dueDateRaw = String(formData.get("dueDate") ?? "");
@@ -357,14 +355,33 @@ export async function updateCustomTask(taskId: string, formData: FormData) {
   });
   if (!assignedMember) throw new Error("Cette personne ne fait pas partie de votre organisation.");
 
-  await prisma.task.update({
-    where: { id: taskId },
-    data: { label, dueDate: new Date(dueDateRaw), assignedMembershipId },
-  });
+  await prisma.$transaction([
+    prisma.task.update({
+      where: { id: taskId },
+      data: { label, dueDate: new Date(dueDateRaw), assignedMembershipId },
+    }),
+    prisma.auditLog.create({
+      data: {
+        organizationId: membership.organizationId,
+        actorUserId: user.id,
+        action: "task.edited_manually",
+        entityType: "Task",
+        entityId: taskId,
+        metadata: { newLabel: label },
+      },
+    }),
+  ]);
 
   revalidatePath(`/dashboard/events/${task.employeeEventId}`);
 }
 
+/**
+ * Supprimer une étape, gabarit ou personnalisée — un vrai retrait,
+ * pas juste un statut "Annulée" (toujours disponible séparément si un
+ * RH préfère garder la trace qu'une étape existait sans être faite).
+ * Le journal d'audit garde le libellé supprimé, pour ne jamais perdre
+ * complètement la trace de ce qui a été retiré.
+ */
 export async function deleteCustomTask(taskId: string) {
   const membership = await getCurrentMembership();
   const user = await getCurrentUser();
@@ -374,9 +391,6 @@ export async function deleteCustomTask(taskId: string) {
     where: { id: taskId, organizationId: membership.organizationId },
   });
   if (!task) throw new Error("Tâche introuvable dans cette organisation");
-  if (task.taskTemplateId !== null) {
-    throw new Error("Seules les étapes ajoutées manuellement peuvent être supprimées. Utilisez le statut « Annulée » pour les autres.");
-  }
 
   await prisma.$transaction([
     prisma.task.delete({ where: { id: taskId } }),

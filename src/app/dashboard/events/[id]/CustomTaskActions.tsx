@@ -95,7 +95,7 @@ export function CustomTaskActions({
           </button>
         }
         title="Supprimer cette étape ?"
-        description="Cette étape a été ajoutée manuellement, elle sera définitivement retirée du parcours (contrairement aux étapes standard, qui restent archivables plutôt que supprimées)."
+        description="Cette étape sera définitivement retirée de ce parcours. Si vous préférez simplement indiquer qu'elle n'a pas été faite sans la faire disparaître, utilisez plutôt le statut « Annulée » à côté."
         confirmLabel="Supprimer l'étape"
         onConfirm={() => deleteCustomTask(task.id)}
       />

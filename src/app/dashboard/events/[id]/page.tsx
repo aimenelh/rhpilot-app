@@ -168,16 +168,19 @@ export default async function EventDetailPage({
                     </p>
                   )}
                   {task.taskTemplateId === null && (
-                    <CustomTaskActions
-                      task={{
-                        id: task.id,
-                        label: task.label,
-                        dueDate: task.dueDate.toISOString().slice(0, 10),
-                        assignedMembershipId: task.assignedMembershipId,
-                      }}
-                      members={members}
-                    />
+                    <p className="mt-0.5 text-[11px] font-medium text-brand-blue">
+                      Étape ajoutée manuellement
+                    </p>
                   )}
+                  <CustomTaskActions
+                    task={{
+                      id: task.id,
+                      label: task.label,
+                      dueDate: task.dueDate.toISOString().slice(0, 10),
+                      assignedMembershipId: task.assignedMembershipId,
+                    }}
+                    members={members}
+                  />
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <div className="flex flex-col overflow-hidden rounded-lg border border-surface-border">
