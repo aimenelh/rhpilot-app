@@ -321,3 +321,76 @@ export async function moveTask(taskId: string, direction: "up" | "down") {
 
   revalidatePath(`/dashboard/events/${task.employeeEventId}`);
 }
+
+/**
+ * Modifier ou supprimer une étape ajoutée manuellement — réservé aux
+ * tâches sans gabarit d'origine (taskTemplateId vide). Une tâche
+ * issue d'un gabarit standard garde son statut "Annulée" comme
+ * équivalent de suppression, pour ne jamais perdre la trace de ce
+ * que le parcours standard prévoyait.
+ */
+export async function updateCustomTask(taskId: string, formData: FormData) {
+  const membership = await getCurrentMembership();
+  const user = await getCurrentUser();
+  if (!membership || !user) throw new Error("Non authentifié ou aucune organisation active");
+
+  const task = await prisma.task.findFirst({
+    where: { id: taskId, organizationId: membership.organizationId },
+  });
+  if (!task) throw new Error("Tâche introuvable dans cette organisation");
+  if (task.taskTemplateId !== null) {
+    throw new Error("Seules les étapes ajoutées manuellement peuvent être modifiées.");
+  }
+
+  const label = String(formData.get("label") ?? "").trim();
+  const dueDateRaw = String(formData.get("dueDate") ?? "");
+  const assignedMembershipId = String(formData.get("assignedMembershipId") ?? "").trim();
+
+  if (!label) throw new Error("Le libellé de la tâche est obligatoire.");
+  if (!dueDateRaw || Number.isNaN(new Date(dueDateRaw).getTime())) {
+    throw new Error("L'échéance n'est pas valide.");
+  }
+  if (!assignedMembershipId) throw new Error("Veuillez choisir un responsable.");
+
+  const assignedMember = await prisma.membership.findFirst({
+    where: { id: assignedMembershipId, organizationId: membership.organizationId, deletedAt: null },
+  });
+  if (!assignedMember) throw new Error("Cette personne ne fait pas partie de votre organisation.");
+
+  await prisma.task.update({
+    where: { id: taskId },
+    data: { label, dueDate: new Date(dueDateRaw), assignedMembershipId },
+  });
+
+  revalidatePath(`/dashboard/events/${task.employeeEventId}`);
+}
+
+export async function deleteCustomTask(taskId: string) {
+  const membership = await getCurrentMembership();
+  const user = await getCurrentUser();
+  if (!membership || !user) throw new Error("Non authentifié ou aucune organisation active");
+
+  const task = await prisma.task.findFirst({
+    where: { id: taskId, organizationId: membership.organizationId },
+  });
+  if (!task) throw new Error("Tâche introuvable dans cette organisation");
+  if (task.taskTemplateId !== null) {
+    throw new Error("Seules les étapes ajoutées manuellement peuvent être supprimées. Utilisez le statut « Annulée » pour les autres.");
+  }
+
+  await prisma.$transaction([
+    prisma.task.delete({ where: { id: taskId } }),
+    prisma.auditLog.create({
+      data: {
+        organizationId: membership.organizationId,
+        actorUserId: user.id,
+        action: "task.deleted_manually",
+        entityType: "EmployeeEvent",
+        entityId: task.employeeEventId,
+        metadata: { deletedLabel: task.label },
+      },
+    }),
+  ]);
+
+  revalidatePath(`/dashboard/events/${task.employeeEventId}`);
+}

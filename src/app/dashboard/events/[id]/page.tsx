@@ -16,6 +16,7 @@ import { isOverdue } from "@/lib/urgency";
 import { getEventTemplateDotColor } from "@/lib/eventTemplateStyle";
 import { ArchiveEventButton } from "./ArchiveEventButton";
 import { AddCustomTaskForm } from "./AddCustomTaskForm";
+import { CustomTaskActions } from "./CustomTaskActions";
 
 export const dynamic = "force-dynamic";
 
@@ -83,7 +84,11 @@ export default async function EventDetailPage({
         <ArchiveEventButton eventId={employeeEvent.id} />
       </div>
 
-      <div className="mt-6 flex flex-col gap-3">
+      <div className="mt-6">
+        <AddCustomTaskForm employeeEventId={employeeEvent.id} members={members} />
+      </div>
+
+      <div className="mt-4 flex flex-col gap-3">
         {employeeEvent.tasks.map((task) => {
           const overdue = isOverdue(task.dueDate, task.status);
           return (
@@ -162,6 +167,17 @@ export default async function EventDetailPage({
                       Pièce attendue : {task.proofLabel}
                     </p>
                   )}
+                  {task.taskTemplateId === null && (
+                    <CustomTaskActions
+                      task={{
+                        id: task.id,
+                        label: task.label,
+                        dueDate: task.dueDate.toISOString().slice(0, 10),
+                        assignedMembershipId: task.assignedMembershipId,
+                      }}
+                      members={members}
+                    />
+                  )}
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                   <div className="flex flex-col overflow-hidden rounded-lg border border-surface-border">
@@ -200,10 +216,6 @@ export default async function EventDetailPage({
             </Card>
           );
         })}
-      </div>
-
-      <div className="mt-4">
-        <AddCustomTaskForm employeeEventId={employeeEvent.id} members={members} />
       </div>
     </div>
   );
