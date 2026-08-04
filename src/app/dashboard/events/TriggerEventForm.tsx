@@ -6,6 +6,7 @@ import { Rocket } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Field";
+import { isWeekend } from "@/lib/format";
 import { CcnHint } from "@/components/CcnHint";
 import type { TriggerEventFormState } from "./actions";
 
@@ -119,6 +120,12 @@ export function TriggerEventForm({
               value={triggerDate}
               onChange={(event) => setTriggerDate(event.target.value)}
             />
+            {isWeekend(triggerDate) && (
+              <p className="mt-1 text-xs text-ink-faint">
+                Cette date tombe un week-end, vérifiez qu&apos;elle correspond bien à votre
+                intention.
+              </p>
+            )}
           </div>
           <SubmitButton />
         </div>

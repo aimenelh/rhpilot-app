@@ -28,6 +28,7 @@ export default async function EventsPage({
     where: {
       organizationId: membership.organizationId,
       employee: { deletedAt: null },
+      deletedAt: null,
       ...(query
         ? {
             OR: [

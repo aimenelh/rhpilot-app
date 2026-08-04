@@ -61,6 +61,7 @@ async function detectProbationEndingWithoutEvent(organizationId: string): Promis
         organizationId,
         employeeId: employee.id,
         eventTemplate: { key: "fin_periode_essai" },
+        deletedAt: null,
       },
     });
     if (alreadyTriggered) continue;
@@ -120,7 +121,7 @@ async function detectMissingOnboardingEvent(organizationId: string): Promise<Ano
     if (daysSinceHire > 60) continue;
 
     const alreadyTriggered = await prisma.employeeEvent.findFirst({
-      where: { organizationId, employeeId: employee.id, eventTemplate: { key: "embauche" } },
+      where: { organizationId, employeeId: employee.id, eventTemplate: { key: "embauche" }, deletedAt: null },
     });
     if (alreadyTriggered) continue;
 
@@ -201,7 +202,7 @@ async function detectMedicalVisitNeverScheduled(organizationId: string): Promise
     if (daysUntil(employee.hireDate) > -365) continue;
 
     const alreadyTriggered = await prisma.employeeEvent.findFirst({
-      where: { organizationId, employeeId: employee.id, eventTemplate: { key: "visite_medicale" } },
+      where: { organizationId, employeeId: employee.id, eventTemplate: { key: "visite_medicale" }, deletedAt: null },
     });
     if (alreadyTriggered) continue;
 

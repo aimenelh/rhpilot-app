@@ -10,9 +10,9 @@ import { TriggerEventForm } from "../../events/TriggerEventForm";
 import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { getUserDisplayName } from "@/lib/displayName";
-import { formatDate } from "@/lib/format";
+import { formatDate, addDuration, formatDuration } from "@/lib/format";
 import { isOverdue, daysUntil } from "@/lib/urgency";
-import { Stethoscope, TriangleAlert } from "lucide-react";
+import { Stethoscope, TriangleAlert, Hourglass } from "lucide-react";
 import { getEventTemplateDotColor } from "@/lib/eventTemplateStyle";
 import { summarizeParcours } from "@/lib/parcoursSummary";
 import { CcnHint } from "@/components/CcnHint";
@@ -52,7 +52,7 @@ export default async function EmployeeDetailPage({
       orderBy: { label: "asc" },
     }),
     prisma.employeeEvent.findMany({
-      where: { employeeId: employee.id, organizationId: membership.organizationId },
+      where: { employeeId: employee.id, organizationId: membership.organizationId, deletedAt: null },
       include: { eventTemplate: true, tasks: true },
       orderBy: { triggerDate: "desc" },
     }),
@@ -170,6 +170,47 @@ export default async function EmployeeDetailPage({
             </p>
           </div>
         </Card>
+      )}
+
+      {employee.probationDuration && employee.probationDurationUnit && (
+        (() => {
+          const probationEndDate = addDuration(
+            employee.hireDate,
+            employee.probationDuration,
+            employee.probationDurationUnit
+          );
+          const overdue = isOverdue(probationEndDate, "TODO");
+          return (
+            <Card
+              className={`mt-4 flex items-center gap-3 ${
+                overdue ? "border-accent-rose/30 bg-accent-rose/5" : "border-brand-blue/20 bg-brand-blue/5"
+              }`}
+              compact
+            >
+              <span
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+                  overdue ? "bg-accent-rose/10 text-accent-rose" : "bg-brand-blue/10 text-brand-blue"
+                }`}
+              >
+                <Hourglass size={16} />
+              </span>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
+                  Période d&apos;essai
+                </p>
+                <p className="text-sm font-semibold text-ink">
+                  {formatDuration(employee.probationDuration, employee.probationDurationUnit)},
+                  fin prévue le {formatDate(probationEndDate)}
+                  {overdue && (
+                    <span className="ml-2 font-normal text-accent-rose">
+                      (dépassée de {Math.abs(daysUntil(probationEndDate))} jours)
+                    </span>
+                  )}
+                </p>
+              </div>
+            </Card>
+          );
+        })()
       )}
 
       <div className="mt-8 max-w-xl">

@@ -250,13 +250,14 @@ model TaskTemplate {
 // ------------------------------------------------------------
 
 model EmployeeEvent {
-  id              String   @id @default(cuid())
+  id              String    @id @default(cuid())
   organizationId  String
   employeeId      String
   eventTemplateId String
   triggerDate     DateTime
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deletedAt       DateTime? // supprimer un doublon archive, ne détruit jamais l'historique
 
   organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   employee      Employee      @relation(fields: [organizationId, employeeId], references: [organizationId, id], onDelete: Restrict)
@@ -283,9 +284,9 @@ model Task {
   id                   String                   @id @default(cuid())
   organizationId       String
   employeeEventId      String
-  taskTemplateId       String
+  taskTemplateId       String?                  // copié du template — vide pour une tâche ajoutée manuellement
   label                String                   // copié du template
-  stepOrder            Int                      // copié
+  stepOrder            Int                      // copié, modifiable ensuite (réordonnancement manuel)
   dueDate              DateTime                 // calculée
   deadlineType         DeadlineType             // copié — ne change jamais rétroactivement si le template évolue
   resolutionRole       FunctionalRoleResolution // copié
@@ -297,9 +298,9 @@ model Task {
   createdAt            DateTime                 @default(now())
   updatedAt            DateTime                 @updatedAt
 
-  employeeEvent      EmployeeEvent @relation(fields: [organizationId, employeeEventId], references: [organizationId, id], onDelete: Cascade)
-  taskTemplate       TaskTemplate  @relation(fields: [taskTemplateId], references: [id], onDelete: Restrict)
-  assignedMembership Membership?   @relation(fields: [organizationId, assignedMembershipId], references: [organizationId, id], onDelete: Restrict)
+  employeeEvent      EmployeeEvent  @relation(fields: [organizationId, employeeEventId], references: [organizationId, id], onDelete: Cascade)
+  taskTemplate       TaskTemplate?  @relation(fields: [taskTemplateId], references: [id], onDelete: Restrict)
+  assignedMembership Membership?    @relation(fields: [organizationId, assignedMembershipId], references: [organizationId, id], onDelete: Restrict)
 
   attachments Attachment[]
 

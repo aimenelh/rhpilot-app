@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { triggerEmployeeEvent } from "@/lib/eventEngine";
@@ -177,4 +178,146 @@ export async function assignTask(taskId: string, formData: FormData) {
   redirect(
     `/dashboard/events/${task.employeeEventId}?flash=${encodeURIComponent("Tâche assignée")}`
   );
+}
+
+/**
+ * Archive un parcours (par exemple un doublon créé par erreur) —
+ * jamais de suppression définitive, cohérent avec le reste du
+ * produit. Ses tâches restent en base pour l'historique, simplement
+ * masquées de toutes les listes actives.
+ */
+export async function archiveEmployeeEvent(eventId: string) {
+  const membership = await getCurrentMembership();
+  const user = await getCurrentUser();
+  if (!membership || !user) {
+    throw new Error("Non authentifié ou aucune organisation active");
+  }
+
+  const event = await prisma.employeeEvent.findFirst({
+    where: { id: eventId, organizationId: membership.organizationId, deletedAt: null },
+  });
+  if (!event) throw new Error("Parcours introuvable dans cette organisation");
+
+  await prisma.$transaction([
+    prisma.employeeEvent.update({
+      where: { id: eventId },
+      data: { deletedAt: new Date() },
+    }),
+    prisma.auditLog.create({
+      data: {
+        organizationId: membership.organizationId,
+        actorUserId: user.id,
+        action: "employeeEvent.archived",
+        entityType: "EmployeeEvent",
+        entityId: eventId,
+      },
+    }),
+  ]);
+
+  redirect(
+    `/dashboard/employees/${event.employeeId}?flash=${encodeURIComponent("Parcours archivé")}`
+  );
+}
+
+/**
+ * Ajoute une tâche manuelle à un parcours déjà généré — parce que le
+ * fonctionnement de chaque entreprise diffère, un gabarit ne peut
+ * jamais tout prévoir. Toujours assignée dès la création (l'assignant
+ * choisit directement qui), donc jamais "À assigner" comme les tâches
+ * de gabarit peuvent l'être.
+ */
+export async function addCustomTask(employeeEventId: string, formData: FormData) {
+  const membership = await getCurrentMembership();
+  const user = await getCurrentUser();
+  if (!membership || !user) {
+    throw new Error("Non authentifié ou aucune organisation active");
+  }
+
+  const event = await prisma.employeeEvent.findFirst({
+    where: { id: employeeEventId, organizationId: membership.organizationId, deletedAt: null },
+  });
+  if (!event) throw new Error("Parcours introuvable dans cette organisation");
+
+  const label = String(formData.get("label") ?? "").trim();
+  const dueDateRaw = String(formData.get("dueDate") ?? "");
+  const assignedMembershipId = String(formData.get("assignedMembershipId") ?? "").trim();
+
+  if (!label) throw new Error("Le libellé de la tâche est obligatoire.");
+  if (!dueDateRaw || Number.isNaN(new Date(dueDateRaw).getTime())) {
+    throw new Error("L'échéance n'est pas valide.");
+  }
+  if (!assignedMembershipId) throw new Error("Veuillez choisir un responsable.");
+
+  const assignedMember = await prisma.membership.findFirst({
+    where: { id: assignedMembershipId, organizationId: membership.organizationId, deletedAt: null },
+  });
+  if (!assignedMember) throw new Error("Cette personne ne fait pas partie de votre organisation.");
+
+  const lastTask = await prisma.task.findFirst({
+    where: { employeeEventId, organizationId: membership.organizationId },
+    orderBy: { stepOrder: "desc" },
+  });
+  const nextStepOrder = (lastTask?.stepOrder ?? 0) + 1;
+
+  await prisma.$transaction([
+    prisma.task.create({
+      data: {
+        organizationId: membership.organizationId,
+        employeeEventId,
+        taskTemplateId: null,
+        label,
+        stepOrder: nextStepOrder,
+        dueDate: new Date(dueDateRaw),
+        deadlineType: "USER_DEFINED",
+        resolutionRole: "MANAGER_DIRECT", // jamais affiché : la tâche est toujours déjà assignée
+        assignedMembershipId,
+      },
+    }),
+    prisma.auditLog.create({
+      data: {
+        organizationId: membership.organizationId,
+        actorUserId: user.id,
+        action: "task.added_manually",
+        entityType: "EmployeeEvent",
+        entityId: employeeEventId,
+        metadata: { label },
+      },
+    }),
+  ]);
+
+  redirect(`/dashboard/events/${employeeEventId}?flash=${encodeURIComponent("Tâche ajoutée")}`);
+}
+
+/**
+ * Réordonnancement par échange avec la tâche voisine (flèches
+ * monter/descendre) plutôt qu'un vrai glisser-déposer — plus simple,
+ * plus sûr, sans nouvelle dépendance, largement suffisant pour un
+ * parcours qui compte rarement plus de 10 étapes.
+ */
+export async function moveTask(taskId: string, direction: "up" | "down") {
+  const membership = await getCurrentMembership();
+  if (!membership) throw new Error("Non authentifié ou aucune organisation active");
+
+  const task = await prisma.task.findFirst({
+    where: { id: taskId, organizationId: membership.organizationId },
+  });
+  if (!task) throw new Error("Tâche introuvable dans cette organisation");
+
+  const siblings = await prisma.task.findMany({
+    where: { employeeEventId: task.employeeEventId, organizationId: membership.organizationId },
+    orderBy: { stepOrder: "asc" },
+  });
+
+  const currentIndex = siblings.findIndex((t) => t.id === taskId);
+  const swapIndex = direction === "up" ? currentIndex - 1 : currentIndex + 1;
+  if (swapIndex < 0 || swapIndex >= siblings.length) return; // déjà en haut/bas, rien à faire
+
+  const swapWith = siblings[swapIndex];
+
+  await prisma.$transaction([
+    prisma.task.update({ where: { id: task.id }, data: { stepOrder: swapWith.stepOrder } }),
+    prisma.task.update({ where: { id: swapWith.id }, data: { stepOrder: task.stepOrder } }),
+  ]);
+
+  revalidatePath(`/dashboard/events/${task.employeeEventId}`);
 }

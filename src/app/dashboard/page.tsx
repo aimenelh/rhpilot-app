@@ -61,7 +61,7 @@ export default async function DashboardPage({
   const [employeeCount, eventCount, doneCount, openTasks, anomalies, newTasksThisWeek, completedThisWeek] =
     await Promise.all([
       prisma.employee.count({ where: { organizationId, deletedAt: null } }),
-      prisma.employeeEvent.count({ where: { organizationId, employee: { deletedAt: null } } }),
+      prisma.employeeEvent.count({ where: { organizationId, employee: { deletedAt: null }, deletedAt: null } }),
       prisma.task.count({
         where: {
           organizationId,

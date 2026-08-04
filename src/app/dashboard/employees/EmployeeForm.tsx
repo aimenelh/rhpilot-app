@@ -1,11 +1,13 @@
 "use client";
 
 import { useFormState, useFormStatus } from "react-dom";
+import { useState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select, FieldHint } from "@/components/ui/Field";
 import type { EmployeeFormState } from "./actions";
+import { isWeekend } from "@/lib/format";
 
 type ManagerOption = { id: string; label: string };
 
@@ -45,6 +47,10 @@ export function EmployeeForm({
   submitLabel: string;
 }) {
   const [state, formAction] = useFormState<EmployeeFormState, FormData>(action, undefined);
+  const [contractType, setContractType] = useState(defaultValues.contractType);
+  const [hireDate, setHireDate] = useState(defaultValues.hireDate);
+  const [contractEndDate, setContractEndDate] = useState(defaultValues.contractEndDate);
+  const showContractEndDate = ["CDD", "APPRENTISSAGE", "PROFESSIONNALISATION"].includes(contractType);
 
   return (
     <Card>
@@ -111,14 +117,26 @@ export function EmployeeForm({
             id="hireDate"
             name="hireDate"
             type="date"
-            defaultValue={defaultValues.hireDate}
+            value={hireDate}
+            onChange={(event) => setHireDate(event.target.value)}
             required
           />
+          {isWeekend(hireDate) && (
+            <FieldHint>
+              Cette date tombe un week-end, vérifiez qu&apos;elle correspond bien à votre
+              intention.
+            </FieldHint>
+          )}
         </div>
 
         <div>
           <Label htmlFor="contractType">Type de contrat</Label>
-          <Select id="contractType" name="contractType" defaultValue={defaultValues.contractType}>
+          <Select
+            id="contractType"
+            name="contractType"
+            value={contractType}
+            onChange={(event) => setContractType(event.target.value)}
+          >
             <option value="">Non défini</option>
             <option value="CDI">CDI</option>
             <option value="CDD">CDD</option>
@@ -127,20 +145,28 @@ export function EmployeeForm({
           </Select>
         </div>
 
-        <div>
-          <Label htmlFor="contractEndDate">Date de fin de contrat</Label>
-          <Input
-            id="contractEndDate"
-            name="contractEndDate"
-            type="date"
-            defaultValue={defaultValues.contractEndDate}
-          />
-          <FieldHint>
-            À renseigner pour un CDD ou un contrat d&apos;apprentissage/professionnalisation,
-            sans objet pour un CDI. RH Pilot vous préviendra simplement quand cette date
-            approche, sans rien déclencher automatiquement.
-          </FieldHint>
-        </div>
+        {showContractEndDate && (
+          <div>
+            <Label htmlFor="contractEndDate">Date de fin de contrat</Label>
+            <Input
+              id="contractEndDate"
+              name="contractEndDate"
+              type="date"
+              value={contractEndDate}
+              onChange={(event) => setContractEndDate(event.target.value)}
+            />
+            {isWeekend(contractEndDate) && (
+              <FieldHint>
+                Cette date tombe un week-end, vérifiez qu&apos;elle correspond bien à votre
+                intention.
+              </FieldHint>
+            )}
+            <FieldHint>
+              RH Pilot vous préviendra simplement quand cette date approche, sans rien
+              déclencher automatiquement.
+            </FieldHint>
+          </div>
+        )}
 
         <div>
           <Label htmlFor="probationDuration">Durée de la période d&apos;essai</Label>

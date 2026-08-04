@@ -19,3 +19,15 @@ export function formatDuration(amount: number, unit: "DAYS" | "WEEKS" | "MONTHS"
   const [singular, plural] = labels[unit];
   return `${amount} ${amount > 1 ? plural : singular}`;
 }
+
+// Un vrai calendrier natif (<input type="date">) est dessiné par le
+// navigateur, on ne peut pas y griser visuellement certains jours —
+// c'est une vraie limite technique, pas un choix. À la place, un
+// avertissement discret apparaît sous le champ si la date choisie
+// tombe un week-end, sans jamais bloquer le choix (cf. principe :
+// ne jamais empêcher une saisie, même rare).
+export function isWeekend(dateString: string): boolean {
+  if (!dateString) return false;
+  const day = new Date(`${dateString}T00:00:00`).getDay();
+  return day === 0 || day === 6;
+}

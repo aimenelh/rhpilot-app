@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { CalendarDays, User, CircleCheck, CircleDashed, TriangleAlert, Send } from "lucide-react";
+import { CalendarDays, User, CircleCheck, CircleDashed, TriangleAlert, Send, ChevronUp, ChevronDown } from "lucide-react";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
@@ -8,12 +8,14 @@ import { Badge } from "@/components/ui/Badge";
 import { Select } from "@/components/ui/Field";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { TaskStatusForm } from "../TaskStatusForm";
-import { updateTaskStatus, assignTask } from "../actions";
+import { updateTaskStatus, assignTask, moveTask } from "../actions";
 import { sendManualReminder } from "../../notifications/actions";
 import { getUserDisplayName } from "@/lib/displayName";
 import { formatDate } from "@/lib/format";
 import { isOverdue } from "@/lib/urgency";
 import { getEventTemplateDotColor } from "@/lib/eventTemplateStyle";
+import { ArchiveEventButton } from "./ArchiveEventButton";
+import { AddCustomTaskForm } from "./AddCustomTaskForm";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +35,7 @@ export default async function EventDetailPage({
 
   const [employeeEvent, members] = await Promise.all([
     prisma.employeeEvent.findFirst({
-      where: { id: params.id, organizationId: membership.organizationId },
+      where: { id: params.id, organizationId: membership.organizationId, deletedAt: null },
       include: {
         employee: true,
         eventTemplate: true,
@@ -75,6 +77,10 @@ export default async function EventDetailPage({
       </p>
       <div className="mt-3 max-w-xs">
         <ProgressBar value={doneCount} max={employeeEvent.tasks.length} />
+      </div>
+
+      <div className="mt-3">
+        <ArchiveEventButton eventId={employeeEvent.id} />
       </div>
 
       <div className="mt-6 flex flex-col gap-3">
@@ -157,14 +163,44 @@ export default async function EventDetailPage({
                     </p>
                   )}
                 </div>
-                <TaskStatusForm
-                  action={updateTaskStatus.bind(null, task.id)}
-                  currentStatus={task.status}
-                />
+                <div className="flex shrink-0 items-center gap-2">
+                  <div className="flex flex-col">
+                    <form action={moveTask.bind(null, task.id, "up")}>
+                      <button
+                        type="submit"
+                        disabled={task.stepOrder === employeeEvent.tasks[0]?.stepOrder}
+                        aria-label="Monter cette tâche"
+                        className="flex h-5 w-5 items-center justify-center text-ink-faint hover:text-ink disabled:opacity-30"
+                      >
+                        <ChevronUp size={14} />
+                      </button>
+                    </form>
+                    <form action={moveTask.bind(null, task.id, "down")}>
+                      <button
+                        type="submit"
+                        disabled={
+                          task.stepOrder === employeeEvent.tasks[employeeEvent.tasks.length - 1]?.stepOrder
+                        }
+                        aria-label="Descendre cette tâche"
+                        className="flex h-5 w-5 items-center justify-center text-ink-faint hover:text-ink disabled:opacity-30"
+                      >
+                        <ChevronDown size={14} />
+                      </button>
+                    </form>
+                  </div>
+                  <TaskStatusForm
+                    action={updateTaskStatus.bind(null, task.id)}
+                    currentStatus={task.status}
+                  />
+                </div>
               </div>
             </Card>
           );
         })}
+      </div>
+
+      <div className="mt-4">
+        <AddCustomTaskForm employeeEventId={employeeEvent.id} members={members} />
       </div>
     </div>
   );
