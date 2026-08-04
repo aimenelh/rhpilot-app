@@ -13,6 +13,7 @@ type NavItem = {
   href: string;
   label: string;
   available: boolean;
+  section?: string; // affiche un séparateur avec ce titre juste avant cette entrée
 };
 
 const NAV_ITEMS: NavItem[] = [
@@ -20,9 +21,9 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/employees", label: "Salariés", available: true },
   { href: "/dashboard/events", label: "Parcours", available: true },
   { href: "/dashboard/calendar", label: "Calendrier", available: true },
+  { href: "/dashboard/team", label: "Équipe", available: true, section: "Administration" },
+  { href: "/dashboard/configuration", label: "Configuration", available: true },
   { href: "/dashboard/notifications", label: "Notifications", available: true },
-  { href: "/dashboard/team", label: "Équipe", available: true },
-  { href: "/dashboard/organization", label: "Organisation", available: true },
   { href: "/dashboard/help", label: "Aide", available: true },
 ];
 
@@ -56,30 +57,40 @@ export function AppShell({
 
             if (!item.available) {
               return (
-                <span
-                  key={item.href}
-                  className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-ink-faint"
-                >
-                  {item.label}
-                  <span className="rounded-full bg-surface-subtle px-2 py-0.5 text-[11px]">
-                    Bientôt
+                <span key={item.href}>
+                  {item.section && (
+                    <p className="mb-1 mt-4 px-3 text-[11px] font-medium uppercase tracking-wide text-ink-faint">
+                      {item.section}
+                    </p>
+                  )}
+                  <span className="flex items-center justify-between rounded-lg px-3 py-2 text-sm text-ink-faint">
+                    {item.label}
+                    <span className="rounded-full bg-surface-subtle px-2 py-0.5 text-[11px]">
+                      Bientôt
+                    </span>
                   </span>
                 </span>
               );
             }
 
             return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+              <div key={item.href}>
+                {item.section && (
+                  <p className="mb-1 mt-4 px-3 text-[11px] font-medium uppercase tracking-wide text-ink-faint">
+                    {item.section}
+                  </p>
+                )}
+                <Link
+                  href={item.href}
+                  className={`rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   isActive
                     ? "bg-brand-blue/10 text-brand-blue"
                     : "text-ink-soft hover:bg-surface-subtle hover:text-ink"
                 }`}
-              >
-                {item.label}
-              </Link>
+                >
+                  {item.label}
+                </Link>
+              </div>
             );
           })}
         </nav>

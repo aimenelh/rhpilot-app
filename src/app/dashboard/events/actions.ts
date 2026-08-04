@@ -407,7 +407,7 @@ export async function updateCustomTask(taskId: string, formData: FormData) {
   await prisma.$transaction(operations);
 
   revalidatePath(`/dashboard/events/${task.employeeEventId}`);
-  revalidatePath("/dashboard/organization");
+  revalidatePath("/dashboard/configuration");
 }
 
 /**
@@ -466,5 +466,5 @@ export async function deleteCustomTask(taskId: string, rememberForFuture: boolea
   await prisma.$transaction(operations);
 
   revalidatePath(`/dashboard/events/${task.employeeEventId}`);
-  revalidatePath("/dashboard/organization");
+  revalidatePath("/dashboard/configuration");
 }

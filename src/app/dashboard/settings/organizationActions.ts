@@ -18,7 +18,7 @@ export async function updateConventionCollective(formData: FormData) {
     data: { conventionCollective: raw || null },
   });
 
-  revalidatePath("/dashboard/organization");
+  revalidatePath("/dashboard/configuration");
   revalidatePath("/dashboard/employees");
   revalidatePath("/dashboard/events");
 }
@@ -43,7 +43,7 @@ export async function updateFunctionalRole(formData: FormData) {
     data: { functionalRole: value },
   });
 
-  revalidatePath("/dashboard/organization");
+  revalidatePath("/dashboard/configuration");
 }
 
 /**
@@ -59,5 +59,5 @@ export async function revertTaskTemplateOverride(overrideId: string) {
     where: { id: overrideId, organizationId: membership.organizationId },
   });
 
-  revalidatePath("/dashboard/organization");
+  revalidatePath("/dashboard/configuration");
 }
