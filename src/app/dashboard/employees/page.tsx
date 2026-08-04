@@ -11,6 +11,7 @@ import { getUserDisplayName } from "@/lib/displayName";
 import { formatDate } from "@/lib/format";
 import { reactivateEmployee } from "./actions";
 import { generateDemoOrganization, archiveAllEmployees } from "./demoActions";
+import { DemoOrgSubmitButton } from "./DemoOrgSubmitButton";
 import { ArchiveAllButton } from "@/components/employees/ArchiveAllButton";
 
 export const dynamic = "force-dynamic";
@@ -114,9 +115,7 @@ export default async function EmployeesPage({
                     <Button variant="secondary">Importer depuis un fichier CSV</Button>
                   </Link>
                   <form action={generateDemoOrganization}>
-                    <Button type="submit" variant="secondary">
-                      Générer une entreprise de démonstration
-                    </Button>
+                    <DemoOrgSubmitButton />
                   </form>
                 </div>
               }

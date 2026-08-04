@@ -219,6 +219,17 @@ export async function generateDemoOrganization() {
     throw new Error("Non authentifié ou aucune organisation active");
   }
 
+  // Filet de sécurité serveur, en plus du bouton désactivé pendant le
+  // chargement côté client : si un double-clic ou un problème réseau
+  // déclenche malgré tout un second appel, on refuse plutôt que de
+  // créer une seconde entreprise de démonstration par-dessus.
+  const existingEmployeeCount = await prisma.employee.count({
+    where: { organizationId: membership.organizationId, deletedAt: null },
+  });
+  if (existingEmployeeCount > 0) {
+    throw new Error("Votre organisation a déjà des salariés — génération annulée pour éviter un doublon.");
+  }
+
   const createdEmployees: { id: string; firstName: string; lastName: string; hireDate: Date }[] = [];
 
   for (const template of DEMO_EMPLOYEES) {
