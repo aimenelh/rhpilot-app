@@ -7,7 +7,6 @@ import {
   Circle,
   Sparkles,
   History,
-  Lightbulb,
   CalendarDays,
   Users,
   ClipboardCheck,
@@ -24,6 +23,7 @@ import { formatRelativeDueDate, isOverdue } from "@/lib/urgency";
 import { getAnomalies } from "@/lib/anomalies";
 import { triggerEventQuick } from "./events/actions";
 import { getUserDisplayName } from "@/lib/displayName";
+import { DidYouKnowCard } from "@/components/DidYouKnowCard";
 
 // Le tableau de bord change à chaque action (créer un parcours,
 // changer un statut...) — il ne doit jamais servir une version mise en
@@ -94,18 +94,6 @@ function timeAgo(date: Date): string {
   if (days < 7) return `il y a ${days} jours`;
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(date);
 }
-
-// Astuces sur des fonctionnalités qui existent vraiment — jamais rien
-// d'inventé ni de futur. Une différente chaque jour, sans état à
-// stocker : dérivée simplement de la date du jour.
-const DID_YOU_KNOW_TIPS = [
-  "Vous pouvez personnaliser vos modèles de parcours directement depuis un parcours déjà généré, sans jamais toucher à ce que voient les autres organisations.",
-  "Un salarié archivé n'est jamais perdu : retrouvez-le à tout moment depuis l'onglet Archivés, sur la page Salariés.",
-  "RH Pilot n'interprète jamais votre convention collective : il vous oriente simplement vers la bonne source officielle, au bon moment.",
-  "Le Calendrier vous permet de basculer entre vos propres tâches et celles de toute l'organisation, en un clic.",
-  "Vous pouvez exporter l'ensemble de vos données à tout moment, conformément au RGPD, depuis Configuration.",
-  "Une étape que vous ne faites jamais chez vous peut être supprimée définitivement de vos futurs parcours, pas seulement annulée à chaque fois.",
-];
 
 export default async function DashboardPage({
   searchParams,
@@ -299,9 +287,6 @@ export default async function DashboardPage({
   } else {
     synthesis = "Aucune échéance critique aujourd'hui. Tout est sous contrôle.";
   }
-
-  const dayIndex = Math.floor(Date.now() / 86400000);
-  const todayTip = DID_YOU_KNOW_TIPS[dayIndex % DID_YOU_KNOW_TIPS.length];
 
   const firstName = user!.firstName || user!.email.split("@")[0];
 
@@ -729,13 +714,7 @@ export default async function DashboardPage({
         )}
       </div>
 
-      <Card className="mt-5 flex items-start gap-2.5 bg-surface-subtle">
-        <Lightbulb size={16} className="mt-0.5 shrink-0 text-accent-amber" />
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Le saviez-vous ?</p>
-          <p className="mt-1 text-sm text-ink-soft">{todayTip}</p>
-        </div>
-      </Card>
+      <DidYouKnowCard />
     </div>
   );
 }
