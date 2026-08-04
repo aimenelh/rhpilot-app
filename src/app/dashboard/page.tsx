@@ -6,9 +6,9 @@ import {
   CircleCheck,
   Sparkles,
   Rocket,
-  CheckCircle2,
-  Circle,
   History,
+  Lightbulb,
+  CalendarDays,
 } from "lucide-react";
 import { getCurrentMemberships } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -19,6 +19,7 @@ import { formatRelativeDueDate, isOverdue } from "@/lib/urgency";
 import { getAnomalies } from "@/lib/anomalies";
 import { triggerEventQuick } from "./events/actions";
 import { getUserDisplayName } from "@/lib/displayName";
+import { WEEKDAY_LABELS } from "@/lib/calendar";
 
 // Le tableau de bord change à chaque action (créer un parcours,
 // changer un statut...) — il ne doit jamais servir une version mise en
@@ -90,12 +91,24 @@ function timeAgo(date: Date): string {
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(date);
 }
 
+// Astuces sur des fonctionnalités qui existent vraiment — jamais rien
+// d'inventé ni de futur. Une différente chaque jour, sans état à
+// stocker : dérivée simplement de la date du jour.
+const DID_YOU_KNOW_TIPS = [
+  "Vous pouvez personnaliser vos modèles de parcours directement depuis un parcours déjà généré, sans jamais toucher à ce que voient les autres organisations.",
+  "Un salarié archivé n'est jamais perdu : retrouvez-le à tout moment depuis l'onglet Archivés, sur la page Salariés.",
+  "RH Pilot n'interprète jamais votre convention collective : il vous oriente simplement vers la bonne source officielle, au bon moment.",
+  "Le Calendrier vous permet de basculer entre vos propres tâches et celles de toute l'organisation, en un clic.",
+  "Vous pouvez exporter l'ensemble de vos données à tout moment, conformément au RGPD, depuis Configuration.",
+  "Une étape que vous ne faites jamais chez vous peut être supprimée définitivement de vos futurs parcours, pas seulement annulée à chaque fois.",
+];
+
 export default async function DashboardPage({
   searchParams,
 }: {
   searchParams: { view?: string };
 }) {
-  const { memberships } = await getCurrentMemberships();
+  const { user, memberships } = await getCurrentMemberships();
 
   if (memberships.length === 0) {
     return <CreateOrganizationForm />;
@@ -226,9 +239,9 @@ export default async function DashboardPage({
 
   const isEmpty = employeeCount === 0;
 
-  // Checklist de démarrage — entièrement dérivée de vraies données,
-  // jamais de cases cochées artificiellement. Reste affichée tant que
-  // tout n'est pas fait, disparaît une fois complète.
+  // Un seul mécanisme de progression, pas trois qui se répètent —
+  // entièrement dérivé de vraies données, jamais de case cochée
+  // artificiellement.
   const onboardingSteps = [
     { label: "Créer votre organisation", done: true },
     { label: "Définir votre convention collective", done: !!organization.conventionCollective },
@@ -236,91 +249,176 @@ export default async function DashboardPage({
     { label: "Déclencher un premier parcours", done: eventCount > 0 },
     { label: "Inviter un collègue", done: membersInOrgCount > 1 },
   ];
-  const allStepsDone = onboardingSteps.every((s) => s.done);
+  const doneStepsCount = onboardingSteps.filter((s) => s.done).length;
+  const allStepsDone = doneStepsCount === onboardingSteps.length;
+  const progressPercent = Math.round((doneStepsCount / onboardingSteps.length) * 100);
+  const nextStep = onboardingSteps.find((s) => !s.done);
 
-  // Un seul conseil à la fois, jamais plusieurs en même temps — le
-  // premier point non réglé de cette liste, dans cet ordre précis.
-  // "Ajouter un salarié" n'y figure pas : la grande carte d'accueil
-  // s'en charge déjà quand l'organisation est vide, pas la peine de
-  // le répéter.
+  // Un seul conseil à la fois, jamais plusieurs en même temps.
   let tip: string | null = null;
   if (!organization.conventionCollective) {
     tip =
-      "Pensez à renseigner votre convention collective. Cela permettra à RH Pilot de vous orienter vers les bonnes ressources lors des embauches et périodes d'essai.";
+      "Renseignez votre convention collective pour que RH Pilot vous oriente vers les bonnes ressources lors des embauches et périodes d'essai.";
   } else if (membersInOrgCount === 1) {
     tip = "Invitez un collègue afin de pouvoir lui assigner automatiquement des tâches.";
   } else if (employeeCount > 0 && eventCount === 0) {
     tip = "Déclenchez votre premier parcours RH depuis la fiche d'un salarié pour voir RH Pilot en action.";
   }
 
+  // "Cette semaine" — un vrai mini-planning des 7 prochains jours,
+  // dérivé des tâches déjà chargées (reason "soon"), aucune requête
+  // supplémentaire.
+  const weekAheadByDay = new Map<string, { label: string; employeeName: string }[]>();
+  for (const { task, reason } of flagged) {
+    if (reason !== "soon") continue;
+    const dayLabel = WEEKDAY_LABELS[(task.dueDate.getDay() + 6) % 7];
+    if (!weekAheadByDay.has(dayLabel)) weekAheadByDay.set(dayLabel, []);
+    weekAheadByDay.get(dayLabel)!.push({
+      label: task.label,
+      employeeName: task.employeeEvent.employee.firstName,
+    });
+  }
+  const weekAheadEntries = Array.from(weekAheadByDay.entries()).slice(0, 4);
+
+  // Météo RH et phrase de synthèse — jamais un chiffre brut, toujours
+  // une phrase qui dit directement ce qui compte.
+  const weatherEmoji = overdueCount > 0 ? "🔴" : soonCount > 0 ? "🟠" : "🟢";
+  let synthesis: string;
+  if (isEmpty) {
+    synthesis =
+      "Votre organisation est prête. Il vous reste quelques étapes pour profiter pleinement de RH Pilot.";
+  } else if (overdueCount > 0) {
+    synthesis = `${overdueCount} tâche${overdueCount > 1 ? "s" : ""} en retard nécessite${overdueCount > 1 ? "nt" : ""} votre attention.`;
+  } else if (soonCount > 0) {
+    synthesis = `${soonCount} échéance${soonCount > 1 ? "s" : ""} arrive${soonCount > 1 ? "nt" : ""} cette semaine.`;
+  } else {
+    synthesis = "Aucune échéance critique aujourd'hui. Tout est sous contrôle.";
+  }
+
+  const dayIndex = Math.floor(Date.now() / 86400000);
+  const todayTip = DID_YOU_KNOW_TIPS[dayIndex % DID_YOU_KNOW_TIPS.length];
+
+  const firstName = user!.firstName || user!.email.split("@")[0];
+  const todayLabel = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" }).format(
+    new Date()
+  );
+
   return (
-    <div className="max-w-4xl">
-      {isEmpty ? (
-        <Card className="border-brand-blue/20 bg-gradient-to-br from-brand-blue/[0.04] to-brand-violet/[0.04]">
+    <div className="max-w-5xl">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 data-tour="dashboard-attention" className="text-2xl font-semibold text-ink">
+            Bonjour {firstName} 👋
+          </h1>
+          <p className="mt-1 text-sm text-ink-soft">
+            <span className="mr-1.5">{weatherEmoji}</span>
+            {synthesis}
+          </p>
+        </div>
+        <p className="shrink-0 text-sm capitalize text-ink-faint">{todayLabel}</p>
+      </div>
+
+      {!allStepsDone && (
+        <Card className="mt-5 border-brand-blue/20 bg-gradient-to-br from-brand-blue/[0.04] to-brand-violet/[0.04]">
           <div className="flex items-start gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white shadow-sm">
               <Rocket size={20} className="text-brand-blue" />
             </span>
-            <div>
-              <h1 className="text-lg font-semibold text-ink">Votre espace RH Pilot est prêt.</h1>
+            <div className="flex-1">
+              <h2 className="text-base font-semibold text-ink">
+                {isEmpty ? "Votre espace RH Pilot est opérationnel." : "Votre espace RH Pilot prend forme."}
+              </h2>
               <p className="mt-1 text-sm text-ink-soft">
-                Commencez par ajouter votre premier salarié, ou explorez le logiciel pour voir
-                comment un événement RH devient un parcours complet.
+                Encore {onboardingSteps.length - doneStepsCount} étape
+                {onboardingSteps.length - doneStepsCount > 1 ? "s" : ""} pour profiter de toutes les
+                fonctionnalités.
               </p>
+              <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-surface-subtle">
+                <div
+                  className="h-full rounded-full bg-brand-gradient transition-all"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
               <div className="mt-4 flex flex-wrap gap-3">
-                <Link href="/dashboard/employees/new">
-                  <Button data-tour="add-employee">Ajouter un salarié</Button>
-                </Link>
-                <Link href="/dashboard/employees">
-                  <Button variant="secondary">Découvrir RH Pilot</Button>
-                </Link>
+                {employeeCount === 0 && (
+                  <Link href="/dashboard/employees/new">
+                    <Button data-tour="add-employee">Ajouter un salarié</Button>
+                  </Link>
+                )}
+                {membersInOrgCount === 1 && (
+                  <Link href="/dashboard/team">
+                    <Button variant="secondary">Inviter un collègue</Button>
+                  </Link>
+                )}
+                {isEmpty && (
+                  <Link href="/dashboard/employees">
+                    <Button variant="secondary">Découvrir RH Pilot</Button>
+                  </Link>
+                )}
               </div>
             </div>
           </div>
         </Card>
-      ) : (
-        <>
-          <h1 data-tour="dashboard-attention" className="text-2xl font-semibold text-ink">
-            Aujourd&apos;hui
-          </h1>
-          <p className="mt-1 text-sm text-ink-soft">Ce qui mérite votre attention, avant le reste.</p>
-        </>
       )}
 
-      {!allStepsDone && (
-        <Card className="mt-4">
-          <h2 className="text-sm font-semibold text-ink">Premiers pas</h2>
-          <ul className="mt-3 flex flex-col gap-2">
-            {onboardingSteps.map((step) => (
-              <li key={step.label} className="flex items-center gap-2 text-sm">
-                {step.done ? (
-                  <CheckCircle2 size={16} className="shrink-0 text-accent-teal" />
-                ) : (
-                  <Circle size={16} className="shrink-0 text-ink-faint" />
-                )}
-                <span className={step.done ? "text-ink-faint line-through" : "text-ink-soft"}>
-                  {step.label}
-                </span>
-              </li>
-            ))}
-          </ul>
+      <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Aujourd&apos;hui</p>
+          {flagged.length === 0 ? (
+            <div className="mt-3 flex items-center gap-2">
+              <CircleCheck size={18} className="text-accent-teal" />
+              <p className="text-sm text-ink-soft">Rien d&apos;urgent</p>
+            </div>
+          ) : (
+            <div className="mt-3">
+              <p className="flex items-center gap-2 text-sm text-ink">
+                <TriangleAlert size={16} className="text-accent-amber" />
+                {flagged.length} action{flagged.length > 1 ? "s" : ""} importante
+                {flagged.length > 1 ? "s" : ""}
+              </p>
+              <Link
+                href="/dashboard?view=tasks"
+                className="mt-2 inline-block text-xs font-medium text-brand-blue hover:underline"
+              >
+                Voir →
+              </Link>
+            </div>
+          )}
         </Card>
-      )}
 
-      {tip && (
-        <Card className="mt-4 flex items-start gap-2.5 border-brand-violet/20 bg-brand-violet/5">
-          <Sparkles size={16} className="mt-0.5 shrink-0 text-brand-violet" />
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-brand-violet">
-              RH Pilot vous conseille
-            </p>
-            <p className="mt-1 text-sm text-ink-soft">{tip}</p>
-          </div>
+        <Card>
+          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-ink-faint">
+            <CalendarDays size={13} /> Cette semaine
+          </p>
+          {weekAheadEntries.length === 0 ? (
+            <p className="mt-3 text-sm text-ink-soft">Aucune échéance.</p>
+          ) : (
+            <ul className="mt-3 flex flex-col gap-1.5">
+              {weekAheadEntries.map(([day, items]) => (
+                <li key={day} className="flex items-start gap-2 text-xs">
+                  <span className="w-7 shrink-0 font-medium text-ink-faint">{day}</span>
+                  <span className="text-ink-soft">
+                    {items[0].label} ({items[0].employeeName})
+                    {items.length > 1 && <> +{items.length - 1}</>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </Card>
-      )}
+
+        <Card className="border-brand-violet/20 bg-brand-violet/5">
+          <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-brand-violet">
+            <Sparkles size={13} /> RH Pilot vous conseille
+          </p>
+          <p className="mt-3 text-sm text-ink-soft">
+            {tip ?? "Aucun conseil aujourd'hui. Votre organisation est bien configurée."}
+          </p>
+        </Card>
+      </div>
 
       {!isEmpty && anomalies.length > 0 && (
-        <Card className="mt-6 border-brand-blue/20 bg-gradient-to-br from-brand-blue/[0.03] to-brand-violet/[0.03]">
+        <Card className="mt-5 border-brand-blue/20 bg-gradient-to-br from-brand-blue/[0.03] to-brand-violet/[0.03]">
           <div className="flex items-center gap-2">
             <Sparkles size={18} className="text-brand-blue" />
             <h2 className="text-sm font-semibold text-ink">Suggestions</h2>
@@ -389,16 +487,9 @@ export default async function DashboardPage({
         </Card>
       )}
 
-      {isEmpty ? (
-        <Card className="mt-6">
-          <p className="text-sm text-ink-soft">
-            Aucun événement RH en cours. Lorsque vous ajouterez un salarié ou déclencherez un
-            parcours, RH Pilot centralisera automatiquement toutes les échéances ici.
-          </p>
-        </Card>
-      ) : (
+      {!isEmpty && (
         <>
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
             <Card className="border-accent-rose/20">
               <p className="text-3xl font-semibold text-accent-rose">{overdueCount}</p>
               <p className="mt-1 text-xs font-medium text-ink-faint">en retard</p>
@@ -533,21 +624,28 @@ export default async function DashboardPage({
       )}
 
       {recentActivity.length > 0 && (
-        <Card className="mt-4">
+        <Card className="mt-5">
           <div className="flex items-center gap-2">
             <History size={16} className="text-ink-faint" />
             <h2 className="text-sm font-semibold text-ink">Activité récente</h2>
           </div>
-          <ul className="mt-3 flex flex-col divide-y divide-surface-border">
-            {recentActivity.map((entry) => {
+          <ul className="mt-4 flex flex-col">
+            {recentActivity.map((entry, index) => {
               const label = AUDIT_LABELS[entry.action]?.(entry.metadata) ?? entry.action;
+              const isLast = index === recentActivity.length - 1;
               return (
-                <li key={entry.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-                  <span className="text-ink-soft">{label}</span>
-                  <span className="shrink-0 text-xs text-ink-faint">
-                    {timeAgo(entry.createdAt)}
-                    {entry.actor && <> · {getUserDisplayName(entry.actor)}</>}
-                  </span>
+                <li key={entry.id} className="relative flex gap-3 pb-5 last:pb-0">
+                  {!isLast && (
+                    <span className="absolute left-[5px] top-3 h-full w-px bg-surface-border" />
+                  )}
+                  <span className="relative mt-1.5 h-[11px] w-[11px] shrink-0 rounded-full border-2 border-brand-blue bg-white" />
+                  <div className="flex-1">
+                    <p className="text-sm text-ink-soft">{label}</p>
+                    <p className="mt-0.5 text-xs text-ink-faint">
+                      {timeAgo(entry.createdAt)}
+                      {entry.actor && <> · {getUserDisplayName(entry.actor)}</>}
+                    </p>
+                  </div>
                 </li>
               );
             })}
@@ -555,22 +653,32 @@ export default async function DashboardPage({
         </Card>
       )}
 
-      <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Link href="/dashboard/employees">
-          <Card className="transition-colors hover:border-brand-blue/40" compact>
-            <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">Salariés</p>
-            <p className="mt-1 text-xl font-semibold text-ink">{employeeCount}</p>
-          </Card>
-        </Link>
-        <Link href="/dashboard/events">
-          <Card className="transition-colors hover:border-brand-blue/40" compact>
-            <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-              Parcours RH actifs
-            </p>
-            <p className="mt-1 text-xl font-semibold text-ink">{eventCount}</p>
-          </Card>
-        </Link>
-      </div>
+      {!isEmpty && (
+        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <Link href="/dashboard/employees">
+            <Card className="transition-colors hover:border-brand-blue/40" compact>
+              <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">Salariés</p>
+              <p className="mt-1 text-xl font-semibold text-ink">{employeeCount}</p>
+            </Card>
+          </Link>
+          <Link href="/dashboard/events">
+            <Card className="transition-colors hover:border-brand-blue/40" compact>
+              <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
+                Parcours RH actifs
+              </p>
+              <p className="mt-1 text-xl font-semibold text-ink">{eventCount}</p>
+            </Card>
+          </Link>
+        </div>
+      )}
+
+      <Card className="mt-5 flex items-start gap-2.5 bg-surface-subtle">
+        <Lightbulb size={16} className="mt-0.5 shrink-0 text-accent-amber" />
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Le saviez-vous ?</p>
+          <p className="mt-1 text-sm text-ink-soft">{todayTip}</p>
+        </div>
+      </Card>
     </div>
   );
 }
