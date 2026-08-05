@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Sparkles, Send, Info } from "lucide-react";
 import { Card } from "@/components/ui/Card";
@@ -32,7 +32,7 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
     askAboutOrganizationAction,
     undefined
   );
-  const inputRef = useRef<HTMLInputElement>(null);
+  const [question, setQuestion] = useState("");
 
   return (
     <Card className="mt-5 border-brand-violet/25 bg-gradient-to-br from-brand-violet/[0.04] to-brand-blue/[0.04]">
@@ -65,12 +65,13 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
 
       <form action={formAction} className="mt-3 flex gap-2">
         <Input
-          ref={inputRef}
           name="question"
           placeholder="Ex : Qui nécessite mon attention cette semaine ?"
           required
           maxLength={500}
           disabled={!aiEnabled}
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
           className="flex-1"
         />
         <SubmitButton disabled={!aiEnabled} />
@@ -83,12 +84,7 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
             key={suggestion}
             type="button"
             disabled={!aiEnabled}
-            onClick={() => {
-              if (inputRef.current) {
-                inputRef.current.value = suggestion;
-                inputRef.current.focus();
-              }
-            }}
+            onClick={() => setQuestion(suggestion)}
             className="rounded-full border border-brand-violet/20 bg-white px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-brand-violet/40 hover:text-brand-violet disabled:opacity-50"
           >
             {suggestion}
