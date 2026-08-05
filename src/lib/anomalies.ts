@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { daysUntil } from "@/lib/urgency";
-import { addDuration } from "@/lib/format";
+import { addDuration, formatDate, formatDuration } from "@/lib/format";
 
 export type AnomalySeverity = "critical" | "medium" | "low";
 
@@ -8,6 +8,10 @@ export type Anomaly = {
   key: string;
   severity: AnomalySeverity;
   message: string;
+  // Les faits précis qui ont mené à cette suggestion — jamais une
+  // explication générée, uniquement ce que le détecteur a réellement
+  // vérifié. Affiché au clic sur "Pourquoi cette suggestion ?".
+  reasoning: string[];
   action: {
     label: string;
     employeeId: string;
@@ -78,6 +82,12 @@ async function detectProbationEndingWithoutEvent(organizationId: string): Promis
         diff < 0
           ? `${employee.firstName} ${employee.lastName} a dépassé la fin de période d'essai prévue (il y a ${Math.abs(diff)} jour${Math.abs(diff) > 1 ? "s" : ""}) sans parcours déclenché.`
           : `${employee.firstName} ${employee.lastName} termine sa période d'essai dans ${diff} jour${diff > 1 ? "s" : ""}.`,
+      reasoning: [
+        `Embauché·e le ${formatDate(employee.hireDate)}.`,
+        `Durée de période d'essai renseignée : ${formatDuration(employee.probationDuration!, employee.probationDurationUnit!)}.`,
+        `Fin calculée : ${formatDate(endDate)}.`,
+        `Aucun parcours "Fin de période d'essai" n'a été déclenché pour cette personne.`,
+      ],
       action: {
         label: "Générer le parcours",
         employeeId: employee.id,
@@ -129,6 +139,11 @@ async function detectMissingOnboardingEvent(organizationId: string): Promise<Ano
       key: `onboarding-${employee.id}`,
       severity: "critical",
       message: `${employee.firstName} ${employee.lastName} a été embauché·e il y a ${daysSinceHire} jours sans qu'aucun parcours d'embauche n'ait été déclenché.`,
+      reasoning: [
+        `Date d'embauche : ${formatDate(employee.hireDate)} (il y a ${daysSinceHire} jours).`,
+        `Aucun parcours "Embauche" n'a été déclenché pour cette personne.`,
+        `Le seuil de vigilance est fixé à 7 jours après l'embauche.`,
+      ],
       action: {
         label: "Créer le parcours",
         employeeId: employee.id,
@@ -155,6 +170,7 @@ async function detectEmployeeWithoutManager(organizationId: string): Promise<Ano
     key: `no-manager-${employee.id}`,
     severity: "low",
     message: `${employee.firstName} ${employee.lastName} n'a pas de manager direct renseigné.`,
+    reasoning: [`Le champ "Manager direct" de sa fiche salarié est vide.`],
     action: null,
     link: { label: "Renseigner un manager", href: `/dashboard/employees/${employee.id}` },
   }));
@@ -177,13 +193,22 @@ async function detectEmployeeMissingContractInfo(organizationId: string): Promis
 
   return employees
     .filter((employee) => daysUntil(employee.hireDate) > -180)
-    .map((employee) => ({
-      key: `missing-contract-${employee.id}`,
-      severity: "low",
-      message: `${employee.firstName} ${employee.lastName} n'a pas de type de contrat ou de durée de période d'essai renseignés : les suggestions de fin de période d'essai ne peuvent pas être calculées pour cette personne.`,
-      action: null,
-      link: { label: "Compléter la fiche", href: `/dashboard/employees/${employee.id}` },
-    }));
+    .map((employee) => {
+      const missing: string[] = [];
+      if (!employee.contractType) missing.push(`Type de contrat non renseigné.`);
+      if (!employee.probationDuration) missing.push(`Durée de période d'essai non renseignée.`);
+      return {
+        key: `missing-contract-${employee.id}`,
+        severity: "low" as const,
+        message: `${employee.firstName} ${employee.lastName} n'a pas de type de contrat ou de durée de période d'essai renseignés : les suggestions de fin de période d'essai ne peuvent pas être calculées pour cette personne.`,
+        reasoning: [
+          `Embauché·e il y a moins de 6 mois (${formatDate(employee.hireDate)}).`,
+          ...missing,
+        ],
+        action: null,
+        link: { label: "Compléter la fiche", href: `/dashboard/employees/${employee.id}` },
+      };
+    });
 }
 
 /**
@@ -210,6 +235,11 @@ async function detectMedicalVisitNeverScheduled(organizationId: string): Promise
       key: `medical-visit-never-${employee.id}`,
       severity: "medium",
       message: `Aucune visite médicale n'a jamais été programmée pour ${employee.firstName} ${employee.lastName}, embauché·e il y a plus d'un an.`,
+      reasoning: [
+        `Embauché·e le ${formatDate(employee.hireDate)} (plus d'un an).`,
+        `Aucune date de prochaine visite médicale renseignée sur sa fiche.`,
+        `Aucun parcours "Visite médicale" n'a jamais été déclenché pour cette personne.`,
+      ],
       action: {
         label: "Générer le parcours",
         employeeId: employee.id,
@@ -241,6 +271,10 @@ async function detectMedicalVisitOverdue(organizationId: string): Promise<Anomal
       key: `medical-visit-overdue-${employee.id}`,
       severity: "critical",
       message: `La prochaine visite médicale de ${employee.firstName} ${employee.lastName} était prévue il y a ${Math.abs(diff)} jour${Math.abs(diff) > 1 ? "s" : ""}.`,
+      reasoning: [
+        `Date de prochaine visite médicale renseignée sur sa fiche : ${formatDate(employee.nextMedicalVisitDate)}.`,
+        `Cette date est aujourd'hui dépassée de ${Math.abs(diff)} jour${Math.abs(diff) > 1 ? "s" : ""}.`,
+      ],
       action: {
         label: "Générer le parcours",
         employeeId: employee.id,
@@ -278,6 +312,13 @@ async function detectContractEndingApproaching(organizationId: string): Promise<
         diff < 0
           ? `Le contrat de ${employee.firstName} ${employee.lastName} est arrivé à échéance il y a ${Math.abs(diff)} jour${Math.abs(diff) > 1 ? "s" : ""}.`
           : `Le contrat de ${employee.firstName} ${employee.lastName} arrive à échéance dans ${diff} jour${diff > 1 ? "s" : ""}.`,
+      reasoning: [
+        `Type de contrat : ${employee.contractType ?? "non renseigné"}.`,
+        `Date de fin de contrat renseignée : ${formatDate(employee.contractEndDate)}.`,
+        diff < 0
+          ? `Cette date est aujourd'hui dépassée de ${Math.abs(diff)} jour${Math.abs(diff) > 1 ? "s" : ""}.`
+          : `Le seuil de vigilance est fixé à 30 jours avant l'échéance.`,
+      ],
       action: null,
       link: { label: "Voir la fiche", href: `/dashboard/employees/${employee.id}` },
     });

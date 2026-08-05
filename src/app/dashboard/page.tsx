@@ -24,6 +24,7 @@ import { getAnomalies } from "@/lib/anomalies";
 import { triggerEventQuick } from "./events/actions";
 import { getUserDisplayName } from "@/lib/displayName";
 import { DidYouKnowCard } from "@/components/DidYouKnowCard";
+import { AnomalyReasoning } from "@/components/AnomalyReasoning";
 
 // Le tableau de bord change à chaque action (créer un parcours,
 // changer un statut...) — il ne doit jamais servir une version mise en
@@ -409,11 +410,16 @@ export default async function DashboardPage({
           </div>
           <ul className="mt-3 flex flex-col divide-y divide-surface-border">
             {visibleAnomalies.map((anomaly) => (
-              <li key={anomaly.key} className="flex items-center justify-between gap-4 py-3">
-                <p className="flex items-start gap-2 text-sm text-ink">
-                  <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${SEVERITY_DOT[anomaly.severity]}`} />
-                  {anomaly.message}
-                </p>
+              <li key={anomaly.key} className="flex items-start justify-between gap-4 py-3">
+                <div className="flex-1">
+                  <p className="flex items-start gap-2 text-sm text-ink">
+                    <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${SEVERITY_DOT[anomaly.severity]}`} />
+                    {anomaly.message}
+                  </p>
+                  <div className="pl-3.5">
+                    <AnomalyReasoning reasoning={anomaly.reasoning} />
+                  </div>
+                </div>
                 {anomaly.action && (
                   <form action={triggerEventQuick}>
                     <input type="hidden" name="employeeId" value={anomaly.action.employeeId} />
@@ -441,11 +447,16 @@ export default async function DashboardPage({
               </summary>
               <ul className="flex flex-col divide-y divide-surface-border border-t border-surface-border">
                 {hiddenAnomalies.map((anomaly) => (
-                  <li key={anomaly.key} className="flex items-center justify-between gap-4 py-3">
-                    <p className="flex items-start gap-2 text-sm text-ink">
-                      <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${SEVERITY_DOT[anomaly.severity]}`} />
-                      {anomaly.message}
-                    </p>
+                  <li key={anomaly.key} className="flex items-start justify-between gap-4 py-3">
+                    <div className="flex-1">
+                      <p className="flex items-start gap-2 text-sm text-ink">
+                        <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${SEVERITY_DOT[anomaly.severity]}`} />
+                        {anomaly.message}
+                      </p>
+                      <div className="pl-3.5">
+                        <AnomalyReasoning reasoning={anomaly.reasoning} />
+                      </div>
+                    </div>
                     {anomaly.action && (
                       <form action={triggerEventQuick}>
                         <input type="hidden" name="employeeId" value={anomaly.action.employeeId} />
