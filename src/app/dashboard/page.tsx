@@ -111,6 +111,7 @@ export default async function DashboardPage({
   const organizationId = memberships[0].organizationId;
   const organization = memberships[0].organization;
   const view = searchParams.view === "tasks" ? "tasks" : "employee";
+  const aiEnabled = Boolean(process.env.ANTHROPIC_API_KEY);
 
   const [
     employeeCount,
@@ -402,6 +403,8 @@ export default async function DashboardPage({
           </p>
         </Card>
       </div>
+
+      <AskAboutOrganization aiEnabled={aiEnabled} />
 
       {!isEmpty && anomalies.length > 0 && (
         <Card className="mt-5 border-brand-blue/20 bg-gradient-to-br from-brand-blue/[0.03] to-brand-violet/[0.03]">
@@ -725,8 +728,6 @@ export default async function DashboardPage({
           </Card>
         )}
       </div>
-
-      <AskAboutOrganization />
 
       <DidYouKnowCard />
     </div>
