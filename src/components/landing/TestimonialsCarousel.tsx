@@ -11,7 +11,7 @@ const TESTIMONIALS = [
   },
   {
     quote: "Les échéances liées à la paie, chaque fin de mois, mettent les équipes RH sous tension.",
-    role: "Chargé RH en alternance.",
+    role: "Chargée RH en alternance.",
   },
   {
     quote:
@@ -22,6 +22,12 @@ const TESTIMONIALS = [
     quote:
       "Il manquait parfois un simple rappel : une visite médicale, une pièce d'identité arrivée à expiration, ou un bon suivi après le recrutement.",
     role: "Assistant RH.",
+ {
+    quote:
+      "Certaines entreprises en auraient bien besoin...",
+    role: "Assistante RH.",
+  },
+
   },
 ];
 
