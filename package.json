@@ -15,6 +15,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0",
     "@clerk/localizations": "3.9.6",
     "@clerk/nextjs": "5.2.6",
     "@prisma/client": "5.17.0",
