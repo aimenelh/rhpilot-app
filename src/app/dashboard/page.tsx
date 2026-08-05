@@ -25,6 +25,7 @@ import { triggerEventQuick } from "./events/actions";
 import { getUserDisplayName } from "@/lib/displayName";
 import { DidYouKnowCard } from "@/components/DidYouKnowCard";
 import { AnomalyReasoning } from "@/components/AnomalyReasoning";
+import { AskAboutOrganization } from "@/components/AskAboutOrganization";
 
 // Le tableau de bord change à chaque action (créer un parcours,
 // changer un statut...) — il ne doit jamais servir une version mise en
@@ -724,6 +725,8 @@ export default async function DashboardPage({
           </Card>
         )}
       </div>
+
+      <AskAboutOrganization />
 
       <DidYouKnowCard />
     </div>
