@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Logomark, Wordmark } from "@/components/Brand";
 import { switchOrganization } from "../actions";
+import { InitializingScreen } from "@/components/InitializingScreen";
 import Link from "next/link";
 
 function ErrorScreen({ title, description }: { title: string; description: string }) {
@@ -70,13 +71,10 @@ export default async function JoinPage({ params }: { params: { token: string } }
   const user = await getCurrentUser();
   if (!user) {
     // Même écran d'attente que le tableau de bord dans ce cas rare
-    // (webhook Clerk pas encore synchronisé) — jamais une page cassée.
-    return (
-      <ErrorScreen
-        title="Initialisation de votre compte en cours"
-        description="Rechargez cette page dans un instant."
-      />
-    );
+    // (webhook Clerk pas encore synchronisé) — écran qui se
+    // rafraîchit tout seul plutôt que de demander à la personne de
+    // deviner quand recharger.
+    return <InitializingScreen />;
   }
 
   if (user.email.toLowerCase() !== invitation.email.toLowerCase()) {

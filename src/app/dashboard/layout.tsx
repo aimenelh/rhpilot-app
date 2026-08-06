@@ -5,6 +5,7 @@ import { getAnomalies } from "@/lib/anomalies";
 import { getUserDisplayName } from "@/lib/displayName";
 import { AppShell } from "@/components/AppShell";
 import { Logomark, Wordmark } from "@/components/Brand";
+import { InitializingScreen } from "@/components/InitializingScreen";
 
 export default async function DashboardLayout({
   children,
@@ -14,15 +15,10 @@ export default async function DashboardLayout({
   const { user, memberships } = await getCurrentMemberships();
 
   // Cas rare : le webhook Clerk n'a pas encore (ou plus) de
-  // correspondance. Écran d'attente sobre plutôt qu'une page cassée.
+  // correspondance. Écran d'attente qui se rafraîchit tout seul —
+  // jamais besoin de deviner quand recharger manuellement.
   if (!user) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-surface-subtle">
-        <p className="text-sm text-ink-soft">
-          Initialisation de votre compte en cours, réessayez dans un instant.
-        </p>
-      </div>
-    );
+    return <InitializingScreen />;
   }
 
   // Aucune organisation : pas de navigation à afficher tant qu'il n'y a
