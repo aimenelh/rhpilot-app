@@ -1,14 +1,10 @@
 import {
   Rocket,
   ArrowRight,
-  ChevronDown,
   Users,
   FileText,
   CalendarDays,
   ShieldCheck,
-  FlaskConical,
-  MessageCircleHeart,
-  Heart,
   LayoutDashboard,
   ListChecks,
   UserCircle,
@@ -17,24 +13,6 @@ import {
 import { Logomark } from "@/components/Brand";
 import { Button } from "@/components/ui/Button";
 import { acknowledgeWelcome } from "./actions";
-
-const POINTS = [
-  {
-    icon: FlaskConical,
-    title: "Déjà pleinement utilisable",
-    text: "Certaines fonctionnalités évolueront encore pendant la bêta.",
-  },
-  {
-    icon: MessageCircleHeart,
-    title: "Votre retour guide les prochaines évolutions",
-    text: "Une remarque, une incompréhension ou un bug nous aide à améliorer RH Pilot.",
-  },
-  {
-    icon: Heart,
-    title: "Utilisez RH Pilot naturellement",
-    text: "Pas besoin de « tout tester », faites comme dans votre quotidien.",
-  },
-];
 
 // Icônes décoratives en orbite autour du logo — purement illustratif,
 // reprend le même langage visuel que la landing page (halos, orbite).
@@ -237,58 +215,6 @@ export default function WelcomePage({
             </div>
           </div>
         </form>
-
-        <div className="absolute bottom-7 flex flex-col items-center gap-1.5 text-xs text-ink-faint">
-          <span>Faites défiler pour en savoir plus</span>
-          <ChevronDown size={16} className="animate-bounce" />
-        </div>
-      </section>
-
-      {/* ============================================================ SUITE */}
-      <section className="relative z-10 mx-auto max-w-lg px-6 pb-24">
-        <div className="welcome-card-in w-full rounded-2xl border border-surface-border bg-white p-8 text-center shadow-lg sm:p-10">
-          <h2 className="text-xl font-semibold text-ink">Avant de commencer</h2>
-
-          <ul className="mt-8 flex flex-col gap-6 text-left">
-            {POINTS.map((point, index) => (
-              <li key={index} className="flex items-start gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-blue/10 text-brand-blue">
-                  <point.icon size={15} />
-                </span>
-                <div className="pt-0.5">
-                  <p className="text-sm font-semibold text-ink">{point.title}</p>
-                  <p className="mt-0.5 text-sm leading-relaxed text-ink-soft">{point.text}</p>
-                </div>
-              </li>
-            ))}
-          </ul>
-
-          <div className="mt-9 border-t border-surface-border pt-7">
-            <p className="text-sm leading-relaxed text-ink-soft">
-              <span className="font-medium text-ink">Votre avis compte réellement.</span> Cette
-              bêta n&apos;a pas pour objectif de démontrer que RH Pilot est parfait. Elle a
-              pour objectif de construire le meilleur copilote RH possible avec ceux qui
-              l&apos;utiliseront demain.
-            </p>
-          </div>
-
-          <form action={acknowledgeWelcome} className="mt-7">
-            <input type="hidden" name="next" value={next} />
-            <Button type="submit" className="w-full py-3 text-base">
-              <span className="inline-flex items-center justify-center gap-2">
-                Découvrir RH Pilot
-                <ArrowRight size={18} />
-              </span>
-            </Button>
-            <p className="mt-2 text-xs text-ink-faint">≈ 2 minutes pour découvrir votre espace</p>
-          </form>
-        </div>
-
-        <p className="relative z-10 mt-8 max-w-sm text-center text-sm leading-relaxed text-ink-faint">
-          RH Pilot ne se construit pas seulement avec du code. Il se construit aussi grâce
-          aux professionnels RH qui prennent le temps de partager leur expérience. Merci
-          d&apos;en faire partie.
-        </p>
       </section>
     </div>
   );
