@@ -258,7 +258,7 @@ export default async function DashboardPage({
       ctaLabel: "Configurer maintenant",
       // TODO Aimen : vérifier que c'est bien la route de la page où se
       // configure la convention collective dans Configuration.
-      ctaHref: "/dashboard/configuration",
+      ctaHref: "/dashboard/configuration/organisation",
     };
   } else if (membersInOrgCount === 1) {
     tip = {
