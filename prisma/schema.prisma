@@ -42,6 +42,7 @@ model Organization {
   notifications  Notification[]
   invitations    Invitation[]
   taskTemplateOverrides TaskTemplateOverride[]
+  reminderRules         ReminderRule[]
 
   @@map("organizations")
 }
@@ -381,6 +382,28 @@ model Attachment {
 // dans l'application) ; les garder en scalaire simple évite la
 // complexité des clés composites pour une table qui n'est qu'un
 // historique de lecture.
+// Règle de relance automatique : "X jours avant l'échéance d'une
+// tâche, prévenir telle personne". Propre à chaque organisation —
+// jamais de valeur par défaut imposée à tout le monde. La logique
+// d'envoi vit dans src/lib/reminders.ts, déclenchée une fois par jour
+// par une tâche planifiée Vercel (voir vercel.json et
+// /api/cron/reminders).
+model ReminderRule {
+  id             String   @id @default(cuid())
+  organizationId String
+  daysBeforeDue  Int // ex : 7 → rappel envoyé 7 jours avant l'échéance
+  notifyAssignee Boolean  @default(true)
+  notifyManager  Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, daysBeforeDue])
+  @@index([organizationId])
+  @@map("reminder_rules")
+}
+
 model Notification {
   id                    String   @id @default(cuid())
   organizationId        String

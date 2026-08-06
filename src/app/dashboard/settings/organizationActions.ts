@@ -61,3 +61,54 @@ export async function revertTaskTemplateOverride(overrideId: string) {
 
   revalidatePath("/dashboard/configuration");
 }
+
+/**
+ * Crée une règle de relance automatique — "X jours avant l'échéance,
+ * prévenir telle personne". Sans effet tant qu'aucune règle n'est
+ * définie : aucune relance automatique n'est envoyée par défaut.
+ */
+export async function createReminderRule(formData: FormData) {
+  const membership = await getCurrentMembership();
+  if (!membership) throw new Error("Non authentifié ou aucune organisation active");
+  if (membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN") {
+    throw new Error("Seuls les propriétaires et administrateurs peuvent modifier ce réglage.");
+  }
+
+  const daysBeforeDue = Number(formData.get("daysBeforeDue"));
+  const notifyAssignee = formData.get("notifyAssignee") === "on";
+  const notifyManager = formData.get("notifyManager") === "on";
+
+  if (!Number.isInteger(daysBeforeDue) || daysBeforeDue < 0 || daysBeforeDue > 90) {
+    throw new Error("Le délai doit être un nombre de jours entre 0 et 90.");
+  }
+  if (!notifyAssignee && !notifyManager) {
+    throw new Error("Choisissez au moins un destinataire.");
+  }
+
+  const existing = await prisma.reminderRule.findFirst({
+    where: { organizationId: membership.organizationId, daysBeforeDue },
+  });
+  if (existing) {
+    throw new Error(`Une règle existe déjà pour ${daysBeforeDue} jour(s) avant l'échéance.`);
+  }
+
+  await prisma.reminderRule.create({
+    data: { organizationId: membership.organizationId, daysBeforeDue, notifyAssignee, notifyManager },
+  });
+
+  revalidatePath("/dashboard/configuration");
+}
+
+export async function deleteReminderRule(ruleId: string) {
+  const membership = await getCurrentMembership();
+  if (!membership) throw new Error("Non authentifié ou aucune organisation active");
+  if (membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN") {
+    throw new Error("Seuls les propriétaires et administrateurs peuvent modifier ce réglage.");
+  }
+
+  await prisma.reminderRule.deleteMany({
+    where: { id: ruleId, organizationId: membership.organizationId },
+  });
+
+  revalidatePath("/dashboard/configuration");
+}

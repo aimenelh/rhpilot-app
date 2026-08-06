@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select, FieldHint } from "@/components/ui/Field";
-import { updateConventionCollective, updateFunctionalRole, revertTaskTemplateOverride } from "../settings/organizationActions";
+import { updateConventionCollective, updateFunctionalRole, revertTaskTemplateOverride, createReminderRule, deleteReminderRule } from "../settings/organizationActions";
 
 export const dynamic = "force-dynamic";
 
@@ -49,7 +49,7 @@ export default async function ConfigurationPage() {
 
   const canEditOrganization = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
 
-  const [organization, eventTemplates, overrides] = await Promise.all([
+  const [organization, eventTemplates, overrides, reminderRules] = await Promise.all([
     prisma.organization.findUnique({ where: { id: membership.organizationId } }),
     prisma.eventTemplate.findMany({
       where: { archivedAt: null },
@@ -57,6 +57,10 @@ export default async function ConfigurationPage() {
       orderBy: { label: "asc" },
     }),
     prisma.taskTemplateOverride.findMany({ where: { organizationId: membership.organizationId } }),
+    prisma.reminderRule.findMany({
+      where: { organizationId: membership.organizationId },
+      orderBy: { daysBeforeDue: "desc" },
+    }),
   ]);
 
   const overrideByTaskTemplateId = new Map(overrides.map((o) => [o.taskTemplateId, o]));
@@ -222,6 +226,67 @@ export default async function ConfigurationPage() {
           </p>
         </div>
       </div>
+
+      {canEditOrganization && (
+        <Card className="mt-8">
+          <h2 className="text-sm font-semibold text-ink">Relances automatiques</h2>
+          <p className="mt-1 text-sm text-ink-soft">
+            Sans règle définie, aucune relance automatique n&apos;est envoyée — seuls les
+            résumés programmés depuis Notifications continuent de fonctionner normalement.
+            Ajoutez une règle pour prévenir la personne assignée (et/ou son manager) un
+            certain nombre de jours avant chaque échéance.
+          </p>
+
+          {reminderRules.length > 0 && (
+            <ul className="mt-4 flex flex-col divide-y divide-surface-border">
+              {reminderRules.map((rule) => (
+                <li key={rule.id} className="flex items-center justify-between gap-3 py-2.5">
+                  <p className="text-sm text-ink">
+                    <strong>{rule.daysBeforeDue} jour{rule.daysBeforeDue > 1 ? "s" : ""}</strong>{" "}
+                    avant l&apos;échéance, prévenir{" "}
+                    {rule.notifyAssignee && rule.notifyManager
+                      ? "la personne assignée et son manager"
+                      : rule.notifyAssignee
+                        ? "la personne assignée"
+                        : "le manager de la personne assignée"}
+                  </p>
+                  <form action={deleteReminderRule.bind(null, rule.id)}>
+                    <Button type="submit" variant="secondary" className="shrink-0 text-xs">
+                      Supprimer
+                    </Button>
+                  </form>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <form action={createReminderRule} className="mt-4 flex flex-wrap items-end gap-3">
+            <div>
+              <Label htmlFor="daysBeforeDue">Jours avant l&apos;échéance</Label>
+              <Input
+                id="daysBeforeDue"
+                name="daysBeforeDue"
+                type="number"
+                min={0}
+                max={90}
+                required
+                className="w-28"
+              />
+            </div>
+            <label className="flex items-center gap-1.5 pb-2.5 text-sm text-ink-soft">
+              <input type="checkbox" name="notifyAssignee" defaultChecked />
+              Assigné
+            </label>
+            <label className="flex items-center gap-1.5 pb-2.5 text-sm text-ink-soft">
+              <input type="checkbox" name="notifyManager" />
+              Manager
+            </label>
+            <Button type="submit" className="text-sm">
+              Ajouter la règle
+            </Button>
+          </form>
+        </Card>
+      )}
 
       <Card className="mt-8">
         <h2 className="text-sm font-semibold text-ink">Export de vos données</h2>
