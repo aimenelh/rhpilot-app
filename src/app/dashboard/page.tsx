@@ -440,7 +440,7 @@ export default async function DashboardPage({
         </Card>
       </div>
 
-      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="mt-5 grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
         <div className={!isEmpty && anomalies.length > 0 ? "lg:col-span-2" : "lg:col-span-3"}>
           <AskAboutOrganization aiEnabled={aiEnabled} />
         </div>

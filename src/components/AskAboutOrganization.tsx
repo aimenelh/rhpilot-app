@@ -3,16 +3,13 @@
 import { useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Sparkles, Send, Info, CheckCheck } from "lucide-react";
+import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Field";
 import { Logomark } from "@/components/Brand";
 import { askAboutOrganizationAction, type AskAboutOrganizationState } from "@/app/dashboard/aiActions";
 
-const SUGGESTIONS = [
-  "Qui risque un oubli administratif ?",
-  "Quels dossiers sont incomplets ?",
-  "Quels contrats arrivent bientôt à échéance ?",
-];
+const SUGGESTION_QUESTIONS = ["Qui est en retard ?", "Quels sont les parcours à risque ?", "Quelles échéances cette semaine ?"];
 
 type Message = { role: "user" | "assistant"; text: string; time: string };
 
@@ -134,7 +131,7 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        {SUGGESTIONS.map((suggestion) => (
+        {SUGGESTION_QUESTIONS.map((suggestion) => (
           <button
             key={suggestion}
             type="button"
@@ -145,6 +142,12 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
             {suggestion}
           </button>
         ))}
+        <Link
+          href="/dashboard/calendar"
+          className="rounded-full border border-brand-violet/20 bg-white px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-brand-violet/40 hover:text-brand-violet"
+        >
+          Voir le calendrier
+        </Link>
       </div>
 
       <form action={formAction} className="mt-3 flex gap-2">
