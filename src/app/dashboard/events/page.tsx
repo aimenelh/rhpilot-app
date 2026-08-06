@@ -4,6 +4,7 @@ import { TriangleAlert, Clock, CircleCheck } from "lucide-react";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
@@ -45,7 +46,14 @@ export default async function EventsPage({
 
   return (
     <div className="max-w-4xl">
-      <h1 className="text-2xl font-semibold text-ink">Parcours RH actifs</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold text-ink">Parcours RH actifs</h1>
+        <Link href="/dashboard/events/bulk-trigger" className="shrink-0">
+          <Button variant="secondary" className="text-sm">
+            Déclencher en masse
+          </Button>
+        </Link>
+      </div>
       <p className="mt-1 text-sm text-ink-soft">
         RH Pilot génère un plan d&apos;action complet pour chaque événement, mais chaque
         entreprise s&apos;organise à sa façon : ajoutez une étape ou changez l&apos;ordre
