@@ -1,4 +1,19 @@
-import { Rocket, FlaskConical, MessageCircleHeart, Heart, ArrowRight, ListChecks, BellRing } from "lucide-react";
+import {
+  Rocket,
+  ArrowRight,
+  ChevronDown,
+  Users,
+  FileText,
+  CalendarDays,
+  ShieldCheck,
+  FlaskConical,
+  MessageCircleHeart,
+  Heart,
+  LayoutDashboard,
+  ListChecks,
+  UserCircle,
+  Settings,
+} from "lucide-react";
 import { Logomark } from "@/components/Brand";
 import { Button } from "@/components/ui/Button";
 import { acknowledgeWelcome } from "./actions";
@@ -21,6 +36,35 @@ const POINTS = [
   },
 ];
 
+// Icônes décoratives en orbite autour du logo — purement illustratif,
+// reprend le même langage visuel que la landing page (halos, orbite).
+const ORBIT_ICONS = [
+  { icon: Users, top: "14%", left: "10%", tone: "bg-brand-violet/10 text-brand-violet" },
+  { icon: FileText, top: "14%", left: "90%", tone: "bg-accent-amber/10 text-accent-amber" },
+  { icon: CalendarDays, top: "86%", left: "9%", tone: "bg-accent-teal/10 text-accent-teal" },
+  { icon: ShieldCheck, top: "86%", left: "91%", tone: "bg-brand-blue/10 text-brand-blue" },
+];
+
+// Contenu de l'aperçu produit — décoratif et volontairement schématique
+// (comme les mini-cartes déjà présentes sur cette page), jamais présenté
+// comme un vrai relevé de données.
+const PREVIEW_NAV = [
+  { icon: LayoutDashboard, label: "Tableau de bord", active: true },
+  { icon: Users, label: "Salariés" },
+  { icon: ListChecks, label: "Parcours" },
+  { icon: CalendarDays, label: "Calendrier" },
+  { icon: UserCircle, label: "Équipe" },
+  { icon: Settings, label: "Configuration" },
+];
+const PREVIEW_KPIS = [
+  { icon: Users, value: "12", label: "Salariés", tone: "bg-brand-violet/10 text-brand-violet" },
+  { icon: ListChecks, value: "8", label: "Parcours actifs", tone: "bg-accent-teal/10 text-accent-teal" },
+  { icon: CalendarDays, value: "15", label: "Échéances", tone: "bg-accent-amber/10 text-accent-amber" },
+  { icon: ShieldCheck, value: "100%", label: "À jour", tone: "bg-brand-blue/10 text-brand-blue" },
+];
+const PREVIEW_ROWS = ["bg-brand-blue", "bg-accent-teal", "bg-accent-amber"];
+const PREVIEW_DAYS = [28, 29, 30, 1, 2, 3, 4];
+
 export default function WelcomePage({
   searchParams,
 }: {
@@ -29,74 +73,183 @@ export default function WelcomePage({
   const next = searchParams.next || "/";
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-surface-subtle via-white to-brand-blue/5 px-6 py-16">
-      <div
-        aria-hidden
-        className="welcome-shape-1 pointer-events-none absolute h-72 w-72 rounded-full bg-brand-blue/10 blur-3xl"
-        style={{ top: "8%", left: "6%" }}
-      />
-      <div
-        aria-hidden
-        className="welcome-shape-2 pointer-events-none absolute h-64 w-64 rounded-full bg-brand-violet/10 blur-3xl"
-        style={{ bottom: "10%", right: "8%" }}
-      />
-      <div
-        aria-hidden
-        className="welcome-shape-1 pointer-events-none absolute h-40 w-40 rounded-full bg-accent-teal/10 blur-2xl"
-        style={{ top: "55%", left: "16%" }}
-      />
+    <div className="bg-gradient-to-br from-surface-subtle via-white to-brand-blue/5">
+      {/* ============================================================ HERO */}
+      <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-20">
+        <div
+          aria-hidden
+          className="welcome-shape-1 pointer-events-none absolute h-72 w-72 rounded-full bg-brand-blue/10 blur-3xl"
+          style={{ top: "4%", left: "4%" }}
+        />
+        <div
+          aria-hidden
+          className="welcome-shape-2 pointer-events-none absolute h-64 w-64 rounded-full bg-brand-violet/10 blur-3xl"
+          style={{ bottom: "6%", right: "6%" }}
+        />
+        <div
+          aria-hidden
+          className="welcome-shape-1 pointer-events-none absolute h-40 w-40 rounded-full bg-accent-teal/10 blur-2xl"
+          style={{ top: "45%", left: "2%" }}
+        />
+        <div
+          aria-hidden
+          className="welcome-shape-2 pointer-events-none absolute h-40 w-40 rounded-full bg-accent-amber/10 blur-2xl"
+          style={{ top: "40%", right: "2%" }}
+        />
 
-      <div
-        aria-hidden
-        className="welcome-shape-2 pointer-events-none absolute hidden w-48 rounded-xl border border-ink/10 bg-white/10 px-4 py-3 opacity-[0.12] backdrop-blur-sm sm:block"
-        style={{ top: "16%", right: "14%", transform: "rotate(-6deg)" }}
-      >
-        <div className="flex items-center gap-2">
-          <ListChecks size={14} className="text-ink" />
-          <div className="h-2 w-24 rounded bg-ink" />
-        </div>
-      </div>
-      <div
-        aria-hidden
-        className="welcome-shape-1 pointer-events-none absolute hidden w-40 rounded-xl border border-ink/10 bg-white/10 px-4 py-3 opacity-[0.12] backdrop-blur-sm sm:block"
-        style={{ bottom: "18%", left: "12%", transform: "rotate(5deg)" }}
-      >
-        <div className="flex items-center gap-2">
-          <BellRing size={14} className="text-ink" />
-          <div className="h-2 w-20 rounded bg-ink" />
-        </div>
-      </div>
+        <form action={acknowledgeWelcome} className="relative z-10 flex w-full flex-col items-center">
+          <input type="hidden" name="next" value={next} />
 
-      <div className="relative z-10 flex w-full max-w-lg flex-col items-center">
-        <div className="welcome-logo-float relative mb-10">
-          <div
-            aria-hidden
-            className="absolute inset-0 -z-10 scale-[2.2] rounded-full bg-brand-gradient opacity-20 blur-2xl"
-          />
-          <div className="flex h-24 w-24 items-center justify-center rounded-[1.75rem] bg-white shadow-xl">
-            <Logomark size={48} />
+          {/* Logo en orbite */}
+          <div className="relative h-56 w-full max-w-xl sm:h-64">
+            <svg
+              aria-hidden
+              viewBox="0 0 100 100"
+              preserveAspectRatio="none"
+              className="pointer-events-none absolute inset-0 h-full w-full text-brand-violet/15"
+            >
+              <ellipse cx="50" cy="50" rx="46" ry="42" fill="none" stroke="currentColor" strokeWidth="0.4" strokeDasharray="1.6 2.2" />
+            </svg>
+            <span aria-hidden className="absolute left-[24%] top-[6%] h-1.5 w-1.5 rotate-45 rounded-[2px] bg-brand-violet/40" />
+            <span aria-hidden className="absolute right-[26%] top-[10%] h-2 w-2 rotate-45 rounded-[2px] bg-brand-blue/30" />
+            <span aria-hidden className="absolute bottom-[10%] left-[30%] h-1.5 w-1.5 rounded-full bg-accent-teal/40" />
+            <span aria-hidden className="absolute bottom-[6%] right-[28%] h-2 w-2 rotate-45 rounded-[2px] bg-accent-amber/40" />
+
+            {ORBIT_ICONS.map(({ icon: Icon, top, left, tone }, i) => (
+              <div
+                key={i}
+                className="absolute flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white shadow-lg"
+                style={{ top, left }}
+              >
+                <span className={`flex h-9 w-9 items-center justify-center rounded-full ${tone}`}>
+                  <Icon size={17} />
+                </span>
+              </div>
+            ))}
+
+            <div className="welcome-logo-float absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+              <div
+                aria-hidden
+                className="absolute inset-0 -z-10 scale-[2.4] rounded-full bg-brand-gradient opacity-25 blur-2xl"
+              />
+              <div className="flex h-24 w-24 items-center justify-center rounded-[1.75rem] bg-white shadow-xl">
+                <Logomark size={48} />
+              </div>
+              <span className="absolute -right-1 -top-1 flex h-4 w-4">
+                <span className="absolute inline-flex h-full w-full animate-ping welcome-pulse-dot rounded-full bg-brand-violet opacity-60" />
+                <span className="relative inline-flex h-4 w-4 rounded-full bg-brand-violet" />
+              </span>
+            </div>
           </div>
-          <span className="absolute -right-1 -top-1 flex h-4 w-4">
-            <span className="absolute inline-flex h-full w-full animate-ping welcome-pulse-dot rounded-full bg-brand-violet opacity-60" />
-            <span className="relative inline-flex h-4 w-4 rounded-full bg-brand-violet" />
-          </span>
-        </div>
 
-        <div className="welcome-card-in w-full rounded-2xl border border-surface-border bg-white p-8 text-center shadow-lg sm:p-10">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-semibold text-brand-blue">
+          <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-brand-violet/10 px-3 py-1 text-xs font-semibold text-brand-violet">
             <Rocket size={13} />
-            Bienvenue dans la bêta
+            Bêta
           </span>
 
-          <h1 className="mt-5 text-2xl font-semibold leading-tight text-ink sm:text-[28px]">
-            Merci d&apos;être parmi les premiers à tester RH Pilot.
+          <h1 className="mt-5 max-w-2xl text-center text-4xl font-bold leading-tight text-ink sm:text-5xl">
+            Bienvenue sur la bêta de{" "}
+            <span className="bg-brand-gradient bg-clip-text text-transparent">RH Pilot</span>
           </h1>
 
-          <p className="mt-4 text-sm font-medium text-brand-blue">
-            Votre regard aujourd&apos;hui contribuera directement aux évolutions de demain.
+          <p className="mt-4 max-w-xl text-center text-base leading-relaxed text-ink-soft">
+            Nous sommes ravis de vous compter parmi les premiers à tester RH Pilot. Votre
+            retour nous aidera à construire le meilleur copilote RH.
           </p>
 
-          <ul className="mt-10 flex flex-col gap-6 text-left">
+          <Button type="submit" className="mt-8 px-8 py-3.5 text-base">
+            <span className="inline-flex items-center justify-center gap-2">
+              Découvrir RH Pilot
+              <ArrowRight size={18} />
+            </span>
+          </Button>
+
+          {/* Aperçu produit — décoratif */}
+          <div
+            aria-hidden
+            className="welcome-card-in mt-14 flex w-full max-w-3xl overflow-hidden rounded-2xl border border-surface-border bg-white shadow-2xl"
+          >
+            <div className="hidden w-40 shrink-0 border-r border-surface-border bg-surface-subtle/50 p-4 sm:block">
+              <div className="flex items-center gap-1.5">
+                <Logomark size={16} />
+                <span className="text-xs font-bold text-ink">RH Pilot</span>
+              </div>
+              <div className="mt-5 flex flex-col gap-0.5">
+                {PREVIEW_NAV.map((item) => (
+                  <div
+                    key={item.label}
+                    className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] ${
+                      item.active ? "bg-white font-medium text-brand-blue shadow-sm" : "text-ink-faint"
+                    }`}
+                  >
+                    <item.icon size={12} />
+                    {item.label}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex-1 p-5 text-left">
+              <p className="text-sm font-bold text-ink">Bonjour Aïmen 👋</p>
+
+              <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+                {PREVIEW_KPIS.map((kpi) => (
+                  <div key={kpi.label} className="rounded-lg border border-surface-border p-2.5">
+                    <span className={`flex h-6 w-6 items-center justify-center rounded-md ${kpi.tone}`}>
+                      <kpi.icon size={12} />
+                    </span>
+                    <p className="mt-1.5 text-sm font-bold text-ink">{kpi.value}</p>
+                    <p className="text-[9px] text-ink-faint">{kpi.label}</p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div className="rounded-lg border border-surface-border p-3">
+                  <p className="text-[10px] font-semibold text-ink">Échéances à venir</p>
+                  <div className="mt-2 flex flex-col gap-2">
+                    {PREVIEW_ROWS.map((color, i) => (
+                      <div key={i} className="flex items-center gap-1.5">
+                        <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${color}`} />
+                        <span className="h-1.5 flex-1 rounded-full bg-surface-subtle" />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="rounded-lg border border-surface-border p-3">
+                  <p className="text-[10px] font-semibold text-ink">Calendrier</p>
+                  <p className="text-[9px] text-ink-faint">Mai 2026</p>
+                  <div className="mt-1.5 grid grid-cols-7 gap-y-1 text-center text-[8px] text-ink-faint">
+                    {["L", "M", "M", "J", "V", "S", "D"].map((d, i) => (
+                      <span key={i}>{d}</span>
+                    ))}
+                    {PREVIEW_DAYS.map((d, i) => (
+                      <span
+                        key={i}
+                        className={i === 3 ? "mx-auto flex h-3.5 w-3.5 items-center justify-center rounded-full bg-brand-blue text-white" : ""}
+                      >
+                        {d}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </form>
+
+        <div className="absolute bottom-7 flex flex-col items-center gap-1.5 text-xs text-ink-faint">
+          <span>Faites défiler pour en savoir plus</span>
+          <ChevronDown size={16} className="animate-bounce" />
+        </div>
+      </section>
+
+      {/* ============================================================ SUITE */}
+      <section className="relative z-10 mx-auto max-w-lg px-6 pb-24">
+        <div className="welcome-card-in w-full rounded-2xl border border-surface-border bg-white p-8 text-center shadow-lg sm:p-10">
+          <h2 className="text-xl font-semibold text-ink">Avant de commencer</h2>
+
+          <ul className="mt-8 flex flex-col gap-6 text-left">
             {POINTS.map((point, index) => (
               <li key={index} className="flex items-start gap-3">
                 <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-blue/10 text-brand-blue">
@@ -136,7 +289,7 @@ export default function WelcomePage({
           aux professionnels RH qui prennent le temps de partager leur expérience. Merci
           d&apos;en faire partie.
         </p>
-      </div>
+      </section>
     </div>
   );
 }
