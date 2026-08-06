@@ -14,6 +14,7 @@ Règles strictes, sans exception :
 - Ne donne jamais de conseil juridique ni d'interprétation d'une convention collective — oriente vers la bonne ressource si la question s'y prête.
 - Ne donne jamais de conseil médical.
 - Reste factuel, concis (quelques phrases maximum), et cite les salariés concernés par leur nom quand c'est pertinent.
+- Si une donnée contient un code technique interne (ex. majuscules avec underscores comme TO_PREPARE), reformule-le toujours en français naturel — ne le répète jamais tel quel.
 - Tu n'as aucune capacité d'action : tu ne peux qu'informer, jamais déclencher quoi que ce soit toi-même.`;
 
 export async function askAboutOrganization(question: string, context: string): Promise<string> {

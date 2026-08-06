@@ -5,6 +5,17 @@ import { prisma } from "@/lib/prisma";
 import { askAboutOrganization } from "@/lib/ai";
 import { formatDate } from "@/lib/format";
 
+// Traduction des statuts techniques Prisma vers un français lisible —
+// sans ça, l'IA répète les codes bruts ("TO_PREPARE") tels quels dans ses réponses.
+const STATUS_LABELS: Record<string, string> = {
+  TO_PREPARE: "à préparer",
+  TODO: "à faire",
+  IN_PROGRESS: "en cours",
+  WAITING_EXTERNAL: "en attente d'un tiers externe",
+  DONE: "terminée",
+  CANCELLED: "annulée",
+};
+
 export type SummarizeMonthState = { summary: string; error: string } | undefined;
 
 export async function summarizeMonthAction(
@@ -41,7 +52,7 @@ export async function summarizeMonthAction(
 
   const lines = tasks.map(
     (t) =>
-      `- ${formatDate(t.dueDate)} : ${t.label} (${t.employeeEvent.eventTemplate?.label ?? "Événement"}) pour ${t.employeeEvent.employee.firstName} ${t.employeeEvent.employee.lastName}, statut : ${t.status}`
+      `- ${formatDate(t.dueDate)} : ${t.label} (${t.employeeEvent.eventTemplate?.label ?? "Événement"}) pour ${t.employeeEvent.employee.firstName} ${t.employeeEvent.employee.lastName}, statut : ${STATUS_LABELS[t.status] ?? t.status}`
   );
 
   try {

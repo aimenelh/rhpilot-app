@@ -12,6 +12,17 @@ import { formatDate, formatDuration, addDuration } from "@/lib/format";
 const MAX_EMPLOYEES_IN_CONTEXT = 60;
 const MAX_UPCOMING_TASKS_IN_CONTEXT = 30;
 
+// Traduction des statuts techniques Prisma vers un français lisible —
+// sans ça, l'IA répète les codes bruts ("TO_PREPARE") tels quels dans ses réponses.
+const STATUS_LABELS: Record<string, string> = {
+  TO_PREPARE: "à préparer",
+  TODO: "à faire",
+  IN_PROGRESS: "en cours",
+  WAITING_EXTERNAL: "en attente d'un tiers externe",
+  DONE: "terminée",
+  CANCELLED: "annulée",
+};
+
 async function buildContext(organizationId: string): Promise<string> {
   const [employees, anomalies, upcomingTasks] = await Promise.all([
     prisma.employee.findMany({
@@ -48,7 +59,7 @@ async function buildContext(organizationId: string): Promise<string> {
   const anomalyLines = anomalies.map((a) => `- [${a.severity}] ${a.message}`);
 
   const taskLines = upcomingTasks.map(
-    (t) => `- ${t.label} pour ${t.employeeEvent.employee.firstName} ${t.employeeEvent.employee.lastName}, échéance le ${formatDate(t.dueDate)} (statut : ${t.status})`
+    (t) => `- ${t.label} pour ${t.employeeEvent.employee.firstName} ${t.employeeEvent.employee.lastName}, échéance le ${formatDate(t.dueDate)} (statut : ${STATUS_LABELS[t.status] ?? t.status})`
   );
 
   return [
