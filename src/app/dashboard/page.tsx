@@ -97,6 +97,42 @@ function timeAgo(date: Date): string {
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(date);
 }
 
+// Une seule définition de ligne de suggestion, réutilisée pour les
+// suggestions visibles et celles repliées sous "Voir plus" — évite un
+// copier-coller à faire diverger accidentellement entre les deux.
+type Anomaly = Awaited<ReturnType<typeof getAnomalies>>[number];
+
+function AnomalyRow({ anomaly, severityDot }: { anomaly: Anomaly; severityDot: Record<string, string> }) {
+  return (
+    <li className="py-3 first:pt-0">
+      <p className="flex items-start gap-2 text-sm text-ink">
+        <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${severityDot[anomaly.severity]}`} />
+        {anomaly.message}
+      </p>
+      <div className="pl-3.5">
+        <AnomalyReasoning reasoning={anomaly.reasoning} />
+      </div>
+      {anomaly.action && (
+        <form action={triggerEventQuick} className="mt-2 pl-3.5">
+          <input type="hidden" name="employeeId" value={anomaly.action.employeeId} />
+          <input type="hidden" name="eventTemplateKey" value={anomaly.action.eventTemplateKey} />
+          <input type="hidden" name="triggerDate" value={anomaly.action.triggerDate} />
+          <Button type="submit" variant="secondary" className="w-full text-xs">
+            {anomaly.action.label}
+          </Button>
+        </form>
+      )}
+      {anomaly.link && (
+        <Link href={anomaly.link.href} className="mt-2 block pl-3.5">
+          <Button variant="secondary" type="button" className="w-full text-xs">
+            {anomaly.link.label}
+          </Button>
+        </Link>
+      )}
+    </li>
+  );
+}
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -211,7 +247,7 @@ export default async function DashboardPage({
     return a.earliestDue.getTime() - b.earliestDue.getTime();
   });
 
-  const SUGGESTIONS_LIMIT = 8;
+  const SUGGESTIONS_LIMIT = 3;
   const visibleAnomalies = anomalies.slice(0, SUGGESTIONS_LIMIT);
   const hiddenAnomalies = anomalies.slice(SUGGESTIONS_LIMIT);
   const hiddenAnomaliesCount = hiddenAnomalies.length;
@@ -404,87 +440,45 @@ export default async function DashboardPage({
         </Card>
       </div>
 
-      <AskAboutOrganization aiEnabled={aiEnabled} />
+      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className={!isEmpty && anomalies.length > 0 ? "lg:col-span-2" : "lg:col-span-3"}>
+          <AskAboutOrganization aiEnabled={aiEnabled} />
+        </div>
 
-      {!isEmpty && anomalies.length > 0 && (
-        <Card className="mt-5 border-brand-blue/20 bg-gradient-to-br from-brand-blue/[0.03] to-brand-violet/[0.03]">
-          <div className="flex items-center gap-2">
-            <Sparkles size={18} className="text-brand-blue" />
-            <h2 className="text-sm font-semibold text-ink">Suggestions</h2>
-          </div>
-          <ul className="mt-3 flex flex-col divide-y divide-surface-border">
-            {visibleAnomalies.map((anomaly) => (
-              <li key={anomaly.key} className="flex items-start justify-between gap-4 py-3">
-                <div className="flex-1">
-                  <p className="flex items-start gap-2 text-sm text-ink">
-                    <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${SEVERITY_DOT[anomaly.severity]}`} />
-                    {anomaly.message}
-                  </p>
-                  <div className="pl-3.5">
-                    <AnomalyReasoning reasoning={anomaly.reasoning} />
-                  </div>
-                </div>
-                {anomaly.action && (
-                  <form action={triggerEventQuick}>
-                    <input type="hidden" name="employeeId" value={anomaly.action.employeeId} />
-                    <input type="hidden" name="eventTemplateKey" value={anomaly.action.eventTemplateKey} />
-                    <input type="hidden" name="triggerDate" value={anomaly.action.triggerDate} />
-                    <Button type="submit" variant="secondary" className="shrink-0">
-                      {anomaly.action.label}
-                    </Button>
-                  </form>
-                )}
-                {anomaly.link && (
-                  <Link href={anomaly.link.href} className="shrink-0">
-                    <Button variant="secondary" type="button">
-                      {anomaly.link.label}
-                    </Button>
-                  </Link>
-                )}
-              </li>
-            ))}
-          </ul>
-          {hiddenAnomaliesCount > 0 && (
-            <details className="mt-1">
-              <summary className="cursor-pointer py-2 text-sm font-medium text-brand-blue">
-                Afficher {hiddenAnomaliesCount} suggestion{hiddenAnomaliesCount > 1 ? "s" : ""} de plus
-              </summary>
-              <ul className="flex flex-col divide-y divide-surface-border border-t border-surface-border">
-                {hiddenAnomalies.map((anomaly) => (
-                  <li key={anomaly.key} className="flex items-start justify-between gap-4 py-3">
-                    <div className="flex-1">
-                      <p className="flex items-start gap-2 text-sm text-ink">
-                        <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${SEVERITY_DOT[anomaly.severity]}`} />
-                        {anomaly.message}
-                      </p>
-                      <div className="pl-3.5">
-                        <AnomalyReasoning reasoning={anomaly.reasoning} />
-                      </div>
-                    </div>
-                    {anomaly.action && (
-                      <form action={triggerEventQuick}>
-                        <input type="hidden" name="employeeId" value={anomaly.action.employeeId} />
-                        <input type="hidden" name="eventTemplateKey" value={anomaly.action.eventTemplateKey} />
-                        <input type="hidden" name="triggerDate" value={anomaly.action.triggerDate} />
-                        <Button type="submit" variant="secondary" className="shrink-0">
-                          {anomaly.action.label}
-                        </Button>
-                      </form>
-                    )}
-                    {anomaly.link && (
-                      <Link href={anomaly.link.href} className="shrink-0">
-                        <Button variant="secondary" type="button">
-                          {anomaly.link.label}
-                        </Button>
-                      </Link>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </details>
-          )}
-        </Card>
-      )}
+        {!isEmpty && anomalies.length > 0 && (
+          <Card className="h-full lg:col-span-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles size={16} className="text-brand-blue" />
+                <h2 className="text-sm font-semibold text-ink">Suggestions IA</h2>
+              </div>
+              <span className="rounded-full bg-brand-blue/10 px-2 py-0.5 text-xs font-semibold text-brand-blue">
+                {anomalies.length}
+              </span>
+            </div>
+
+            <ul className="mt-2 flex flex-col divide-y divide-surface-border">
+              {visibleAnomalies.map((anomaly) => (
+                <AnomalyRow key={anomaly.key} anomaly={anomaly} severityDot={SEVERITY_DOT} />
+              ))}
+            </ul>
+
+            {hiddenAnomaliesCount > 0 && (
+              <details className="mt-1">
+                <summary className="cursor-pointer py-2 text-xs font-medium text-brand-blue">
+                  Voir les {hiddenAnomaliesCount} autre{hiddenAnomaliesCount > 1 ? "s" : ""} suggestion
+                  {hiddenAnomaliesCount > 1 ? "s" : ""}
+                </summary>
+                <ul className="flex flex-col divide-y divide-surface-border border-t border-surface-border">
+                  {hiddenAnomalies.map((anomaly) => (
+                    <AnomalyRow key={anomaly.key} anomaly={anomaly} severityDot={SEVERITY_DOT} />
+                  ))}
+                </ul>
+              </details>
+            )}
+          </Card>
+        )}
+      </div>
 
       {!isEmpty && (
         <>

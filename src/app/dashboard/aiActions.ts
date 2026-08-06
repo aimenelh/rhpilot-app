@@ -74,31 +74,32 @@ async function buildContext(organizationId: string): Promise<string> {
   ].join("\n");
 }
 
-export type AskAboutOrganizationState = { answer: string; error: string } | undefined;
+export type AskAboutOrganizationState = { question: string; answer: string; error: string } | undefined;
 
 export async function askAboutOrganizationAction(
   _prevState: AskAboutOrganizationState,
   formData: FormData
 ): Promise<AskAboutOrganizationState> {
   const membership = await getCurrentMembership();
-  if (!membership) return { answer: "", error: "Non authentifié ou aucune organisation active." };
+  if (!membership) return { question: "", answer: "", error: "Non authentifié ou aucune organisation active." };
 
   const question = String(formData.get("question") ?? "").trim();
-  if (!question) return { answer: "", error: "Veuillez poser une question." };
+  if (!question) return { question: "", answer: "", error: "Veuillez poser une question." };
   if (question.length > 500) {
-    return { answer: "", error: "Question trop longue (500 caractères maximum)." };
+    return { question, answer: "", error: "Question trop longue (500 caractères maximum)." };
   }
 
   try {
     const context = await buildContext(membership.organizationId);
     const answer = await askAboutOrganization(question, context);
-    return { answer, error: "" };
+    return { question, answer, error: "" };
   } catch (err) {
     // Ne jamais renvoyer le message d'erreur brut de l'API à
     // l'écran — un vrai souci de clé/quota ne doit jamais s'afficher
     // en anglais technique à un utilisateur RH.
     console.error("Erreur askAboutOrganizationAction:", err);
     return {
+      question,
       answer: "",
       error:
         err instanceof Error && err.message.includes("ANTHROPIC_API_KEY")
