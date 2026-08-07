@@ -22,6 +22,7 @@ import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import { AttentionPreview } from "@/components/landing/AttentionPreview";
 import { MessyPreview } from "@/components/landing/MessyPreview";
 import { Reveal } from "@/components/landing/Reveal";
+import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
 
 const QUOTES = [
   "« Je pensais que c'était toi. »",
@@ -100,7 +101,8 @@ const UPCOMING_NEEDS = [
 
 export default function WhyPage() {
   return (
-    <div className="min-h-screen bg-surface-subtle">
+    <div className="min-h-screen">
+      <AmbientNetwork />
       <MarketingHeader />
 
       {/* Bloc 1 — Titre */}
@@ -119,7 +121,7 @@ export default function WhyPage() {
       </section>
 
       {/* Bloc 2 — Le problème, en peu de mots */}
-      <section className="border-y border-surface-border bg-white py-16">
+      <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
         <div className="mx-auto grid max-w-5xl grid-cols-1 items-center gap-10 px-6 md:grid-cols-2">
           <Reveal>
             <div>
@@ -175,7 +177,7 @@ export default function WhyPage() {
       </section>
 
       {/* Bloc 4 — Notre philosophie */}
-      <section className="border-y border-surface-border bg-white py-16">
+      <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
         <div className="mx-auto max-w-5xl px-6">
           <Reveal>
             <div className="text-center">
@@ -292,7 +294,7 @@ export default function WhyPage() {
 
         {/* Schéma terrain → produit, dans un fond léger pour qu'il respire */}
         <Reveal>
-          <div className="mx-auto mt-10 max-w-lg rounded-2xl border border-brand-blue/10 bg-brand-blue/[0.03] px-8 py-8">
+          <div className="mx-auto mt-10 max-w-lg rounded-2xl border border-brand-blue/10 bg-brand-blue/[0.03] px-8 py-8 backdrop-blur-sm">
             <div className="flex flex-col items-center gap-2">
               <Reveal>
                 <div className="flex flex-col items-center gap-1.5 text-center">
@@ -324,7 +326,7 @@ export default function WhyPage() {
         <div className="mt-10 flex flex-col gap-2">
           {NEEDS_TO_FEATURES.map((item, index) => (
             <Reveal key={item.need} delay={index * 100}>
-              <div className="flex flex-col items-center gap-3 rounded-xl border border-surface-border bg-white p-4 sm:flex-row">
+              <div className="flex flex-col items-center gap-3 rounded-xl border border-surface-border bg-white/85 p-4 backdrop-blur-sm sm:flex-row">
                 <div className="flex flex-1 items-center gap-3">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-subtle text-ink-faint">
                     <item.icon size={16} />
@@ -389,7 +391,7 @@ export default function WhyPage() {
       </section>
 
       {/* Bloc 8 — D'où vient RH Pilot */}
-      <section className="border-t border-surface-border bg-white py-16">
+      <section className="relative border-t border-surface-border bg-white/70 py-16 backdrop-blur-sm">
         <Reveal>
           <div className="mx-auto max-w-2xl px-6 text-center">
             <h2 className="text-2xl font-semibold text-ink">D&apos;où vient RH Pilot</h2>
