@@ -4,24 +4,19 @@ import { ArrowLeft } from "lucide-react";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
-
 export const dynamic = "force-dynamic";
-
 const ACCESS_ROLE_LABELS: Record<string, string> = {
   OWNER: "Propriétaire",
   ADMIN: "Administrateur",
   MEMBER: "Membre",
 };
-
 export default async function AboutConfigPage() {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
-
   const organization = await prisma.organization.findUnique({
     where: { id: membership.organizationId },
     select: { conventionCollective: true },
   });
-
   return (
     <div className="max-w-3xl">
       <Link
@@ -30,12 +25,10 @@ export default async function AboutConfigPage() {
       >
         <ArrowLeft size={14} /> Configuration
       </Link>
-
       <h1 className="mt-3 text-2xl font-semibold text-ink">À propos</h1>
       <p className="mt-1 text-sm text-ink-soft">
         Informations sur votre espace RH Pilot.
       </p>
-
       <Card className="mt-6">
         <h2 className="text-sm font-semibold text-ink">Votre espace</h2>
         <dl className="mt-3 flex flex-col gap-2.5 text-sm">
@@ -57,7 +50,6 @@ export default async function AboutConfigPage() {
           </div>
         </dl>
       </Card>
-
       <Card className="mt-4">
         <h2 className="text-sm font-semibold text-ink">Ressources</h2>
         <div className="mt-3 flex flex-col gap-2 text-sm">
@@ -75,7 +67,6 @@ export default async function AboutConfigPage() {
           </Link>
         </div>
       </Card>
-
       <p className="mt-6 text-xs text-ink-faint">
         RH Pilot est actuellement en version bêta gratuite. Les informations d&apos;abonnement
         apparaîtront ici lors du passage en version payante.

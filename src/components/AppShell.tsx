@@ -19,6 +19,7 @@ import { Logomark, Wordmark } from "./Brand";
 import { FlashToast } from "./ui/FlashToast";
 import { Assistant } from "./assistant/Assistant";
 import { TourGuide } from "./tour/TourGuide";
+import { GlobalSearch } from "./GlobalSearch";
 
 type NavItem = {
   href: string;
@@ -122,11 +123,12 @@ export function AppShell({
       </aside>
 
       <div className="flex flex-1 flex-col">
-        <header className="flex h-16 items-center justify-between border-b border-surface-border bg-white px-8">
-          <div>
+        <header className="flex h-16 items-center justify-between gap-6 border-b border-surface-border bg-white px-8">
+          <div className="shrink-0">
             <p className="text-sm font-semibold text-ink">{organizationName}</p>
             <p className="text-xs text-ink-faint">Rôle d&apos;accès : {accessRole}</p>
           </div>
+          <GlobalSearch />
           <UserButton afterSignOutUrl="/sign-in" />
         </header>
 

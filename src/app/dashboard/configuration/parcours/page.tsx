@@ -7,15 +7,11 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { revertTaskTemplateOverride } from "../../settings/organizationActions";
-
 export const dynamic = "force-dynamic";
-
 export default async function ParcoursConfigPage() {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
-
   const canEditOrganization = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
-
   const [eventTemplates, overrides] = await Promise.all([
     prisma.eventTemplate.findMany({
       where: { archivedAt: null },
@@ -24,9 +20,7 @@ export default async function ParcoursConfigPage() {
     }),
     prisma.taskTemplateOverride.findMany({ where: { organizationId: membership.organizationId } }),
   ]);
-
   const overrideByTaskTemplateId = new Map(overrides.map((o) => [o.taskTemplateId, o]));
-
   return (
     <div className="max-w-3xl">
       <Link
@@ -35,20 +29,17 @@ export default async function ParcoursConfigPage() {
       >
         <ArrowLeft size={14} /> Configuration
       </Link>
-
       <h1 className="mt-3 text-2xl font-semibold text-ink">Parcours RH</h1>
       <p className="mt-1 text-sm text-ink-soft">
         RH Pilot propose une base pour chaque type d&apos;événement, jamais imposée : chaque
         étape peut être adaptée à votre façon de travailler, directement depuis un parcours
         déjà généré.
       </p>
-
       <div className="mt-6 flex flex-col gap-4">
         {eventTemplates.map((eventTemplate) => {
           const templateOverrideCount = eventTemplate.taskTemplates.filter((t) =>
             overrideByTaskTemplateId.has(t.id)
           ).length;
-
           return (
             <Card key={eventTemplate.id}>
               <div className="flex items-center justify-between">
@@ -65,7 +56,6 @@ export default async function ParcoursConfigPage() {
                   </Badge>
                 )}
               </div>
-
               <ul className="mt-4 flex flex-col divide-y divide-surface-border">
                 {eventTemplate.taskTemplates.map((taskTemplate) => {
                   const override = overrideByTaskTemplateId.get(taskTemplate.id);
@@ -110,7 +100,6 @@ export default async function ParcoursConfigPage() {
           );
         })}
       </div>
-
       <div className="mt-4 flex items-start gap-2.5 rounded-lg bg-brand-blue/5 px-4 py-3 text-sm text-ink-soft">
         <Sparkles size={16} className="mt-0.5 shrink-0 text-brand-blue" />
         <p>

@@ -19,6 +19,7 @@ export async function updateConventionCollective(formData: FormData) {
   });
 
   revalidatePath("/dashboard/configuration");
+  revalidatePath("/dashboard/configuration/organisation");
   revalidatePath("/dashboard/employees");
   revalidatePath("/dashboard/events");
 }
@@ -44,6 +45,7 @@ export async function updateFunctionalRole(formData: FormData) {
   });
 
   revalidatePath("/dashboard/configuration");
+  revalidatePath("/dashboard/configuration/organisation");
 }
 
 /**
@@ -60,6 +62,7 @@ export async function revertTaskTemplateOverride(overrideId: string) {
   });
 
   revalidatePath("/dashboard/configuration");
+  revalidatePath("/dashboard/configuration/parcours");
 }
 
 /**
@@ -97,6 +100,7 @@ export async function createReminderRule(formData: FormData) {
   });
 
   revalidatePath("/dashboard/configuration");
+  revalidatePath("/dashboard/configuration/notifications");
 }
 
 export async function deleteReminderRule(ruleId: string) {
@@ -111,4 +115,5 @@ export async function deleteReminderRule(ruleId: string) {
   });
 
   revalidatePath("/dashboard/configuration");
+  revalidatePath("/dashboard/configuration/notifications");
 }

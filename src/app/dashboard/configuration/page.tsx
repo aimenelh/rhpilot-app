@@ -5,13 +5,10 @@ import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-
 export const dynamic = "force-dynamic";
-
 export default async function ConfigurationPage() {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
-
   const [organization, eventTemplateCount, overrideCount, reminderRuleCount] = await Promise.all([
     prisma.organization.findUnique({
       where: { id: membership.organizationId },
@@ -21,9 +18,7 @@ export default async function ConfigurationPage() {
     prisma.taskTemplateOverride.count({ where: { organizationId: membership.organizationId } }),
     prisma.reminderRule.count({ where: { organizationId: membership.organizationId } }),
   ]);
-
   const organizationSectionIncomplete = !membership.functionalRole || !organization?.conventionCollective;
-
   return (
     <div className="max-w-4xl">
       <h1 className="text-2xl font-semibold text-ink">Configuration</h1>
@@ -31,9 +26,7 @@ export default async function ConfigurationPage() {
         Gérez les paramètres de votre espace RH Pilot. Personnalisez votre organisation, vos
         parcours, vos notifications et vos données.
       </p>
-
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
-        {/* Organisation */}
         <Link href="/dashboard/configuration/organisation">
           <Card className="h-full transition-colors hover:border-brand-blue/30">
             <div className="flex items-start justify-between gap-3">
@@ -65,8 +58,6 @@ export default async function ConfigurationPage() {
             )}
           </Card>
         </Link>
-
-        {/* Parcours RH */}
         <Link href="/dashboard/configuration/parcours">
           <Card className="h-full transition-colors hover:border-brand-blue/30">
             <div className="flex items-start justify-between gap-3">
@@ -95,8 +86,6 @@ export default async function ConfigurationPage() {
             </div>
           </Card>
         </Link>
-
-        {/* Notifications */}
         <Link href="/dashboard/configuration/notifications">
           <Card className="h-full transition-colors hover:border-brand-blue/30">
             <div className="flex items-start justify-between gap-3">
@@ -126,9 +115,6 @@ export default async function ConfigurationPage() {
             </ul>
           </Card>
         </Link>
-
-        {/* Données — pas de sous-page : les boutons sont déjà l'action finale,
-            inutile d'ajouter un clic pour y accéder */}
         <Card className="h-full">
           <div className="flex items-start gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-amber/10 text-accent-amber">
@@ -159,9 +145,6 @@ export default async function ConfigurationPage() {
             </Button>
           </div>
         </Card>
-
-        {/* Sécurité — n'existe pas encore : affiché honnêtement comme à venir,
-            jamais un lien vers une page qui n'a rien derrière */}
         <Card className="h-full opacity-60">
           <div className="flex items-start gap-3">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ink-faint/10 text-ink-faint">
@@ -178,8 +161,6 @@ export default async function ConfigurationPage() {
             Bientôt disponible
           </span>
         </Card>
-
-        {/* À propos */}
         <Link href="/dashboard/configuration/a-propos">
           <Card className="h-full transition-colors hover:border-brand-blue/30">
             <div className="flex items-start justify-between gap-3">
