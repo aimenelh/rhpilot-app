@@ -40,7 +40,7 @@ export function TestimonialsCarousel() {
 
   return (
     <div className="mx-auto max-w-2xl">
-      <div className="min-h-[220px] rounded-2xl border border-surface-border bg-white p-8 shadow-sm sm:p-10">
+      <div className="min-h-[220px] rounded-2xl border border-surface-border bg-white/80 p-8 shadow-sm backdrop-blur-md sm:p-10">
         {isConclusion ? (
           <div className="text-center">
            <p className="text-base leading-relaxed text-ink">

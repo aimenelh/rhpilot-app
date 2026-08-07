@@ -8,6 +8,7 @@ import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import { Reveal } from "@/components/landing/Reveal";
 import { StoryStep1, StoryStep2, StoryStep3 } from "@/components/landing/StorySteps";
 import { TestimonialsCarousel } from "@/components/landing/TestimonialsCarousel";
+import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
 
 const BENEFITS = [
   {
@@ -38,7 +39,8 @@ const BENEFITS = [
 
 export function LandingPage() {
   return (
-    <div className="min-h-screen bg-surface-subtle">
+    <div className="min-h-screen">
+      <AmbientNetwork />
       <MarketingHeader />
 
       <section className="relative overflow-hidden">
@@ -92,7 +94,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="border-y border-surface-border bg-white py-16">
+      <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
         <div className="mx-auto max-w-2xl px-6">
           <Reveal>
             <h2 className="text-center text-2xl font-semibold text-ink">
@@ -134,46 +136,57 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-4xl px-6 py-14">
+      <section className="relative mx-auto max-w-4xl px-6 py-16">
         <Reveal>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-            <div className="rounded-2xl border border-surface-border bg-white p-8 text-center shadow-sm transition-shadow duration-300 hover:shadow-md">
-              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-blue/10 text-brand-blue">
-                <BarChart3 size={22} />
-              </span>
-              <p className="mt-4 text-4xl font-semibold text-brand-blue">45%</p>
-              <p className="mt-2 text-sm text-ink-soft">
+          <div className="relative grid grid-cols-1 gap-12 sm:grid-cols-2 sm:gap-0">
+            <div
+              aria-hidden
+              className="absolute left-1/2 top-1/2 hidden h-28 w-px -translate-x-1/2 -translate-y-1/2 bg-gradient-to-b from-transparent via-surface-border to-transparent sm:block"
+            />
+            <span
+              aria-hidden
+              className="absolute left-1/2 top-1/2 hidden h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-brand-blue/50 sm:block"
+            />
+
+            <div className="text-center sm:pr-12 sm:text-right">
+              <p className="flex items-baseline justify-center gap-2 sm:justify-end">
+                <BarChart3 size={18} className="text-brand-blue/50" />
+                <span className="text-6xl font-bold tracking-tight text-ink">
+                  45<span className="text-brand-blue">%</span>
+                </span>
+              </p>
+              <p className="mt-3 text-sm text-ink-soft">
                 des salariés français travaillent dans une TPE ou une PME.
               </p>
-              <p className="mt-1 text-sm font-medium text-ink">
+              <p className="mt-1.5 text-sm font-medium text-brand-blue">
                 → RH Pilot a été pensé pour elles.
               </p>
-              <p className="mt-3 text-xs text-ink-faint">
-                Source : Insee (TPE-PME, micro-entreprises incluses)
-              </p>
+              <p className="mt-4 text-[11px] text-ink-faint">Insee</p>
             </div>
-            <div className="rounded-2xl border border-surface-border bg-white p-8 text-center shadow-sm transition-shadow duration-300 hover:shadow-md">
-              <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-violet/10 text-brand-violet">
-                <Timer size={22} />
-              </span>
-              <p className="mt-4 text-4xl font-semibold text-brand-blue">60%</p>
-              <p className="mt-2 text-sm text-ink-soft">
+
+            <div className="text-center sm:pl-12 sm:text-left">
+              <p className="flex items-baseline justify-center gap-2 sm:justify-start">
+                <Timer size={18} className="text-brand-violet/50" />
+                <span className="text-6xl font-bold tracking-tight text-ink">
+                  60<span className="text-brand-violet">%</span>
+                </span>
+              </p>
+              <p className="mt-3 text-sm text-ink-soft">
                 des RH passent au moins la moitié de leur journée sur des tâches
                 administratives.
               </p>
-              <p className="mt-1 text-sm font-medium text-ink">
-                → RH Pilot ne fait pas ce travail à leur place. Il veille simplement à ce
-                que rien ne soit oublié.
+              <p className="mt-1.5 text-sm font-medium text-brand-violet">
+                → RH Pilot veille simplement à ce que rien ne soit oublié.
               </p>
-              <p className="mt-3 text-xs text-ink-faint">
-                Source : Baromètre RH au quotidien, Éditions Tissot / PayFit, 2026
+              <p className="mt-4 text-[11px] text-ink-faint">
+                Baromètre RH au quotidien, Éditions Tissot / PayFit, 2026
               </p>
             </div>
           </div>
         </Reveal>
       </section>
 
-      <section className="border-y border-surface-border bg-white py-16">
+      <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
         <div className="mx-auto max-w-2xl px-6">
           <Reveal>
             <div className="text-center">
