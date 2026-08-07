@@ -12,6 +12,11 @@ export type Anomaly = {
   // explication générée, uniquement ce que le détecteur a réellement
   // vérifié. Affiché au clic sur "Pourquoi cette suggestion ?".
   reasoning: string[];
+  // Ce qui se passe concrètement si rien n'est fait — jamais une
+  // menace vague, toujours un fait vérifiable (une date qui passe,
+  // une possibilité qui se ferme). Absent quand il n'y a pas de vraie
+  // conséquence distincte du message lui-même.
+  consequence?: string;
   action: {
     label: string;
     employeeId: string;
@@ -88,6 +93,10 @@ async function detectProbationEndingWithoutEvent(organizationId: string): Promis
         `Fin calculée : ${formatDate(endDate)}.`,
         `Aucun parcours "Fin de période d'essai" n'a été déclenché pour cette personne.`,
       ],
+      consequence:
+        diff < 0
+          ? "Cette suggestion reste signalée en critique tant qu'aucun parcours n'est déclenché."
+          : "Sans action, cette suggestion passera en critique une fois la date dépassée.",
       action: {
         label: "Générer le parcours",
         employeeId: employee.id,
@@ -144,6 +153,8 @@ async function detectMissingOnboardingEvent(organizationId: string): Promise<Ano
         `Aucun parcours "Embauche" n'a été déclenché pour cette personne.`,
         `Le seuil de vigilance est fixé à 7 jours après l'embauche.`,
       ],
+      consequence:
+        "Le parcours ne se génère jamais automatiquement rétroactivement : sans déclenchement, ces tâches ne seront jamais créées pour cette personne.",
       action: {
         label: "Créer le parcours",
         employeeId: employee.id,
@@ -205,6 +216,8 @@ async function detectEmployeeMissingContractInfo(organizationId: string): Promis
           `Embauché·e il y a moins de 6 mois (${formatDate(employee.hireDate)}).`,
           ...missing,
         ],
+        consequence:
+          "Tant que ces champs restent vides, RH Pilot ne peut calculer ni alerter sur la fin de période d'essai de cette personne.",
         action: null,
         link: { label: "Compléter la fiche", href: `/dashboard/employees/${employee.id}` },
       };
@@ -240,6 +253,8 @@ async function detectMedicalVisitNeverScheduled(organizationId: string): Promise
         `Aucune date de prochaine visite médicale renseignée sur sa fiche.`,
         `Aucun parcours "Visite médicale" n'a jamais été déclenché pour cette personne.`,
       ],
+      consequence:
+        "Sans date renseignée, RH Pilot ne peut jamais vous alerter automatiquement sur cette échéance à l'avenir.",
       action: {
         label: "Générer le parcours",
         employeeId: employee.id,
@@ -275,6 +290,7 @@ async function detectMedicalVisitOverdue(organizationId: string): Promise<Anomal
         `Date de prochaine visite médicale renseignée sur sa fiche : ${formatDate(employee.nextMedicalVisitDate)}.`,
         `Cette date est aujourd'hui dépassée de ${Math.abs(diff)} jour${Math.abs(diff) > 1 ? "s" : ""}.`,
       ],
+      consequence: "Cette suggestion reste signalée en critique tant qu'aucune nouvelle date n'est renseignée.",
       action: {
         label: "Générer le parcours",
         employeeId: employee.id,
@@ -319,6 +335,8 @@ async function detectContractEndingApproaching(organizationId: string): Promise<
           ? `Cette date est aujourd'hui dépassée de ${Math.abs(diff)} jour${Math.abs(diff) > 1 ? "s" : ""}.`
           : `Le seuil de vigilance est fixé à 30 jours avant l'échéance.`,
       ],
+      consequence:
+        "Cette suggestion reste affichée tant que le contrat n'est ni renouvelé, ni requalifié, ni le salarié archivé.",
       action: null,
       link: { label: "Voir la fiche", href: `/dashboard/employees/${employee.id}` },
     });
@@ -341,6 +359,24 @@ const DETECTORS: AnomalyDetector[] = [
 ];
 
 export async function getAnomalies(organizationId: string): Promise<Anomaly[]> {
-  const results = await Promise.all(DETECTORS.map((detector) => detector(organizationId)));
-  return results.flat().sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
+  const [results, dismissals] = await Promise.all([
+    Promise.all(DETECTORS.map((detector) => detector(organizationId))),
+    prisma.anomalyDismissal.findMany({ where: { organizationId } }),
+  ]);
+
+  const now = new Date();
+  // Une clé écartée définitivement (jamais de snoozedUntil) reste
+  // masquée tant que la situation qui la génère ne change pas — elle
+  // disparaît naturellement d'elle-même le jour où les vraies données
+  // changent, puisque la clé elle-même en dépend. Une clé reportée
+  // (snoozedUntil renseigné) réapparaît automatiquement une fois la
+  // date passée.
+  const hiddenKeys = new Set(
+    dismissals.filter((d) => !d.snoozedUntil || d.snoozedUntil > now).map((d) => d.anomalyKey)
+  );
+
+  return results
+    .flat()
+    .filter((anomaly) => !hiddenKeys.has(anomaly.key))
+    .sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
 }

@@ -22,6 +22,7 @@ import { Button } from "@/components/ui/Button";
 import { formatRelativeDueDate, isOverdue } from "@/lib/urgency";
 import { getAnomalies } from "@/lib/anomalies";
 import { triggerEventQuick } from "./events/actions";
+import { dismissAnomaly } from "./anomalyActions";
 import { getUserDisplayName } from "@/lib/displayName";
 import { DidYouKnowCard } from "@/components/DidYouKnowCard";
 import { AnomalyReasoning } from "@/components/AnomalyReasoning";
@@ -92,24 +93,39 @@ function AnomalyRow({ anomaly, severityDot }: { anomaly: Anomaly; severityDot: R
       </p>
       <div className="pl-3.5">
         <AnomalyReasoning reasoning={anomaly.reasoning} />
+        {anomaly.consequence && (
+          <p className="mt-1 text-xs italic text-ink-faint">{anomaly.consequence}</p>
+        )}
       </div>
-      {anomaly.action && (
-        <form action={triggerEventQuick} className="mt-2 pl-3.5">
-          <input type="hidden" name="employeeId" value={anomaly.action.employeeId} />
-          <input type="hidden" name="eventTemplateKey" value={anomaly.action.eventTemplateKey} />
-          <input type="hidden" name="triggerDate" value={anomaly.action.triggerDate} />
-          <Button type="submit" variant="secondary" className="w-full text-xs">
-            {anomaly.action.label}
-          </Button>
+      <div className="mt-2 flex items-center gap-2 pl-3.5">
+        {anomaly.action && (
+          <form action={triggerEventQuick} className="flex-1">
+            <input type="hidden" name="employeeId" value={anomaly.action.employeeId} />
+            <input type="hidden" name="eventTemplateKey" value={anomaly.action.eventTemplateKey} />
+            <input type="hidden" name="triggerDate" value={anomaly.action.triggerDate} />
+            <Button type="submit" variant="secondary" className="w-full text-xs">
+              {anomaly.action.label}
+            </Button>
+          </form>
+        )}
+        {anomaly.link && (
+          <Link href={anomaly.link.href} className="flex-1">
+            <Button variant="secondary" type="button" className="w-full text-xs">
+              {anomaly.link.label}
+            </Button>
+          </Link>
+        )}
+        <form action={dismissAnomaly.bind(null, anomaly.key, "later")}>
+          <button type="submit" className="whitespace-nowrap text-xs text-ink-faint hover:text-ink-soft">
+            Plus tard
+          </button>
         </form>
-      )}
-      {anomaly.link && (
-        <Link href={anomaly.link.href} className="mt-2 block pl-3.5">
-          <Button variant="secondary" type="button" className="w-full text-xs">
-            {anomaly.link.label}
-          </Button>
-        </Link>
-      )}
+        <form action={dismissAnomaly.bind(null, anomaly.key, "ignore")}>
+          <button type="submit" className="whitespace-nowrap text-xs text-ink-faint hover:text-accent-rose">
+            Ignorer
+          </button>
+        </form>
+      </div>
     </li>
   );
 }

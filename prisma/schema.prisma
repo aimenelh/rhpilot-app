@@ -43,6 +43,7 @@ model Organization {
   invitations    Invitation[]
   taskTemplateOverrides TaskTemplateOverride[]
   reminderRules         ReminderRule[]
+  anomalyDismissals     AnomalyDismissal[]
 
   @@map("organizations")
 }
@@ -81,6 +82,7 @@ model User {
 
   memberships       Membership[]
   auditLogs         AuditLog[]
+  anomalyDismissals AnomalyDismissal[]
   sentNotifications Notification[]
 
   @@map("users")
@@ -422,6 +424,29 @@ model Notification {
 
   @@index([organizationId, sentAt])
   @@map("notifications")
+}
+
+// Mémorise qu'un utilisateur a choisi "Ignorer" ou "Plus tard" sur
+// une suggestion précise — les suggestions elles-mêmes ne sont jamais
+// stockées (recalculées à chaque affichage à partir des vraies
+// données), donc c'est ce modèle qui porte la seule vraie décision
+// humaine à retenir. `snoozedUntil` vide = ignorée définitivement pour
+// cette clé précise ; renseigné = réapparaît automatiquement après
+// cette date.
+model AnomalyDismissal {
+  id             String    @id @default(cuid())
+  organizationId String
+  anomalyKey     String // même valeur que Anomaly.key (ex: "probation-abc123")
+  snoozedUntil   DateTime?
+  dismissedByUserId String?
+  createdAt      DateTime  @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  dismissedBy  User?        @relation(fields: [dismissedByUserId], references: [id], onDelete: SetNull)
+
+  @@unique([organizationId, anomalyKey])
+  @@index([organizationId])
+  @@map("anomaly_dismissals")
 }
 
 model AuditLog {
