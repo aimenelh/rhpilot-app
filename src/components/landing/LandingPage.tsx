@@ -94,7 +94,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
+      <section className="relative py-16">
         <div className="mx-auto max-w-4xl px-6">
           <Reveal>
             <h2 className="text-center text-2xl font-semibold text-ink">
@@ -156,7 +156,7 @@ export function LandingPage() {
         </Reveal>
       </section>
 
-      <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
+      <section className="relative py-16">
         <div className="mx-auto max-w-2xl px-6">
           <Reveal>
             <div className="text-center">
