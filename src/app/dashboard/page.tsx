@@ -380,20 +380,18 @@ export default async function DashboardPage({
           </p>
         </Card>
       </div>
-      <div className="mt-5 grid grid-cols-1 items-start gap-4 lg:grid-cols-3">
-        <div className={!isEmpty && anomalies.length > 0 ? "lg:col-span-2" : "lg:col-span-3"}>
+      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className={`self-start lg:sticky lg:top-4 ${!isEmpty && anomalies.length > 0 ? "lg:col-span-2" : "lg:col-span-3"}`}>
           <AskAboutOrganization aiEnabled={aiEnabled} />
         </div>
         {!isEmpty && anomalies.length > 0 && (
-          <Card className="h-full lg:col-span-1">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles size={16} className="text-brand-blue" />
-                <h2 className="text-sm font-semibold text-ink">Suggestions IA</h2>
-              </div>
-              <span className="rounded-full bg-brand-blue/10 px-2 py-0.5 text-xs font-semibold text-brand-blue">
-                {anomalies.length}
-              </span>
+          <Card className="lg:col-span-1">
+            <div className="flex items-center gap-2">
+              <Sparkles size={16} className="text-brand-blue" />
+              <h2 className="text-sm font-semibold text-ink">
+                RH Pilot a observé {anomalies.length} point{anomalies.length > 1 ? "s" : ""}{" "}
+                nécessitant votre attention
+              </h2>
             </div>
             <ul className="mt-2 flex flex-col divide-y divide-surface-border">
               {visibleAnomalies.map((anomaly) => (
