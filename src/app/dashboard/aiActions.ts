@@ -12,17 +12,6 @@ import { formatDate, formatDuration, addDuration } from "@/lib/format";
 const MAX_EMPLOYEES_IN_CONTEXT = 60;
 const MAX_UPCOMING_TASKS_IN_CONTEXT = 30;
 
-// Traduction des statuts techniques Prisma vers un français lisible —
-// sans ça, l'IA répète les codes bruts ("TO_PREPARE") tels quels dans ses réponses.
-const STATUS_LABELS: Record<string, string> = {
-  TO_PREPARE: "à préparer",
-  TODO: "à faire",
-  IN_PROGRESS: "en cours",
-  WAITING_EXTERNAL: "en attente d'un tiers externe",
-  DONE: "terminée",
-  CANCELLED: "annulée",
-};
-
 async function buildContext(organizationId: string): Promise<string> {
   const [employees, anomalies, upcomingTasks] = await Promise.all([
     prisma.employee.findMany({
@@ -59,7 +48,7 @@ async function buildContext(organizationId: string): Promise<string> {
   const anomalyLines = anomalies.map((a) => `- [${a.severity}] ${a.message}`);
 
   const taskLines = upcomingTasks.map(
-    (t) => `- ${t.label} pour ${t.employeeEvent.employee.firstName} ${t.employeeEvent.employee.lastName}, échéance le ${formatDate(t.dueDate)} (statut : ${STATUS_LABELS[t.status] ?? t.status})`
+    (t) => `- ${t.label} pour ${t.employeeEvent.employee.firstName} ${t.employeeEvent.employee.lastName}, échéance le ${formatDate(t.dueDate)} (statut : ${t.status})`
   );
 
   return [
@@ -74,33 +63,35 @@ async function buildContext(organizationId: string): Promise<string> {
   ].join("\n");
 }
 
-export type AskAboutOrganizationState = { question: string; answer: string; error: string } | undefined;
+export type AskAboutOrganizationState = { answer: string; error: string; question: string } | undefined;
 
 export async function askAboutOrganizationAction(
   _prevState: AskAboutOrganizationState,
   formData: FormData
 ): Promise<AskAboutOrganizationState> {
   const membership = await getCurrentMembership();
-  if (!membership) return { question: "", answer: "", error: "Non authentifié ou aucune organisation active." };
-
   const question = String(formData.get("question") ?? "").trim();
-  if (!question) return { question: "", answer: "", error: "Veuillez poser une question." };
+
+  if (!membership) {
+    return { answer: "", error: "Non authentifié ou aucune organisation active.", question };
+  }
+  if (!question) return { answer: "", error: "Veuillez poser une question.", question };
   if (question.length > 500) {
-    return { question, answer: "", error: "Question trop longue (500 caractères maximum)." };
+    return { answer: "", error: "Question trop longue (500 caractères maximum).", question };
   }
 
   try {
     const context = await buildContext(membership.organizationId);
     const answer = await askAboutOrganization(question, context);
-    return { question, answer, error: "" };
+    return { answer, error: "", question };
   } catch (err) {
     // Ne jamais renvoyer le message d'erreur brut de l'API à
     // l'écran — un vrai souci de clé/quota ne doit jamais s'afficher
     // en anglais technique à un utilisateur RH.
     console.error("Erreur askAboutOrganizationAction:", err);
     return {
-      question,
       answer: "",
+      question,
       error:
         err instanceof Error && err.message.includes("ANTHROPIC_API_KEY")
           ? "Cette fonctionnalité n'est pas encore activée."
