@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ClerkProvider } from "@clerk/nextjs";
 import { frFR } from "@clerk/localizations";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -48,7 +49,10 @@ export default function RootLayout({
   return (
     <ClerkProvider localization={frFR as any} appearance={clerkAppearance}>
       <html lang="fr">
-        <body className="font-sans antialiased">{children}</body>
+        <body className="font-sans antialiased">
+          {children}
+          <Analytics />
+        </body>
       </html>
     </ClerkProvider>
   );
