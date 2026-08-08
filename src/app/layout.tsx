@@ -8,12 +8,12 @@ export const metadata: Metadata = {
   title: "RH Pilot, votre copilote d'organisation RH",
   description:
     "RH Pilot transforme chaque événement RH en plan d'action complet : tâches, échéances, responsables et preuves.",
-  // Bêta fermée : le site ne doit pas apparaître dans les résultats de
-  // recherche. À retirer explicitement le jour d'une ouverture publique
-  // — ce n'est pas quelque chose qui doit rester "par oubli".
+  // Bêta ouverte à l'indexation depuis [aujourd'hui] — décision
+  // explicite prise avec Aimen, pas un oubli. Voir aussi
+  // src/app/robots.ts pour le blocage des pages privées.
   robots: {
-    index: false,
-    follow: false,
+    index: true,
+    follow: true,
   },
 };
 
