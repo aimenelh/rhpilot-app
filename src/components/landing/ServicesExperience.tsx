@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import {
-  Hourglass,
   Stethoscope,
   FileText,
   FileWarning,
@@ -27,17 +26,10 @@ import { Card } from "@/components/ui/Card";
 const MEMORY_ITEMS = [
   { id: "lea", icon: Stethoscope, label: "Visite médicale — Léa", tone: "text-accent-teal bg-accent-teal/10" },
   { id: "karim", icon: Users, label: "Entretien annuel — Karim", tone: "text-brand-blue bg-brand-blue/10" },
-  { id: "nora", icon: FileText, label: "Contrat CDD — Nora", tone: "text-brand-violet bg-brand-violet/10" },
+  { id: "ines", icon: FileText, label: "Contrat CDD — Inès", tone: "text-brand-violet bg-brand-violet/10" },
   { id: "yanis", icon: FileWarning, label: "Document manquant — Yanis", tone: "text-accent-amber bg-accent-amber/10" },
   { id: "julie", icon: Bell, label: "Rappel équipe — Julie", tone: "text-accent-rose bg-accent-rose/10" },
 ];
-
-const SURPRISE_ITEM = {
-  id: "mathis",
-  icon: Hourglass,
-  label: "Fin de période d'essai — Mathis",
-  tone: "text-brand-violet bg-brand-violet/10",
-};
 
 const DEFAULT_STEPS = ["Documents", "Visite médicale", "Intégration", "Suivi à J+30"];
 
@@ -313,7 +305,7 @@ export function ServicesExperience() {
           {step === 1 && memoryPhase === "recall" && (
             <div className="text-center">
               <p className="text-sm font-semibold text-ink-faint">
-                Cliquez sur chaque échéance dont vous vous souvenez.
+                Cliquez sur chaque échéance dont vous vous souvenez encore.
               </p>
               <div className="relative mx-auto mt-6 max-w-lg">
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -322,13 +314,24 @@ export function ServicesExperience() {
                     return (
                       <button key={item.id} type="button" onClick={() => toggleConfirm(item.id)} className="press-fx text-left">
                         <Card compact className={`shadow-sm transition-colors ${isConfirmed ? "border-accent-teal/40 bg-accent-teal/5" : ""}`}>
-                          <div className="flex items-center justify-between">
-                            <span className={`flex h-9 w-9 items-center justify-center rounded-full ${item.tone}`}>
-                              <item.icon size={16} />
-                            </span>
-                            {isConfirmed && <Check size={14} className="text-accent-teal" />}
-                          </div>
-                          <p className="mt-2 text-xs font-medium text-ink">{item.label}</p>
+                          {isConfirmed ? (
+                            <>
+                              <div className="flex items-center justify-between">
+                                <span className={`flex h-9 w-9 items-center justify-center rounded-full ${item.tone}`}>
+                                  <item.icon size={16} />
+                                </span>
+                                <Check size={14} className="text-accent-teal" />
+                              </div>
+                              <p className="mt-2 text-xs font-medium text-ink">{item.label}</p>
+                            </>
+                          ) : (
+                            <>
+                              <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-surface-subtle text-ink-faint">
+                                ?
+                              </span>
+                              <p className="mt-2 text-xs font-medium text-ink-faint">Cliquez pour vous en souvenir</p>
+                            </>
+                          )}
                         </Card>
                       </button>
                     );
@@ -336,16 +339,10 @@ export function ServicesExperience() {
                 </div>
 
                 {surpriseVisible && (
-                  <div className="surprise-in mt-3 flex justify-end">
-                    <div className="w-32">
-                      <Card compact className="opacity-90 shadow-none">
-                        <span className={`flex h-7 w-7 items-center justify-center rounded-full ${SURPRISE_ITEM.tone}`}>
-                          <SURPRISE_ITEM.icon size={13} />
-                        </span>
-                        <p className="mt-1.5 text-[10px] font-medium text-ink-soft">{SURPRISE_ITEM.label}</p>
-                      </Card>
-                    </div>
-                  </div>
+                  <span
+                    aria-hidden
+                    className="surprise-in pointer-events-none absolute -right-2 -top-2 h-1.5 w-1.5 rounded-full bg-brand-violet/60"
+                  />
                 )}
               </div>
 
@@ -362,6 +359,10 @@ export function ServicesExperience() {
               <p className="text-3xl font-bold text-accent-rose">Perdu…</p>
               <p className="mx-auto mt-3 max-w-sm text-base text-ink">
                 Vous avez oublié la fin de période d&apos;essai de <strong>Mathis</strong>.
+              </p>
+              <p className="mx-auto mt-2 max-w-sm text-sm text-ink-faint">
+                C&apos;est normal : elle était quelque part dans l&apos;onglet «&nbsp;RH
+                divers&nbsp;», coincée entre la paie de janvier et une liste de courses.
               </p>
               <div className="mx-auto mt-8 max-w-md border-t border-surface-border pt-6">
                 <p className="text-sm text-ink-soft">Mais ce n&apos;est pas grave, car :</p>
