@@ -5,9 +5,9 @@ import {
   Hourglass,
   Stethoscope,
   FileText,
+  FileWarning,
   Users,
   Bell,
-  UserPlus,
   ArrowRight,
   ArrowUp,
   ArrowDown,
@@ -16,6 +16,7 @@ import {
   Sparkles,
   TriangleAlert,
   CircleCheck,
+  Check,
   RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
@@ -23,14 +24,20 @@ import { Logomark } from "@/components/Brand";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
-const CHAOS_ITEMS = [
-  { icon: Hourglass, label: "Période d'essai", tone: "text-brand-violet bg-brand-violet/10" },
-  { icon: Stethoscope, label: "Visite médicale", tone: "text-accent-teal bg-accent-teal/10" },
-  { icon: FileText, label: "Document manquant", tone: "text-accent-amber bg-accent-amber/10" },
-  { icon: Users, label: "Entretien", tone: "text-brand-blue bg-brand-blue/10" },
-  { icon: Bell, label: "Rappel", tone: "text-accent-rose bg-accent-rose/10" },
-  { icon: UserPlus, label: "Nouveau collaborateur", tone: "text-brand-violet bg-brand-violet/10" },
+const MEMORY_ITEMS = [
+  { id: "lea", icon: Stethoscope, label: "Visite médicale — Léa", tone: "text-accent-teal bg-accent-teal/10" },
+  { id: "karim", icon: Users, label: "Entretien annuel — Karim", tone: "text-brand-blue bg-brand-blue/10" },
+  { id: "nora", icon: FileText, label: "Contrat CDD — Nora", tone: "text-brand-violet bg-brand-violet/10" },
+  { id: "yanis", icon: FileWarning, label: "Document manquant — Yanis", tone: "text-accent-amber bg-accent-amber/10" },
+  { id: "julie", icon: Bell, label: "Rappel équipe — Julie", tone: "text-accent-rose bg-accent-rose/10" },
 ];
+
+const SURPRISE_ITEM = {
+  id: "mathis",
+  icon: Hourglass,
+  label: "Fin de période d'essai — Mathis",
+  tone: "text-brand-violet bg-brand-violet/10",
+};
 
 const DEFAULT_STEPS = ["Documents", "Visite médicale", "Intégration", "Suivi à J+30"];
 
@@ -68,6 +75,8 @@ const STEP_GLOW: Record<number, [string, string]> = {
   6: ["rgba(46,111,242,0.12)", "rgba(123,92,250,0.1)"],
 };
 
+type MemoryPhase = "ready" | "memorize" | "recall" | "lost";
+
 export function ServicesExperience() {
   const [step, setStep] = useState(0);
   const [parcoursSteps, setParcoursSteps] = useState(DEFAULT_STEPS);
@@ -75,6 +84,11 @@ export function ServicesExperience() {
   const [summaryShown, setSummaryShown] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  const [memoryPhase, setMemoryPhase] = useState<MemoryPhase>("ready");
+  const [countdown, setCountdown] = useState(5);
+  const [confirmed, setConfirmed] = useState<Set<string>>(new Set());
+  const [surpriseVisible, setSurpriseVisible] = useState(false);
 
   useEffect(() => {
     setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -100,6 +114,41 @@ export function ServicesExperience() {
     return () => node.removeEventListener("mousemove", onMove);
   }, [reducedMotion]);
 
+  useEffect(() => {
+    if (memoryPhase !== "memorize") return;
+    if (countdown <= 0) {
+      setMemoryPhase("recall");
+      return;
+    }
+    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => clearTimeout(t);
+  }, [memoryPhase, countdown]);
+
+  useEffect(() => {
+    if (memoryPhase !== "recall") return;
+    const t = setTimeout(() => setSurpriseVisible(true), 1800);
+    return () => clearTimeout(t);
+  }, [memoryPhase]);
+
+  function startMemorize() {
+    setCountdown(5);
+    setConfirmed(new Set());
+    setSurpriseVisible(false);
+    setMemoryPhase("memorize");
+  }
+
+  function toggleConfirm(id: string) {
+    setConfirmed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  }
+
   function moveStep(index: number, dir: -1 | 1) {
     setParcoursSteps((prev) => {
       const next = [...prev];
@@ -123,9 +172,12 @@ export function ServicesExperience() {
     setParcoursSteps(DEFAULT_STEPS);
     setAskedIndex(null);
     setSummaryShown(false);
+    setMemoryPhase("ready");
+    setConfirmed(new Set());
+    setSurpriseVisible(false);
   }
 
-  const canAdvance = step === 4 ? askedIndex !== null : step === 5 ? summaryShown : step < 6;
+  const canAdvance = step === 4 ? askedIndex !== null : step === 5 ? summaryShown : step !== 1 && step < 6;
   function advance() {
     if (!canAdvance) return;
     setStep((s) => Math.min(s + 1, TOTAL_STEPS));
@@ -133,6 +185,7 @@ export function ServicesExperience() {
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
+      if (step === 1) return;
       if (e.key === "Enter" || e.key === " ") {
         if (step < 6) {
           e.preventDefault();
@@ -160,8 +213,10 @@ export function ServicesExperience() {
         .scene-in { animation: sceneIn 0.55s cubic-bezier(0.16,1,0.3,1) both; }
         @keyframes softFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
         .soft-float { animation: softFloat 4s ease-in-out infinite; }
+        @keyframes surpriseIn { from { opacity: 0; transform: translateY(6px) scale(0.9); } to { opacity: 0.85; transform: translateY(0) scale(1); } }
+        .surprise-in { animation: surpriseIn 0.8s ease-out both; }
         @media (prefers-reduced-motion: reduce) {
-          .scene-in, .soft-float { animation: none; }
+          .scene-in, .soft-float, .surprise-in { animation: none; }
         }
         .press-fx { transition: transform 0.15s ease; }
         .press-fx:active { transform: scale(0.96); }
@@ -207,11 +262,11 @@ export function ServicesExperience() {
           </div>
         )}
 
-        <div key={step} className="scene-in">
+        <div key={`${step}-${memoryPhase}`} className="scene-in">
           {step === 0 && (
             <div className="text-center">
               <h2 className="text-2xl font-semibold text-ink sm:text-3xl">
-                Votre journée RH commence ici.
+                Combien d&apos;échéances RH pouvez-vous retenir à la fois ?
               </h2>
               <p className="mx-auto mt-3 max-w-md text-base text-ink-soft">
                 Vivez en direct comment RH Pilot remet de l&apos;ordre dans une journée chargée.
@@ -221,32 +276,102 @@ export function ServicesExperience() {
                   Commencer l&apos;expérience <ArrowRight size={16} />
                 </span>
               </Button>
-              <p className="mt-4 text-xs text-ink-faint">Entrée pour avancer · Échap pour quitter</p>
+              <p className="mt-4 text-xs text-ink-faint">Échap pour quitter à tout moment</p>
             </div>
           )}
 
-          {step === 1 && (
+          {step === 1 && memoryPhase === "ready" && (
             <div className="text-center">
-              <p className="text-sm font-semibold text-ink-faint">6 éléments nécessitent votre attention.</p>
+              <p className="text-sm font-semibold text-ink-faint">Test de mémoire</p>
+              <h2 className="mt-2 text-xl font-semibold text-ink sm:text-2xl">
+                Mémorisez ces échéances. Vous avez 5 secondes.
+              </h2>
+              <Button className="press-fx mt-8 px-6 py-3 text-base" onClick={startMemorize}>
+                <span className="inline-flex items-center gap-2">
+                  Prêt <ArrowRight size={16} />
+                </span>
+              </Button>
+            </div>
+          )}
+
+          {step === 1 && memoryPhase === "memorize" && (
+            <div className="text-center">
+              <p className="text-4xl font-bold text-brand-blue">{countdown}</p>
               <div className="mx-auto mt-6 grid max-w-lg grid-cols-2 gap-3 sm:grid-cols-3">
-                {CHAOS_ITEMS.map((item, i) => (
-                  <div
-                    key={item.label}
-                    className={reducedMotion ? "" : "soft-float"}
-                    style={{ animationDelay: `${i * 0.3}s`, transform: `rotate(${(i % 2 === 0 ? -1 : 1) * 2}deg)` }}
-                  >
-                    <Card compact className="shadow-sm">
-                      <span className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full ${item.tone}`}>
-                        <item.icon size={16} />
-                      </span>
-                      <p className="mt-2 text-xs font-medium text-ink">{item.label}</p>
-                    </Card>
-                  </div>
+                {MEMORY_ITEMS.map((item) => (
+                  <Card key={item.id} compact className="shadow-sm">
+                    <span className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full ${item.tone}`}>
+                      <item.icon size={16} />
+                    </span>
+                    <p className="mt-2 text-xs font-medium text-ink">{item.label}</p>
+                  </Card>
                 ))}
+              </div>
+            </div>
+          )}
+
+          {step === 1 && memoryPhase === "recall" && (
+            <div className="text-center">
+              <p className="text-sm font-semibold text-ink-faint">
+                Cliquez sur chaque échéance dont vous vous souvenez.
+              </p>
+              <div className="relative mx-auto mt-6 max-w-lg">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {MEMORY_ITEMS.map((item) => {
+                    const isConfirmed = confirmed.has(item.id);
+                    return (
+                      <button key={item.id} type="button" onClick={() => toggleConfirm(item.id)} className="press-fx text-left">
+                        <Card compact className={`shadow-sm transition-colors ${isConfirmed ? "border-accent-teal/40 bg-accent-teal/5" : ""}`}>
+                          <div className="flex items-center justify-between">
+                            <span className={`flex h-9 w-9 items-center justify-center rounded-full ${item.tone}`}>
+                              <item.icon size={16} />
+                            </span>
+                            {isConfirmed && <Check size={14} className="text-accent-teal" />}
+                          </div>
+                          <p className="mt-2 text-xs font-medium text-ink">{item.label}</p>
+                        </Card>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {surpriseVisible && (
+                  <div className="surprise-in mt-3 flex justify-end">
+                    <div className="w-32">
+                      <Card compact className="opacity-90 shadow-none">
+                        <span className={`flex h-7 w-7 items-center justify-center rounded-full ${SURPRISE_ITEM.tone}`}>
+                          <SURPRISE_ITEM.icon size={13} />
+                        </span>
+                        <p className="mt-1.5 text-[10px] font-medium text-ink-soft">{SURPRISE_ITEM.label}</p>
+                      </Card>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <Button className="press-fx mt-8 px-6 py-3 text-base" onClick={() => setMemoryPhase("lost")}>
+                <span className="inline-flex items-center gap-2">
+                  Valider <ArrowRight size={16} />
+                </span>
+              </Button>
+            </div>
+          )}
+
+          {step === 1 && memoryPhase === "lost" && (
+            <div className="text-center">
+              <p className="text-3xl font-bold text-accent-rose">Perdu…</p>
+              <p className="mx-auto mt-3 max-w-sm text-base text-ink">
+                Vous avez oublié la fin de période d&apos;essai de <strong>Mathis</strong>.
+              </p>
+              <div className="mx-auto mt-8 max-w-md border-t border-surface-border pt-6">
+                <p className="text-sm text-ink-soft">Mais ce n&apos;est pas grave, car :</p>
+                <p className="mt-2 text-lg font-semibold text-ink">
+                  « La mémoire ne devrait jamais être le principal outil d&apos;une équipe RH. »
+                </p>
               </div>
               <Button className="press-fx mt-8 px-6 py-3 text-base" onClick={() => setStep(2)}>
                 <span className="inline-flex items-center gap-2">
-                  Laisser RH Pilot faire le tri <ArrowRight size={16} />
+                  Voir comment RH Pilot change ça <ArrowRight size={16} />
                 </span>
               </Button>
             </div>
@@ -280,39 +405,20 @@ export function ServicesExperience() {
                     <li key={`${label}-${i}`} className="flex items-center justify-between gap-2 py-2.5">
                       <span className="text-sm text-ink">{label}</span>
                       <div className="flex shrink-0 items-center gap-1">
-                        <button
-                          type="button"
-                          aria-label="Monter l'étape"
-                          onClick={() => moveStep(i, -1)}
-                          className="rounded p-1 text-ink-faint hover:bg-surface-subtle hover:text-ink"
-                        >
+                        <button type="button" aria-label="Monter l'étape" onClick={() => moveStep(i, -1)} className="rounded p-1 text-ink-faint hover:bg-surface-subtle hover:text-ink">
                           <ArrowUp size={13} />
                         </button>
-                        <button
-                          type="button"
-                          aria-label="Descendre l'étape"
-                          onClick={() => moveStep(i, 1)}
-                          className="rounded p-1 text-ink-faint hover:bg-surface-subtle hover:text-ink"
-                        >
+                        <button type="button" aria-label="Descendre l'étape" onClick={() => moveStep(i, 1)} className="rounded p-1 text-ink-faint hover:bg-surface-subtle hover:text-ink">
                           <ArrowDown size={13} />
                         </button>
-                        <button
-                          type="button"
-                          aria-label="Retirer l'étape"
-                          onClick={() => removeStep(i)}
-                          className="rounded p-1 text-ink-faint hover:bg-accent-rose/10 hover:text-accent-rose"
-                        >
+                        <button type="button" aria-label="Retirer l'étape" onClick={() => removeStep(i)} className="rounded p-1 text-ink-faint hover:bg-accent-rose/10 hover:text-accent-rose">
                           <X size={13} />
                         </button>
                       </div>
                     </li>
                   ))}
                 </ul>
-                <button
-                  type="button"
-                  onClick={addStep}
-                  className="mt-3 flex items-center gap-1.5 text-xs font-medium text-brand-blue hover:underline"
-                >
+                <button type="button" onClick={addStep} className="mt-3 flex items-center gap-1.5 text-xs font-medium text-brand-blue hover:underline">
                   <Plus size={13} /> Ajouter une étape
                 </button>
               </Card>
@@ -338,9 +444,7 @@ export function ServicesExperience() {
                       type="button"
                       onClick={() => setAskedIndex(i)}
                       className={`press-fx rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                        askedIndex === i
-                          ? "border-brand-blue bg-brand-blue text-white"
-                          : "border-brand-violet/20 text-ink-soft hover:border-brand-violet/40 hover:text-brand-violet"
+                        askedIndex === i ? "border-brand-blue bg-brand-blue text-white" : "border-brand-violet/20 text-ink-soft hover:border-brand-violet/40 hover:text-brand-violet"
                       }`}
                     >
                       {item.q}
@@ -353,11 +457,7 @@ export function ServicesExperience() {
                   </div>
                 )}
               </Card>
-              <Button
-                className="press-fx mt-8 px-6 py-3 text-base disabled:opacity-40"
-                disabled={askedIndex === null}
-                onClick={() => setStep(5)}
-              >
+              <Button className="press-fx mt-8 px-6 py-3 text-base disabled:opacity-40" disabled={askedIndex === null} onClick={() => setStep(5)}>
                 <span className="inline-flex items-center gap-2">
                   Continuer <ArrowRight size={16} />
                 </span>
@@ -384,11 +484,7 @@ export function ServicesExperience() {
               </div>
 
               <Card className="mx-auto mt-4 max-w-sm text-left shadow-sm">
-                <button
-                  type="button"
-                  onClick={() => setSummaryShown(true)}
-                  className="press-fx flex items-center gap-1.5 text-sm font-semibold text-brand-violet"
-                >
+                <button type="button" onClick={() => setSummaryShown(true)} className="press-fx flex items-center gap-1.5 text-sm font-semibold text-brand-violet">
                   <Sparkles size={14} /> Résumer mon mois
                 </button>
                 {summaryShown && (
@@ -400,11 +496,7 @@ export function ServicesExperience() {
                 )}
               </Card>
 
-              <Button
-                className="press-fx mt-8 px-6 py-3 text-base disabled:opacity-40"
-                disabled={!summaryShown}
-                onClick={() => setStep(6)}
-              >
+              <Button className="press-fx mt-8 px-6 py-3 text-base disabled:opacity-40" disabled={!summaryShown} onClick={() => setStep(6)}>
                 <span className="inline-flex items-center gap-2">
                   Voir ce que vous venez de découvrir <ArrowRight size={16} />
                 </span>
@@ -435,11 +527,7 @@ export function ServicesExperience() {
                 <Link href="/sign-up">
                   <Button className="press-fx px-6 py-3 text-base">Essayer RH Pilot gratuitement</Button>
                 </Link>
-                <button
-                  type="button"
-                  onClick={restart}
-                  className="flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink"
-                >
+                <button type="button" onClick={restart} className="flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink">
                   <RotateCcw size={12} /> Revoir l&apos;expérience
                 </button>
               </div>
