@@ -8,11 +8,6 @@ import {
   Users,
   Bell,
   Hourglass,
-  Monitor,
-  Coffee,
-  BookOpen,
-  PenTool,
-  Flower2,
   ShoppingCart,
   ArrowRight,
   ArrowUp,
@@ -31,19 +26,11 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
 const FIND_ITEMS = [
-  { id: "lea", icon: Stethoscope, label: "Visite médicale — Léa", tone: "text-accent-teal bg-accent-teal/10", top: "28%", left: "36%", rotate: -6 },
-  { id: "karim", icon: Users, label: "Entretien annuel — Karim", tone: "text-brand-blue bg-brand-blue/10", top: "14%", left: "58%", rotate: 4 },
-  { id: "ines", icon: FileText, label: "Contrat CDD — Inès", tone: "text-brand-violet bg-brand-violet/10", top: "62%", left: "55%", rotate: -4 },
-  { id: "yanis", icon: FileWarning, label: "Document manquant — Yanis", tone: "text-accent-amber bg-accent-amber/10", top: "82%", left: "32%", rotate: 5 },
-  { id: "julie", icon: Bell, label: "Rappel équipe — Julie", tone: "text-accent-rose bg-accent-rose/10", top: "46%", left: "16%", rotate: 3 },
-];
-
-const DECOR = [
-  { icon: Monitor, top: "16%", left: "12%", rotate: 0, size: 34 },
-  { icon: Coffee, top: "78%", left: "12%", rotate: -8, size: 24 },
-  { icon: BookOpen, top: "20%", left: "82%", rotate: 6, size: 28 },
-  { icon: PenTool, top: "50%", left: "88%", rotate: 30, size: 20 },
-  { icon: Flower2, top: "8%", left: "90%", rotate: 0, size: 22 },
+  { id: "lea", icon: Stethoscope, label: "Visite médicale — Léa", paper: "#fde68a", top: "26%", left: "34%", rotate: -6 },
+  { id: "karim", icon: Users, label: "Entretien annuel — Karim", paper: "#bfdbfe", top: "13%", left: "58%", rotate: 4 },
+  { id: "ines", icon: FileText, label: "Contrat CDD — Inès", paper: "#bbf7d0", top: "60%", left: "54%", rotate: -4 },
+  { id: "yanis", icon: FileWarning, label: "Document manquant — Yanis", paper: "#fed7aa", top: "82%", left: "30%", rotate: 5 },
+  { id: "julie", icon: Bell, label: "Rappel équipe — Julie", paper: "#fbcfe8", top: "45%", left: "14%", rotate: 3 },
 ];
 
 const DEFAULT_STEPS = ["Documents", "Visite médicale", "Intégration", "Suivi à J+30"];
@@ -81,6 +68,39 @@ const STEP_GLOW: Record<number, [string, string]> = {
   5: ["rgba(20,201,176,0.12)", "rgba(46,111,242,0.06)"],
   6: ["rgba(46,111,242,0.12)", "rgba(123,92,250,0.1)"],
 };
+
+// Un vrai post-it : papier coloré, coin plié, ombre portée — dimensions
+// fixes et identiques pour tous, condition indispensable pour que la
+// note de Mathis se cache parfaitement sous la liste de courses.
+function PostIt({
+  icon: Icon,
+  label,
+  paper,
+  found,
+}: {
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  paper: string;
+  found?: boolean;
+}) {
+  return (
+    <div
+      className="relative flex h-20 w-20 flex-col justify-between p-2"
+      style={{ backgroundColor: paper, boxShadow: "0 8px 14px -6px rgba(40,30,10,0.4)" }}
+    >
+      <div
+        aria-hidden
+        className="absolute bottom-0 right-0 h-3 w-3"
+        style={{ background: "linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.14) 50%)" }}
+      />
+      <div className="flex items-center justify-between">
+        <Icon size={14} className="text-ink/70" />
+        {found && <Check size={12} className="text-ink" />}
+      </div>
+      <p className="text-[9px] font-medium italic leading-tight text-ink/80">{label}</p>
+    </div>
+  );
+}
 
 export function ServicesExperience() {
   const [step, setStep] = useState(0);
@@ -189,8 +209,10 @@ export function ServicesExperience() {
       <style>{`
         @keyframes sceneIn { from { opacity: 0; transform: scale(0.96) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         .scene-in { animation: sceneIn 0.55s cubic-bezier(0.16,1,0.3,1) both; }
+        @keyframes steamRise { 0% { transform: translateY(0) scaleX(1); opacity: 0.5; } 100% { transform: translateY(-14px) scaleX(1.4); opacity: 0; } }
+        .steam { animation: steamRise 2.4s ease-out infinite; }
         @media (prefers-reduced-motion: reduce) {
-          .scene-in { animation: none; }
+          .scene-in, .steam { animation: none; }
         }
         .press-fx { transition: transform 0.15s ease; }
         .press-fx:active { transform: scale(0.96); }
@@ -206,9 +228,7 @@ export function ServicesExperience() {
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 opacity-60"
-        style={{
-          background: "radial-gradient(320px circle at var(--spot-x) var(--spot-y), rgba(46,111,242,0.06), transparent 70%)",
-        }}
+        style={{ background: "radial-gradient(320px circle at var(--spot-x) var(--spot-y), rgba(46,111,242,0.06), transparent 70%)" }}
       />
 
       <Link href="/" className="absolute left-6 top-6 flex items-center gap-2 opacity-80 transition-opacity hover:opacity-100">
@@ -252,25 +272,45 @@ export function ServicesExperience() {
           {step === 1 && (
             <div className="text-center">
               <p className="text-sm font-semibold text-ink-faint">
-                {found.size < 5
-                  ? `Retrouvez les 5 échéances cachées sur ce bureau. (${found.size}/5)`
-                  : "Vous avez tout trouvé."}
+                {found.size < 5 ? `Retrouvez les 5 échéances cachées sur ce bureau. (${found.size}/5)` : "Vous avez tout trouvé."}
               </p>
 
               <div
-                className="relative mx-auto mt-6 h-[380px] w-full max-w-xl overflow-hidden rounded-2xl border border-surface-border shadow-inner"
-                style={{ background: "linear-gradient(135deg, #f6efe3, #efe2cd)" }}
+                className="relative mx-auto mt-6 h-[400px] w-full max-w-xl overflow-hidden rounded-2xl border border-[#5a4632]/30 shadow-inner"
+                style={{ background: "repeating-linear-gradient(100deg, #caa876, #caa876 3px, #c39f6c 3px, #c39f6c 6px)" }}
               >
-                {DECOR.map((d, i) => (
-                  <span
-                    key={i}
-                    aria-hidden
-                    className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 text-[#b8a888]"
-                    style={{ top: d.top, left: d.left, transform: `translate(-50%, -50%) rotate(${d.rotate}deg)` }}
-                  >
-                    <d.icon size={d.size} strokeWidth={1.5} />
-                  </span>
-                ))}
+                <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-3 bg-[#5a4632]/25" />
+                <div aria-hidden className="pointer-events-none absolute inset-0" style={{ boxShadow: "inset 0 0 60px 10px rgba(40,28,14,0.18)" }} />
+
+                <div className="pointer-events-none absolute" style={{ top: "16%", left: "13%", transform: "translate(-50%, -50%)" }}>
+                  <div className="h-3 w-8 rounded-b bg-[#2a2a2a]/70" style={{ marginTop: "34px", marginLeft: "5px" }} />
+                  <div className="w-16 rounded-md border-2 border-[#2a2a2a] bg-[#0c1b33] p-1.5 shadow-lg">
+                    <div className="flex gap-1">
+                      <span className="h-1.5 w-1.5 rounded-full bg-white/20" />
+                      <span className="h-1.5 w-4 rounded-full bg-brand-blue/70" />
+                    </div>
+                    <div className="mt-1 flex gap-1">
+                      <span className="h-3 flex-1 rounded-sm bg-brand-violet/40" />
+                      <span className="h-3 flex-1 rounded-sm bg-accent-teal/40" />
+                      <span className="h-3 flex-1 rounded-sm bg-accent-amber/40" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pointer-events-none absolute" style={{ top: "78%", left: "11%", transform: "translate(-50%, -50%)" }}>
+                  <span className="steam absolute -top-2 left-2 h-2 w-0.5 rounded-full bg-white/60" />
+                  <span className="steam absolute -top-2 left-4 h-2 w-0.5 rounded-full bg-white/50" style={{ animationDelay: "0.8s" }} />
+                  <div className="relative h-4 w-5 rounded-b-md bg-[#e8e2d4]">
+                    <span className="absolute -right-1.5 top-0.5 h-2 w-1.5 rounded-r-full border border-[#e8e2d4]" />
+                  </div>
+                </div>
+
+                <div
+                  className="pointer-events-none absolute h-7 w-9 rounded-sm bg-[#eef0ef] shadow-md"
+                  style={{ top: "20%", left: "84%", transform: "translate(-50%, -50%) rotate(6deg)" }}
+                >
+                  <div className="absolute left-0 top-0 h-full w-1 bg-[#c1c7c4]" />
+                </div>
 
                 {FIND_ITEMS.map((item) => {
                   const isFound = found.has(item.id);
@@ -279,37 +319,28 @@ export function ServicesExperience() {
                       key={item.id}
                       type="button"
                       onClick={() => markFound(item.id)}
-                      className="press-fx absolute w-24"
+                      className="press-fx absolute"
                       style={{ top: item.top, left: item.left, transform: `translate(-50%, -50%) rotate(${item.rotate}deg)` }}
                     >
-                      <Card compact className={`shadow-md transition-opacity ${isFound ? "opacity-70 ring-1 ring-accent-teal/40" : ""}`}>
-                        <span className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full ${item.tone}`}>
-                          {isFound ? <Check size={13} /> : <item.icon size={13} />}
-                        </span>
-                        <p className="mt-1 text-[10px] font-medium leading-tight text-ink">{item.label}</p>
-                      </Card>
+                      <div className={isFound ? "opacity-70" : ""}>
+                        <PostIt icon={item.icon} label={item.label} paper={item.paper} found={isFound} />
+                      </div>
                     </button>
                   );
                 })}
 
-                <div className="absolute" style={{ top: "70%", left: "80%", transform: "translate(-50%, -50%)" }}>
-                  <div className="relative h-16 w-24">
-                    <div className={`absolute inset-0 rotate-[-9deg] transition-all duration-300 ${revealed ? "ring-2 ring-accent-rose/50" : ""}`}>
-                      <Card compact className="shadow-md">
-                        <Hourglass size={13} className="mx-auto text-brand-violet" />
-                        <p className="mt-1 text-[10px] font-medium leading-tight text-ink">
-                          Fin de période d&apos;essai — Mathis
-                        </p>
-                      </Card>
+                <div className="absolute" style={{ top: "68%", left: "80%", transform: "translate(-50%, -50%)" }}>
+                  <div className="relative h-20 w-20">
+                    <div className="absolute inset-0" style={{ transform: "rotate(-4deg)" }}>
+                      <div style={{ boxShadow: revealed ? "0 0 0 3px rgba(244,63,94,0.45)" : "none", borderRadius: 2 }}>
+                        <PostIt icon={Hourglass} label="Période d'essai — Mathis" paper="#e9d5ff" />
+                      </div>
                     </div>
                     <div
                       className="absolute inset-0 z-10 transition-transform duration-700 ease-out"
-                      style={{ transform: revealed ? "translate(110px, -18px) rotate(22deg)" : "rotate(3deg)" }}
+                      style={{ transform: revealed ? "translate(120px, -22px) rotate(26deg)" : "rotate(-4deg)" }}
                     >
-                      <Card compact className="bg-white shadow-md">
-                        <ShoppingCart size={13} className="mx-auto text-ink-faint" />
-                        <p className="mt-1 text-[10px] font-medium leading-tight text-ink-soft">Liste de courses</p>
-                      </Card>
+                      <PostIt icon={ShoppingCart} label="Lait, pain, œufs, café…" paper="#f7f3ea" />
                     </div>
                   </div>
                 </div>
