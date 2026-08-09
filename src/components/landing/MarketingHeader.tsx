@@ -11,6 +11,12 @@ export function MarketingHeader() {
       </Link>
       <nav className="flex items-center gap-6">
         <Link
+          href="/services"
+          className="text-sm font-medium text-ink-soft hover:text-ink"
+        >
+          Nos services
+        </Link>
+        <Link
           href="/pourquoi"
           className="text-sm font-medium text-ink-soft hover:text-ink"
         >
