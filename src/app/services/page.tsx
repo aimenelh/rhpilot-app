@@ -14,6 +14,8 @@ import { Badge } from "@/components/ui/Badge";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import { Reveal } from "@/components/landing/Reveal";
+import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
+import { ServicesExperience } from "@/components/landing/ServicesExperience";
 
 const PARCOURS_STANDARD = ["Création du dossier", "Documents", "Visite médicale", "Intégration", "Suivi à J+30"];
 const PARCOURS_PERSONNALISE = [
@@ -27,37 +29,34 @@ const PARCOURS_PERSONNALISE = [
 export const metadata = {
   title: "Nos services — RH Pilot",
   description:
-    "Tableau de bord, copilote IA, parcours automatisés et personnalisables, notifications intelligentes : découvrez ce que RH Pilot apporte à votre organisation RH.",
+    "Vivez en 60 secondes comment RH Pilot organise une journée RH : tableau de bord, copilote IA, parcours automatisés et personnalisables, notifications intelligentes.",
 };
 
 export default function ServicesPage() {
   return (
-    <div className="min-h-screen bg-surface-subtle">
+    <div className="min-h-screen">
+      <AmbientNetwork />
       <MarketingHeader />
 
-      {/* Hero */}
-      <section className="mx-auto max-w-3xl px-6 py-16 text-center sm:py-24">
+      {/* Expérience interactive */}
+      <section className="relative mx-auto max-w-4xl px-6 pb-20 pt-6 sm:pt-10">
+        <ServicesExperience />
+      </section>
+
+      {/* Transition vers le détail */}
+      <section className="relative border-y border-surface-border bg-white/70 py-12 backdrop-blur-sm">
         <Reveal>
-          <h1 className="text-3xl font-semibold text-ink sm:text-4xl">
-            Votre copilote RH, à chaque étape du quotidien
-          </h1>
-          <p className="mx-auto mt-4 max-w-xl text-base text-ink-soft">
-            RH Pilot centralise vos collaborateurs, anticipe vos échéances, automatise vos
-            parcours et répond à vos questions — sans jamais décider à votre place.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-            <Link href="/sign-up">
-              <Button className="px-6 py-3 text-base">Essayer gratuitement</Button>
-            </Link>
-            <Link href="/pourquoi" className="text-sm font-medium text-ink-soft hover:text-ink">
-              Pourquoi RH Pilot ? →
-            </Link>
+          <div className="mx-auto max-w-2xl px-6 text-center">
+            <h2 className="text-xl font-semibold text-ink">Pour aller plus loin</h2>
+            <p className="mt-2 text-sm text-ink-soft">
+              Le détail de ce que vous venez de vivre, fonctionnalité par fonctionnalité.
+            </p>
           </div>
         </Reveal>
       </section>
 
       {/* 01 — PILOTER */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
+      <section className="relative mx-auto max-w-6xl px-6 py-16">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
           <Reveal>
             <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue">01 — Piloter</p>
@@ -76,7 +75,7 @@ export default function ServicesPage() {
           </Reveal>
 
           <Reveal delay={120}>
-            <Card className="shadow-lg">
+            <Card className="bg-white/85 shadow-lg backdrop-blur-sm">
               <div className="grid grid-cols-3 gap-3">
                 <div className="rounded-lg bg-brand-violet/5 p-3 text-center">
                   <Users size={16} className="mx-auto text-brand-violet" />
@@ -110,10 +109,10 @@ export default function ServicesPage() {
       </section>
 
       {/* 02 — ANTICIPER */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
+      <section className="relative mx-auto max-w-6xl px-6 py-16">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
           <Reveal className="order-2 lg:order-1">
-            <Card className="shadow-lg">
+            <Card className="bg-white/85 shadow-lg backdrop-blur-sm">
               <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Priorités du jour</p>
               <ul className="mt-3 flex flex-col gap-3">
                 <li className="flex items-start gap-2.5">
@@ -162,7 +161,7 @@ export default function ServicesPage() {
       </section>
 
       {/* 03 — AUTOMATISER */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
+      <section className="relative mx-auto max-w-6xl px-6 py-16">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
           <Reveal>
             <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue">03 — Automatiser</p>
@@ -182,7 +181,7 @@ export default function ServicesPage() {
 
           <Reveal delay={120}>
             <div className="grid grid-cols-2 gap-4">
-              <Card>
+              <Card className="bg-white/85 backdrop-blur-sm">
                 <p className="text-xs font-semibold text-ink-faint">Modèle standard</p>
                 <ul className="mt-3 flex flex-col gap-2.5">
                   {PARCOURS_STANDARD.map((step) => (
@@ -193,7 +192,7 @@ export default function ServicesPage() {
                   ))}
                 </ul>
               </Card>
-              <Card className="border-brand-blue/20 bg-brand-blue/[0.02]">
+              <Card className="border-brand-blue/20 bg-brand-blue/[0.02] backdrop-blur-sm">
                 <div className="flex items-center justify-between">
                   <p className="text-xs font-semibold text-ink-faint">Votre version</p>
                   <Badge tone="brand">Personnalisé</Badge>
@@ -217,10 +216,10 @@ export default function ServicesPage() {
       </section>
 
       {/* 04 — ASSISTER */}
-      <section className="mx-auto max-w-6xl px-6 py-16">
+      <section className="relative mx-auto max-w-6xl px-6 py-16">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2">
           <Reveal className="order-2 lg:order-1">
-            <Card className="border-brand-violet/20 bg-gradient-to-br from-brand-violet/[0.04] to-brand-blue/[0.04] shadow-lg">
+            <Card className="border-brand-violet/20 bg-gradient-to-br from-brand-violet/[0.04] to-brand-blue/[0.04] shadow-lg backdrop-blur-sm">
               <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
                 <Sparkles size={14} className="text-brand-violet" /> Assistant RH Pilot
               </p>
@@ -259,7 +258,7 @@ export default function ServicesPage() {
       </section>
 
       {/* Objections / clôture */}
-      <section className="mx-auto max-w-3xl px-6 py-16 text-center">
+      <section className="relative mx-auto max-w-3xl px-6 py-16 text-center">
         <Reveal>
           <h2 className="text-2xl font-semibold text-ink">RH Pilot s&apos;adapte à votre façon de travailler</h2>
           <p className="mx-auto mt-4 max-w-xl text-base text-ink-soft">
