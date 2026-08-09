@@ -14,31 +14,20 @@ import {
 } from "@/lib/calendar";
 import { Card } from "@/components/ui/Card";
 import { MonthSummaryButton } from "./MonthSummaryButton";
-
 export const dynamic = "force-dynamic";
-
-// Couleur par TYPE d'événement (pas par statut) — les seuls libellés
-// confirmés existants dans les modèles de parcours réels. Tout libellé
-// inconnu retombe sur la couleur par défaut plutôt que de planter.
 const CATEGORY_STYLES: Record<string, { dot: string; badgeBg: string; badgeText: string }> = {
   "Embauche": { dot: "bg-brand-violet", badgeBg: "bg-brand-violet/10", badgeText: "text-brand-violet" },
   "Visite médicale": { dot: "bg-accent-teal", badgeBg: "bg-accent-teal/10", badgeText: "text-accent-teal" },
   "Fin de période d'essai": { dot: "bg-accent-amber", badgeBg: "bg-accent-amber/10", badgeText: "text-accent-amber" },
 };
 const DEFAULT_CATEGORY_STYLE = { dot: "bg-brand-blue", badgeBg: "bg-brand-blue/10", badgeText: "text-brand-blue" };
-
 function categoryStyle(label: string | undefined) {
   return (label && CATEGORY_STYLES[label]) || DEFAULT_CATEGORY_STYLE;
 }
-
 function parseDayKey(key: string): Date {
   const [y, m, d] = key.split("-").map(Number);
   return new Date(y, m - 1, d);
 }
-
-// Type minimal et explicite plutôt qu'une inférence Prisma générique fragile —
-// n'importe quel résultat de requête avec ces champs (même avec des champs en
-// plus) satisfait ce type sans risque de plantage de build.
 type TaskForDisplay = {
   id: string;
   employeeEventId: string;
@@ -50,7 +39,6 @@ type TaskForDisplay = {
     eventTemplate: { label: string } | null;
   };
 };
-
 function TaskRow({ task }: { task: TaskForDisplay }) {
   const style = categoryStyle(task.employeeEvent.eventTemplate?.label);
   const isDone = task.status === "DONE";
@@ -76,7 +64,6 @@ function TaskRow({ task }: { task: TaskForDisplay }) {
     </Link>
   );
 }
-
 export default async function CalendarPage({
   searchParams,
 }: {
@@ -84,29 +71,23 @@ export default async function CalendarPage({
 }) {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
-
   const view = searchParams.view === "all" ? "all" : "mine";
   const { year, month } = parseMonthParam(searchParams.month);
   const viewFilter = view === "mine" ? { assignedMembershipId: membership.id } : {};
-
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const todayKey = dateKey(todayStart);
   const weekEnd = new Date(todayStart);
   weekEnd.setDate(weekEnd.getDate() + 7);
-
   const selectedDay = searchParams.day ? parseDayKey(searchParams.day) : todayStart;
   const selectedDayEnd = new Date(selectedDay);
   selectedDayEnd.setDate(selectedDayEnd.getDate() + 1);
-
   const weeks = getMonthGrid(year, month);
   const rangeStart = weeks[0][0].date;
   const rangeEnd = weeks[weeks.length - 1][6].date;
   const rangeEndExclusive = new Date(rangeEnd);
   rangeEndExclusive.setDate(rangeEndExclusive.getDate() + 1);
-
   const taskInclude = { employeeEvent: { include: { employee: true, eventTemplate: true } } } as const;
-
   const [monthGridTasks, todayTasks, overdueTasks, overdueCount, weekCount, upcomingTasks, selectedDayTasks] =
     await Promise.all([
       prisma.task.findMany({
@@ -185,27 +166,20 @@ export default async function CalendarPage({
         orderBy: { dueDate: "asc" },
       }),
     ]);
-
   const tasksByDay = new Map<string, typeof monthGridTasks>();
   for (const task of monthGridTasks) {
     const key = dateKey(task.dueDate);
     if (!tasksByDay.has(key)) tasksByDay.set(key, []);
     tasksByDay.get(key)!.push(task);
   }
-
-  // Catégories réellement présentes ce mois-ci — jamais une catégorie inventée
-  // (ex. "Entretien") qui n'existerait pas dans les modèles de parcours réels.
   const categoriesPresent = Array.from(
     new Set(monthGridTasks.map((t) => t.employeeEvent.eventTemplate?.label).filter(Boolean))
   ) as string[];
-
   const prevMonth = month === 0 ? { year: year - 1, month: 11 } : { year, month: month - 1 };
   const nextMonth = month === 11 ? { year: year + 1, month: 0 } : { year, month: month + 1 };
   const isCurrentRealMonth = year === now.getFullYear() && month === now.getMonth();
-
   const baseParams = `month=${monthParam(year, month)}&view=${view}`;
   const activeCategory = searchParams.category;
-
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -213,7 +187,6 @@ export default async function CalendarPage({
           <h1 className="text-2xl font-semibold text-ink">Calendrier</h1>
           <p className="mt-1 text-sm text-ink-soft">Planifiez et suivez toutes vos échéances RH en un coup d&apos;œil.</p>
         </div>
-
         <div className="flex gap-1 rounded-lg bg-surface-subtle p-1">
           <Link
             href={`/dashboard/calendar?month=${monthParam(year, month)}&view=mine`}
@@ -233,8 +206,6 @@ export default async function CalendarPage({
           </Link>
         </div>
       </div>
-
-      {/* Résumé en un coup d'œil */}
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card compact>
           <p className="text-xs font-medium text-ink-faint">Aujourd&apos;hui</p>
@@ -259,8 +230,6 @@ export default async function CalendarPage({
           <p className="text-xs text-ink-faint">échéance{overdueCount > 1 ? "s" : ""}</p>
         </Card>
       </div>
-
-      {/* Filtres par type d'événement, dérivés des vraies données du mois */}
       {categoriesPresent.length > 0 && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Link
@@ -288,9 +257,7 @@ export default async function CalendarPage({
           })}
         </div>
       )}
-
       <div className="mt-6 flex flex-col gap-6 lg:flex-row">
-        {/* Colonne principale : navigation + grille */}
         <div className="flex-1">
           <div className="flex items-center justify-center gap-3">
             <Link
@@ -319,7 +286,6 @@ export default async function CalendarPage({
               </Link>
             )}
           </div>
-
           <div className="mt-4 grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-surface-border bg-surface-border">
             {WEEKDAY_LABELS.map((label, i) => (
               <div
@@ -331,7 +297,6 @@ export default async function CalendarPage({
                 {label}
               </div>
             ))}
-
             {weeks.flat().map((day, i) => {
               const key = dateKey(day.date);
               const dayOfWeek = i % 7;
@@ -341,7 +306,6 @@ export default async function CalendarPage({
                 dayTasks = dayTasks.filter((t) => t.employeeEvent.eventTemplate?.label === activeCategory);
               }
               const isSelected = key === dateKey(selectedDay);
-
               return (
                 <Link
                   key={key}
@@ -383,7 +347,6 @@ export default async function CalendarPage({
               );
             })}
           </div>
-
           {monthGridTasks.length === 0 && (
             <div className="mt-6 flex flex-col items-center gap-2 rounded-xl border border-dashed border-surface-border py-10 text-center">
               <CalendarDays size={22} className="text-ink-faint" />
@@ -394,8 +357,6 @@ export default async function CalendarPage({
               </p>
             </div>
           )}
-
-          {/* Détail du jour sélectionné */}
           <div className="mt-6">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 className="flex items-center gap-2 text-base font-semibold text-ink">
@@ -404,7 +365,6 @@ export default async function CalendarPage({
               </h2>
               <MonthSummaryButton year={year} month={month} />
             </div>
-
             {selectedDayTasks.length === 0 ? (
               <p className="mt-3 text-sm text-ink-faint">Aucune tâche ce jour-là.</p>
             ) : (
@@ -418,8 +378,6 @@ export default async function CalendarPage({
             )}
           </div>
         </div>
-
-        {/* Sidebar */}
         <div className="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0">
           <Card>
             <div className="flex items-center justify-between">
@@ -440,7 +398,6 @@ export default async function CalendarPage({
               </div>
             )}
           </Card>
-
           {overdueCount > 0 && (
             <Card className="border-accent-rose/20">
               <div className="flex items-center justify-between">
@@ -475,7 +432,6 @@ export default async function CalendarPage({
               )}
             </Card>
           )}
-
           <Card>
             <h2 className="text-sm font-semibold text-ink">Prochaines échéances</h2>
             {upcomingTasks.length === 0 ? (

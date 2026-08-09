@@ -1,9 +1,7 @@
 "use client";
-
 import { useFormState, useFormStatus } from "react-dom";
 import { Sparkles } from "lucide-react";
 import { summarizeMonthAction, type SummarizeMonthState } from "./calendarActions";
-
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
@@ -17,13 +15,11 @@ function SubmitButton() {
     </button>
   );
 }
-
 export function MonthSummaryButton({ year, month }: { year: number; month: number }) {
   const [state, formAction] = useFormState<SummarizeMonthState, FormData>(
     summarizeMonthAction,
     undefined
   );
-
   return (
     <div>
       <form action={formAction}>
