@@ -7,6 +7,13 @@ import {
   FileWarning,
   Users,
   Bell,
+  Hourglass,
+  Monitor,
+  Coffee,
+  BookOpen,
+  PenTool,
+  Flower2,
+  ShoppingCart,
   ArrowRight,
   ArrowUp,
   ArrowDown,
@@ -23,12 +30,20 @@ import { Logomark } from "@/components/Brand";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
-const MEMORY_ITEMS = [
-  { id: "lea", icon: Stethoscope, label: "Visite médicale — Léa", tone: "text-accent-teal bg-accent-teal/10" },
-  { id: "karim", icon: Users, label: "Entretien annuel — Karim", tone: "text-brand-blue bg-brand-blue/10" },
-  { id: "ines", icon: FileText, label: "Contrat CDD — Inès", tone: "text-brand-violet bg-brand-violet/10" },
-  { id: "yanis", icon: FileWarning, label: "Document manquant — Yanis", tone: "text-accent-amber bg-accent-amber/10" },
-  { id: "julie", icon: Bell, label: "Rappel équipe — Julie", tone: "text-accent-rose bg-accent-rose/10" },
+const FIND_ITEMS = [
+  { id: "lea", icon: Stethoscope, label: "Visite médicale — Léa", tone: "text-accent-teal bg-accent-teal/10", top: "28%", left: "36%", rotate: -6 },
+  { id: "karim", icon: Users, label: "Entretien annuel — Karim", tone: "text-brand-blue bg-brand-blue/10", top: "14%", left: "58%", rotate: 4 },
+  { id: "ines", icon: FileText, label: "Contrat CDD — Inès", tone: "text-brand-violet bg-brand-violet/10", top: "62%", left: "55%", rotate: -4 },
+  { id: "yanis", icon: FileWarning, label: "Document manquant — Yanis", tone: "text-accent-amber bg-accent-amber/10", top: "82%", left: "32%", rotate: 5 },
+  { id: "julie", icon: Bell, label: "Rappel équipe — Julie", tone: "text-accent-rose bg-accent-rose/10", top: "46%", left: "16%", rotate: 3 },
+];
+
+const DECOR = [
+  { icon: Monitor, top: "16%", left: "12%", rotate: 0, size: 34 },
+  { icon: Coffee, top: "78%", left: "12%", rotate: -8, size: 24 },
+  { icon: BookOpen, top: "20%", left: "82%", rotate: 6, size: 28 },
+  { icon: PenTool, top: "50%", left: "88%", rotate: 30, size: 20 },
+  { icon: Flower2, top: "8%", left: "90%", rotate: 0, size: 22 },
 ];
 
 const DEFAULT_STEPS = ["Documents", "Visite médicale", "Intégration", "Suivi à J+30"];
@@ -67,8 +82,6 @@ const STEP_GLOW: Record<number, [string, string]> = {
   6: ["rgba(46,111,242,0.12)", "rgba(123,92,250,0.1)"],
 };
 
-type MemoryPhase = "ready" | "memorize" | "recall" | "lost";
-
 export function ServicesExperience() {
   const [step, setStep] = useState(0);
   const [parcoursSteps, setParcoursSteps] = useState(DEFAULT_STEPS);
@@ -77,10 +90,9 @@ export function ServicesExperience() {
   const [reducedMotion, setReducedMotion] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [memoryPhase, setMemoryPhase] = useState<MemoryPhase>("ready");
-  const [countdown, setCountdown] = useState(5);
-  const [confirmed, setConfirmed] = useState<Set<string>>(new Set());
-  const [surpriseVisible, setSurpriseVisible] = useState(false);
+  const [found, setFound] = useState<Set<string>>(new Set());
+  const [revealed, setRevealed] = useState(false);
+  const [lostTextShown, setLostTextShown] = useState(false);
 
   useEffect(() => {
     setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -106,39 +118,13 @@ export function ServicesExperience() {
     return () => node.removeEventListener("mousemove", onMove);
   }, [reducedMotion]);
 
-  useEffect(() => {
-    if (memoryPhase !== "memorize") return;
-    if (countdown <= 0) {
-      setMemoryPhase("recall");
-      return;
-    }
-    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
-  }, [memoryPhase, countdown]);
-
-  useEffect(() => {
-    if (memoryPhase !== "recall") return;
-    const t = setTimeout(() => setSurpriseVisible(true), 1800);
-    return () => clearTimeout(t);
-  }, [memoryPhase]);
-
-  function startMemorize() {
-    setCountdown(5);
-    setConfirmed(new Set());
-    setSurpriseVisible(false);
-    setMemoryPhase("memorize");
+  function markFound(id: string) {
+    setFound((prev) => new Set(prev).add(id));
   }
 
-  function toggleConfirm(id: string) {
-    setConfirmed((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+  function revealMathis() {
+    setRevealed(true);
+    setTimeout(() => setLostTextShown(true), 900);
   }
 
   function moveStep(index: number, dir: -1 | 1) {
@@ -164,9 +150,9 @@ export function ServicesExperience() {
     setParcoursSteps(DEFAULT_STEPS);
     setAskedIndex(null);
     setSummaryShown(false);
-    setMemoryPhase("ready");
-    setConfirmed(new Set());
-    setSurpriseVisible(false);
+    setFound(new Set());
+    setRevealed(false);
+    setLostTextShown(false);
   }
 
   const canAdvance = step === 4 ? askedIndex !== null : step === 5 ? summaryShown : step !== 1 && step < 6;
@@ -203,12 +189,8 @@ export function ServicesExperience() {
       <style>{`
         @keyframes sceneIn { from { opacity: 0; transform: scale(0.96) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
         .scene-in { animation: sceneIn 0.55s cubic-bezier(0.16,1,0.3,1) both; }
-        @keyframes softFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
-        .soft-float { animation: softFloat 4s ease-in-out infinite; }
-        @keyframes surpriseIn { from { opacity: 0; transform: translateY(6px) scale(0.9); } to { opacity: 0.85; transform: translateY(0) scale(1); } }
-        .surprise-in { animation: surpriseIn 0.8s ease-out both; }
         @media (prefers-reduced-motion: reduce) {
-          .scene-in, .soft-float, .surprise-in { animation: none; }
+          .scene-in { animation: none; }
         }
         .press-fx { transition: transform 0.15s ease; }
         .press-fx:active { transform: scale(0.96); }
@@ -244,21 +226,16 @@ export function ServicesExperience() {
         {step > 0 && step < TOTAL_STEPS && (
           <div className="mb-10 flex items-center justify-center gap-1.5">
             {Array.from({ length: TOTAL_STEPS - 1 }).map((_, i) => (
-              <span
-                key={i}
-                className={`h-1 rounded-full transition-all duration-500 ${
-                  i < step ? "w-8 bg-brand-blue" : "w-4 bg-surface-border"
-                }`}
-              />
+              <span key={i} className={`h-1 rounded-full transition-all duration-500 ${i < step ? "w-8 bg-brand-blue" : "w-4 bg-surface-border"}`} />
             ))}
           </div>
         )}
 
-        <div key={`${step}-${memoryPhase}`} className="scene-in">
+        <div key={step} className="scene-in">
           {step === 0 && (
             <div className="text-center">
               <h2 className="text-2xl font-semibold text-ink sm:text-3xl">
-                Combien d&apos;échéances RH pouvez-vous retenir à la fois ?
+                Sauriez-vous retrouver toutes les échéances RH d&apos;un bureau ?
               </h2>
               <p className="mx-auto mt-3 max-w-md text-base text-ink-soft">
                 Vivez en direct comment RH Pilot remet de l&apos;ordre dans une journée chargée.
@@ -272,109 +249,102 @@ export function ServicesExperience() {
             </div>
           )}
 
-          {step === 1 && memoryPhase === "ready" && (
-            <div className="text-center">
-              <p className="text-sm font-semibold text-ink-faint">Test de mémoire</p>
-              <h2 className="mt-2 text-xl font-semibold text-ink sm:text-2xl">
-                Mémorisez ces échéances. Vous avez 5 secondes.
-              </h2>
-              <Button className="press-fx mt-8 px-6 py-3 text-base" onClick={startMemorize}>
-                <span className="inline-flex items-center gap-2">
-                  Prêt <ArrowRight size={16} />
-                </span>
-              </Button>
-            </div>
-          )}
-
-          {step === 1 && memoryPhase === "memorize" && (
-            <div className="text-center">
-              <p className="text-4xl font-bold text-brand-blue">{countdown}</p>
-              <div className="mx-auto mt-6 grid max-w-lg grid-cols-2 gap-3 sm:grid-cols-3">
-                {MEMORY_ITEMS.map((item) => (
-                  <Card key={item.id} compact className="shadow-sm">
-                    <span className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full ${item.tone}`}>
-                      <item.icon size={16} />
-                    </span>
-                    <p className="mt-2 text-xs font-medium text-ink">{item.label}</p>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {step === 1 && memoryPhase === "recall" && (
+          {step === 1 && (
             <div className="text-center">
               <p className="text-sm font-semibold text-ink-faint">
-                Cliquez sur chaque échéance dont vous vous souvenez encore.
+                {found.size < 5
+                  ? `Retrouvez les 5 échéances cachées sur ce bureau. (${found.size}/5)`
+                  : "Vous avez tout trouvé."}
               </p>
-              <div className="relative mx-auto mt-6 max-w-lg">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                  {MEMORY_ITEMS.map((item) => {
-                    const isConfirmed = confirmed.has(item.id);
-                    return (
-                      <button key={item.id} type="button" onClick={() => toggleConfirm(item.id)} className="press-fx text-left">
-                        <Card compact className={`shadow-sm transition-colors ${isConfirmed ? "border-accent-teal/40 bg-accent-teal/5" : ""}`}>
-                          {isConfirmed ? (
-                            <>
-                              <div className="flex items-center justify-between">
-                                <span className={`flex h-9 w-9 items-center justify-center rounded-full ${item.tone}`}>
-                                  <item.icon size={16} />
-                                </span>
-                                <Check size={14} className="text-accent-teal" />
-                              </div>
-                              <p className="mt-2 text-xs font-medium text-ink">{item.label}</p>
-                            </>
-                          ) : (
-                            <>
-                              <span className="mx-auto flex h-9 w-9 items-center justify-center rounded-full bg-surface-subtle text-ink-faint">
-                                ?
-                              </span>
-                              <p className="mt-2 text-xs font-medium text-ink-faint">Cliquez pour vous en souvenir</p>
-                            </>
-                          )}
-                        </Card>
-                      </button>
-                    );
-                  })}
-                </div>
 
-                {surpriseVisible && (
+              <div
+                className="relative mx-auto mt-6 h-[380px] w-full max-w-xl overflow-hidden rounded-2xl border border-surface-border shadow-inner"
+                style={{ background: "linear-gradient(135deg, #f6efe3, #efe2cd)" }}
+              >
+                {DECOR.map((d, i) => (
                   <span
+                    key={i}
                     aria-hidden
-                    className="surprise-in pointer-events-none absolute -right-2 -top-2 h-1.5 w-1.5 rounded-full bg-brand-violet/60"
-                  />
-                )}
+                    className="pointer-events-none absolute -translate-x-1/2 -translate-y-1/2 text-[#b8a888]"
+                    style={{ top: d.top, left: d.left, transform: `translate(-50%, -50%) rotate(${d.rotate}deg)` }}
+                  >
+                    <d.icon size={d.size} strokeWidth={1.5} />
+                  </span>
+                ))}
+
+                {FIND_ITEMS.map((item) => {
+                  const isFound = found.has(item.id);
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => markFound(item.id)}
+                      className="press-fx absolute w-24"
+                      style={{ top: item.top, left: item.left, transform: `translate(-50%, -50%) rotate(${item.rotate}deg)` }}
+                    >
+                      <Card compact className={`shadow-md transition-opacity ${isFound ? "opacity-70 ring-1 ring-accent-teal/40" : ""}`}>
+                        <span className={`mx-auto flex h-7 w-7 items-center justify-center rounded-full ${item.tone}`}>
+                          {isFound ? <Check size={13} /> : <item.icon size={13} />}
+                        </span>
+                        <p className="mt-1 text-[10px] font-medium leading-tight text-ink">{item.label}</p>
+                      </Card>
+                    </button>
+                  );
+                })}
+
+                <div className="absolute" style={{ top: "70%", left: "80%", transform: "translate(-50%, -50%)" }}>
+                  <div className="relative h-16 w-24">
+                    <div className={`absolute inset-0 rotate-[-9deg] transition-all duration-300 ${revealed ? "ring-2 ring-accent-rose/50" : ""}`}>
+                      <Card compact className="shadow-md">
+                        <Hourglass size={13} className="mx-auto text-brand-violet" />
+                        <p className="mt-1 text-[10px] font-medium leading-tight text-ink">
+                          Fin de période d&apos;essai — Mathis
+                        </p>
+                      </Card>
+                    </div>
+                    <div
+                      className="absolute inset-0 z-10 transition-transform duration-700 ease-out"
+                      style={{ transform: revealed ? "translate(110px, -18px) rotate(22deg)" : "rotate(3deg)" }}
+                    >
+                      <Card compact className="bg-white shadow-md">
+                        <ShoppingCart size={13} className="mx-auto text-ink-faint" />
+                        <p className="mt-1 text-[10px] font-medium leading-tight text-ink-soft">Liste de courses</p>
+                      </Card>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              <Button className="press-fx mt-8 px-6 py-3 text-base" onClick={() => setMemoryPhase("lost")}>
-                <span className="inline-flex items-center gap-2">
-                  Valider <ArrowRight size={16} />
-                </span>
-              </Button>
-            </div>
-          )}
+              {found.size === 5 && !revealed && (
+                <Button className="press-fx mt-8 px-6 py-3 text-base" onClick={revealMathis}>
+                  <span className="inline-flex items-center gap-2">
+                    J&apos;ai tout trouvé <ArrowRight size={16} />
+                  </span>
+                </Button>
+              )}
 
-          {step === 1 && memoryPhase === "lost" && (
-            <div className="text-center">
-              <p className="text-3xl font-bold text-accent-rose">Perdu…</p>
-              <p className="mx-auto mt-3 max-w-sm text-base text-ink">
-                Vous avez oublié la fin de période d&apos;essai de <strong>Mathis</strong>.
-              </p>
-              <p className="mx-auto mt-2 max-w-sm text-sm text-ink-faint">
-                C&apos;est normal : elle était quelque part dans l&apos;onglet «&nbsp;RH
-                divers&nbsp;», coincée entre la paie de janvier et une liste de courses.
-              </p>
-              <div className="mx-auto mt-8 max-w-md border-t border-surface-border pt-6">
-                <p className="text-sm text-ink-soft">Mais ce n&apos;est pas grave, car :</p>
-                <p className="mt-2 text-lg font-semibold text-ink">
-                  « La mémoire ne devrait jamais être le principal outil d&apos;une équipe RH. »
-                </p>
-              </div>
-              <Button className="press-fx mt-8 px-6 py-3 text-base" onClick={() => setStep(2)}>
-                <span className="inline-flex items-center gap-2">
-                  Voir comment RH Pilot change ça <ArrowRight size={16} />
-                </span>
-              </Button>
+              {lostTextShown && (
+                <div className="scene-in mt-8">
+                  <p className="text-3xl font-bold text-accent-rose">Perdu…</p>
+                  <p className="mx-auto mt-3 max-w-sm text-base text-ink">
+                    Vous avez oublié la fin de période d&apos;essai de <strong>Mathis</strong>.
+                  </p>
+                  <p className="mx-auto mt-2 max-w-sm text-sm text-ink-faint">
+                    Elle était juste là, sous la liste de courses.
+                  </p>
+                  <div className="mx-auto mt-8 max-w-md border-t border-surface-border pt-6">
+                    <p className="text-sm text-ink-soft">Mais ce n&apos;est pas grave, car :</p>
+                    <p className="mt-2 text-lg font-semibold text-ink">
+                      « La mémoire ne devrait jamais être le principal outil d&apos;une équipe RH. »
+                    </p>
+                  </div>
+                  <Button className="press-fx mt-8 px-6 py-3 text-base" onClick={() => setStep(2)}>
+                    <span className="inline-flex items-center gap-2">
+                      Voir comment RH Pilot change ça <ArrowRight size={16} />
+                    </span>
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
