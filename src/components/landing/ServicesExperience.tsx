@@ -19,6 +19,7 @@ import {
   CircleCheck,
   Check,
   RotateCcw,
+  type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { Logomark } from "@/components/Brand";
@@ -78,7 +79,7 @@ function PostIt({
   paper,
   found,
 }: {
-  icon: React.ComponentType<{ size?: number; className?: string }>;
+  icon: LucideIcon;
   label: string;
   paper: string;
   found?: boolean;
