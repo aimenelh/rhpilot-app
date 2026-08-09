@@ -143,17 +143,18 @@ export function ServicesExperience() {
             <p className="text-sm font-semibold text-ink-faint">6 éléments nécessitent votre attention.</p>
             <div className="mx-auto mt-6 grid max-w-lg grid-cols-2 gap-3 sm:grid-cols-3">
               {CHAOS_ITEMS.map((item, i) => (
-                <Card
+                <div
                   key={item.label}
-                  compact
-                  className={`${reducedMotion ? "" : "soft-float"} shadow-sm`}
+                  className={reducedMotion ? "" : "soft-float"}
                   style={{ animationDelay: `${i * 0.3}s`, transform: `rotate(${(i % 2 === 0 ? -1 : 1) * 2}deg)` }}
                 >
-                  <span className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full ${item.tone}`}>
-                    <item.icon size={16} />
-                  </span>
-                  <p className="mt-2 text-xs font-medium text-ink">{item.label}</p>
-                </Card>
+                  <Card compact className="shadow-sm">
+                    <span className={`mx-auto flex h-9 w-9 items-center justify-center rounded-full ${item.tone}`}>
+                      <item.icon size={16} />
+                    </span>
+                    <p className="mt-2 text-xs font-medium text-ink">{item.label}</p>
+                  </Card>
+                </div>
               ))}
             </div>
             <Button className="mt-8 px-6 py-3 text-base" onClick={() => setStep(2)}>
