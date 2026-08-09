@@ -27,7 +27,82 @@ export function HeroVisual() {
   const doneCount = CENTRAL_TASKS.filter((t) => t.status === "done").length;
 
   return (
-    <div className="hidden items-center gap-10 lg:flex">
+    <>
+      {/* Version mobile/tablette — composition simplifiée (2 satellites au
+          lieu de 6, pas de lignes SVG ni d'orbite animée) plutôt qu'une
+          réduction brute de la version desktop, qui casserait sur un
+          écran étroit. Le fond animé (AmbientNetwork) reste visible
+          indépendamment de ce composant. */}
+      <div className="relative mx-auto mt-2 h-64 w-full max-w-xs lg:hidden">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute left-1/2 top-1/2 h-48 w-48 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand-gradient opacity-20 blur-3xl"
+        />
+
+        <div
+          className="absolute z-10 w-32 opacity-60"
+          style={{ top: "12%", left: "14%", transform: "translate(-50%, -50%) rotate(-6deg) scale(0.85)" }}
+        >
+          <Card compact className="shadow-sm">
+            <div className="flex items-center gap-1.5">
+              <Stethoscope size={13} className="shrink-0 text-brand-violet" />
+              <p className="truncate text-[10px] font-semibold text-ink">Visite médicale</p>
+            </div>
+          </Card>
+        </div>
+
+        <div
+          className="absolute z-10 w-32 opacity-70"
+          style={{ top: "14%", left: "86%", transform: "translate(-50%, -50%) rotate(5deg) scale(0.85)" }}
+        >
+          <Card compact className="shadow-sm">
+            <div className="flex items-center gap-1.5">
+              <Landmark size={13} className="shrink-0 text-accent-amber" />
+              <p className="truncate text-[10px] font-semibold text-ink">DPAE</p>
+            </div>
+          </Card>
+        </div>
+
+        <div
+          className="absolute z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-md"
+          style={{ top: "6%", left: "50%", transform: "translate(-50%, -50%)" }}
+        >
+          <Bell size={14} className="text-brand-blue" />
+          <span className="absolute -right-0.5 -top-0.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-accent-rose text-[8px] font-semibold text-white">
+            2
+          </span>
+        </div>
+
+        <div className="absolute left-1/2 top-1/2 z-30 w-56 -translate-x-1/2 -translate-y-1/2 rotate-[-1deg]">
+          <Card className="shadow-[0_25px_50px_-15px_rgba(46,111,242,0.3)] ring-1 ring-brand-blue/10">
+            <div className="flex items-center gap-2">
+              <span className="h-2 w-2 shrink-0 rounded-full bg-accent-teal" />
+              <div>
+                <p className="text-xs font-semibold text-ink">Embauche de Julie Martin</p>
+                <p className="text-[10px] text-ink-faint">Déclenché aujourd&apos;hui</p>
+              </div>
+            </div>
+            <div className="mt-2.5">
+              <ProgressBar value={doneCount} max={CENTRAL_TASKS.length} />
+            </div>
+            <ul className="mt-3 flex flex-col gap-2">
+              {CENTRAL_TASKS.map((task) => (
+                <li key={task.label} className="flex items-center gap-2">
+                  {task.status === "done" ? (
+                    <CircleCheck size={13} className="shrink-0 text-accent-teal" />
+                  ) : (
+                    <CircleDashed size={13} className="shrink-0 text-ink-faint" />
+                  )}
+                  <p className="text-xs text-ink">{task.label}</p>
+                </li>
+              ))}
+            </ul>
+          </Card>
+        </div>
+      </div>
+
+      {/* Version desktop/large écran — composition complète */}
+      <div className="hidden items-center gap-10 lg:flex">
       <div className="relative h-[520px] w-[520px] shrink-0">
         {/* Halo derrière la carte centrale */}
         <div
@@ -274,5 +349,6 @@ export function HeroVisual() {
         </p>
       </div>
     </div>
+    </>
   );
 }
