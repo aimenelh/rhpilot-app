@@ -8,6 +8,7 @@ const WELCOME_COOKIE = "rhpilot_welcome_seen";
 // vient de la vérification de signature Svix, pas de Clerk auth()).
 const isPublicRoute = createRouteMatcher([
   "/",
+  "/services",
   "/pourquoi",
   "/cgu",
   "/confidentialite",
