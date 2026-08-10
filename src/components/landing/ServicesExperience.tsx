@@ -34,6 +34,14 @@ const FIND_ITEMS = [
   { id: "julie", icon: Bell, label: "Rappel équipe — Julie", paper: "#fbcfe8", top: "45%", left: "14%", rotate: 3 },
 ];
 
+const DUST = [
+  { top: "22%", left: "68%", delay: "0s" },
+  { top: "55%", left: "42%", delay: "3s" },
+  { top: "35%", left: "20%", delay: "6s" },
+  { top: "70%", left: "62%", delay: "1.5s" },
+  { top: "15%", left: "38%", delay: "4.5s" },
+];
+
 const DEFAULT_STEPS = ["Documents", "Visite médicale", "Intégration", "Suivi à J+30"];
 
 const QUESTIONS = [
@@ -70,24 +78,11 @@ const STEP_GLOW: Record<number, [string, string]> = {
   6: ["rgba(46,111,242,0.12)", "rgba(123,92,250,0.1)"],
 };
 
-// Un vrai post-it : papier coloré, coin plié, ombre portée — dimensions
-// fixes et identiques pour tous, condition indispensable pour que la
-// note de Mathis se cache parfaitement sous la liste de courses.
-function PostIt({
-  icon: Icon,
-  label,
-  paper,
-  found,
-}: {
-  icon: LucideIcon;
-  label: string;
-  paper: string;
-  found?: boolean;
-}) {
+function PostIt({ icon: Icon, label, paper, found }: { icon: LucideIcon; label: string; paper: string; found?: boolean }) {
   return (
     <div
       className="relative flex h-20 w-20 flex-col justify-between p-2"
-      style={{ backgroundColor: paper, boxShadow: "0 8px 14px -6px rgba(40,30,10,0.4)" }}
+      style={{ backgroundColor: paper, boxShadow: "0 10px 18px -6px rgba(40,30,10,0.45)" }}
     >
       <div
         aria-hidden
@@ -110,10 +105,12 @@ export function ServicesExperience() {
   const [summaryShown, setSummaryShown] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const deskRef = useRef<HTMLDivElement>(null);
 
   const [found, setFound] = useState<Set<string>>(new Set());
   const [revealed, setRevealed] = useState(false);
   const [lostTextShown, setLostTextShown] = useState(false);
+  const [hoveredId, setHoveredId] = useState<string | null>(null);
 
   useEffect(() => {
     setReducedMotion(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
@@ -132,11 +129,27 @@ export function ServicesExperience() {
         const rect = node!.getBoundingClientRect();
         node!.style.setProperty("--spot-x", `${e.clientX - rect.left}px`);
         node!.style.setProperty("--spot-y", `${e.clientY - rect.top}px`);
+
+        if (deskRef.current) {
+          const deskRect = deskRef.current.getBoundingClientRect();
+          const cx = deskRect.left + deskRect.width / 2;
+          const cy = deskRect.top + deskRect.height / 2;
+          const dx = Math.max(-1, Math.min(1, (e.clientX - cx) / (deskRect.width / 2)));
+          const dy = Math.max(-1, Math.min(1, (e.clientY - cy) / (deskRect.height / 2)));
+          deskRef.current.style.transform = `rotateX(${dy * -7}deg) rotateY(${dx * 7}deg)`;
+        }
         ticking = false;
       });
     }
+    function onLeave() {
+      if (deskRef.current) deskRef.current.style.transform = "rotateX(0deg) rotateY(0deg)";
+    }
     node.addEventListener("mousemove", onMove);
-    return () => node.removeEventListener("mousemove", onMove);
+    node.addEventListener("mouseleave", onLeave);
+    return () => {
+      node.removeEventListener("mousemove", onMove);
+      node.removeEventListener("mouseleave", onLeave);
+    };
   }, [reducedMotion]);
 
   function markFound(id: string) {
@@ -212,11 +225,18 @@ export function ServicesExperience() {
         .scene-in { animation: sceneIn 0.55s cubic-bezier(0.16,1,0.3,1) both; }
         @keyframes steamRise { 0% { transform: translateY(0) scaleX(1); opacity: 0.5; } 100% { transform: translateY(-14px) scaleX(1.4); opacity: 0; } }
         .steam { animation: steamRise 2.4s ease-out infinite; }
+        @keyframes dustDrift {
+          0% { transform: translate(0,0); opacity: 0; }
+          15% { opacity: 0.55; }
+          85% { opacity: 0.4; }
+          100% { transform: translate(16px, -34px); opacity: 0; }
+        }
+        .dust-mote { animation: dustDrift 9s ease-in-out infinite; }
         @media (prefers-reduced-motion: reduce) {
-          .scene-in, .steam { animation: none; }
+          .scene-in, .steam, .dust-mote { animation: none; }
         }
         .press-fx { transition: transform 0.15s ease; }
-        .press-fx:active { transform: scale(0.96); }
+        .press-fx:active { transform: scale(0.94); }
       `}</style>
 
       <div
@@ -276,72 +296,98 @@ export function ServicesExperience() {
                 {found.size < 5 ? `Retrouvez les 5 échéances cachées sur ce bureau. (${found.size}/5)` : "Vous avez tout trouvé."}
               </p>
 
-              <div
-                className="relative mx-auto mt-6 h-[400px] w-full max-w-xl overflow-hidden rounded-2xl border border-[#5a4632]/30 shadow-inner"
-                style={{ background: "repeating-linear-gradient(100deg, #caa876, #caa876 3px, #c39f6c 3px, #c39f6c 6px)" }}
-              >
-                <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-3 bg-[#5a4632]/25" />
-                <div aria-hidden className="pointer-events-none absolute inset-0" style={{ boxShadow: "inset 0 0 60px 10px rgba(40,28,14,0.18)" }} />
-
-                <div className="pointer-events-none absolute" style={{ top: "16%", left: "13%", transform: "translate(-50%, -50%)" }}>
-                  <div className="h-3 w-8 rounded-b bg-[#2a2a2a]/70" style={{ marginTop: "34px", marginLeft: "5px" }} />
-                  <div className="w-16 rounded-md border-2 border-[#2a2a2a] bg-[#0c1b33] p-1.5 shadow-lg">
-                    <div className="flex gap-1">
-                      <span className="h-1.5 w-1.5 rounded-full bg-white/20" />
-                      <span className="h-1.5 w-4 rounded-full bg-brand-blue/70" />
-                    </div>
-                    <div className="mt-1 flex gap-1">
-                      <span className="h-3 flex-1 rounded-sm bg-brand-violet/40" />
-                      <span className="h-3 flex-1 rounded-sm bg-accent-teal/40" />
-                      <span className="h-3 flex-1 rounded-sm bg-accent-amber/40" />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pointer-events-none absolute" style={{ top: "78%", left: "11%", transform: "translate(-50%, -50%)" }}>
-                  <span className="steam absolute -top-2 left-2 h-2 w-0.5 rounded-full bg-white/60" />
-                  <span className="steam absolute -top-2 left-4 h-2 w-0.5 rounded-full bg-white/50" style={{ animationDelay: "0.8s" }} />
-                  <div className="relative h-4 w-5 rounded-b-md bg-[#e8e2d4]">
-                    <span className="absolute -right-1.5 top-0.5 h-2 w-1.5 rounded-r-full border border-[#e8e2d4]" />
-                  </div>
-                </div>
-
+              <div className="mx-auto mt-6 w-full max-w-xl" style={{ perspective: "1400px" }}>
                 <div
-                  className="pointer-events-none absolute h-7 w-9 rounded-sm bg-[#eef0ef] shadow-md"
-                  style={{ top: "20%", left: "84%", transform: "translate(-50%, -50%) rotate(6deg)" }}
+                  ref={deskRef}
+                  className="relative h-[400px] w-full overflow-hidden rounded-2xl border border-[#5a4632]/30 shadow-2xl transition-transform duration-200 ease-out"
+                  style={{
+                    background: "repeating-linear-gradient(100deg, #caa876, #caa876 3px, #c39f6c 3px, #c39f6c 6px)",
+                    transformStyle: "preserve-3d",
+                  }}
                 >
-                  <div className="absolute left-0 top-0 h-full w-1 bg-[#c1c7c4]" />
-                </div>
+                  <div aria-hidden className="pointer-events-none absolute inset-0" style={{ background: "linear-gradient(135deg, rgba(255,255,255,0.28), transparent 55%)" }} />
+                  <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 h-3 bg-[#5a4632]/25" />
+                  <div aria-hidden className="pointer-events-none absolute inset-0" style={{ boxShadow: "inset 0 0 60px 10px rgba(40,28,14,0.18)" }} />
 
-                {FIND_ITEMS.map((item) => {
-                  const isFound = found.has(item.id);
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => markFound(item.id)}
-                      className="press-fx absolute"
-                      style={{ top: item.top, left: item.left, transform: `translate(-50%, -50%) rotate(${item.rotate}deg)` }}
-                    >
-                      <div className={isFound ? "opacity-70" : ""}>
-                        <PostIt icon={item.icon} label={item.label} paper={item.paper} found={isFound} />
+                  {DUST.map((d, i) => (
+                    <span
+                      key={i}
+                      aria-hidden
+                      className="dust-mote pointer-events-none absolute h-[3px] w-[3px] rounded-full bg-white"
+                      style={{ top: d.top, left: d.left, animationDelay: d.delay, transform: "translateZ(60px)" }}
+                    />
+                  ))}
+
+                  <div className="pointer-events-none absolute" style={{ top: "16%", left: "13%", transform: "translate(-50%, -50%) translateZ(48px)" }}>
+                    <div className="h-3 w-8 rounded-b bg-[#2a2a2a]/70" style={{ marginTop: "34px", marginLeft: "5px" }} />
+                    <div className="w-16 rounded-md border-2 border-[#2a2a2a] bg-[#0c1b33] p-1.5 shadow-lg">
+                      <div className="flex gap-1">
+                        <span className="h-1.5 w-1.5 rounded-full bg-white/20" />
+                        <span className="h-1.5 w-4 rounded-full bg-brand-blue/70" />
                       </div>
-                    </button>
-                  );
-                })}
-
-                <div className="absolute" style={{ top: "68%", left: "80%", transform: "translate(-50%, -50%)" }}>
-                  <div className="relative h-20 w-20">
-                    <div className="absolute inset-0" style={{ transform: "rotate(-4deg)" }}>
-                      <div style={{ boxShadow: revealed ? "0 0 0 3px rgba(244,63,94,0.45)" : "none", borderRadius: 2 }}>
-                        <PostIt icon={Hourglass} label="Période d'essai — Mathis" paper="#e9d5ff" />
+                      <div className="mt-1 flex gap-1">
+                        <span className="h-3 flex-1 rounded-sm bg-brand-violet/40" />
+                        <span className="h-3 flex-1 rounded-sm bg-accent-teal/40" />
+                        <span className="h-3 flex-1 rounded-sm bg-accent-amber/40" />
                       </div>
                     </div>
-                    <div
-                      className="absolute inset-0 z-10 transition-transform duration-700 ease-out"
-                      style={{ transform: revealed ? "translate(120px, -22px) rotate(26deg)" : "rotate(-4deg)" }}
-                    >
-                      <PostIt icon={ShoppingCart} label="Lait, pain, œufs, café…" paper="#f7f3ea" />
+                  </div>
+
+                  <div className="pointer-events-none absolute" style={{ top: "78%", left: "11%", transform: "translate(-50%, -50%) translateZ(20px)" }}>
+                    <span className="steam absolute -top-2 left-2 h-2 w-0.5 rounded-full bg-white/60" />
+                    <span className="steam absolute -top-2 left-4 h-2 w-0.5 rounded-full bg-white/50" style={{ animationDelay: "0.8s" }} />
+                    <div className="relative h-4 w-5 rounded-b-md bg-[#e8e2d4]">
+                      <span className="absolute -right-1.5 top-0.5 h-2 w-1.5 rounded-r-full border border-[#e8e2d4]" />
+                    </div>
+                  </div>
+
+                  <div
+                    className="pointer-events-none absolute h-7 w-9 rounded-sm bg-[#eef0ef] shadow-md"
+                    style={{ top: "20%", left: "84%", transform: "translate(-50%, -50%) rotate(6deg) translateZ(16px)" }}
+                  >
+                    <div className="absolute left-0 top-0 h-full w-1 bg-[#c1c7c4]" />
+                  </div>
+
+                  {FIND_ITEMS.map((item) => {
+                    const isFound = found.has(item.id);
+                    const isHovered = hoveredId === item.id;
+                    const z = isHovered ? 54 : 26;
+                    const scale = isHovered ? 1.08 : 1;
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        onClick={() => markFound(item.id)}
+                        onMouseEnter={() => setHoveredId(item.id)}
+                        onMouseLeave={() => setHoveredId((h) => (h === item.id ? null : h))}
+                        className="press-fx absolute"
+                        style={{
+                          top: item.top,
+                          left: item.left,
+                          transform: `translate(-50%, -50%) rotate(${item.rotate}deg) translateZ(${z}px) scale(${scale})`,
+                          transition: "transform 0.25s ease, opacity 0.25s ease",
+                        }}
+                      >
+                        <div className={isFound ? "opacity-70" : ""}>
+                          <PostIt icon={item.icon} label={item.label} paper={item.paper} found={isFound} />
+                        </div>
+                      </button>
+                    );
+                  })}
+
+                  <div className="absolute" style={{ top: "68%", left: "80%", transform: "translate(-50%, -50%) translateZ(26px)" }}>
+                    <div className="relative h-20 w-20">
+                      <div className="absolute inset-0" style={{ transform: "rotate(-4deg)" }}>
+                        <div style={{ boxShadow: revealed ? "0 0 0 3px rgba(244,63,94,0.45)" : "none", borderRadius: 2 }}>
+                          <PostIt icon={Hourglass} label="Période d'essai — Mathis" paper="#e9d5ff" />
+                        </div>
+                      </div>
+                      <div
+                        className="absolute inset-0 z-10 transition-transform duration-700 ease-out"
+                        style={{ transform: revealed ? "translate(120px, -22px) rotate(26deg) translateZ(10px)" : "rotate(-4deg)" }}
+                      >
+                        <PostIt icon={ShoppingCart} label="Lait, pain, œufs, café…" paper="#f7f3ea" />
+                      </div>
                     </div>
                   </div>
                 </div>
