@@ -1,8 +1,8 @@
 import Link from "next/link";
-import { TriangleAlert, Sparkles, Send, CircleCheck, BarChart3, Timer } from "lucide-react";
+import Image from "next/image";
+import { TriangleAlert, Sparkles, Send, CircleCheck, BarChart3, Timer, CalendarClock } from "lucide-react";
 import { Button } from "@/components/ui/Button";
-import { ProductPreview } from "@/components/landing/ProductPreview";
-import { HeroVisual } from "@/components/landing/HeroVisual";
+import { Card } from "@/components/ui/Card";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import { Reveal } from "@/components/landing/Reveal";
@@ -61,17 +61,16 @@ export function LandingPage() {
         <span aria-hidden className="pointer-events-none absolute right-[20%] top-[14%] h-2 w-2 rounded-full bg-brand-violet/50 blur-[1px]" />
         <span aria-hidden className="pointer-events-none absolute bottom-[18%] right-[10%] h-1.5 w-1.5 rounded-full bg-accent-teal/50 blur-[1px]" />
 
-        <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-6 py-16 lg:grid-cols-2 lg:gap-16 lg:py-24">
+        <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-14 px-6 pb-24 pt-20 lg:grid-cols-2 lg:gap-16 lg:pt-28">
           <div>
-            <h1 className="text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
+            <h1 className="text-4xl font-bold leading-[1.08] tracking-tight text-ink sm:text-5xl lg:text-6xl">
               La mémoire ne devrait{" "}
               <span className="bg-brand-gradient bg-clip-text text-transparent">jamais</span>{" "}
               être le principal outil d&apos;une équipe RH.
             </h1>
-            <p className="mt-5 max-w-lg text-lg text-ink-soft">
-              RH Pilot transforme chaque événement RH en plan d&apos;action clair : les bonnes
-              échéances, les bons responsables, une vue d&apos;ensemble de ce qui reste à
-              faire.
+            <p className="mt-6 max-w-lg text-lg text-ink-soft">
+              RH Pilot centralise vos échéances, vos parcours et vos actions RH pour vous
+              aider à savoir quoi faire, quand le faire, et pourquoi.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-4">
               <Link href="/sign-up">
@@ -81,16 +80,137 @@ export function LandingPage() {
                 J&apos;ai déjà un compte →
               </Link>
             </div>
+            <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium text-ink-faint">
+              <span className="flex items-center gap-1.5">
+                <CircleCheck size={13} className="text-accent-teal" /> Hébergé en Europe
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CircleCheck size={13} className="text-accent-teal" /> Sécurisé
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CircleCheck size={13} className="text-accent-teal" /> Pensé pour le RGPD
+              </span>
+            </div>
           </div>
 
-          {/* Mobile / tablette : aperçu simple, la composition complète est réservée au desktop */}
-          <div className="flex justify-center lg:hidden">
-            <ProductPreview />
-          </div>
+          {/* Vraie capture du produit, pas une illustration */}
+          <Reveal>
+            <div className="relative">
+              <div className="overflow-hidden rounded-2xl border border-surface-border shadow-2xl">
+                <Image
+                  src="/marketing/dashboard.png"
+                  alt="Tableau de bord RH Pilot"
+                  width={1672}
+                  height={941}
+                  className="w-full"
+                  priority
+                />
+              </div>
+              <div className="absolute -bottom-6 -left-4 max-w-[13rem] rounded-2xl bg-brand-blue px-4 py-3.5 text-sm font-medium leading-relaxed text-white shadow-xl sm:-left-8 sm:max-w-[15rem]">
+                « Je veux arrêter d&apos;oublier les périodes d&apos;essai qui se terminent. »
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
 
-          <div className="flex justify-center lg:justify-end">
-            <HeroVisual />
-          </div>
+      {/* Fonctionnalités — trois blocs honnêtes, ce que RH Pilot fait réellement aujourd'hui */}
+      <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
+        <div className="mx-auto max-w-6xl px-6">
+          <Reveal>
+            <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
+              {/* Parcours collaborateur */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue">Parcours collaborateur</p>
+                <h3 className="mt-2 text-lg font-semibold text-ink">Suivez chaque étape, de l&apos;arrivée au départ.</h3>
+                <p className="mt-2 text-sm text-ink-soft">
+                  Créez des parcours personnalisés et assurez une expérience fluide et
+                  conforme pour chaque collaborateur.
+                </p>
+
+                <div className="relative mt-6 flex items-center justify-between">
+                  <div aria-hidden className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-surface-border" />
+                  {["Arrivée", "Intégration", "Essai", "Suivi", "Départ"].map((label, i) => (
+                    <span
+                      key={label}
+                      className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold ${
+                        i === 2
+                          ? "bg-brand-blue text-white"
+                          : i < 2
+                            ? "bg-accent-teal/15 text-accent-teal"
+                            : "bg-white text-ink-faint ring-1 ring-surface-border"
+                      }`}
+                    >
+                      {i < 2 ? <CircleCheck size={12} /> : i + 1}
+                    </span>
+                  ))}
+                </div>
+                <p className="mt-2 text-center text-[10px] text-ink-faint">
+                  Arrivée · Intégration · Période d&apos;essai · Suivi · Départ
+                </p>
+
+                <Card className="mt-4">
+                  <p className="text-sm font-medium text-ink">Mathis — Développeur</p>
+                  <p className="text-xs text-accent-amber">Étape actuelle : Période d&apos;essai</p>
+                  <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-subtle">
+                    <div className="h-full rounded-full bg-brand-gradient" style={{ width: "66%" }} />
+                  </div>
+                </Card>
+              </div>
+
+              {/* Automatisations */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue">Automatisations</p>
+                <h3 className="mt-2 text-lg font-semibold text-ink">Gagnez du temps. Restez serein.</h3>
+                <p className="mt-2 text-sm text-ink-soft">
+                  RH Pilot déclenche les bonnes actions au bon moment, dès qu&apos;un
+                  événement RH survient.
+                </p>
+
+                <div className="mt-6 flex flex-col items-center gap-2">
+                  <Card compact className="w-full text-center">
+                    <p className="text-xs font-medium text-ink">Événement : Nouvelle embauche</p>
+                  </Card>
+                  <span className="text-ink-faint">↓</span>
+                  <Card compact className="w-full border-brand-blue/20 bg-brand-blue/5 text-center">
+                    <p className="flex items-center justify-center gap-1.5 text-xs font-medium text-brand-blue">
+                      <Sparkles size={12} /> RH Pilot crée le parcours d&apos;intégration
+                    </p>
+                  </Card>
+                  <div className="mt-1 grid w-full grid-cols-2 gap-1.5 text-[10px] text-ink-faint">
+                    <span className="rounded bg-surface-subtle px-2 py-1 text-center">Documents</span>
+                    <span className="rounded bg-surface-subtle px-2 py-1 text-center">Visite médicale</span>
+                    <span className="rounded bg-surface-subtle px-2 py-1 text-center">Formation</span>
+                    <span className="rounded bg-surface-subtle px-2 py-1 text-center">Rappel manager</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Assistant RH */}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue">Assistant RH</p>
+                <h3 className="mt-2 text-lg font-semibold text-ink">Posez vos questions. Obtenez des réponses.</h3>
+                <p className="mt-2 text-sm text-ink-soft">
+                  Votre assistant connaît vos données RH et vous aide à prendre les bonnes
+                  décisions, sans jamais rien inventer.
+                </p>
+
+                <Card className="mt-6">
+                  <div className="flex justify-end">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-brand-blue px-3 py-1.5 text-xs text-white">
+                      Quelles échéances cette semaine ?
+                    </div>
+                  </div>
+                  <div className="mt-2 flex justify-start">
+                    <div className="max-w-[90%] rounded-2xl rounded-tl-sm bg-surface-subtle px-3 py-1.5 text-xs text-ink">
+                      J&apos;observe 3 échéances cette semaine, dont la période d&apos;essai
+                      de Mathis dans 5 jours.
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </div>
+          </Reveal>
         </div>
       </section>
 
@@ -106,22 +226,13 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="relative mx-auto max-w-4xl px-6 py-16">
+      <section className="relative mx-auto max-w-5xl px-6 py-16">
         <Reveal>
-          <div className="relative grid grid-cols-1 gap-12 sm:grid-cols-2 sm:gap-0">
-            <div
-              aria-hidden
-              className="absolute left-1/2 top-1/2 hidden h-28 w-px -translate-x-1/2 -translate-y-1/2 bg-gradient-to-b from-transparent via-surface-border to-transparent sm:block"
-            />
-            <span
-              aria-hidden
-              className="absolute left-1/2 top-1/2 hidden h-1.5 w-1.5 -translate-x-1/2 -translate-y-1/2 animate-pulse rounded-full bg-brand-blue/50 sm:block"
-            />
-
-            <div className="text-center sm:pr-12 sm:text-right">
-              <p className="flex items-baseline justify-center gap-2 sm:justify-end">
-                <BarChart3 size={18} className="text-brand-blue/50" />
-                <span className="text-6xl font-bold tracking-tight text-ink">
+          <div className="grid grid-cols-1 gap-10 sm:grid-cols-3 sm:divide-x sm:divide-surface-border">
+            <div className="text-center sm:px-6">
+              <p className="flex items-baseline justify-center gap-2">
+                <BarChart3 size={17} className="text-brand-blue/50" />
+                <span className="text-5xl font-bold tracking-tight text-ink">
                   45<span className="text-brand-blue">%</span>
                 </span>
               </p>
@@ -134,10 +245,10 @@ export function LandingPage() {
               <p className="mt-4 text-[11px] text-ink-faint">Insee</p>
             </div>
 
-            <div className="text-center sm:pl-12 sm:text-left">
-              <p className="flex items-baseline justify-center gap-2 sm:justify-start">
-                <Timer size={18} className="text-brand-violet/50" />
-                <span className="text-6xl font-bold tracking-tight text-ink">
+            <div className="text-center sm:px-6">
+              <p className="flex items-baseline justify-center gap-2">
+                <Timer size={17} className="text-brand-violet/50" />
+                <span className="text-5xl font-bold tracking-tight text-ink">
                   60<span className="text-brand-violet">%</span>
                 </span>
               </p>
@@ -146,14 +257,137 @@ export function LandingPage() {
                 administratives.
               </p>
               <p className="mt-1.5 text-sm font-medium text-brand-violet">
-                → RH Pilot veille simplement à ce que rien ne soit oublié.
+                → RH Pilot veille à ce que rien ne soit oublié.
               </p>
               <p className="mt-4 text-[11px] text-ink-faint">
-                Baromètre RH au quotidien, Éditions Tissot / PayFit, 2026
+                Baromètre RH au quotidien, Éditions Tissot / PayFit, 2025
+              </p>
+            </div>
+
+            <div className="text-center sm:px-6">
+              <p className="flex items-baseline justify-center gap-2">
+                <CalendarClock size={17} className="text-accent-amber/60" />
+                <span className="text-5xl font-bold tracking-tight text-ink">272 300</span>
+              </p>
+              <p className="mt-3 text-sm text-ink-soft">
+                fins de période d&apos;essai chaque trimestre en France.
+              </p>
+              <p className="mt-1.5 text-sm font-medium text-accent-amber">
+                → Chacune a un délai de prévenance à ne pas manquer.
+              </p>
+              <p className="mt-4 text-[11px] text-ink-faint">
+                Dares, Ministère du Travail (T3 2025)
               </p>
             </div>
           </div>
         </Reveal>
+      </section>
+
+      <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
+        <div className="mx-auto max-w-5xl px-6">
+          <Reveal>
+            <div className="text-center">
+              <h2 className="text-2xl font-semibold text-ink">Voici RH Pilot, tel qu&apos;il est vraiment</h2>
+              <p className="mx-auto mt-3 max-w-xl text-sm text-ink-soft">
+                Pas de maquette retouchée : ce sont de vraies captures de l&apos;application,
+                en bêta aujourd&apos;hui.
+              </p>
+            </div>
+          </Reveal>
+
+          <div className="mt-14 flex flex-col gap-16">
+            {/* Calendrier */}
+            <Reveal>
+              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-5 lg:gap-12">
+                <div className="lg:col-span-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue">Calendrier</p>
+                  <h3 className="mt-2 text-xl font-semibold text-ink">
+                    Toutes les échéances au même endroit.
+                  </h3>
+                  <p className="mt-3 text-sm text-ink-soft">
+                    Aujourd&apos;hui, cette semaine, ce mois-ci, en retard — jamais besoin de
+                    recouper plusieurs vues pour savoir où vous en êtes.
+                  </p>
+                </div>
+                <div className="group lg:col-span-3">
+                  <div className="overflow-hidden rounded-xl border border-surface-border bg-white shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl">
+                    <div className="flex items-center gap-1.5 border-b border-surface-border bg-surface-subtle px-3 py-2">
+                      <span className="h-2.5 w-2.5 rounded-full bg-accent-rose/50" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-accent-amber/50" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-accent-teal/50" />
+                    </div>
+                    <Image
+                      src="/marketing/calendar.png"
+                      alt="Calendrier RH Pilot"
+                      width={1688}
+                      height={932}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+
+            {/* Notifications */}
+            <Reveal delay={100}>
+              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-5 lg:gap-12">
+                <div className="group order-2 lg:order-1 lg:col-span-3">
+                  <div className="overflow-hidden rounded-xl border border-surface-border bg-white shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl">
+                    <div className="flex items-center gap-1.5 border-b border-surface-border bg-surface-subtle px-3 py-2">
+                      <span className="h-2.5 w-2.5 rounded-full bg-accent-rose/50" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-accent-amber/50" />
+                      <span className="h-2.5 w-2.5 rounded-full bg-accent-teal/50" />
+                    </div>
+                    <Image
+                      src="/marketing/notifications.png"
+                      alt="Notifications RH Pilot"
+                      width={1681}
+                      height={935}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+                <div className="order-1 lg:order-2 lg:col-span-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue">Notifications</p>
+                  <h3 className="mt-2 text-xl font-semibold text-ink">
+                    Qui a été relancé, et quand.
+                  </h3>
+                  <p className="mt-3 text-sm text-ink-soft">
+                    Un historique complet des rappels envoyés — jamais besoin de se demander
+                    si quelqu&apos;un a déjà été prévenu.
+                  </p>
+                </div>
+              </div>
+            </Reveal>
+
+            {/* Assistant */}
+            <Reveal delay={200}>
+              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-5 lg:gap-12">
+                <div className="lg:col-span-2">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue">Assistant</p>
+                  <h3 className="mt-2 text-xl font-semibold text-ink">
+                    Une réponse à chaque question, sur chaque écran.
+                  </h3>
+                  <p className="mt-3 text-sm text-ink-soft">
+                    L&apos;assistant vous suit partout dans l&apos;application, avec des
+                    suggestions adaptées à l&apos;écran où vous êtes.
+                  </p>
+                </div>
+                <div className="group flex justify-center lg:col-span-3">
+                  <div className="w-full max-w-sm overflow-hidden rounded-xl border border-surface-border bg-white shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl">
+                    <Image
+                      src="/marketing/assistant.png"
+                      alt="Assistant RH Pilot"
+                      width={570}
+                      height={720}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              </div>
+            </Reveal>
+          </div>
+        </div>
       </section>
 
       <section className="relative py-16">
