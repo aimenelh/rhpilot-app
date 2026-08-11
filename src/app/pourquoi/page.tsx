@@ -79,7 +79,7 @@ export default function WhyPage() {
         <Reveal variant="scale" delay={100}>
           <div className="mx-auto mt-8 max-w-sm overflow-hidden rounded-2xl border border-surface-border bg-white shadow-lg">
             <div className="border-b border-surface-border px-4 py-3 text-center">
-              <p className="text-xs font-semibold text-ink">Embauche · Julie Martin</p>
+              <p className="text-xs font-semibold text-ink">Embauche · Paul DUMAS</p>
               <p className="text-[10px] text-ink-faint">Karim, Léa, Inès</p>
             </div>
             <div className="flex flex-col p-4">
