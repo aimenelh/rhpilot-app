@@ -46,12 +46,6 @@ export default async function EventsPage({
 
   return (
     <div className="max-w-4xl">
-      <style>{`
-        @keyframes pageIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-        .page-in { animation: pageIn 0.4s ease-out both; }
-        @media (prefers-reduced-motion: reduce) { .page-in { animation: none; } }
-      `}</style>
-      <div className="page-in">
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-semibold text-ink">Parcours RH actifs</h1>
         <Link href="/dashboard/events/bulk-trigger" className="shrink-0">
@@ -103,7 +97,7 @@ export default async function EventsPage({
 
               return (
                 <Link key={event.id} href={`/dashboard/events/${event.id}`}>
-                  <Card className="transition-all duration-150 hover:-translate-y-0.5 hover:border-brand-blue/40 hover:shadow-md">
+                  <Card interactive>
                     <div className="flex items-center justify-between gap-4">
                       <div className="flex items-center gap-2.5">
                         <span
@@ -151,7 +145,6 @@ export default async function EventsPage({
             })}
           </div>
         )}
-      </div>
       </div>
     </div>
   );

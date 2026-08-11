@@ -86,10 +86,10 @@ export function AppShell({
                 )}
                 <Link
                   href={item.href}
-                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
                     isActive
                       ? "bg-brand-blue/10 text-brand-blue"
-                      : "text-ink-soft hover:bg-surface-subtle hover:text-ink"
+                      : "text-ink-soft hover:translate-x-0.5 hover:bg-surface-subtle hover:text-ink"
                   }`}
                 >
                   <item.icon size={16} />
@@ -103,10 +103,10 @@ export function AppShell({
         <div className="mt-auto flex flex-col gap-1 pt-4">
           <Link
             href={HELP_ITEM.href}
-            className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+            className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
               pathname.startsWith(HELP_ITEM.href)
                 ? "bg-brand-blue/10 text-brand-blue"
-                : "text-ink-faint hover:bg-surface-subtle hover:text-ink-soft"
+                : "text-ink-faint hover:translate-x-0.5 hover:bg-surface-subtle hover:text-ink-soft"
             }`}
           >
             <HELP_ITEM.icon size={16} />

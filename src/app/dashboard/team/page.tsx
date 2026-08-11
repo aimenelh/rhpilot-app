@@ -50,12 +50,6 @@ export default async function TeamPage() {
 
   return (
     <div className="max-w-2xl">
-      <style>{`
-        @keyframes pageIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-        .page-in { animation: pageIn 0.4s ease-out both; }
-        @media (prefers-reduced-motion: reduce) { .page-in { animation: none; } }
-      `}</style>
-      <div className="page-in">
       <h1 className="text-2xl font-semibold text-ink">Équipe</h1>
       <p className="mt-1 text-sm text-ink-soft">
         {members.length} membre{members.length > 1 ? "s" : ""} dans votre organisation.
@@ -155,7 +149,6 @@ export default async function TeamPage() {
           Seuls les propriétaires et administrateurs peuvent inviter de nouveaux membres.
         </p>
       )}
-      </div>
     </div>
   );
 }
