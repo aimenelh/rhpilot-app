@@ -465,3 +465,26 @@ model AuditLog {
   @@index([organizationId, createdAt])
   @@map("audit_logs")
 }
+
+// ------------------------------------------------------------
+// Marketing — diagnostic public
+// ------------------------------------------------------------
+
+// Réponses au quiz "Diagnostic RH" (/diagnostic), rempli par des
+// visiteurs anonymes avant toute création de compte — jamais lié à
+// une Organization ou un User, puisqu'aucun des deux n'existe encore
+// à ce stade. answers stocke les réponses brutes (Json) pour ne pas
+// figer le schéma si les questions évoluent ; riskAreas est calculé
+// côté serveur au moment de l'enregistrement, pour permettre un
+// filtrage rapide sans reparser answers à chaque requête.
+model DiagnosticResponse {
+  id          String   @id @default(cuid())
+  answers     Json
+  riskAreas   String[]
+  email       String?
+  companySize String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("diagnostic_responses")
+}
