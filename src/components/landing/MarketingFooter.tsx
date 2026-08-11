@@ -8,6 +8,12 @@ const PRODUCT_LINKS = [
   { href: "/sign-in", label: "Se connecter" },
 ];
 
+const RESOURCES_LINKS = [
+  { href: "/ressources", label: "Tous les articles" },
+  { href: "/ressources/delai-prevenance-periode-essai", label: "Délai de prévenance" },
+  { href: "/ressources/visite-medicale-embauche-delai", label: "Visite médicale d'embauche" },
+];
+
 const LEGAL_LINKS = [
   { href: "/securite", label: "Sécurité" },
   { href: "/cgu", label: "CGU" },
@@ -20,7 +26,7 @@ export function MarketingFooter() {
 
   return (
     <footer className="border-t border-surface-border">
-      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-8 gap-y-10 px-6 py-14 sm:grid-cols-4">
+      <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-8 gap-y-10 px-6 py-14 sm:grid-cols-5">
         <div className="col-span-2">
           <Link href="/" className="flex items-center gap-2">
             <Logomark size={24} />
@@ -35,6 +41,19 @@ export function MarketingFooter() {
           <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Produit</p>
           <ul className="mt-3 flex flex-col gap-2.5">
             {PRODUCT_LINKS.map((link) => (
+              <li key={link.href}>
+                <Link href={link.href} className="text-sm text-ink-soft transition-colors hover:text-ink hover:underline">
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Ressources</p>
+          <ul className="mt-3 flex flex-col gap-2.5">
+            {RESOURCES_LINKS.map((link) => (
               <li key={link.href}>
                 <Link href={link.href} className="text-sm text-ink-soft transition-colors hover:text-ink hover:underline">
                   {link.label}

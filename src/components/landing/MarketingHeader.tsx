@@ -22,6 +22,12 @@ export function MarketingHeader() {
         >
           Pourquoi RH Pilot ?
         </Link>
+        <Link
+          href="/ressources"
+          className="text-sm font-medium text-ink-soft hover:text-ink"
+        >
+          Ressources
+        </Link>
         <Link href="/sign-in" className="text-sm font-medium text-ink-soft hover:text-ink">
           Se connecter
         </Link>
