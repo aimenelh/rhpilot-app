@@ -10,12 +10,13 @@ import { Reveal } from "@/components/landing/Reveal";
 import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
 
 const CONVERSATION = [
-  { mine: true, name: "Karim", initials: "K", color: "#2E6FF2", time: "09:02", text: "Le nouveau arrive aujourd'hui, quelqu'un pour l'accueillir ?" },
-  { mine: false, name: "Léa", initials: "L", color: "#7B5CFA", time: "09:10", text: "Je pensais que c'était toi 😅" },
-  { mine: false, name: "Inès", initials: "I", color: "#14C9B0", time: "09:14", text: "Cette échéance est passée." },
-  { mine: true, name: "Karim", initials: "K", color: "#2E6FF2", time: "09:15", text: "Attends, quelle échéance ?" },
-  { mine: false, name: "Léa", initials: "L", color: "#7B5CFA", time: "09:41", text: "Qui devait s'en occuper ?" },
-  { mine: false, name: "Inès", initials: "I", color: "#14C9B0", time: "10:02", text: "Personne ne m'avait prévenue." },
+  { mine: true, name: "Karim", initials: "K", color: "#2E6FF2", time: "09:02", text: "Le nouveau arrive aujourd'hui, quelqu'un pour l'accueillir ? 👀" },
+  { mine: false, name: "Léa", initials: "L", color: "#7B5CFA", time: "09:10", text: "Ah non pas moi, j'ai l'entretien d'intégration de Léo à 9h30 😅" },
+  { mine: false, name: "Inès", initials: "I", color: "#14C9B0", time: "09:12", text: "Attends je croyais que c'était toi Karim qui gérait les arrivées ?" },
+  { mine: true, name: "Karim", initials: "K", color: "#2E6FF2", time: "09:15", text: "Moi je fais les contrats, pas l'accueil 🙃" },
+  { mine: false, name: "Léa", initials: "L", color: "#7B5CFA", time: "09:41", text: "Bon du coup qui va la chercher à l'accueil ?" },
+  { mine: false, name: "Inès", initials: "I", color: "#14C9B0", time: "09:52", text: "Elle arrive à quelle heure déjà 😭" },
+  { mine: true, name: "Karim", initials: "K", color: "#2E6FF2", time: "10:02", text: "...personne ne lui a envoyé le plan d'accès en fait" },
 ];
 
 const PHILOSOPHY = [
@@ -77,9 +78,9 @@ export default function WhyPage() {
         </Reveal>
 
         <Reveal variant="scale" delay={100}>
-          <div className="mx-auto mt-8 max-w-sm overflow-hidden rounded-2xl border border-surface-border bg-white shadow-lg">
+          <div className="mx-auto mt-8 max-w-md overflow-hidden rounded-2xl border border-surface-border bg-white shadow-lg">
             <div className="border-b border-surface-border px-4 py-3 text-center">
-              <p className="text-xs font-semibold text-ink">Embauche · Paul DUMAS</p>
+              <p className="text-xs font-semibold text-ink">Embauche · Julie Martin</p>
               <p className="text-[10px] text-ink-faint">Karim, Léa, Inès</p>
             </div>
             <div className="flex flex-col p-4">
@@ -94,7 +95,7 @@ export default function WhyPage() {
                         {msg.initials}
                       </span>
                     )}
-                    <div className={`flex max-w-[75%] flex-col ${msg.mine ? "items-end" : "items-start"}`}>
+                    <div className={`flex max-w-[82%] flex-col ${msg.mine ? "items-end" : "items-start"}`}>
                       {!msg.mine && (
                         <span className="mb-0.5 text-[10px] font-medium text-ink-faint">{msg.name}</span>
                       )}
