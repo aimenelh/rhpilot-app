@@ -50,6 +50,12 @@ export default async function TeamPage() {
 
   return (
     <div className="max-w-2xl">
+      <style>{`
+        @keyframes pageIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .page-in { animation: pageIn 0.4s ease-out both; }
+        @media (prefers-reduced-motion: reduce) { .page-in { animation: none; } }
+      `}</style>
+      <div className="page-in">
       <h1 className="text-2xl font-semibold text-ink">Équipe</h1>
       <p className="mt-1 text-sm text-ink-soft">
         {members.length} membre{members.length > 1 ? "s" : ""} dans votre organisation.
@@ -81,10 +87,13 @@ export default async function TeamPage() {
           {members.map((m, index) => {
             const isSelf = m.id === membership.id;
             return (
-              <li key={m.id} className="flex items-center justify-between gap-3 py-3">
+              <li
+                key={m.id}
+                className="-mx-2.5 flex items-center justify-between gap-3 rounded-lg px-2.5 py-3 transition-colors duration-150 hover:bg-surface-subtle/70"
+              >
                 <div className="flex items-center gap-3">
                   <span
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white ${AVATAR_COLORS[index % AVATAR_COLORS.length]}`}
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white transition-transform duration-150 ${AVATAR_COLORS[index % AVATAR_COLORS.length]}`}
                   >
                     {getInitials(m.user)}
                   </span>
@@ -117,7 +126,10 @@ export default async function TeamPage() {
           </div>
           <ul className="mt-3 flex flex-col divide-y divide-surface-border">
             {pendingInvitations.map((invitation) => (
-              <li key={invitation.id} className="flex items-center justify-between py-3">
+              <li
+                key={invitation.id}
+                className="-mx-2.5 flex items-center justify-between rounded-lg px-2.5 py-3 transition-colors duration-150 hover:bg-surface-subtle/70"
+              >
                 <div className="flex items-center gap-2.5">
                   <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-subtle text-ink-faint">
                     <Mail size={14} />
@@ -143,6 +155,7 @@ export default async function TeamPage() {
           Seuls les propriétaires et administrateurs peuvent inviter de nouveaux membres.
         </p>
       )}
+      </div>
     </div>
   );
 }
