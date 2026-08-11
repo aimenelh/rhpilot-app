@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import {
   ShieldCheck,
   Globe,
@@ -32,6 +33,7 @@ const PILLARS = [
     icon: Globe,
     title: "Hébergé en Europe",
     text: "Base de données et application hébergées dans l'Union européenne.",
+    badge: true,
   },
   {
     icon: KeyRound,
@@ -56,13 +58,33 @@ const PILLARS = [
 ];
 
 const VENDORS = [
-  { name: "Neon", role: "Base de données (UE)" },
-  { name: "Clerk", role: "Authentification" },
-  { name: "Resend", role: "Emails transactionnels" },
-  { name: "Vercel", role: "Hébergement de l'application" },
+  { name: "Neon", role: "Base de données (UE)", src: "/logos/neon.png", w: 581, h: 194, dark: false },
+  { name: "Clerk", role: "Authentification", src: "/logos/clerk.png", w: 580, h: 197, dark: false },
+  { name: "Resend", role: "Emails transactionnels", src: "/logos/resend.png", w: 712, h: 199, dark: true },
+  { name: "Vercel", role: "Hébergement de l'application", src: "/logos/vercel.png", w: 800, h: 201, dark: false },
 ];
 
 const RIGHTS = ["Accès", "Rectification", "Effacement", "Limitation", "Portabilité", "Opposition"];
+
+// Drapeau européen reconstruit fidèlement (fond bleu, 12 étoiles en
+// cercle) — le fichier fourni portait un filigrane visible, inutilisable
+// tel quel sur un vrai site.
+function EUFlag({ size = 22 }: { size?: number }) {
+  const stars = Array.from({ length: 12 }, (_, i) => {
+    const angle = (i / 12) * 2 * Math.PI - Math.PI / 2;
+    return { x: 12 + 7 * Math.cos(angle), y: 12 + 7 * Math.sin(angle) };
+  });
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" className="shrink-0 rounded-sm" aria-label="Union européenne">
+      <rect width="24" height="24" fill="#003399" />
+      {stars.map((s, i) => (
+        <text key={i} x={s.x} y={s.y} fontSize="5" fill="#FFCC00" textAnchor="middle" dominantBaseline="central">
+          ★
+        </text>
+      ))}
+    </svg>
+  );
+}
 
 export default function SecurityPage() {
   return (
@@ -95,9 +117,12 @@ export default function SecurityPage() {
             {PILLARS.map((item, index) => (
               <Reveal key={item.title} variant="bounce" delay={(index % 3) * 100 + Math.floor(index / 3) * 120}>
                 <Card className="h-full">
-                  <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue">
-                    <item.icon size={18} />
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue">
+                      <item.icon size={18} />
+                    </span>
+                    {item.badge && <EUFlag size={24} />}
+                  </div>
                   <h3 className="mt-3 text-sm font-semibold text-ink">{item.title}</h3>
                   <p className="mt-1.5 text-sm text-ink-soft">{item.text}</p>
                 </Card>
@@ -119,9 +144,17 @@ export default function SecurityPage() {
         <div className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
           {VENDORS.map((vendor, index) => (
             <Reveal key={vendor.name} variant="bounce" delay={index * 90}>
-              <Card compact>
-                <p className="text-sm font-semibold text-ink">{vendor.name}</p>
-                <p className="mt-1 text-xs text-ink-faint">{vendor.role}</p>
+              <Card compact className={vendor.dark ? "bg-[#0a0a0a]" : ""}>
+                <div className="flex h-8 items-center justify-center">
+                  <Image
+                    src={vendor.src}
+                    alt={vendor.name}
+                    width={vendor.w}
+                    height={vendor.h}
+                    className="h-full w-auto object-contain"
+                  />
+                </div>
+                <p className={`mt-2 text-xs ${vendor.dark ? "text-white/60" : "text-ink-faint"}`}>{vendor.role}</p>
               </Card>
             </Reveal>
           ))}
