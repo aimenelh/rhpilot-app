@@ -1,5 +1,8 @@
-import { Logomark, Wordmark } from "@/components/Brand";
+import Link from "next/link";
+import { CircleCheck } from "lucide-react";
+import { Logomark } from "@/components/Brand";
 import { AuthCardStack } from "@/components/landing/AuthCardStack";
+import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
 
 export function AuthLayout({
   title,
@@ -13,44 +16,67 @@ export function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen">
-      {/* Panneau de marque — masqué sur mobile, le formulaire reste
-          utilisable seul en dessous d'un certain gabarit (quality
-          floor responsive). */}
-      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-ink px-12 py-12 lg:flex">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -left-32 -top-32 h-96 w-96 rounded-full bg-brand-blue/30 blur-3xl"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -bottom-40 -right-20 h-96 w-96 rounded-full bg-brand-violet/30 blur-3xl"
-        />
+    <div className="relative min-h-screen overflow-hidden">
+      <AmbientNetwork />
 
-        <div className="relative flex items-center gap-2">
-          <Logomark size={30} />
-          <span className="text-[15px] font-semibold tracking-tight text-white">
-            RH <span className="bg-brand-gradient bg-clip-text text-transparent">Pilot</span>
-          </span>
-        </div>
+      <style>{`
+        @keyframes authIn {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .auth-in { animation: authIn 0.7s cubic-bezier(0.16,1,0.3,1) both; }
+        @media (prefers-reduced-motion: reduce) {
+          .auth-in { animation: none; }
+        }
+      `}</style>
 
-        <div className="relative">
-          <h1 className="max-w-md text-3xl font-semibold leading-tight text-white">{title}</h1>
-          <p className="mt-3 max-w-sm text-sm text-white/60">{subtitle}</p>
-          <div className="mt-10 max-w-md">
+      <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col justify-center gap-14 px-6 py-16 lg:flex-row lg:items-center lg:gap-20">
+        {/* Colonne gauche — même langage que le hero de la landing */}
+        <div className="w-full max-w-md lg:max-w-lg">
+          <Link href="/" className="auth-in mb-8 flex items-center gap-2">
+            <Logomark size={30} />
+            <span className="text-[15px] font-semibold tracking-tight text-ink">
+              RH <span className="bg-brand-gradient bg-clip-text text-transparent">Pilot</span>
+            </span>
+          </Link>
+
+          <h1
+            className="auth-in text-4xl font-bold leading-[1.1] tracking-tight text-ink sm:text-5xl"
+            style={{ animationDelay: "0.05s" }}
+          >
+            {title}
+          </h1>
+          <p className="auth-in mt-4 max-w-md text-base text-ink-soft" style={{ animationDelay: "0.12s" }}>
+            {subtitle}
+          </p>
+
+          <div className="auth-in mt-16 hidden lg:block" style={{ animationDelay: "0.22s" }}>
             <AuthCardStack>{preview}</AuthCardStack>
+          </div>
+
+          <div className="auth-in mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium text-ink-faint" style={{ animationDelay: "0.3s" }}>
+            <span className="flex items-center gap-1.5">
+              <CircleCheck size={13} className="text-accent-teal" /> Hébergé en Europe
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CircleCheck size={13} className="text-accent-teal" /> Sécurisé
+            </span>
+            <span className="flex items-center gap-1.5">
+              <CircleCheck size={13} className="text-accent-teal" /> Pensé pour le RGPD
+            </span>
           </div>
         </div>
 
-        <p className="relative text-xs text-white/40">Votre copilote d&apos;organisation RH</p>
-      </div>
-
-      <div className="flex w-full flex-col items-center justify-center bg-surface-subtle px-6 py-16 lg:w-1/2 lg:px-16">
-        <div className="mb-8 flex items-center gap-2 lg:hidden">
-          <Logomark size={28} />
-          <Wordmark />
+        {/* Colonne droite — carte de connexion en verre, halo lumineux derrière */}
+        <div className="auth-in relative w-full max-w-md" style={{ animationDelay: "0.16s" }}>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -inset-8 -z-10 animate-pulse rounded-[2rem] bg-brand-gradient opacity-[0.08] blur-2xl"
+          />
+          <div className="rounded-2xl border border-surface-border bg-white/85 p-2 shadow-2xl backdrop-blur-xl sm:p-4">
+            {children}
+          </div>
         </div>
-        {children}
       </div>
     </div>
   );

@@ -8,12 +8,15 @@ import { Stethoscope, Send } from "lucide-react";
 export function AuthCardStack({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative" style={{ perspective: "1200px" }}>
-      {/* Carte arrière — visite médicale, encore plus assumée */}
+      {/* Carte arrière — visite médicale, encore plus assumée.
+          Décalage vertical volontairement modéré (-40px, pas -64px) :
+          un décalage trop agressif fait remonter la carte jusque dans
+          le sous-titre au-dessus, quelle que soit sa longueur. */}
       <div
         className="absolute w-40 rounded-xl border border-surface-border bg-white px-3.5 py-3 auth-float-slow"
         style={{
-          top: "-64px",
-          left: "-88px",
+          top: "-40px",
+          left: "-72px",
           transform: "scale(0.8) rotate(-11deg)",
           transformOrigin: "bottom right",
           boxShadow: "0 24px 48px -16px rgba(15, 27, 61, 0.35)",
@@ -35,8 +38,8 @@ export function AuthCardStack({ children }: { children: React.ReactNode }) {
       <div
         className="absolute w-36 rounded-xl border border-surface-border bg-white px-3 py-2.5 auth-float-slower"
         style={{
-          top: "-14px",
-          right: "-68px",
+          top: "-6px",
+          right: "-60px",
           transform: "scale(0.75) rotate(10deg)",
           transformOrigin: "bottom left",
           boxShadow: "0 20px 40px -14px rgba(15, 27, 61, 0.3)",
