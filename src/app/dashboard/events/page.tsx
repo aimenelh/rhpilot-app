@@ -83,14 +83,9 @@ export default async function EventsPage({
               title="Aucun parcours RH pour l'instant"
               description="Déclenchez un événement (embauche, fin de période d'essai...) depuis la fiche d'un salarié pour générer automatiquement son plan d'action."
               action={
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  <Link href="/dashboard/employees">
-                    <Button>Voir les salariés →</Button>
-                  </Link>
-                  <Link href="/dashboard/events/bulk-trigger">
-                    <Button variant="secondary">Déclencher en masse</Button>
-                  </Link>
-                </div>
+                <Link href="/dashboard/employees">
+                  <Button>Voir les salariés →</Button>
+                </Link>
               }
             />
           )
