@@ -4,6 +4,7 @@ import { Logomark, Wordmark } from "@/components/Brand";
 const PRODUCT_LINKS = [
   { href: "/services", label: "Nos services" },
   { href: "/pourquoi", label: "Pourquoi RH Pilot ?" },
+  { href: "/questions", label: "Vos questions" },
   { href: "/diagnostic", label: "Diagnostic RH" },
   { href: "/sign-up", label: "Essayer gratuitement" },
   { href: "/sign-in", label: "Se connecter" },
