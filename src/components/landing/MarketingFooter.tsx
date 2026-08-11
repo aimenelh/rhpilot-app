@@ -9,6 +9,7 @@ const PRODUCT_LINKS = [
 ];
 
 const LEGAL_LINKS = [
+  { href: "/securite", label: "Sécurité" },
   { href: "/cgu", label: "CGU" },
   { href: "/confidentialite", label: "Confidentialité" },
   { href: "/cookies", label: "Cookies" },
