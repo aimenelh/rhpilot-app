@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 const NAV_LINKS = [
   { href: "/services", label: "Nos services" },
   { href: "/pourquoi", label: "Pourquoi RH Pilot ?" },
+  { href: "/questions", label: "Vos questions" },
   { href: "/ressources", label: "Ressources" },
 ];
 
