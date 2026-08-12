@@ -77,7 +77,7 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
             </span>
           </div>
           <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-            Assistant RH Pilot
+            Copilote RH Pilot
             <span className="rounded-full bg-brand-violet/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-violet">
               IA
             </span>

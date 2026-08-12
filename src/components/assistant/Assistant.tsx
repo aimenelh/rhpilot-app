@@ -194,10 +194,10 @@ export function Assistant({ summary }: { summary: AssistantSummary }) {
       <button
         onClick={() => setOpen(true)}
         className="assistant-fab fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-brand-gradient px-4 py-3 text-sm font-medium text-white shadow-card transition-transform duration-150 hover:scale-105 hover:[animation-play-state:paused] active:scale-95"
-        aria-label="Ouvrir l'assistant RH Pilot"
+        aria-label="Ouvrir l'aide RH Pilot"
       >
         <MessageCircleQuestion size={18} />
-        Assistant
+        Aide
       </button>
 
       {open && (
@@ -207,20 +207,20 @@ export function Assistant({ summary }: { summary: AssistantSummary }) {
         >
           <div
             role="dialog"
-            aria-label="Assistant RH Pilot"
+            aria-label="Aide RH Pilot"
             className="assistant-panel-in flex h-[34rem] w-full max-w-sm flex-col rounded-xl border border-surface-border bg-white shadow-lg"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-start justify-between border-b border-surface-border px-4 py-3">
               <div>
-                <p className="text-sm font-semibold text-ink">Assistant RH Pilot</p>
+                <p className="text-sm font-semibold text-ink">Aide RH Pilot</p>
                 <p className="mt-0.5 text-xs text-ink-faint">
                   {showWelcome ? renderGreeting("Bonjour 👋 Bienvenue sur RH Pilot.") : renderGreeting(buildGreeting(summary))}
                 </p>
               </div>
               <button
                 onClick={showWelcome ? exploreFreely : () => setOpen(false)}
-                aria-label="Fermer l'assistant"
+                aria-label="Fermer l'aide"
                 className="shrink-0 text-ink-faint hover:text-ink"
               >
                 <X size={18} />
