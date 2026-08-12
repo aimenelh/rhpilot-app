@@ -20,6 +20,8 @@ import { FlashToast } from "./ui/FlashToast";
 import { Assistant } from "./assistant/Assistant";
 import { TourGuide } from "./tour/TourGuide";
 import { GlobalSearch } from "./GlobalSearch";
+import { RhNewsToast } from "./RhNewsToast";
+import type { RhNewsItem } from "@/lib/rhNews";
 
 type NavItem = {
   href: string;
@@ -53,11 +55,13 @@ export function AppShell({
   organizationName,
   accessRole,
   assistantSummary,
+  rhNews,
   children,
 }: {
   organizationName: string;
   accessRole: string;
   assistantSummary: { userDisplayName: string; overdueCount: number; suggestionsCount: number };
+  rhNews: RhNewsItem[];
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -142,6 +146,7 @@ export function AppShell({
       <FlashToast />
       <Assistant summary={assistantSummary} />
       <TourGuide />
+      <RhNewsToast items={rhNews} />
     </div>
   );
 }

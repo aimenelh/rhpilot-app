@@ -3,6 +3,7 @@ import { getCurrentMemberships } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAnomalies } from "@/lib/anomalies";
 import { getUserDisplayName } from "@/lib/displayName";
+import { getRhNews } from "@/lib/rhNews";
 import { AppShell } from "@/components/AppShell";
 import { Logomark, Wordmark } from "@/components/Brand";
 import { InitializingScreen } from "@/components/InitializingScreen";
@@ -46,7 +47,7 @@ export default async function DashboardLayout({
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const [overdueCount, anomalies] = await Promise.all([
+  const [overdueCount, anomalies, rhNews] = await Promise.all([
     prisma.task.count({
       where: {
         organizationId: currentMembership.organizationId,
@@ -56,6 +57,7 @@ export default async function DashboardLayout({
       },
     }),
     getAnomalies(currentMembership.organizationId),
+    getRhNews(),
   ]);
 
   return (
@@ -67,6 +69,7 @@ export default async function DashboardLayout({
         overdueCount,
         suggestionsCount: anomalies.length,
       }}
+      rhNews={rhNews}
     >
       {children}
     </AppShell>
