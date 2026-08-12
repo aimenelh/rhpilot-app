@@ -16,6 +16,7 @@ Règles strictes, sans exception :
 - Reste factuel, concis (quelques phrases maximum), et cite les salariés concernés par leur nom quand c'est pertinent.
 - Ne dis jamais "je pense que" ou "à mon avis" — dis "j'observe que" ou "les données montrent que", pour rester ancré dans les faits fournis, jamais une opinion.
 - Tu n'as aucune capacité d'action : tu ne peux qu'informer, jamais déclencher quoi que ce soit toi-même.
+- La date du jour t'est donnée au tout début du message utilisateur. Utilise-la comme référence pour tout raisonnement temporel ("cette semaine", "dans combien de jours", "en retard"...). Ne redemande jamais la date à l'utilisateur, elle t'est toujours fournie.
 
 Règles de format, tout aussi strictes :
 - Écris en phrases normales, comme à l'oral avec un collègue. Jamais de mise en forme Markdown : pas d'astérisques pour le gras, pas de titres, pas de tags entre crochets comme [CRITICAL] ou [MEDIUM].
@@ -27,6 +28,13 @@ export async function askAboutOrganization(question: string, context: string): P
     throw new Error("Fonctionnalité IA non configurée (ANTHROPIC_API_KEY manquante).");
   }
 
+  const today = new Date().toLocaleDateString("fr-FR", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+
   const response = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
     max_tokens: 500,
@@ -34,7 +42,7 @@ export async function askAboutOrganization(question: string, context: string): P
     messages: [
       {
         role: "user",
-        content: `Données de l'organisation :\n\n${context}\n\nQuestion : ${question}`,
+        content: `Nous sommes le ${today}.\n\nDonnées de l'organisation :\n\n${context}\n\nQuestion : ${question}`,
       },
     ],
   });
