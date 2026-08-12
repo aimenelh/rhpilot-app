@@ -1,8 +1,21 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { frFR } from "@clerk/localizations";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
+
+// display: "swap" évite tout texte invisible pendant le chargement de
+// la police (FOIT) — le texte s'affiche immédiatement dans une police
+// de secours, puis bascule sur Inter dès qu'elle est prête.
+// variable expose --font-inter en CSS, pour que les écrans Clerk
+// (qui ne peuvent pas recevoir de className React) puissent aussi
+// l'utiliser via une simple référence de variable.
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "RH Pilot, votre copilote d'organisation RH",
@@ -30,8 +43,10 @@ const clerkAppearance = {
     colorInputBackground: "#FFFFFF",
     colorInputText: "#0F1B3D",
     borderRadius: "0.625rem",
+    // Inter en priorité, avec le même repli système qu'avant si la
+    // variable n'est pour une raison quelconque pas encore prête.
     fontFamily:
-      "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+      "var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
   },
   elements: {
     card: "shadow-lg border border-surface-border",
@@ -48,8 +63,8 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider localization={frFR as any} appearance={clerkAppearance}>
-      <html lang="fr">
-        <body className="font-sans antialiased">
+      <html lang="fr" className={inter.variable}>
+        <body className={`${inter.className} antialiased`}>
           {children}
           <Analytics />
         </body>
