@@ -12,6 +12,23 @@ type Message = { role: "user" | "assistant"; text: string; time: string };
 function nowLabel() {
   return new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
 }
+// Filet de sécurité : le system prompt interdit le Markdown à l'IA,
+// mais un modèle peut occasionnellement en glisser malgré tout. Plutôt
+// que d'afficher des astérisques bruts à l'écran, on les convertit en
+// vrai gras — sans dangerouslySetInnerHTML, juste un découpage de texte.
+function renderFormattedText(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return (
+        <strong key={i} className="font-semibold">
+          {part.slice(2, -2)}
+        </strong>
+      );
+    }
+    return <span key={i}>{part}</span>;
+  });
+}
 function SubmitButton({ disabled }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
   return (
@@ -101,7 +118,7 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
                 </span>
                 <div className="flex max-w-[80%] flex-col gap-1">
                   <div className="whitespace-pre-wrap rounded-2xl rounded-tl-sm bg-white px-3.5 py-2 text-sm text-ink shadow-sm">
-                    {m.text}
+                    {renderFormattedText(m.text)}
                   </div>
                   <span className="pl-1 text-[10px] text-ink-faint">{m.time}</span>
                 </div>
