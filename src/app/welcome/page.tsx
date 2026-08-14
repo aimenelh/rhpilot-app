@@ -14,8 +14,6 @@ import { Logomark } from "@/components/Brand";
 import { Button } from "@/components/ui/Button";
 import { acknowledgeWelcome } from "./actions";
 
-// Icônes décoratives en orbite autour du logo — purement illustratif,
-// reprend le même langage visuel que la landing page (halos, orbite).
 const ORBIT_ICONS = [
   { icon: Users, top: "14%", left: "10%", tone: "bg-brand-violet/10 text-brand-violet" },
   { icon: FileText, top: "14%", left: "90%", tone: "bg-accent-amber/10 text-accent-amber" },
@@ -23,9 +21,6 @@ const ORBIT_ICONS = [
   { icon: ShieldCheck, top: "86%", left: "91%", tone: "bg-brand-blue/10 text-brand-blue" },
 ];
 
-// Contenu de l'aperçu produit — décoratif et volontairement schématique
-// (comme les mini-cartes déjà présentes sur cette page), jamais présenté
-// comme un vrai relevé de données.
 const PREVIEW_NAV = [
   { icon: LayoutDashboard, label: "Tableau de bord", active: true },
   { icon: Users, label: "Salariés" },
@@ -52,7 +47,6 @@ export default function WelcomePage({
 
   return (
     <div className="bg-gradient-to-br from-surface-subtle via-white to-brand-blue/5">
-      {/* ============================================================ HERO */}
       <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-20">
         <div
           aria-hidden
@@ -78,7 +72,6 @@ export default function WelcomePage({
         <form action={acknowledgeWelcome} className="relative z-10 flex w-full flex-col items-center">
           <input type="hidden" name="next" value={next} />
 
-          {/* Logo en orbite */}
           <div className="relative h-56 w-full max-w-xl sm:h-64">
             <svg
               aria-hidden
@@ -120,7 +113,7 @@ export default function WelcomePage({
             </div>
           </div>
 
-          <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-brand-violet/10 px-3 py-1 text-xs font-semibold text-brand-violet">
+          <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-brand-violet">
             <Rocket size={13} />
             Bêta
           </span>
@@ -142,7 +135,6 @@ export default function WelcomePage({
             </span>
           </Button>
 
-          {/* Aperçu produit — décoratif */}
           <div
             aria-hidden
             className="welcome-card-in mt-14 flex w-full max-w-3xl overflow-hidden rounded-2xl border border-surface-border bg-white shadow-2xl"

@@ -8,13 +8,7 @@ export function Logomark({ size = 28 }: { size?: number }) {
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
-      <defs>
-        <linearGradient id="rhpilot-gradient" x1="0" y1="0" x2="32" y2="32">
-          <stop offset="0%" stopColor="#2F6FED" />
-          <stop offset="100%" stopColor="#7C5CFC" />
-        </linearGradient>
-      </defs>
-      <rect width="32" height="32" rx="8" fill="url(#rhpilot-gradient)" />
+      <rect width="32" height="32" rx="8" fill="#E8432E" />
       <path
         d="M10 8h8a5 5 0 0 1 0 10h-3.5l6 6h-5l-5.5-5.5V24h-4V8h4Zm0 4v3h7.5a1.5 1.5 0 1 0 0-3H10Z"
         fill="white"

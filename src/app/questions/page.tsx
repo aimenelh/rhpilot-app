@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, FileSpreadsheet, Database, CircleDollarSign, Users, ShieldCheck, X, Check } from "lucide-react";
+import { ArrowRight, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
@@ -32,11 +32,11 @@ const MYTHS = [
   },
 ];
 
-function Kicker({ children }: { children: React.ReactNode }) {
+function CategoryLabel({ children, color }: { children: React.ReactNode; color: string }) {
   return (
-    <span className="inline-block rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-blue">
+    <p className="border-b-2 pb-2 text-xs font-semibold uppercase tracking-[0.1em] text-ink-faint" style={{ borderColor: color }}>
       {children}
-    </span>
+    </p>
   );
 }
 
@@ -47,12 +47,12 @@ export default function QuestionsPage() {
       <MarketingHeader />
 
       {/* Titre */}
-      <section className="mx-auto max-w-2xl px-6 py-16 text-center">
-        <Reveal variant="scale">
-          <h1 className="text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
+      <section className="mx-auto max-w-2xl px-6 py-16">
+        <Reveal variant="left">
+          <h1 className="max-w-xl text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
             Vos questions, avant de vous lancer.
           </h1>
-          <p className="mt-4 text-lg text-ink-soft">
+          <p className="mt-4 max-w-lg text-lg text-ink-soft">
             Les vraies questions qu&apos;on nous pose, avec des réponses honnêtes. Pas de
             discours commercial.
           </p>
@@ -97,12 +97,7 @@ export default function QuestionsPage() {
           <div className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2">
             <Reveal variant="left">
               <Card>
-                <div className="flex items-center gap-2">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-teal/10 text-accent-teal">
-                    <FileSpreadsheet size={16} />
-                  </span>
-                  <Kicker>Excel &amp; habitudes</Kicker>
-                </div>
+                <CategoryLabel color="#14B8A6">Excel &amp; habitudes</CategoryLabel>
                 <div className="mt-3">
                   <FaqItem question="Vais-je devoir tout ressaisir mes données existantes ?">
                     Non. Vous pouvez importer vos salariés directement depuis un fichier CSV, ou
@@ -120,12 +115,7 @@ export default function QuestionsPage() {
 
             <Reveal variant="right">
               <Card>
-                <div className="flex items-center gap-2">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue">
-                    <Database size={16} />
-                  </span>
-                  <Kicker>Ce n&apos;est pas un SIRH</Kicker>
-                </div>
+                <CategoryLabel color="#E8432E">Ce n&apos;est pas un SIRH</CategoryLabel>
                 <div className="mt-3">
                   <FaqItem question="J'ai déjà un SIRH, RH Pilot fait doublon ?">
                     Non. RH Pilot ne remplace aucun outil existant : il rend visible ce qui,
@@ -143,12 +133,7 @@ export default function QuestionsPage() {
 
             <Reveal variant="left" delay={100}>
               <Card>
-                <div className="flex items-center gap-2">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-amber/10 text-accent-amber">
-                    <CircleDollarSign size={16} />
-                  </span>
-                  <Kicker>Prix &amp; engagement</Kicker>
-                </div>
+                <CategoryLabel color="#D97706">Prix &amp; engagement</CategoryLabel>
                 <div className="mt-3">
                   <FaqItem question="Combien ça coûte ?">
                     RH Pilot est actuellement gratuit, en bêta. Le modèle tarifaire définitif
@@ -164,12 +149,7 @@ export default function QuestionsPage() {
 
             <Reveal variant="right" delay={100}>
               <Card>
-                <div className="flex items-center gap-2">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-violet/10 text-brand-violet">
-                    <Users size={16} />
-                  </span>
-                  <Kicker>Équipe &amp; adoption</Kicker>
-                </div>
+                <CategoryLabel color="#B8321F">Équipe &amp; adoption</CategoryLabel>
                 <div className="mt-3">
                   <FaqItem question="Mon équipe va-t-elle devoir apprendre un outil compliqué ?">
                     Non. Si vous savez lire un tableau de bord et cliquer sur un bouton, vous
@@ -186,12 +166,7 @@ export default function QuestionsPage() {
 
             <Reveal variant="left" delay={200} className="md:col-span-2">
               <Card>
-                <div className="flex items-center gap-2">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent-rose/10 text-accent-rose">
-                    <ShieldCheck size={16} />
-                  </span>
-                  <Kicker>Données &amp; IA</Kicker>
-                </div>
+                <CategoryLabel color="#E11D48">Données &amp; IA</CategoryLabel>
                 <div className="mt-3 grid grid-cols-1 gap-x-8 sm:grid-cols-2">
                   <div>
                     <FaqItem question="Mes données sont-elles en sécurité ?">

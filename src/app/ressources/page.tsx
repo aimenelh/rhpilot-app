@@ -36,15 +36,12 @@ export default function ResourcesPage() {
       <AmbientNetwork />
       <MarketingHeader />
 
-      <section className="mx-auto max-w-3xl px-6 py-16 text-center">
-        <Reveal variant="scale">
-          <span className="inline-block rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-blue">
-            Ressources
-          </span>
-          <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
+      <section className="mx-auto max-w-3xl px-6 py-16">
+        <Reveal variant="left">
+          <h1 className="max-w-xl text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
             Ce que le Code du travail dit vraiment.
           </h1>
-          <p className="mx-auto mt-4 max-w-lg text-lg text-ink-soft">
+          <p className="mt-4 max-w-lg text-lg text-ink-soft">
             Des délais légaux expliqués simplement, sourcés, sans jargon inutile.
           </p>
         </Reveal>

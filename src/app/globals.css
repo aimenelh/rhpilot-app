@@ -17,6 +17,13 @@ body {
   outline-offset: 2px;
 }
 
+/* Police d'accroche pour tous les titres — appliquée une seule fois
+   ici plutôt que sur chaque page individuellement. Le corps de texte
+   (p, span, li...) reste en Inter, non affecté par cette règle. */
+h1, h2, h3 {
+  font-family: var(--font-heading), var(--font-inter), sans-serif;
+}
+
 @keyframes page-fade-in {
   from {
     opacity: 0;

@@ -41,14 +41,6 @@ const BENEFITS = [
   },
 ];
 
-function Kicker({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="inline-block rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-blue">
-      {children}
-    </span>
-  );
-}
-
 export function LandingPage() {
   return (
     <div className="min-h-screen">
@@ -423,13 +415,13 @@ export function LandingPage() {
       </section>
 
       <section className="mx-auto max-w-4xl px-6 py-16">
-        <Reveal variant="scale">
-          <div className="text-center">
-            <Kicker>Ce qui change vraiment</Kicker>
-            <h2 className="mt-3 text-2xl font-semibold text-ink">
-              Pourquoi les RH choisissent RH Pilot
-            </h2>
-          </div>
+        <Reveal variant="left">
+          <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">
+            Ce qui change vraiment
+          </span>
+          <h2 className="mt-3 text-2xl font-semibold text-ink">
+            Pourquoi les RH choisissent RH Pilot
+          </h2>
         </Reveal>
 
         <div className="mt-12 border-t border-surface-border">

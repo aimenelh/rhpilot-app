@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Inter, Space_Grotesk } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { frFR } from "@clerk/localizations";
 import { Analytics } from "@vercel/analytics/next";
@@ -16,6 +16,17 @@ const inter = Inter({
   subsets: ["latin"],
   display: "swap",
   variable: "--font-inter",
+});
+
+// Police d'accroche pour les titres (h1/h2/h3) uniquement — le corps
+// de texte reste en Inter. Appliquée globalement via globals.css
+// (règle "h1, h2, h3"), pas besoin de toucher chaque page une par
+// une. Seuls les deux poids réellement utilisés sont chargés.
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  display: "swap",
+  variable: "--font-heading",
 });
 
 export const viewport: Viewport = {
@@ -81,7 +92,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider localization={frFR as any} appearance={clerkAppearance}>
-      <html lang="fr" className={inter.variable}>
+      <html lang="fr" className={`${inter.variable} ${spaceGrotesk.variable}`}>
         <body className={`${inter.className} antialiased`}>
           {children}
           <Analytics />

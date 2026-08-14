@@ -86,6 +86,15 @@ function EUFlag({ size = 22 }: { size?: number }) {
   );
 }
 
+function SectionMark({ number, label }: { number: string; label: string }) {
+  return (
+    <div className="flex items-baseline gap-3">
+      <span className="text-2xl font-bold text-brand-blue/25">{number}</span>
+      <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">{label}</span>
+    </div>
+  );
+}
+
 export default function SecurityPage() {
   return (
     <div className="min-h-screen">
@@ -93,17 +102,14 @@ export default function SecurityPage() {
       <MarketingHeader />
 
       {/* Hero */}
-      <section className="mx-auto max-w-2xl px-6 py-20 text-center">
-        <Reveal variant="scale">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-blue">
-            <ShieldCheck size={13} /> Sécurité
-          </span>
-          <h1 className="mt-4 text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
+      <section className="mx-auto max-w-2xl px-6 py-20">
+        <Reveal variant="left">
+          <h1 className="max-w-lg text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
             La confiance ne se décrète pas.
           </h1>
         </Reveal>
         <Reveal delay={150}>
-          <p className="mt-4 text-lg text-ink-soft">
+          <p className="mt-4 max-w-md text-lg text-ink-soft">
             Vos données RH sont sensibles. Voici, concrètement, comment RH Pilot les traite, 
             sans jargon, et sans rien promettre que nous ne fassions déjà.
           </p>
@@ -112,20 +118,23 @@ export default function SecurityPage() {
 
       {/* Les 6 piliers */}
       <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mx-auto max-w-2xl px-6">
+          <Reveal>
+            <SectionMark number="01" label="Les fondamentaux" />
+          </Reveal>
+          <div className="mt-6 flex flex-col">
             {PILLARS.map((item, index) => (
-              <Reveal key={item.title} variant="bounce" delay={(index % 3) * 100 + Math.floor(index / 3) * 120}>
-                <Card className="h-full">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue">
-                      <item.icon size={18} />
-                    </span>
-                    {item.badge && <EUFlag size={24} />}
+              <Reveal key={item.title} variant="left" delay={index * 90}>
+                <div className="flex items-start gap-4 border-t border-surface-border py-5 first:border-t-0">
+                  <item.icon size={18} className="mt-0.5 shrink-0 text-brand-blue" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h3 className="text-sm font-semibold text-ink">{item.title}</h3>
+                      {item.badge && <EUFlag size={18} />}
+                    </div>
+                    <p className="mt-1 text-sm text-ink-soft">{item.text}</p>
                   </div>
-                  <h3 className="mt-3 text-sm font-semibold text-ink">{item.title}</h3>
-                  <p className="mt-1.5 text-sm text-ink-soft">{item.text}</p>
-                </Card>
+                </div>
               </Reveal>
             ))}
           </div>
@@ -133,10 +142,11 @@ export default function SecurityPage() {
       </section>
 
       {/* Sous-traitants réels */}
-      <section className="mx-auto max-w-3xl px-6 py-16 text-center">
-        <Reveal variant="scale">
-          <h2 className="text-2xl font-semibold text-ink">Avec qui nous travaillons</h2>
-          <p className="mx-auto mt-3 max-w-lg text-sm text-ink-soft">
+      <section className="mx-auto max-w-3xl px-6 py-16">
+        <Reveal variant="left">
+          <SectionMark number="02" label="Notre infrastructure" />
+          <h2 className="mt-4 text-2xl font-semibold text-ink">Avec qui nous travaillons</h2>
+          <p className="mt-3 max-w-lg text-sm text-ink-soft">
             Aucun mystère : voici l&apos;infrastructure réelle derrière RH Pilot, listée en
             détail dans notre politique de confidentialité.
           </p>
@@ -163,15 +173,16 @@ export default function SecurityPage() {
 
       {/* RGPD */}
       <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
-        <Reveal variant="scale">
-          <div className="mx-auto max-w-2xl px-6 text-center">
-            <h2 className="text-2xl font-semibold text-ink">Vos droits, sans détour</h2>
-            <p className="mt-3 text-sm text-ink-soft">
+        <Reveal variant="left">
+          <div className="mx-auto max-w-2xl px-6">
+            <SectionMark number="03" label="Vos droits" />
+            <h2 className="mt-4 text-2xl font-semibold text-ink">Vos droits, sans détour</h2>
+            <p className="mt-3 max-w-lg text-sm text-ink-soft">
               RH Pilot agit comme sous-traitant au sens du RGPD, l&apos;entreprise cliente
               reste responsable du traitement des données de ses salariés. Vous conservez à
               tout moment :
             </p>
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
+            <div className="mt-6 flex flex-wrap items-center gap-2">
               {RIGHTS.map((right) => (
                 <span
                   key={right}
