@@ -38,7 +38,7 @@ const PILLARS = [
   {
     icon: KeyRound,
     title: "Authentification déléguée",
-    text: "Gérée par Clerk, spécialiste de l'authentification — jamais construite ni stockée par nous-mêmes.",
+    text: "Gérée par Clerk, spécialiste de l'authentification, jamais construite ni stockée par nous-mêmes.",
   },
   {
     icon: FileClock,
@@ -104,7 +104,7 @@ export default function SecurityPage() {
         </Reveal>
         <Reveal delay={150}>
           <p className="mt-4 text-lg text-ink-soft">
-            Vos données RH sont sensibles. Voici, concrètement, comment RH Pilot les traite —
+            Vos données RH sont sensibles. Voici, concrètement, comment RH Pilot les traite, 
             sans jargon, et sans rien promettre que nous ne fassions déjà.
           </p>
         </Reveal>
@@ -167,7 +167,7 @@ export default function SecurityPage() {
           <div className="mx-auto max-w-2xl px-6 text-center">
             <h2 className="text-2xl font-semibold text-ink">Vos droits, sans détour</h2>
             <p className="mt-3 text-sm text-ink-soft">
-              RH Pilot agit comme sous-traitant au sens du RGPD — l&apos;entreprise cliente
+              RH Pilot agit comme sous-traitant au sens du RGPD, l&apos;entreprise cliente
               reste responsable du traitement des données de ses salariés. Vous conservez à
               tout moment :
             </p>
@@ -191,7 +191,7 @@ export default function SecurityPage() {
         </Reveal>
       </section>
 
-      {/* Honnêteté produit — lien direct avec la sécurité */}
+      {/* Honnêteté produit, lien direct avec la sécurité */}
       <section className="bg-ink py-16">
         <Reveal variant="scale">
           <p className="mx-auto max-w-lg px-6 text-center text-lg font-medium leading-relaxed text-white">
