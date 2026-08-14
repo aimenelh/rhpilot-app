@@ -2,16 +2,16 @@ import { Quote } from "lucide-react";
 import { Reveal } from "@/components/landing/Reveal";
 
 const FEATURED = {
-  quote:
-    "Ce qui demande le plus de vigilance, c'est le suivi des périodes d'essai : les délais de prévenance, les entretiens à organiser, les décisions à formaliser, et les absences qui peuvent la prolonger. Il faut vérifier régulièrement les échéances pour ne rien oublier.",
-  role: "Responsable RH",
+  quote: "Les échéances liées à la paie, chaque fin de mois, mettent les équipes RH sous tension.",
+  role: "Chargée RH en alternance",
 };
 
 const SUPPORTING = [
   {
-    quote: "Les échéances liées à la paie, chaque fin de mois, mettent les équipes RH sous tension.",
-    role: "Chargée RH en alternance",
-    accent: "bg-brand-violet",
+    quote:
+      "Ce qui demande le plus de vigilance, c'est le suivi des périodes d'essai : les délais de prévenance, les entretiens à organiser, les décisions à formaliser, et les absences qui peuvent la prolonger. Il faut vérifier régulièrement les échéances pour ne rien oublier.",
+    role: "Responsable RH",
+    accent: "bg-brand-blue",
   },
   {
     quote:
@@ -35,35 +35,37 @@ const SUPPORTING = [
 export function TestimonialsCarousel() {
   return (
     <div className="mx-auto max-w-5xl">
-      <div className="grid grid-cols-1 gap-10 lg:grid-cols-5 lg:gap-14">
-        {/* Citation vedette */}
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-5 lg:gap-16">
+        {/* Citation vedette — courte et percutante, jamais un pavé */}
         <Reveal variant="left" className="lg:col-span-3">
-          <div className="relative">
+          <div className="relative flex h-full flex-col justify-center py-6">
             <Quote
-              size={120}
-              className="pointer-events-none absolute -left-4 -top-6 text-brand-blue/[0.06]"
+              size={140}
+              className="pointer-events-none absolute -left-6 -top-10 text-brand-blue/[0.05]"
               aria-hidden
               strokeWidth={1}
             />
-            <p className="relative text-xl font-medium leading-relaxed text-ink sm:text-2xl">
+            <p className="relative text-2xl font-medium leading-snug text-ink sm:text-3xl">
               {FEATURED.quote}
             </p>
-            <p className="relative mt-5 text-xs font-semibold uppercase tracking-wider text-ink-faint">
+            <p className="relative mt-6 text-xs font-semibold uppercase tracking-wider text-ink-faint">
               {FEATURED.role}
             </p>
           </div>
         </Reveal>
 
-        {/* Colonne de soutien */}
+        {/* Colonne de soutien — compacte, texte réduit, beaucoup d'espace entre chaque voix */}
         <div className="flex flex-col divide-y divide-surface-border lg:col-span-2">
           {SUPPORTING.map((item, index) => (
             <Reveal key={item.quote} variant="right" delay={120 + index * 100}>
-              <div className="py-4 first:pt-0">
+              <div className="py-5 first:pt-0">
                 <div className="flex items-start gap-2.5">
-                  <span aria-hidden className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${item.accent}`} />
-                  <p className="text-sm leading-relaxed text-ink-soft">{item.quote}</p>
+                  <span aria-hidden className={`mt-1 h-1.5 w-1.5 shrink-0 rounded-full ${item.accent}`} />
+                  <p className="text-[13px] leading-relaxed text-ink-soft">{item.quote}</p>
                 </div>
-                <p className="mt-1.5 pl-4 text-xs font-medium text-ink-faint">{item.role}</p>
+                <p className="mt-1.5 pl-4 text-[11px] font-medium uppercase tracking-wide text-ink-faint">
+                  {item.role}
+                </p>
               </div>
             </Reveal>
           ))}
@@ -72,7 +74,7 @@ export function TestimonialsCarousel() {
 
       {/* Conclusion — bande pleine largeur, se détache nettement du reste */}
       <Reveal variant="scale" delay={500}>
-        <div className="mt-12 rounded-2xl bg-ink px-8 py-8 text-center sm:px-14">
+        <div className="mt-14 rounded-2xl bg-ink px-8 py-8 text-center sm:px-14">
           <p className="text-base leading-relaxed text-white/85 sm:text-lg">
             Un constat revenait systématiquement : ce n&apos;est pas un manque
             d&apos;informations, mais un manque de temps, d&apos;anticipation et de rappels.
