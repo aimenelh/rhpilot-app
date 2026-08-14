@@ -16,28 +16,28 @@ const BENEFITS = [
     title: "Rien ne passe inaperçu",
     description:
       "Les tâches en retard et les échéances proches remontent toujours en premier, sans avoir à les chercher.",
-    accent: "text-accent-rose bg-accent-rose/10 group-hover:bg-accent-rose",
+    accent: "text-accent-rose",
   },
   {
     icon: Sparkles,
     title: "Des suggestions, pas seulement des données",
     description:
       "RH Pilot détecte les oublis probables, comme une période d'essai qui approche ou un parcours jamais créé, et propose l'action en un clic.",
-    accent: "text-brand-violet bg-brand-violet/10 group-hover:bg-brand-violet",
+    accent: "text-brand-violet",
   },
   {
     icon: Send,
     title: "Des rappels qui partent tout seuls",
     description:
       "Résumés automatiques et rappels manuels, envoyés directement à la bonne personne, pas seulement à vous.",
-    accent: "text-accent-teal bg-accent-teal/10 group-hover:bg-accent-teal",
+    accent: "text-accent-teal",
   },
   {
     icon: CircleCheck,
     title: "Un vrai parcours, pas une case à cocher",
     description:
       "Chaque événement RH devient un plan complet (tâches, échéances, preuves attendues), pas juste un rappel isolé.",
-    accent: "text-brand-blue bg-brand-blue/10 group-hover:bg-brand-blue",
+    accent: "text-brand-blue",
   },
 ];
 
@@ -422,7 +422,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl px-6 py-16">
+      <section className="mx-auto max-w-4xl px-6 py-16">
         <Reveal variant="scale">
           <div className="text-center">
             <Kicker>Ce qui change vraiment</Kicker>
@@ -431,25 +431,32 @@ export function LandingPage() {
             </h2>
           </div>
         </Reveal>
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2">
+
+        <div className="mt-12 border-t border-surface-border">
           {BENEFITS.map((benefit, index) => (
-            <Reveal key={benefit.title} variant="bounce" delay={(index % 2) * 130 + Math.floor(index / 2) * 100}>
-              <div className="group relative flex gap-4 overflow-hidden rounded-2xl border border-surface-border bg-white/70 p-6 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+            <Reveal key={benefit.title} variant="left" delay={index * 90}>
+              <div className="group grid grid-cols-1 items-center gap-3 border-b border-surface-border py-7 transition-colors duration-300 hover:bg-surface-subtle/40 sm:grid-cols-12 sm:gap-6 sm:px-4">
                 <span
                   aria-hidden
-                  className="pointer-events-none absolute -bottom-3 -right-1 select-none text-7xl font-bold text-ink/[0.04]"
+                  className="select-none text-5xl font-bold leading-none transition-colors duration-300 sm:col-span-2 sm:text-6xl"
+                  style={{
+                    WebkitTextStroke: "1.5px rgba(15, 27, 61, 0.16)",
+                    color: "transparent",
+                  }}
                 >
                   {String(index + 1).padStart(2, "0")}
                 </span>
-                <span
-                  className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors duration-300 group-hover:text-white ${benefit.accent}`}
-                >
-                  <benefit.icon size={22} />
-                </span>
-                <div className="relative">
-                  <h3 className="text-sm font-semibold text-ink">{benefit.title}</h3>
-                  <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{benefit.description}</p>
+
+                <div className="flex items-center gap-3 sm:col-span-4">
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-subtle ${benefit.accent}`}>
+                    <benefit.icon size={18} />
+                  </span>
+                  <h3 className="text-base font-semibold text-ink">{benefit.title}</h3>
                 </div>
+
+                <p className="text-sm leading-relaxed text-ink-soft sm:col-span-6">
+                  {benefit.description}
+                </p>
               </div>
             </Reveal>
           ))}
