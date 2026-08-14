@@ -104,8 +104,8 @@ export function LandingPage() {
                 <Image
                   src="/marketing/dashboard.png"
                   alt="Tableau de bord RH Pilot"
-                  width={1672}
-                  height={941}
+                  width={1885}
+                  height={1030}
                   className="w-full"
                   priority
                 />
@@ -323,8 +323,8 @@ export function LandingPage() {
                     <Image
                       src="/marketing/calendar.png"
                       alt="Calendrier RH Pilot"
-                      width={1688}
-                      height={932}
+                      width={1882}
+                      height={1036}
                       className="w-full"
                     />
                   </div>
@@ -345,8 +345,8 @@ export function LandingPage() {
                     <Image
                       src="/marketing/notifications.png"
                       alt="Notifications RH Pilot"
-                      width={1681}
-                      height={935}
+                      width={1882}
+                      height={1027}
                       className="w-full"
                     />
                   </div>
@@ -382,8 +382,8 @@ export function LandingPage() {
                     <Image
                       src="/marketing/assistant.png"
                       alt="Assistant RH Pilot"
-                      width={570}
-                      height={720}
+                      width={842}
+                      height={675}
                       className="w-full"
                     />
                   </div>
