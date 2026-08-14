@@ -16,26 +16,38 @@ const BENEFITS = [
     title: "Rien ne passe inaperçu",
     description:
       "Les tâches en retard et les échéances proches remontent toujours en premier, sans avoir à les chercher.",
+    accent: "text-accent-rose bg-accent-rose/10 group-hover:bg-accent-rose",
   },
   {
     icon: Sparkles,
     title: "Des suggestions, pas seulement des données",
     description:
       "RH Pilot détecte les oublis probables, comme une période d'essai qui approche ou un parcours jamais créé, et propose l'action en un clic.",
+    accent: "text-brand-violet bg-brand-violet/10 group-hover:bg-brand-violet",
   },
   {
     icon: Send,
     title: "Des rappels qui partent tout seuls",
     description:
       "Résumés automatiques et rappels manuels, envoyés directement à la bonne personne, pas seulement à vous.",
+    accent: "text-accent-teal bg-accent-teal/10 group-hover:bg-accent-teal",
   },
   {
     icon: CircleCheck,
     title: "Un vrai parcours, pas une case à cocher",
     description:
       "Chaque événement RH devient un plan complet (tâches, échéances, preuves attendues), pas juste un rappel isolé.",
+    accent: "text-brand-blue bg-brand-blue/10 group-hover:bg-brand-blue",
   },
 ];
+
+function Kicker({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-block rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-blue">
+      {children}
+    </span>
+  );
+}
 
 export function LandingPage() {
   return (
@@ -411,19 +423,30 @@ export function LandingPage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-6 py-16">
-        <Reveal>
-          <h2 className="text-center text-2xl font-semibold text-ink">
-            Pourquoi les RH choisissent RH Pilot
-          </h2>
+        <Reveal variant="scale">
+          <div className="text-center">
+            <Kicker>Ce qui change vraiment</Kicker>
+            <h2 className="mt-3 text-2xl font-semibold text-ink">
+              Pourquoi les RH choisissent RH Pilot
+            </h2>
+          </div>
         </Reveal>
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2">
           {BENEFITS.map((benefit, index) => (
-            <Reveal key={benefit.title} delay={(index % 2) * 150}>
-              <div className="group flex gap-4 rounded-2xl border border-surface-border bg-white/70 p-6 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-blue/10 text-brand-blue transition-colors duration-300 group-hover:bg-brand-blue group-hover:text-white">
+            <Reveal key={benefit.title} variant="bounce" delay={(index % 2) * 130 + Math.floor(index / 2) * 100}>
+              <div className="group relative flex gap-4 overflow-hidden rounded-2xl border border-surface-border bg-white/70 p-6 shadow-sm backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute -bottom-3 -right-1 select-none text-7xl font-bold text-ink/[0.04]"
+                >
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <span
+                  className={`relative flex h-12 w-12 shrink-0 items-center justify-center rounded-xl transition-colors duration-300 group-hover:text-white ${benefit.accent}`}
+                >
                   <benefit.icon size={22} />
                 </span>
-                <div>
+                <div className="relative">
                   <h3 className="text-sm font-semibold text-ink">{benefit.title}</h3>
                   <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{benefit.description}</p>
                 </div>
