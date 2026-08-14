@@ -22,6 +22,7 @@ import { TourGuide } from "./tour/TourGuide";
 import { GlobalSearch } from "./GlobalSearch";
 import { RhNewsToast } from "./RhNewsToast";
 import type { RhNewsItem } from "@/lib/rhNews";
+import { IosInstallHint } from "./IosInstallHint";
 
 type NavItem = {
   href: string;
@@ -147,6 +148,7 @@ export function AppShell({
       <Assistant summary={assistantSummary} />
       <TourGuide />
       <RhNewsToast items={rhNews} />
+      <IosInstallHint />
     </div>
   );
 }

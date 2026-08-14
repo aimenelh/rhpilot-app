@@ -1,8 +1,9 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { frFR } from "@clerk/localizations";
 import { Analytics } from "@vercel/analytics/next";
+import { PwaRegister } from "@/components/PwaRegister";
 import "./globals.css";
 
 // display: "swap" évite tout texte invisible pendant le chargement de
@@ -17,6 +18,10 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
+export const viewport: Viewport = {
+  themeColor: "#2F6FED",
+};
+
 export const metadata: Metadata = {
   title: "RH Pilot, votre copilote d'organisation RH",
   description:
@@ -27,6 +32,19 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+  },
+  manifest: "/manifest.webmanifest",
+  icons: {
+    icon: [
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/favicon-16.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: "/icons/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "RH Pilot",
   },
 };
 
@@ -67,6 +85,7 @@ export default function RootLayout({
         <body className={`${inter.className} antialiased`}>
           {children}
           <Analytics />
+          <PwaRegister />
         </body>
       </html>
     </ClerkProvider>
