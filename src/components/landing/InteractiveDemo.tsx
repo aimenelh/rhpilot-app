@@ -90,7 +90,7 @@ const DEMO_STEPS: DemoStep[] = [
 
 // Position du bouton "Commencer la démo" sur l'écran d'intro, dans le
 // même système de coordonnées que les points cliquables ci-dessus.
-const INTRO_TARGET = { x: 50, y: 72 };
+const INTRO_TARGET = { x: 50, y: 75 };
 
 // Hauteur fixe de la barre façon navigateur (les trois points), en
 // pixels. Sert à aligner exactement la zone cliquable/bulle sur
@@ -308,7 +308,7 @@ export function InteractiveDemo() {
                   Suivez, étape par étape, comment RH Pilot repère un oubli RH et génère le plan
                   d&apos;action correspondant.
                 </p>
-                <Button onClick={() => setHasStarted(true)} className="px-6 py-3 text-base">
+                <Button onClick={() => setHasStarted(true)} className="whitespace-nowrap px-6 py-3 text-base">
                   Commencer la démo
                 </Button>
               </div>
@@ -469,7 +469,7 @@ export function InteractiveDemo() {
                     <span className="absolute -inset-3 animate-ping rounded-full bg-brand-blue/30" />
                   )}
                   <span
-                    className={`relative inline-flex items-center justify-center rounded-lg bg-brand-gradient px-6 py-3 text-base font-medium text-white shadow-card transition-transform ${
+                    className={`relative inline-flex items-center justify-center whitespace-nowrap rounded-lg bg-brand-gradient px-6 py-3 text-base font-medium text-white shadow-card transition-transform ${
                       phase === "clicking" ? "scale-95" : "scale-100"
                     }`}
                   >
