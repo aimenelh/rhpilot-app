@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getAnomalies } from "@/lib/anomalies";
 import { getUserDisplayName } from "@/lib/displayName";
 import { getRhNews } from "@/lib/rhNews";
+import { isAiEnabled } from "@/lib/ai";
 import { AppShell } from "@/components/AppShell";
 import { Logomark, Wordmark } from "@/components/Brand";
 import { InitializingScreen } from "@/components/InitializingScreen";
@@ -70,6 +71,7 @@ export default async function DashboardLayout({
         suggestionsCount: anomalies.length,
       }}
       rhNews={rhNews}
+      aiEnabled={isAiEnabled()}
     >
       {children}
     </AppShell>

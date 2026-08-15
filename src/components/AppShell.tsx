@@ -20,7 +20,7 @@ import {
 } from "lucide-react";
 import { Logomark, Wordmark } from "./Brand";
 import { FlashToast } from "./ui/FlashToast";
-import { Assistant } from "./assistant/Assistant";
+import { AppCopilote } from "./AppCopilote";
 import { TourGuide } from "./tour/TourGuide";
 import { GlobalSearch } from "./GlobalSearch";
 import { RhNewsToast } from "./RhNewsToast";
@@ -60,12 +60,14 @@ export function AppShell({
   accessRole,
   assistantSummary,
   rhNews,
+  aiEnabled,
   children,
 }: {
   organizationName: string;
   accessRole: string;
   assistantSummary: { userDisplayName: string; overdueCount: number; suggestionsCount: number };
   rhNews: RhNewsItem[];
+  aiEnabled: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -201,7 +203,11 @@ export function AppShell({
       </div>
 
       <FlashToast />
-      <Assistant summary={assistantSummary} />
+      {/* Le Copilote a repris tout ce que faisait l'ancien Assistant
+          ("Aide") : accueil personnalisé, onboarding des nouveaux
+          utilisateurs, entrée vers le tour guidé — en plus des
+          questions libres sur l'organisation et sur RH Pilot. */}
+      <AppCopilote summary={assistantSummary} aiEnabled={aiEnabled} />
       <TourGuide />
       <RhNewsToast items={rhNews} />
       <IosInstallHint />

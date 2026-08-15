@@ -132,7 +132,16 @@ export function PublicCopilotePreview() {
         aria-expanded={isOpen}
         className="motion-reduce:transition-none flex h-14 w-14 items-center justify-center rounded-full border border-surface-border bg-white shadow-xl transition-transform hover:scale-105 active:scale-95"
       >
-        {isOpen ? <X size={22} className="text-ink-soft" /> : <Logomark size={30} />}
+        {isOpen ? (
+          <X size={22} className="text-ink-soft" />
+        ) : (
+          <span className="relative inline-flex">
+            <Logomark size={30} />
+            <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand-violet text-white ring-2 ring-white">
+              <Sparkles size={9} />
+            </span>
+          </span>
+        )}
       </button>
     </div>
   );
