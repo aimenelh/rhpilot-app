@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Menu, X } from "lucide-react";
 import { Logomark, Wordmark } from "@/components/Brand";
 import { Button } from "@/components/ui/Button";
+import { PublicCopilotePreview } from "@/components/landing/PublicCopilotePreview";
 
 const NAV_LINKS = [
   { href: "/services", label: "Nos services" },
@@ -23,6 +24,7 @@ export function MarketingHeader() {
   }
 
   return (
+    <>
     <header className="relative mx-auto max-w-6xl px-6 py-6">
       <div className="flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
@@ -98,5 +100,7 @@ export function MarketingHeader() {
         </nav>
       )}
     </header>
+    <PublicCopilotePreview />
+    </>
   );
 }
