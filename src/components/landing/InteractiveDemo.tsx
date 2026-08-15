@@ -97,6 +97,14 @@ const INTRO_TARGET = { x: 50, y: 72 };
 // l'image, qui commence juste en dessous.
 const CHROME_BAR_HEIGHT = 36;
 
+// Sur mobile, forcer l'image à occuper toute la largeur de l'écran la
+// rendrait illisible (ce sont des captures d'interface desktop, avec
+// du texte fin). On l'affiche donc à une taille lisible fixe, quitte
+// à devoir la faire défiler horizontalement — avec un recentrage
+// automatique sur le point cliquable à chaque étape (voir plus bas).
+const MOBILE_IMAGE_HEIGHT = 260;
+const MOBILE_IMAGE_WIDTH = Math.round(MOBILE_IMAGE_HEIGHT * (1882 / 1030));
+
 const TRAVEL_MS = 650; // le point cliquable se déplace vers sa cible
 const CLICK_MS = 350; // effet de clic avant de passer à l'écran suivant
 const FADE_MS = 300; // fondu entre deux captures
@@ -132,13 +140,23 @@ export function InteractiveDemo() {
   const [phase, setPhase] = useState<Phase>("waiting");
   const [isFading, setIsFading] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const isFirstRender = useRef(true);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
     setPrefersReducedMotion(mq.matches);
     const handleChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mq.addEventListener("change", handleChange);
+    return () => mq.removeEventListener("change", handleChange);
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    setIsMobile(mq.matches);
+    const handleChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mq.addEventListener("change", handleChange);
     return () => mq.removeEventListener("change", handleChange);
   }, []);
@@ -244,6 +262,23 @@ export function InteractiveDemo() {
   const step = hasStarted && !isFinished ? DEMO_STEPS[index] : null;
   const target = step ? step.cursor : INTRO_TARGET;
 
+  // Vue compacte scrollable : uniquement sur mobile, et seulement
+  // pendant une vraie étape (pas sur l'intro / l'écran de fin, qui
+  // n'ont pas besoin de cette largeur supplémentaire).
+  const useCompactMobileFrame = isMobile && hasStarted && !isFinished;
+
+  // Recentre la vue sur le point cliquable à chaque changement
+  // d'étape, pour ne jamais laisser la personne chercher où défiler.
+  useEffect(() => {
+    if (!useCompactMobileFrame) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const targetX = (target.x / 100) * MOBILE_IMAGE_WIDTH;
+    const left = Math.max(0, targetX - el.clientWidth / 2);
+    el.scrollTo({ left, behavior: prefersReducedMotion ? "auto" : "smooth" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index, hasStarted, isFinished, isMobile]);
+
   // Version simplifiée pour "mouvement réduit" : pas de point animé ni
   // de bulle, juste des captures et des boutons Précédent / Suivant
   // classiques, avec l'explication en texte simple au-dessus.
@@ -342,11 +377,15 @@ export function InteractiveDemo() {
             second sur mobile, pour que l'explication (colonne
             "Copilote" ci-dessous) se lise avant de regarder l'écran. */}
         <div className="order-2 lg:order-1">
+        <div
+          ref={useCompactMobileFrame ? scrollRef : undefined}
+          className={useCompactMobileFrame ? "overflow-x-auto [-webkit-overflow-scrolling:touch]" : ""}
+        >
         {/* Wrapper SANS overflow-hidden : c'est ce qui permet à
             l'étiquette de s'afficher entièrement même quand le point
             cliquable est tout près d'un bord, au lieu d'être rognée
             par le cadre. */}
-        <div className="relative">
+        <div className="relative" style={useCompactMobileFrame ? { width: MOBILE_IMAGE_WIDTH } : undefined}>
         <div className="overflow-hidden rounded-2xl border border-surface-border bg-white shadow-2xl">
           {/* Barre façon navigateur, cohérente avec le reste du site */}
           <div className="flex items-center gap-1.5 border-b border-surface-border bg-surface-subtle px-3" style={{ height: CHROME_BAR_HEIGHT }}>
@@ -355,7 +394,10 @@ export function InteractiveDemo() {
             <span className="h-2.5 w-2.5 rounded-full bg-accent-teal/50" />
           </div>
 
-          <div className="relative aspect-[1882/1030] w-full bg-surface-subtle">
+          <div
+            className={`relative bg-surface-subtle ${useCompactMobileFrame ? "" : "aspect-[1882/1030] w-full"}`}
+            style={useCompactMobileFrame ? { width: MOBILE_IMAGE_WIDTH, height: MOBILE_IMAGE_HEIGHT } : undefined}
+          >
             <div className={`absolute inset-0 transition-opacity duration-300 ${isFading ? "opacity-0" : "opacity-100"}`}>
               {!hasStarted ? (
                 <div className="flex h-full flex-col items-center justify-start gap-6 bg-ink px-8 pt-[14%] text-center">
@@ -490,6 +532,7 @@ export function InteractiveDemo() {
             </button>
             )}
           </div>
+        </div>
         </div>
         </div>
         </div>
