@@ -9,6 +9,7 @@ import { Reveal } from "@/components/landing/Reveal";
 import { TestimonialsCarousel } from "@/components/landing/TestimonialsCarousel";
 import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
 import { JourneyFlow } from "@/components/landing/JourneyFlow";
+import { InteractiveDemo } from "@/components/landing/InteractiveDemo";
 
 const BENEFITS = [
   {
@@ -114,6 +115,25 @@ export function LandingPage() {
                 « Je veux arrêter d&apos;oublier les périodes d&apos;essai qui se terminent. »
               </div>
             </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* Démo interactive : capture réelles + faux curseur animé */}
+      <section className="relative py-16">
+        <div className="mx-auto max-w-6xl px-6">
+          <Reveal>
+            <div className="text-center">
+              <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">
+                Voir RH Pilot en action
+              </span>
+              <h2 className="mt-3 text-2xl font-semibold text-ink sm:text-3xl">
+                Du problème détecté au parcours généré, en quelques clics.
+              </h2>
+            </div>
+          </Reveal>
+          <Reveal delay={100} className="mt-10">
+            <InteractiveDemo />
           </Reveal>
         </div>
       </section>
