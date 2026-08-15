@@ -400,12 +400,34 @@ export function InteractiveDemo() {
           >
             <div className={`absolute inset-0 transition-opacity duration-300 ${isFading ? "opacity-0" : "opacity-100"}`}>
               {!hasStarted ? (
-                <div className="flex h-full flex-col items-center justify-start gap-6 bg-ink px-8 pt-[14%] text-center">
+                <div className="flex h-full flex-col items-center justify-center gap-6 bg-ink px-8 text-center">
                   <Logo light />
                   <p className="max-w-sm text-sm text-white/70">
                     Suivez, étape par étape, comment RH Pilot repère un oubli RH et génère le plan
                     d&apos;action correspondant.
                   </p>
+                  {/* Dans le flux normal, juste sous le texte — plutôt
+                      qu'à une position en pourcentage fixe qui ne
+                      pouvait pas deviner sur combien de lignes le
+                      texte s'étalerait selon la largeur d'écran. */}
+                  <button
+                    type="button"
+                    onClick={handleHotspotClick}
+                    disabled={phase !== "waiting"}
+                    aria-label="Commencer la démo"
+                    className="relative inline-flex disabled:cursor-default"
+                  >
+                    {phase === "waiting" && (
+                      <span className="absolute -inset-3 animate-ping rounded-full bg-brand-blue/30" />
+                    )}
+                    <span
+                      className={`relative inline-flex items-center justify-center whitespace-nowrap rounded-lg bg-brand-gradient px-6 py-3 text-base font-medium text-white shadow-card transition-transform ${
+                        phase === "clicking" ? "scale-95" : "scale-100"
+                      }`}
+                    >
+                      Commencer la démo
+                    </span>
+                  </button>
                 </div>
               ) : isFinished ? (
                 <div className="flex h-full flex-col items-center justify-center gap-4 bg-ink px-8 text-center">
@@ -453,31 +475,16 @@ export function InteractiveDemo() {
           style={{ top: CHROME_BAR_HEIGHT }}
         >
           <div className="relative h-full w-full">
-            {!isFinished && (
+            {hasStarted && !isFinished && (
             <button
               type="button"
               onClick={handleHotspotClick}
               disabled={phase !== "waiting"}
-              aria-label={!hasStarted ? "Commencer la démo" : `${step?.tooltip}. ${step?.instruction}`}
+              aria-label={`${step?.tooltip}. ${step?.instruction}`}
               className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 transition-[left,top] ease-out disabled:cursor-default"
               style={{ left: `${target.x}%`, top: `${target.y}%`, transitionDuration: `${TRAVEL_MS}ms` }}
             >
-              {!hasStarted ? (
-                // Sur l'intro, le point cliquable EST le bouton principal.
-                <span className="relative inline-flex">
-                  {phase === "waiting" && (
-                    <span className="absolute -inset-3 animate-ping rounded-full bg-brand-blue/30" />
-                  )}
-                  <span
-                    className={`relative inline-flex items-center justify-center whitespace-nowrap rounded-lg bg-brand-gradient px-6 py-3 text-base font-medium text-white shadow-card transition-transform ${
-                      phase === "clicking" ? "scale-95" : "scale-100"
-                    }`}
-                  >
-                    Commencer la démo
-                  </span>
-                </span>
-              ) : (
-                <span className="relative flex h-11 w-11 items-center justify-center">
+              <span className="relative flex h-11 w-11 items-center justify-center">
                   {phase === "waiting" && (
                     <span className="absolute h-8 w-8 animate-ping rounded-full bg-brand-blue/40" />
                   )}
@@ -528,7 +535,6 @@ export function InteractiveDemo() {
                     </div>
                   )}
                 </span>
-              )}
             </button>
             )}
           </div>
