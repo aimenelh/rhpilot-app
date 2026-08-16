@@ -107,7 +107,6 @@ const MOBILE_IMAGE_WIDTH = Math.round(MOBILE_IMAGE_HEIGHT * (1882 / 1030));
 
 const TRAVEL_MS = 650; // le point cliquable se déplace vers sa cible
 const CLICK_MS = 350; // effet de clic avant de passer à l'écran suivant
-const FADE_MS = 300; // fondu entre deux captures
 
 type Phase = "arriving" | "waiting" | "clicking";
 
@@ -138,7 +137,6 @@ export function InteractiveDemo() {
   const [isFinished, setIsFinished] = useState(false);
   const [index, setIndex] = useState(0);
   const [phase, setPhase] = useState<Phase>("waiting");
-  const [isFading, setIsFading] = useState(false);
   const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
@@ -189,12 +187,7 @@ export function InteractiveDemo() {
 
   const goToIndex = (next: number) => {
     clearTimers();
-    setIsFading(true);
-    const t = setTimeout(() => {
-      setIndex(next);
-      setIsFading(false);
-    }, FADE_MS);
-    timers.current.push(t);
+    setIndex(next);
   };
 
   const handleHotspotClick = () => {
@@ -206,12 +199,7 @@ export function InteractiveDemo() {
       } else if (index === DEMO_STEPS.length - 1) {
         // Dernière étape : direction l'écran de fin plutôt qu'une
         // boucle silencieuse vers le début.
-        setIsFading(true);
-        const t2 = setTimeout(() => {
-          setIsFinished(true);
-          setIsFading(false);
-        }, FADE_MS);
-        timers.current.push(t2);
+        setIsFinished(true);
       } else {
         goToIndex(index + 1);
       }
@@ -223,13 +211,7 @@ export function InteractiveDemo() {
     if (!hasStarted) return;
     if (isFinished) {
       // Retour à la dernière étape depuis l'écran de fin.
-      clearTimers();
-      setIsFading(true);
-      const t = setTimeout(() => {
-        setIsFinished(false);
-        setIsFading(false);
-      }, FADE_MS);
-      timers.current.push(t);
+      setIsFinished(false);
       return;
     }
     goToIndex((index - 1 + DEMO_STEPS.length) % DEMO_STEPS.length);
@@ -238,25 +220,15 @@ export function InteractiveDemo() {
   // Revoir les 8 étapes directement, sans repasser par l'écran d'intro.
   const handleReplay = () => {
     clearTimers();
-    setIsFading(true);
-    const t = setTimeout(() => {
-      setIndex(0);
-      setIsFinished(false);
-      setIsFading(false);
-    }, FADE_MS);
-    timers.current.push(t);
+    setIndex(0);
+    setIsFinished(false);
   };
 
   const handleRestart = () => {
     clearTimers();
-    setIsFading(true);
-    const t = setTimeout(() => {
-      setHasStarted(false);
-      setIsFinished(false);
-      setIndex(0);
-      setIsFading(false);
-    }, FADE_MS);
-    timers.current.push(t);
+    setHasStarted(false);
+    setIsFinished(false);
+    setIndex(0);
   };
 
   const step = hasStarted && !isFinished ? DEMO_STEPS[index] : null;
@@ -398,69 +370,94 @@ export function InteractiveDemo() {
             className={`relative bg-surface-subtle ${useCompactMobileFrame ? "" : "aspect-[1882/1030] w-full"}`}
             style={useCompactMobileFrame ? { width: MOBILE_IMAGE_WIDTH, height: MOBILE_IMAGE_HEIGHT } : undefined}
           >
-            <div className={`absolute inset-0 transition-opacity duration-300 ${isFading ? "opacity-0" : "opacity-100"}`}>
-              {!hasStarted ? (
-                <div className="flex h-full flex-col items-center justify-center gap-6 bg-ink px-8 text-center">
-                  <Logo light />
-                  <p className="max-w-sm text-sm text-white/70">
-                    Suivez, étape par étape, comment RH Pilot repère un oubli RH et génère le plan
-                    d&apos;action correspondant.
-                  </p>
-                  {/* Dans le flux normal, juste sous le texte — plutôt
-                      qu'à une position en pourcentage fixe qui ne
-                      pouvait pas deviner sur combien de lignes le
-                      texte s'étalerait selon la largeur d'écran. */}
-                  <button
-                    type="button"
-                    onClick={handleHotspotClick}
-                    disabled={phase !== "waiting"}
-                    aria-label="Commencer la démo"
-                    className="relative inline-flex disabled:cursor-default"
+            {/* Intro, les 8 étapes et l'écran de fin sont tous montés
+                en même temps, superposés, seule l'opacité bascule.
+                Nécessaire pour un vrai fondu croisé : en changeant le
+                contenu ET en le faisant réapparaître au même moment,
+                le navigateur pouvait encore afficher l'ancienne image
+                le temps que la nouvelle charge (un flash, pas un
+                fondu). Ici toutes les images sont déjà chargées, donc
+                le changement d'opacité n'attend jamais rien. */}
+            <div
+              className={`absolute inset-0 transition-opacity duration-300 ${
+                !hasStarted ? "opacity-100" : "pointer-events-none opacity-0"
+              }`}
+            >
+              <div className="flex h-full flex-col items-center justify-center gap-6 bg-ink px-8 text-center">
+                <Logo light />
+                <p className="max-w-sm text-sm text-white/70">
+                  Suivez, étape par étape, comment RH Pilot repère un oubli RH et génère le plan
+                  d&apos;action correspondant.
+                </p>
+                {/* Dans le flux normal, juste sous le texte — plutôt
+                    qu'à une position en pourcentage fixe qui ne
+                    pouvait pas deviner sur combien de lignes le texte
+                    s'étalerait selon la largeur d'écran. */}
+                <button
+                  type="button"
+                  onClick={handleHotspotClick}
+                  disabled={phase !== "waiting"}
+                  aria-label="Commencer la démo"
+                  className="relative inline-flex disabled:cursor-default"
+                >
+                  {phase === "waiting" && (
+                    <span className="absolute -inset-3 animate-ping rounded-full bg-brand-blue/30" />
+                  )}
+                  <span
+                    className={`relative inline-flex items-center justify-center whitespace-nowrap rounded-lg bg-brand-gradient px-6 py-3 text-base font-medium text-white shadow-card transition-transform ${
+                      phase === "clicking" ? "scale-95" : "scale-100"
+                    }`}
                   >
-                    {phase === "waiting" && (
-                      <span className="absolute -inset-3 animate-ping rounded-full bg-brand-blue/30" />
-                    )}
-                    <span
-                      className={`relative inline-flex items-center justify-center whitespace-nowrap rounded-lg bg-brand-gradient px-6 py-3 text-base font-medium text-white shadow-card transition-transform ${
-                        phase === "clicking" ? "scale-95" : "scale-100"
-                      }`}
-                    >
-                      Commencer la démo
-                    </span>
-                  </button>
-                </div>
-              ) : isFinished ? (
-                <div className="flex h-full flex-col items-center justify-center gap-4 bg-ink px-8 text-center">
-                  <Image src="/icon-192.png" alt="" width={56} height={56} className="h-14 w-14" />
-                  <h3 className="text-xl font-semibold text-white sm:text-2xl">
-                    Ce n&apos;était qu&apos;un aperçu.
-                  </h3>
-                  <p className="max-w-sm text-sm text-white/70">
-                    RH Pilot a bien plus à montrer. La meilleure façon de le découvrir, c&apos;est de
-                    l&apos;essayer par vous-même.
-                  </p>
-                  <div className="mt-1 flex flex-wrap items-center justify-center gap-4">
-                    <Link href="/sign-up">
-                      <Button className="px-6 py-3 text-base">Essayer gratuitement</Button>
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={handleReplay}
-                      className="text-sm font-medium text-white/70 hover:text-white hover:underline"
-                    >
-                      Revoir la démo
-                    </button>
-                  </div>
-                </div>
-              ) : (
+                    Commencer la démo
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {DEMO_STEPS.map((s, i) => (
+              <div
+                key={s.image + i}
+                className={`absolute inset-0 transition-opacity duration-300 ${
+                  hasStarted && !isFinished && i === index ? "opacity-100" : "pointer-events-none opacity-0"
+                }`}
+              >
                 <Image
-                  src={DEMO_STEPS[index].image}
-                  alt={DEMO_STEPS[index].alt}
+                  src={s.image}
+                  alt={s.alt}
                   fill
                   className="object-contain"
                   sizes="(min-width: 1024px) 820px, 100vw"
                 />
-              )}
+              </div>
+            ))}
+
+            <div
+              className={`absolute inset-0 transition-opacity duration-300 ${
+                isFinished ? "opacity-100" : "pointer-events-none opacity-0"
+              }`}
+            >
+              <div className="flex h-full flex-col items-center justify-center gap-4 bg-ink px-8 text-center">
+                <Image src="/icon-192.png" alt="" width={56} height={56} className="h-14 w-14" />
+                <h3 className="text-xl font-semibold text-white sm:text-2xl">
+                  Ce n&apos;était qu&apos;un aperçu.
+                </h3>
+                <p className="max-w-sm text-sm text-white/70">
+                  RH Pilot a bien plus à montrer. La meilleure façon de le découvrir, c&apos;est de
+                  l&apos;essayer par vous-même.
+                </p>
+                <div className="mt-1 flex flex-wrap items-center justify-center gap-4">
+                  <Link href="/sign-up">
+                    <Button className="px-6 py-3 text-base">Essayer gratuitement</Button>
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleReplay}
+                    className="text-sm font-medium text-white/70 hover:text-white hover:underline"
+                  >
+                    Revoir la démo
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -558,7 +555,7 @@ export function InteractiveDemo() {
                 IA
               </span>
             </div>
-            <div className={`mt-3 transition-opacity duration-300 ${isFading ? "opacity-0" : "opacity-100"}`}>
+            <div className="mt-3">
               {!hasStarted ? (
                 <p className="text-sm leading-relaxed text-ink-soft">
                   Cliquez sur le bouton pour lancer la visite guidée, capture par capture.
