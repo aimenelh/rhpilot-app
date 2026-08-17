@@ -17,6 +17,7 @@ const RESOURCES_LINKS = [
 ];
 
 const LEGAL_LINKS = [
+  { href: "/mentions-legales", label: "Mentions légales" },
   { href: "/securite", label: "Sécurité" },
   { href: "/cgu", label: "CGU" },
   { href: "/confidentialite", label: "Confidentialité" },
