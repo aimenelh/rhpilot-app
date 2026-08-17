@@ -38,6 +38,12 @@ export function MarketingFooter() {
           <p className="mt-3 max-w-xs text-sm text-ink-faint">
             Les oublis sont une conséquence. RH Pilot agit avant qu&apos;ils n&apos;arrivent.
           </p>
+          <a
+            href="mailto:aimenoffi@gmail.com"
+            className="mt-4 inline-block text-sm text-ink-soft transition-colors hover:text-ink hover:underline"
+          >
+            aimenoffi@gmail.com
+          </a>
         </div>
 
         <div>

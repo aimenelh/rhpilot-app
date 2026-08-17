@@ -69,6 +69,9 @@ export function JourneyFlow() {
           />
         )}
 
+        {/* Le déroulé se lit dans l'ordre grâce à la ligne et au
+            point qui la parcourt, plus besoin d'un numéro sur
+            chaque étape pour ça, chaque visuel se suffit déjà. */}
         {STEPS.map(({ caption, Step }, i) => (
           <div
             key={i}
@@ -79,11 +82,8 @@ export function JourneyFlow() {
               transitionDelay: visible ? `${i * 200}ms` : "0ms",
             }}
           >
-            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white text-xs font-bold text-brand-blue shadow-md ring-4 ring-surface-subtle">
-              0{i + 1}
-            </span>
-            <p className="text-sm text-ink-soft">{caption}</p>
             <Step />
+            <p className="text-sm text-ink-soft">{caption}</p>
           </div>
         ))}
       </div>
@@ -113,8 +113,8 @@ export function JourneyFlow() {
               transitionDelay: visible ? `${i * 200}ms` : "0ms",
             }}
           >
-            <p className="text-sm text-ink-soft">{caption}</p>
             <Step />
+            <p className="text-sm text-ink-soft">{caption}</p>
           </div>
         ))}
       </div>

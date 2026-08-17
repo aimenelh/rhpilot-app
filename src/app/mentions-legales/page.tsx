@@ -5,7 +5,7 @@ import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
 import { Reveal } from "@/components/landing/Reveal";
 
 export const metadata = {
-  title: "Mentions légales — RH Pilot",
+  title: "Mentions légales, RH Pilot",
   description: "Identité de l'éditeur, hébergement et informations légales du site RH Pilot.",
 };
 

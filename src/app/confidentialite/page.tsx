@@ -6,7 +6,7 @@ import { Reveal } from "@/components/landing/Reveal";
 import { Card } from "@/components/ui/Card";
 
 export const metadata = {
-  title: "Politique de confidentialité — RH Pilot",
+  title: "Politique de confidentialité, RH Pilot",
   description:
     "Quelles données RH Pilot collecte, pourquoi, avec qui elles sont partagées et où elles sont hébergées, sous-traitant par sous-traitant.",
 };
