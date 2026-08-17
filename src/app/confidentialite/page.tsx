@@ -1,7 +1,73 @@
+import Link from "next/link";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
 import { Reveal } from "@/components/landing/Reveal";
+import { Card } from "@/components/ui/Card";
+
+export const metadata = {
+  title: "Politique de confidentialité — RH Pilot",
+  description:
+    "Quelles données RH Pilot collecte, pourquoi, avec qui elles sont partagées et où elles sont hébergées, sous-traitant par sous-traitant.",
+};
+
+// Dernière révision : garder cette date à jour à chaque modification
+// du contenu ci-dessous, c'est la seule chose que la loi demande de
+// signaler explicitement en haut d'une politique de confidentialité.
+const LAST_UPDATED = "17 août 2026";
+
+const SUBPROCESSORS = [
+  {
+    name: "Clerk",
+    role: "Authentification (connexion, gestion des comptes)",
+    location: "États-Unis",
+    detail:
+      "Les données de connexion (email, identité) sont stockées aux États-Unis. Clerk dispose d'un représentant pour la protection des données en Europe et s'appuie sur les clauses contractuelles types pour encadrer ce transfert, conformément au RGPD.",
+  },
+  {
+    name: "Neon",
+    role: "Base de données (salariés, parcours, tâches)",
+    location: "Europe (Francfort, Allemagne)",
+    detail: "L'ensemble des données RH que vous saisissez dans RH Pilot est hébergé sur ce serveur, en Europe.",
+  },
+  {
+    name: "Anthropic",
+    role: "Copilote (réponses aux questions posées)",
+    location: "États-Unis",
+    detail:
+      "Les questions posées au Copilote, accompagnées des données strictement nécessaires pour y répondre, sont transmises à Anthropic. Conservées au maximum 30 jours puis supprimées automatiquement, jamais utilisées pour entraîner leurs modèles.",
+  },
+  {
+    name: "Vercel",
+    role: "Hébergement du site et de l'application",
+    location: "Exécution en Europe, société basée aux États-Unis",
+    detail:
+      "L'application s'exécute sur des serveurs européens, mais Vercel Inc. (l'entreprise) est basée aux États-Unis et certaines données de compte transitent sous les mêmes garanties contractuelles.",
+  },
+  {
+    name: "Resend",
+    role: "Envoi des emails (invitations, résumés de tâches)",
+    location: "États-Unis",
+    detail:
+      "Les emails sont envoyés depuis l'Europe, mais les métadonnées de compte sont stockées aux États-Unis. Resend est certifié dans le cadre du Data Privacy Framework UE-États-Unis.",
+  },
+  {
+    name: "Vercel Analytics",
+    role: "Statistiques de fréquentation du site",
+    location: "Anonymisé, sans cookie",
+    detail:
+      "Aucun cookie, aucune donnée permettant de vous identifier individuellement. Une session est automatiquement effacée après 24 heures.",
+  },
+];
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="border-t border-surface-border py-10 first:border-t-0 first:pt-0">
+      <h2 className="text-xl font-semibold text-ink">{title}</h2>
+      <div className="mt-3 flex flex-col gap-3 text-base leading-relaxed text-ink-soft">{children}</div>
+    </section>
+  );
+}
 
 export default function ConfidentialitePage() {
   return (
@@ -9,110 +75,153 @@ export default function ConfidentialitePage() {
       <AmbientNetwork />
       <MarketingHeader />
 
-      <div className="relative mx-auto max-w-2xl px-6 py-16">
-        <Reveal>
-          <div className="rounded-2xl border border-surface-border bg-white/75 p-8 shadow-sm backdrop-blur-md sm:p-10">
-            <p className="text-xs font-medium uppercase tracking-wide text-brand-blue">
-              Version bêta, document en cours de finalisation
-            </p>
-            <h1 className="mt-2 text-3xl font-semibold text-ink">Politique de confidentialité</h1>
-            <p className="mt-4 text-sm leading-relaxed text-ink-soft">
-              RH Pilot est actuellement en phase de bêta fermée (immatriculation en tant
-              qu&apos;auto-entreprise en cours). Ce document reflète fidèlement comment vos
-              données sont traitées aujourd&apos;hui.
-            </p>
-
-            <div className="mt-10 flex flex-col gap-8 text-sm leading-relaxed text-ink-soft">
-              <section>
-                <h2 className="text-base font-semibold text-ink">1. Qui traite vos données ?</h2>
-                <p className="mt-2">
-                  RH Pilot est éditeur du Service. Concernant les données des salariés saisies
-                  dans le Service : <strong className="text-ink">l&apos;entreprise cliente est
-                  responsable du traitement</strong>, RH Pilot agit en tant que sous-traitant au
-                  sens de l&apos;article 28 du RGPD.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-base font-semibold text-ink">2. Quelles données sont collectées</h2>
-                <p className="mt-2">
-                  <strong className="text-ink">Compte utilisateur</strong> : email, prénom, nom (via
-                  Clerk, notre fournisseur d&apos;authentification).
-                </p>
-                <p className="mt-2">
-                  <strong className="text-ink">Salariés</strong>, saisis par le Client : identité,
-                  poste, date d&apos;embauche, type de contrat, durée de période d&apos;essai,
-                  prochaine date de suivi médical (jamais son contenu ou son résultat), manager
-                  direct, historique des parcours RH.
-                </p>
-                <p className="mt-2">
-                  <strong className="text-ink">Journal d&apos;audit</strong> des actions effectuées
-                  dans le Service, à des fins de traçabilité et de sécurité.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-base font-semibold text-ink">3. Finalités</h2>
-                <p className="mt-2">
-                  Fournir le Service, envoyer les notifications demandées, assurer la sécurité et
-                  la traçabilité des actions. Les données ne sont jamais utilisées pour entraîner
-                  un modèle d&apos;intelligence artificielle sans consentement explicite préalable,
-                  ni vendues à des tiers.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-base font-semibold text-ink">4. Sous-traitants ultérieurs</h2>
-                <p className="mt-2">Les données peuvent être transmises à :</p>
-                <ul className="mt-2 flex flex-col gap-1.5">
-                  <li>• <strong className="text-ink">Neon</strong> : hébergement de la base de données (Union européenne).</li>
-                  <li>• <strong className="text-ink">Clerk</strong> : authentification et gestion des comptes.</li>
-                  <li>• <strong className="text-ink">Resend</strong> : envoi des emails transactionnels.</li>
-                  <li>• <strong className="text-ink">Vercel</strong> : hébergement de l&apos;application.</li>
-                </ul>
-              </section>
-
-              <section>
-                <h2 className="text-base font-semibold text-ink">5. Durée de conservation</h2>
-                <p className="mt-2">
-                  Les salariés archivés restent accessibles à l&apos;organisation (historique),
-                  sans suppression automatique tant que le compte est actif. Les comptes
-                  désactivés sont anonymisés immédiatement, puis supprimés après une période de
-                  rétention raisonnable, sauf obligation légale de conservation plus longue.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-base font-semibold text-ink">6. Vos droits</h2>
-                <p className="mt-2">
-                  Conformément au RGPD : droit d&apos;accès, de rectification, d&apos;effacement,
-                  de limitation, de portabilité et d&apos;opposition. Pour les salariés d&apos;une
-                  entreprise cliente, ces demandes doivent être adressées à l&apos;employeur
-                  (responsable de traitement). Vous disposez également du droit d&apos;introduire
-                  une réclamation auprès de la CNIL (www.cnil.fr).
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-base font-semibold text-ink">7. Sécurité</h2>
-                <p className="mt-2">
-                  Isolation stricte des données entre chaque organisation cliente, authentification
-                  sécurisée déléguée à un fournisseur spécialisé, accès aux fichiers joints
-                  strictement privé via liens temporaires signés.
-                </p>
-              </section>
-
-              <section>
-                <h2 className="text-base font-semibold text-ink">8. Contact</h2>
-                <p className="mt-2">
-                  Pour toute question relative à cette politique, contactez-nous directement via
-                  les coordonnées communiquées lors de votre entrée en bêta.
-                </p>
-              </section>
-            </div>
-          </div>
+      <section className="mx-auto max-w-2xl px-6 py-16">
+        <Reveal variant="left">
+          <h1 className="text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
+            Politique de confidentialité
+          </h1>
+          <p className="mt-4 text-base text-ink-faint">Dernière mise à jour : {LAST_UPDATED}</p>
+          <p className="mt-4 text-lg text-ink-soft">
+            Cette page dit précisément quelles données RH Pilot collecte, pourquoi, avec qui elles sont
+            partagées, et où elles sont réellement hébergées, prestataire par prestataire. Pas de
+            formule vague du type « vos données sont en sécurité » sans expliquer ce que ça recouvre.
+          </p>
         </Reveal>
-      </div>
+      </section>
+
+      <section className="mx-auto max-w-2xl px-6 pb-16">
+        <Section title="1. Deux rôles distincts">
+          <p>
+            RH Pilot traite deux catégories de données, avec deux responsabilités différentes au sens du
+            RGPD.
+          </p>
+          <p>
+            Pour les données de votre compte (email, identité, préférences), RH Pilot est{" "}
+            <strong className="font-semibold text-ink">responsable du traitement</strong> : c&apos;est
+            nous qui décidons pourquoi et comment ces données sont utilisées.
+          </p>
+          <p>
+            Pour les données que vous saisissez sur vos salariés (nom, date d&apos;embauche, contrat,
+            visite médicale...), RH Pilot agit comme{" "}
+            <strong className="font-semibold text-ink">sous-traitant</strong>. Votre entreprise reste
+            responsable du traitement de ces données : c&apos;est vous qui décidez de les saisir, de les
+            conserver ou de les supprimer, RH Pilot se contente de les stocker et de les organiser pour
+            vous.
+          </p>
+        </Section>
+
+        <Section title="2. Quelles données sont collectées">
+          <p>
+            <strong className="font-semibold text-ink">Données de compte</strong> : email, nom, mot de
+            passe (géré directement par Clerk, jamais stocké par RH Pilot lui-même).
+          </p>
+          <p>
+            <strong className="font-semibold text-ink">Données RH que vous saisissez</strong> : identité
+            des salariés, dates de contrat, période d&apos;essai, visites médicales, tâches et
+            échéances associées.
+          </p>
+          <p>
+            <strong className="font-semibold text-ink">Questions posées au Copilote</strong> : le texte
+            de votre question, et les données de l&apos;organisation strictement nécessaires pour y
+            répondre.
+          </p>
+          <p>
+            <strong className="font-semibold text-ink">Données de navigation</strong> : statistiques de
+            fréquentation anonymisées, sans cookie, sans identification individuelle possible.
+          </p>
+        </Section>
+
+        <Section title="3. Pourquoi ces données sont collectées">
+          <p>
+            Faire fonctionner RH Pilot : calculer vos échéances, générer vos parcours RH, répondre à vos
+            questions. Rien de plus. Aucune donnée n&apos;est vendue, louée ou utilisée à des fins
+            publicitaires.
+          </p>
+        </Section>
+
+        <Section title="4. Avec qui ces données sont partagées, et où">
+          <p className="mb-2">
+            RH Pilot s&apos;appuie sur un nombre volontairement restreint de prestataires spécialisés,
+            plutôt que de tout construire soi-même. Voici, sans approximation, ce que fait chacun et où
+            les données concernées sont réellement traitées.
+          </p>
+          <div className="mt-2 flex flex-col gap-4">
+            {SUBPROCESSORS.map((p) => (
+              <Card key={p.name} compact>
+                <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                  <p className="font-semibold text-ink">{p.name}</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">{p.location}</p>
+                </div>
+                <p className="mt-1 text-sm font-medium text-ink-soft">{p.role}</p>
+                <p className="mt-2 text-sm leading-relaxed text-ink-soft">{p.detail}</p>
+              </Card>
+            ))}
+          </div>
+          <p className="mt-4">
+            Pour les prestataires basés aux États-Unis, le transfert de données est encadré soit par des
+            clauses contractuelles types approuvées par la Commission européenne, soit par une
+            certification dans le cadre du Data Privacy Framework UE-États-Unis, conformément aux
+            exigences du RGPD.
+          </p>
+        </Section>
+
+        <Section title="5. Combien de temps ces données sont conservées">
+          <p>
+            Vos données RH sont conservées tant que votre compte est actif. Vous pouvez exporter
+            l&apos;ensemble de vos données à tout moment depuis votre espace, ou demander leur
+            suppression complète en nous contactant.
+          </p>
+          <p>
+            Les questions posées au Copilote sont conservées au maximum 30 jours du côté d&apos;Anthropic,
+            puis supprimées automatiquement de leurs systèmes.
+          </p>
+        </Section>
+
+        <Section title="6. Vos droits">
+          <p>
+            Conformément au RGPD, vous disposez d&apos;un droit d&apos;accès, de rectification,
+            d&apos;effacement, de limitation et de portabilité de vos données, ainsi que du droit de vous
+            opposer à leur traitement. Pour l&apos;exercer, écrivez-nous à l&apos;adresse indiquée
+            ci-dessous. Vous pouvez aussi déposer une réclamation auprès de la CNIL
+            (www.cnil.fr) si vous estimez que vos droits ne sont pas respectés.
+          </p>
+        </Section>
+
+        <Section title="7. Cookies">
+          <p>
+            RH Pilot n&apos;utilise aucun cookie de mesure d&apos;audience ou publicitaire. Clerk dépose
+            un cookie technique indispensable au maintien de votre connexion : sans lui, vous seriez
+            déconnecté à chaque page. Ce type de cookie est exempté de consentement par la loi, car
+            strictement nécessaire au fonctionnement du service.
+          </p>
+        </Section>
+
+        <Section title="8. Sécurité">
+          <p>
+            Isolation stricte des données entre organisations : une entreprise ne peut jamais voir les
+            données d&apos;une autre. Authentification déléguée à un spécialiste plutôt que gérée en
+            interne. Connexions chiffrées de bout en bout.
+          </p>
+        </Section>
+
+        <Section title="9. Modifications de cette politique">
+          <p>
+            Cette page peut évoluer, notamment si un prestataire change ou si une nouvelle fonctionnalité
+            traite des données différemment. La date de dernière mise à jour en haut de page reflète
+            toujours la version en vigueur.
+          </p>
+        </Section>
+
+        <Section title="10. Contact">
+          <p>
+            Pour toute question sur cette politique ou pour exercer vos droits, écrivez à{" "}
+            <Link href="mailto:aimenoffi@gmail.com" className="font-medium text-brand-blue hover:underline">
+              aimenoffi@gmail.com
+            </Link>
+            .
+          </p>
+        </Section>
+      </section>
 
       <MarketingFooter />
     </div>
