@@ -359,14 +359,17 @@ export function InteractiveDemo() {
             par le cadre. */}
         <div className="relative" style={useCompactMobileFrame ? { width: MOBILE_IMAGE_WIDTH } : undefined}>
         {/* Le personnage qui épie : uniquement sur l'écran d'intro.
-            Toujours au-dessus du cadre (z-10) : entièrement visible,
-            juste posé à côté avec un léger chevauchement du bout des
-            doigts, jamais caché par le cadre. Au clic sur "Commencer
-            la démo", il glisse vers la droite et s'efface en fondu. */}
+            Position calée par mesure au pixel sur la référence
+            fournie (bord du cadre à 80% de la largeur du personnage
+            depuis son bord gauche, départ vertical à 14% de la
+            hauteur du cadre) plutôt qu'estimée à l'œil. Toujours
+            au-dessus du cadre (z-10), entièrement visible. Au clic
+            sur "Commencer la démo", il glisse vers la droite et
+            s'efface en fondu. */}
         {!hasStarted && (
           <div
             aria-hidden
-            className={`pointer-events-none absolute left-[0.5rem] top-[30%] z-10 transition-all duration-300 ease-in sm:left-[1rem] ${
+            className={`pointer-events-none absolute left-[-4.75rem] top-[14%] z-10 transition-all duration-300 ease-in sm:left-[-6.75rem] ${
               phase === "clicking" ? "translate-x-16 opacity-0" : "translate-x-0 opacity-100"
             }`}
           >
