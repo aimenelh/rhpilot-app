@@ -358,17 +358,16 @@ export function InteractiveDemo() {
             cliquable est tout près d'un bord, au lieu d'être rognée
             par le cadre. */}
         <div className="relative" style={useCompactMobileFrame ? { width: MOBILE_IMAGE_WIDTH } : undefined}>
-        {/* Le personnage qui épie : uniquement sur l'écran d'intro, et
-            positionné avant le cadre dans le DOM pour qu'il passe
-            naturellement derrière lui (le cadre est en flux normal,
-            il prime toujours sur un élément en position absolute de
-            même z-index, quel que soit l'ordre). Au clic sur
-            "Commencer la démo", il glisse vers la droite et s'efface,
-            comme s'il se recachait derrière l'écran. */}
+        {/* Le personnage qui épie : uniquement sur l'écran d'intro.
+            Toujours au-dessus du cadre (z-10) pour rester visible en
+            permanence, y compris là où son corps chevauche le bord du
+            cadre. Au clic sur "Commencer la démo", il glisse vers la
+            droite en s'effaçant en fondu, l'effet de disparition
+            vient de l'opacité, pas d'un passage derrière le cadre. */}
         {!hasStarted && (
           <div
             aria-hidden
-            className={`pointer-events-none absolute left-[-0.75rem] top-[30%] z-0 transition-all duration-300 ease-in sm:left-[-1.25rem] ${
+            className={`pointer-events-none absolute left-[-0.5rem] top-[30%] z-10 transition-all duration-300 ease-in sm:left-[-0.75rem] ${
               phase === "clicking" ? "translate-x-14 opacity-0" : "translate-x-0 opacity-100"
             }`}
           >
