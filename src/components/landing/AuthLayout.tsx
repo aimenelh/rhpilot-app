@@ -1,18 +1,21 @@
 import Link from "next/link";
 import { CircleCheck } from "lucide-react";
 import { Logomark } from "@/components/Brand";
-import { AuthCardStack } from "@/components/landing/AuthCardStack";
 import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
 
 export function AuthLayout({
   title,
   subtitle,
   preview,
+  formTitle,
+  formSubtitle,
   children,
 }: {
   title: string;
   subtitle: string;
   preview: React.ReactNode;
+  formTitle: string;
+  formSubtitle: string;
   children: React.ReactNode;
 }) {
   return (
@@ -50,8 +53,11 @@ export function AuthLayout({
             {subtitle}
           </p>
 
-          <div className="auth-in mt-16 hidden lg:block" style={{ animationDelay: "0.22s" }}>
-            <AuthCardStack>{preview}</AuthCardStack>
+          {/* La mascotte et les vraies cartes RH, déjà composées dans
+              l'illustration elle-même : plus besoin de les recréer en
+              petits mockups séparés à côté. */}
+          <div className="auth-in mt-10 hidden lg:block" style={{ animationDelay: "0.22s" }}>
+            {preview}
           </div>
 
           <div className="auth-in mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium text-ink-faint" style={{ animationDelay: "0.3s" }}>
@@ -67,14 +73,12 @@ export function AuthLayout({
           </div>
         </div>
 
-        {/* Colonne droite — carte de connexion en verre, halo lumineux derrière */}
-        <div className="auth-in relative w-full max-w-md" style={{ animationDelay: "0.16s" }}>
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -inset-8 -z-10 animate-pulse rounded-[2rem] bg-brand-gradient opacity-[0.08] blur-2xl"
-          />
-          <div className="rounded-2xl border border-surface-border bg-white/85 p-2 shadow-2xl backdrop-blur-xl sm:p-4">
-            {children}
+        {/* Colonne droite — épurée, sans halo ni ombre appuyée */}
+        <div className="auth-in w-full max-w-md" style={{ animationDelay: "0.16s" }}>
+          <div className="rounded-2xl border border-surface-border bg-white p-8">
+            <h2 className="text-xl font-semibold text-ink">{formTitle}</h2>
+            <p className="mt-1.5 text-sm text-ink-soft">{formSubtitle}</p>
+            <div className="mt-6">{children}</div>
           </div>
         </div>
       </div>

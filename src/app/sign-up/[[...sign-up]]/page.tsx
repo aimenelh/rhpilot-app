@@ -8,6 +8,8 @@ export default function SignUpPage() {
       title="Votre équipe RH n'oublie plus rien."
       subtitle="Créez votre espace en quelques minutes. Sans engagement, sans configuration compliquée."
       preview={<ProductPreview />}
+      formTitle="Créez votre espace RH"
+      formSubtitle="Quelques minutes pour commencer."
     >
       <SignUp
         appearance={{

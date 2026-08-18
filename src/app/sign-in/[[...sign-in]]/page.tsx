@@ -8,6 +8,8 @@ export default function SignInPage() {
       title="Bon retour."
       subtitle="Reconnectez-vous pour retrouver vos parcours RH et ce qui mérite votre attention aujourd'hui."
       preview={<AttentionPreview />}
+      formTitle="Connectez-vous"
+      formSubtitle="Accédez à votre espace RH Pilot."
     >
       <SignIn
         appearance={{
