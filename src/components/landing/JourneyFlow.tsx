@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { StoryStep1, StoryStep2, StoryStep3 } from "@/components/landing/StorySteps";
 
 const STEPS = [
@@ -9,10 +10,25 @@ const STEPS = [
   { caption: "Les rappels arrivent naturellement, sans y penser.", Step: StoryStep3 },
 ];
 
+// Les 3 poses du cycle de marche, dimensions réelles des fichiers
+// (nécessaires à next/image pour calculer le bon ratio). La ligne de
+// sol (les pieds) est alignée sur le bord bas de chacune.
+const WALK_POSES = [
+  { src: "/illustrations/illu-walk-1.png", width: 555, height: 906 },
+  { src: "/illustrations/illu-walk-2.png", width: 275, height: 914 },
+  { src: "/illustrations/illu-walk-3.png", width: 533, height: 903 },
+];
+const WALK_CYCLE = [0, 1, 2, 1];
+const STRIDE = 0.12;
+
 export function JourneyFlow() {
   const ref = useRef<HTMLDivElement>(null);
+  const walkerDesktopRef = useRef<HTMLDivElement>(null);
+  const walkerMobileRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
+  const [poseIndex, setPoseIndex] = useState(0);
+  const poseIndexRef = useRef(0);
 
   useEffect(() => {
     const mql = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -37,23 +53,57 @@ export function JourneyFlow() {
     return () => observer.disconnect();
   }, []);
 
+  // Le personnage avance le long du tracé en fonction de la position de
+  // scroll. Position écrite directement via ref à chaque frame ; la
+  // pose passe par du state, mise à jour seulement quand elle change.
+  useEffect(() => {
+    if (reducedMotion) return;
+    const node = ref.current;
+    if (!node) return;
+
+    let ticking = false;
+
+    const update = () => {
+      ticking = false;
+      const rect = node.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const progress = Math.min(1, Math.max(0, (vh - rect.top) / (vh + rect.height)));
+
+      if (walkerDesktopRef.current) {
+        walkerDesktopRef.current.style.left = `${progress * 100}%`;
+      }
+      if (walkerMobileRef.current) {
+        walkerMobileRef.current.style.top = `calc(1rem + (100% - 2rem) * ${progress})`;
+      }
+
+      const step = Math.floor(progress / STRIDE) % WALK_CYCLE.length;
+      const nextPose = WALK_CYCLE[step];
+      if (nextPose !== poseIndexRef.current) {
+        poseIndexRef.current = nextPose;
+        setPoseIndex(nextPose);
+      }
+    };
+
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    };
+
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [reducedMotion]);
+
+  const pose = WALK_POSES[poseIndex];
+
   return (
     <div ref={ref} className="relative mx-auto mt-12 max-w-4xl">
-      <style>{`
-        @keyframes journeyPulseX {
-          0% { left: 0%; opacity: 0; }
-          8% { opacity: 1; }
-          92% { opacity: 1; }
-          100% { left: 100%; opacity: 0; }
-        }
-        @keyframes journeyPulseY {
-          0% { top: 0%; opacity: 0; }
-          8% { opacity: 1; }
-          92% { opacity: 1; }
-          100% { top: 100%; opacity: 0; }
-        }
-      `}</style>
-
       {/* ---------- Desktop : flux horizontal ---------- */}
       <div className="relative hidden items-start justify-between md:flex">
         <div
@@ -62,16 +112,21 @@ export function JourneyFlow() {
           style={{ transform: visible ? "scaleX(1)" : "scaleX(0)" }}
         />
         {visible && !reducedMotion && (
-          <span
+          <div
+            ref={walkerDesktopRef}
             aria-hidden
-            className="absolute top-[49px] h-1.5 w-1.5 rounded-full bg-brand-blue shadow-[0_0_8px_2px_rgba(46,111,242,0.5)]"
-            style={{ animation: "journeyPulseX 4.5s ease-in-out infinite", animationDelay: "1.2s" }}
-          />
+            className="pointer-events-none absolute top-[52px] left-0 z-20 -translate-x-1/2 -translate-y-full"
+          >
+            <Image
+              src={pose.src}
+              alt=""
+              width={pose.width}
+              height={pose.height}
+              className="h-14 w-auto drop-shadow-md"
+            />
+          </div>
         )}
 
-        {/* Le déroulé se lit dans l'ordre grâce à la ligne et au
-            point qui la parcourt, plus besoin d'un numéro sur
-            chaque étape pour ça, chaque visuel se suffit déjà. */}
         {STEPS.map(({ caption, Step }, i) => (
           <div
             key={i}
@@ -96,11 +151,19 @@ export function JourneyFlow() {
           style={{ transform: visible ? "scaleY(1)" : "scaleY(0)" }}
         />
         {visible && !reducedMotion && (
-          <span
+          <div
+            ref={walkerMobileRef}
             aria-hidden
-            className="absolute left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-brand-blue shadow-[0_0_8px_2px_rgba(46,111,242,0.5)]"
-            style={{ animation: "journeyPulseY 4.5s ease-in-out infinite", animationDelay: "1.2s" }}
-          />
+            className="pointer-events-none absolute left-1/2 top-4 z-20 -translate-x-[115%] -translate-y-1/2"
+          >
+            <Image
+              src={pose.src}
+              alt=""
+              width={pose.width}
+              height={pose.height}
+              className="h-12 w-auto drop-shadow-md"
+            />
+          </div>
         )}
 
         {STEPS.map(({ caption, Step }, i) => (

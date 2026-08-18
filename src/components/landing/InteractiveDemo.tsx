@@ -377,13 +377,34 @@ export function InteractiveDemo() {
                 : "z-10 translate-x-0 opacity-100"
             }`}
           >
-            <Image
-              src="/illustrations/illu-peek.png"
-              alt=""
-              width={676}
-              height={891}
-              className="h-32 w-auto sm:h-44"
-            />
+            <style>{`
+              @media (prefers-reduced-motion: no-preference) {
+                @keyframes peekLinesPulse {
+                  0%, 100% { opacity: 0.55; transform: scale(0.94); }
+                  50% { opacity: 1; transform: scale(1.06); }
+                }
+                .peek-lines-pulse {
+                  animation: peekLinesPulse 1.8s ease-in-out infinite;
+                  transform-origin: 80% 50%;
+                }
+              }
+            `}</style>
+            <div className="relative">
+              <Image
+                src="/illustrations/illu-peek.png"
+                alt=""
+                width={676}
+                height={891}
+                className="h-32 w-auto sm:h-44"
+              />
+              <Image
+                src="/illustrations/illu-peek-lines.png"
+                alt=""
+                width={144}
+                height={205}
+                className="peek-lines-pulse absolute left-[0.5%] top-[16.5%] w-[21%] h-auto"
+              />
+            </div>
           </div>
         )}
         <div className="overflow-hidden rounded-2xl border border-surface-border bg-white shadow-2xl">

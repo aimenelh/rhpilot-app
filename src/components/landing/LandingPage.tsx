@@ -84,12 +84,25 @@ export function LandingPage() {
                 priority
               />
             </div>
+            <style>{`
+              @media (prefers-reduced-motion: no-preference) {
+                @keyframes heroCopiloteLand {
+                  0% { transform: translateY(-10px); }
+                  55% { transform: translateY(6px); }
+                  75% { transform: translateY(-3px); }
+                  100% { transform: translateY(0); }
+                }
+                .hero-copilote-land {
+                  animation: heroCopiloteLand 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.65s both;
+                }
+              }
+            `}</style>
             <Image
               src="/illustrations/illu-copilote-hero.png"
               alt=""
               width={802}
               height={1274}
-              className="pointer-events-none absolute -top-16 right-10 h-28 w-auto sm:-top-24 sm:right-16 sm:h-40"
+              className="hero-copilote-land pointer-events-none absolute -top-16 right-10 h-28 w-auto sm:-top-24 sm:right-16 sm:h-40"
             />
           </div>
         </Reveal>
@@ -439,12 +452,24 @@ export function LandingPage() {
             de l'illustration au-dessus du bord, 19 % retombant dessus,
             centré avec un léger décalage à droite (+3,6 % de la
             largeur de la section). */}
+        <style>{`
+          @media (prefers-reduced-motion: no-preference) {
+            @keyframes ctaCopiloteSway {
+              0%, 100% { transform: translateX(-50%) rotate(0deg); }
+              50% { transform: translateX(-50%) rotate(1.2deg); }
+            }
+            .cta-copilote-sway {
+              animation: ctaCopiloteSway 4.5s ease-in-out infinite;
+              transform-origin: 50% 100%;
+            }
+          }
+        `}</style>
         <Image
           src="/illustrations/illu-cta-final.png"
           alt=""
           width={1319}
           height={979}
-          className="pointer-events-none absolute left-[58%] top-[-4.7rem] z-10 h-28 w-auto -translate-x-1/2 sm:top-[-7.2rem] sm:h-[170px]"
+          className="cta-copilote-sway pointer-events-none absolute left-[58%] top-[-4.7rem] z-10 h-28 w-auto -translate-x-1/2 sm:top-[-7.2rem] sm:h-[170px]"
         />
         <Reveal>
           <div className="relative mx-auto max-w-2xl px-6 text-center">
