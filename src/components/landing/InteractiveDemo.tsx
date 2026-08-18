@@ -367,7 +367,7 @@ export function InteractiveDemo() {
         {!hasStarted && (
           <div
             aria-hidden
-            className={`pointer-events-none absolute left-[-0.5rem] top-[30%] z-10 transition-all duration-300 ease-in sm:left-[-0.75rem] ${
+            className={`pointer-events-none absolute left-[2rem] top-[30%] z-10 transition-all duration-300 ease-in sm:left-[2.5rem] ${
               phase === "clicking" ? "translate-x-14 opacity-0" : "translate-x-0 opacity-100"
             }`}
           >
