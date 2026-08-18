@@ -362,15 +362,19 @@ export function InteractiveDemo() {
             Position calée par mesure au pixel sur la référence
             fournie (bord du cadre à 80% de la largeur du personnage
             depuis son bord gauche, départ vertical à 14% de la
-            hauteur du cadre) plutôt qu'estimée à l'œil. Toujours
-            au-dessus du cadre (z-10), entièrement visible. Au clic
-            sur "Commencer la démo", il glisse vers la droite et
-            s'efface en fondu. */}
+            hauteur du cadre). Au repos, toujours au-dessus du cadre
+            (z-10), entièrement visible. Au clic sur "Commencer la
+            démo", il repasse sous le cadre (z-0) tout en glissant
+            largement vers la droite : c'est le cadre qui le recouvre
+            visuellement, pas juste un fondu, pour vraiment donner
+            l'impression qu'il se cache derrière. */}
         {!hasStarted && (
           <div
             aria-hidden
-            className={`pointer-events-none absolute left-[-4.75rem] top-[14%] z-10 transition-all duration-300 ease-in sm:left-[-6.75rem] ${
-              phase === "clicking" ? "translate-x-16 opacity-0" : "translate-x-0 opacity-100"
+            className={`pointer-events-none absolute left-[-5.25rem] top-[14%] transition-all duration-300 ease-in sm:left-[-7.25rem] ${
+              phase === "clicking"
+                ? "z-0 translate-x-24 opacity-0 sm:translate-x-32"
+                : "z-10 translate-x-0 opacity-100"
             }`}
           >
             <Image
