@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Stethoscope, UserRoundX, Send, Clock, UserPlus, CheckCircle2 } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
@@ -24,19 +25,16 @@ const PHILOSOPHY = [
 ];
 
 const NEEDS_TO_FEATURES = [
-  { icon: Stethoscope, need: "Ne pas oublier une visite médicale", feature: "Parcours Visite médicale" },
-  { icon: UserRoundX, need: "Savoir qui doit s'occuper de quoi", feature: "Responsabilités visibles" },
-  { icon: Send, need: "Être relancé avant l'oubli", feature: "Notifications automatiques" },
-  { icon: Clock, need: "Suivre les périodes d'essai en cours", feature: "Parcours Fin de période d'essai" },
-  { icon: UserPlus, need: "Bien accompagner une nouvelle recrue", feature: "Parcours Embauche" },
+  { need: "Ne pas oublier une visite médicale", feature: "Parcours Visite médicale" },
+  { need: "Savoir qui doit s'occuper de quoi", feature: "Responsabilités visibles" },
+  { need: "Être relancé avant l'oubli", feature: "Notifications automatiques" },
+  { need: "Suivre les périodes d'essai en cours", feature: "Parcours Fin de période d'essai" },
+  { need: "Bien accompagner une nouvelle recrue", feature: "Parcours Embauche" },
 ];
 
-function SectionMark({ number, label }: { number: string; label: string }) {
+function SectionMark({ label }: { label: string }) {
   return (
-    <div className="flex items-baseline gap-3">
-      <span className="text-2xl font-bold text-brand-blue/25">{number}</span>
-      <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">{label}</span>
-    </div>
+    <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">{label}</span>
   );
 }
 
@@ -65,7 +63,7 @@ export default function WhyPage() {
       <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
         <div className="mx-auto max-w-3xl px-6">
           <Reveal>
-            <SectionMark number="01" label="Le problème" />
+            <SectionMark label="Le problème" />
           </Reveal>
 
           <Reveal variant="scale" delay={100}>
@@ -116,7 +114,7 @@ export default function WhyPage() {
       {/* 02 — Notre philosophie, en liste manifeste, aucune carte */}
       <section className="mx-auto max-w-3xl px-6 py-16">
         <Reveal>
-          <SectionMark number="02" label="Notre philosophie" />
+          <SectionMark label="Notre philosophie" />
         </Reveal>
         <Reveal delay={80}>
           <h2 className="mt-4 max-w-md text-2xl font-semibold text-ink">
@@ -140,7 +138,7 @@ export default function WhyPage() {
       <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
         <div className="mx-auto max-w-3xl px-6">
           <Reveal>
-            <SectionMark number="03" label="Ce que RH Pilot n'est pas" />
+            <SectionMark label="Ce que RH Pilot n'est pas" />
           </Reveal>
           <Reveal delay={80}>
             <h2 className="mt-4 max-w-md text-2xl font-semibold text-ink">
@@ -183,26 +181,34 @@ export default function WhyPage() {
         </Reveal>
       </section>
 
-      {/* 04 — Preuve terrain */}
+      {/* Preuve terrain */}
       <section className="mx-auto max-w-3xl px-6 py-16">
         <Reveal>
-          <SectionMark number="04" label="Observé sur le terrain" />
+          <SectionMark label="Observé sur le terrain" />
         </Reveal>
         <Reveal delay={80}>
-          <h2 className="mt-4 max-w-md text-2xl font-semibold text-ink">
-            Chaque fonctionnalité part d&apos;un besoin réel.
-          </h2>
-          <p className="mt-2 text-sm text-ink-soft">Pas d&apos;une idée de bureau.</p>
+          <div className="mt-4 flex items-start gap-4">
+            <div className="flex-1">
+              <h2 className="max-w-md text-2xl font-semibold text-ink">
+                Chaque fonctionnalité part d&apos;un besoin réel.
+              </h2>
+              <p className="mt-2 text-sm text-ink-soft">Pas d&apos;une idée de bureau.</p>
+            </div>
+            <Image
+              src="/illustrations/illu-checklist.png"
+              alt=""
+              width={369}
+              height={388}
+              className="hidden h-20 w-auto shrink-0 sm:block"
+            />
+          </div>
         </Reveal>
 
         <div className="mt-10 flex flex-col gap-2">
           {NEEDS_TO_FEATURES.map((item, index) => (
             <Reveal key={item.need} variant={index % 2 === 0 ? "left" : "right"} delay={index * 90}>
               <div className="flex flex-col items-center gap-3 rounded-xl border border-surface-border bg-white/85 p-4 backdrop-blur-sm sm:flex-row">
-                <div className="flex flex-1 items-center gap-3">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface-subtle text-ink-faint">
-                    <item.icon size={16} />
-                  </span>
+                <div className="flex flex-1 items-center">
                   <span className="text-sm text-ink-soft">{item.need}</span>
                 </div>
                 <div className="hidden shrink-0 items-center sm:flex" aria-hidden>
