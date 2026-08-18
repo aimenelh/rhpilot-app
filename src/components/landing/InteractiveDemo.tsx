@@ -358,6 +358,29 @@ export function InteractiveDemo() {
             cliquable est tout près d'un bord, au lieu d'être rognée
             par le cadre. */}
         <div className="relative" style={useCompactMobileFrame ? { width: MOBILE_IMAGE_WIDTH } : undefined}>
+        {/* Le personnage qui épie : uniquement sur l'écran d'intro, et
+            positionné avant le cadre dans le DOM pour qu'il passe
+            naturellement derrière lui (le cadre est en flux normal,
+            il prime toujours sur un élément en position absolute de
+            même z-index, quel que soit l'ordre). Au clic sur
+            "Commencer la démo", il glisse vers la droite et s'efface,
+            comme s'il se recachait derrière l'écran. */}
+        {!hasStarted && (
+          <div
+            aria-hidden
+            className={`pointer-events-none absolute left-[-2.5rem] top-[30%] z-0 transition-all duration-300 ease-in sm:left-[-3.5rem] ${
+              phase === "clicking" ? "translate-x-14 opacity-0" : "translate-x-0 opacity-100"
+            }`}
+          >
+            <Image
+              src="/illustrations/illu-peek.png"
+              alt=""
+              width={676}
+              height={891}
+              className="h-32 w-auto sm:h-44"
+            />
+          </div>
+        )}
         <div className="overflow-hidden rounded-2xl border border-surface-border bg-white shadow-2xl">
           {/* Barre façon navigateur, cohérente avec le reste du site */}
           <div className="flex items-center gap-1.5 border-b border-surface-border bg-surface-subtle px-3" style={{ height: CHROME_BAR_HEIGHT }}>
