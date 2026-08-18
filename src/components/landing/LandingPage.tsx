@@ -432,20 +432,27 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="bg-ink py-16">
+      <section className="relative overflow-visible bg-ink py-16">
+        {/* Personnage posé sur le bord supérieur de la section, jambes
+            dans le vide, comme celui du hero sur le tableau de bord.
+            Position calculée à partir de la maquette fournie : 81 %
+            de l'illustration au-dessus du bord, 19 % retombant dessus,
+            centré avec un léger décalage à droite (+3,6 % de la
+            largeur de la section). */}
+        <Image
+          src="/illustrations/illu-cta-final.png"
+          alt=""
+          width={1319}
+          height={979}
+          className="pointer-events-none absolute left-[58%] top-[-4.7rem] z-10 h-28 w-auto -translate-x-1/2 sm:top-[-7.2rem] sm:h-[170px]"
+        />
         <Reveal>
-          <div className="mx-auto max-w-2xl px-6 text-center">
-            <div className="mb-5 inline-block rounded-2xl bg-white p-3 shadow-lg">
-              <Image
-                src="/illustrations/illu-notification.png"
-                alt=""
-                width={419}
-                height={372}
-                className="h-16 w-auto"
-              />
-            </div>
-            <h2 className="text-2xl font-semibold text-white">
-              Prêt à ne plus rien oublier ?
+          <div className="relative mx-auto max-w-2xl px-6 text-center">
+            <p className="font-mono text-xs font-semibold tabular-nums tracking-wide text-brand-blue">
+              AUJOURD&apos;HUI
+            </p>
+            <h2 className="mt-3 text-2xl font-semibold text-white">
+              Rien n&apos;est encore oublié. Gardons ça comme ça.
             </h2>
             <p className="mt-3 text-sm text-white/70">
               Créez votre espace en quelques minutes, sans engagement.
