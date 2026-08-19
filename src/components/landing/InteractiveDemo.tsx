@@ -395,7 +395,7 @@ export function InteractiveDemo() {
                 alt=""
                 width={676}
                 height={891}
-                className="h-32 w-auto sm:h-44"
+                className="h-20 w-auto sm:h-44"
               />
               <Image
                 src="/illustrations/illu-peek-lines.png"
