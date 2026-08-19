@@ -35,7 +35,7 @@ export function AuthLayout({
 
       <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col justify-start gap-14 px-6 py-16 lg:flex-row lg:items-center lg:justify-center lg:gap-20">
         {/* Colonne gauche — même langage que le hero de la landing */}
-        <div className="w-full max-w-md lg:max-w-lg">
+        <div className="w-full min-w-0 max-w-md lg:max-w-lg">
           <Link href="/" className="auth-in mb-8 flex items-center gap-2">
             <Logomark size={30} />
             <span className="text-[15px] font-semibold tracking-tight text-ink">
@@ -74,7 +74,7 @@ export function AuthLayout({
         </div>
 
         {/* Colonne droite — épurée, sans halo ni ombre appuyée */}
-        <div className="auth-in w-full max-w-md" style={{ animationDelay: "0.16s" }}>
+        <div className="auth-in w-full min-w-0 max-w-md" style={{ animationDelay: "0.16s" }}>
           <div className="rounded-2xl border border-surface-border bg-white p-8">
             <h2 className="text-xl font-semibold text-ink">{formTitle}</h2>
             <p className="mt-1.5 text-sm text-ink-soft">{formSubtitle}</p>
