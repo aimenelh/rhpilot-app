@@ -33,7 +33,7 @@ export function AuthLayout({
         }
       `}</style>
 
-      <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col justify-center gap-14 px-6 py-16 lg:flex-row lg:items-center lg:gap-20">
+      <div className="relative mx-auto flex min-h-screen max-w-6xl flex-col justify-start gap-14 px-6 py-16 lg:flex-row lg:items-center lg:justify-center lg:gap-20">
         {/* Colonne gauche — même langage que le hero de la landing */}
         <div className="w-full max-w-md lg:max-w-lg">
           <Link href="/" className="auth-in mb-8 flex items-center gap-2">

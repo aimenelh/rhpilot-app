@@ -24,7 +24,6 @@ const STRIDE = 0.12;
 export function JourneyFlow() {
   const ref = useRef<HTMLDivElement>(null);
   const walkerDesktopRef = useRef<HTMLDivElement>(null);
-  const walkerMobileRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [reducedMotion, setReducedMotion] = useState(false);
   const [poseIndex, setPoseIndex] = useState(0);
@@ -71,9 +70,6 @@ export function JourneyFlow() {
 
       if (walkerDesktopRef.current) {
         walkerDesktopRef.current.style.left = `${progress * 100}%`;
-      }
-      if (walkerMobileRef.current) {
-        walkerMobileRef.current.style.top = `calc(1rem + (100% - 2rem) * ${progress})`;
       }
 
       const step = Math.floor(progress / STRIDE) % WALK_CYCLE.length;
@@ -144,27 +140,16 @@ export function JourneyFlow() {
       </div>
 
       {/* ---------- Mobile : flux vertical ---------- */}
+      {/* Pas de personnage ici : sur une colonne aussi étroite, les
+          légendes prennent toute la largeur des deux côtés de la
+          ligne, aucun endroit où le poser sans chevaucher le texte.
+          La ligne et les étapes suffisent à raconter la séquence. */}
       <div className="relative mx-auto flex max-w-xs flex-col items-center gap-3 md:hidden">
         <div
           aria-hidden
           className="absolute bottom-4 left-1/2 top-4 w-px origin-top -translate-x-1/2 bg-gradient-to-b from-brand-blue/10 via-brand-blue/30 to-brand-violet/10 transition-transform duration-[1200ms] ease-out"
           style={{ transform: visible ? "scaleY(1)" : "scaleY(0)" }}
         />
-        {visible && !reducedMotion && (
-          <div
-            ref={walkerMobileRef}
-            aria-hidden
-            className="pointer-events-none absolute left-1/2 top-4 z-20 -translate-x-[115%] -translate-y-1/2"
-          >
-            <Image
-              src={pose.src}
-              alt=""
-              width={pose.width}
-              height={pose.height}
-              className="h-12 w-auto drop-shadow-md"
-            />
-          </div>
-        )}
 
         {STEPS.map(({ caption, Step }, i) => (
           <div

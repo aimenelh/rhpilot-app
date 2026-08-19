@@ -256,7 +256,7 @@ export function LandingPage() {
                   alt=""
                   width={448}
                   height={539}
-                  className="h-20 w-auto shrink-0"
+                  className="h-14 w-auto shrink-0 sm:h-20"
                 />
               </div>
               <p className="mt-3 text-base leading-relaxed text-ink-soft">

@@ -16,6 +16,8 @@ export default function SignInPage() {
           elements: {
             rootBox: "w-full max-w-md",
             card: "shadow-none border-none bg-transparent w-full",
+            headerTitle: "hidden",
+            headerSubtitle: "hidden",
           },
         }}
       />
