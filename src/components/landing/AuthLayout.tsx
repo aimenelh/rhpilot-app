@@ -75,7 +75,7 @@ export function AuthLayout({
 
         {/* Colonne droite — épurée, sans halo ni ombre appuyée */}
         <div className="auth-in w-full min-w-0 max-w-md" style={{ animationDelay: "0.16s" }}>
-          <div className="rounded-2xl border border-surface-border bg-white p-8">
+          <div className="overflow-hidden rounded-2xl border border-surface-border bg-white p-8">
             <h2 className="text-xl font-semibold text-ink">{formTitle}</h2>
             <p className="mt-1.5 text-sm text-ink-soft">{formSubtitle}</p>
             <div className="mt-6">{children}</div>
