@@ -9,11 +9,13 @@ export const metadata = {
   description: "Identité de l'éditeur, hébergement et informations légales du site RH Pilot.",
 };
 
-// Le SIRET est en cours d'attribution par le Guichet unique au moment
-// de la rédaction de cette page — mention courante et acceptée en
-// attendant. Remplacer par le vrai numéro dès réception, c'est la
-// seule ligne à changer.
-const SIRET = "En cours d'attribution auprès du Guichet unique";
+// Le Kbis indique le SIREN (via le numéro RCS), pas le SIRET à
+// proprement parler — celui-ci demande 5 chiffres supplémentaires
+// identifiant l'établissement, absents de l'extrait fourni. RCS +
+// SIREN est tout aussi valable pour des mentions légales
+// d'entrepreneur individuel. À remplacer par le vrai SIRET si Aimen
+// le retrouve ailleurs (mail INPI, societe.com une fois indexé).
+const RCS = "RCS Montpellier 108 345 125";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -49,8 +51,8 @@ export default function MentionsLegalesPage() {
             Le site RH Pilot est édité par Aimen EL HOUSSEINI, entrepreneur individuel (micro-entreprise),
             exerçant sous le nom commercial <strong className="font-semibold text-ink">RH Pilot</strong>.
           </p>
-          <p>Adresse : 198 rue Robert Koch, 34080 Montpellier, France.</p>
-          <p>SIRET : {SIRET}.</p>
+          <p>Adresse : 198 rue Robert Koch, 34090 Montpellier, France.</p>
+          <p>{RCS}.</p>
           <p>TVA non applicable, article 293 B du Code général des impôts.</p>
           <p>
             Contact :{" "}
