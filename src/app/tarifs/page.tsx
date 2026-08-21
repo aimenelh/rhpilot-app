@@ -123,7 +123,7 @@ export default function TarifsPage() {
           <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <div>
               <p className="text-sm font-semibold text-ink">Besoin sur mesure ? Plusieurs sites, SIRH existant, accompagnement dédié.</p>
-              <p className="mt-1 text-sm text-ink-soft">Enterprise — sur devis, on en discute directement.</p>
+              <p className="mt-1 text-sm text-ink-soft">Enterprise sur devis, on en discute directement.</p>
             </div>
             <Link
               href="mailto:aimenoffi@gmail.com"
