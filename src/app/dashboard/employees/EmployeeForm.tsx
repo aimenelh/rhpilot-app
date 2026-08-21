@@ -66,7 +66,9 @@ function getLegalProbationSuggestion(
   contractType: string,
   professionalCategory: string,
   hireDate: string,
-  contractEndDate: string
+  contractEndDate: string,
+  weeksCompany: string,
+  weeksCfa: string
 ): { duration: string; unit: string; hint: string } | null {
   if (contractType === "CDI") {
     const months = CDI_PROBATION_MONTHS[professionalCategory];
@@ -86,9 +88,107 @@ function getLegalProbationSuggestion(
       hint: `Délai légal maximum selon le Code du travail (art. L1242-10) pour un CDD de cette durée : ${days} jour${days > 1 ? "s" : ""}. Votre convention collective peut prévoir une durée plus courte, jamais plus longue : modifiez librement ce champ si besoin.`,
     };
   }
+  if (contractType === "APPRENTISSAGE") {
+    const wc = parseInt(weeksCompany, 10);
+    const wf = parseInt(weeksCfa, 10);
+    if (Number.isNaN(wc) || Number.isNaN(wf)) return null;
+    const calendarDays = computeApprenticeshipProbationDays(hireDate, wc, wf);
+    if (calendarDays == null) return null;
+    return {
+      duration: String(calendarDays),
+      unit: "DAYS",
+      hint: `Estimation basée sur le rythme déclaré (${wc} semaine${wc > 1 ? "s" : ""} en entreprise / ${wf} semaine${wf > 1 ? "s" : ""} en CFA) pour atteindre 45 jours de présence effective, hors week-ends et jours fériés (art. L6222-18). Ajustez cette date directement si vous savez que le rythme réel diffère (vacances de CFA, période estivale...).`,
+    };
+  }
   return null;
 }
 
+// Article L6222-18 : période probatoire de l'apprenti fixée à 45 jours
+// de présence effective en entreprise (consécutifs ou non), hors
+// semaines de CFA. Calcul jour par jour à partir d'un rythme
+// d'alternance déclaré (ex. 2 semaines entreprise / 1 semaine CFA),
+// en semaines "glissantes" depuis la date d'embauche — on ne connaît
+// pas le calendrier réel du CFA, donc pas d'alignement sur de vraies
+// semaines civiles.
+function getEasterSunday(year: number): Date {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return new Date(year, month - 1, day);
+}
+
+function getFrenchPublicHolidays(year: number): Set<string> {
+  const addDays = (date: Date, days: number) => {
+    const d = new Date(date);
+    d.setDate(d.getDate() + days);
+    return d;
+  };
+  const toKey = (d: Date) => d.toISOString().slice(0, 10);
+  const easter = getEasterSunday(year);
+
+  return new Set(
+    [
+      new Date(year, 0, 1),
+      new Date(year, 4, 1),
+      new Date(year, 4, 8),
+      new Date(year, 6, 14),
+      new Date(year, 7, 15),
+      new Date(year, 10, 1),
+      new Date(year, 10, 11),
+      new Date(year, 11, 25),
+      addDays(easter, 1), // lundi de Pâques
+      addDays(easter, 39), // Ascension
+      addDays(easter, 50), // lundi de Pentecôte
+    ].map(toKey)
+  );
+}
+
+function computeApprenticeshipProbationDays(
+  hireDate: string,
+  weeksCompany: number,
+  weeksCfa: number
+): number | null {
+  if (!hireDate || weeksCompany <= 0) return null;
+  const cycleLength = weeksCompany + weeksCfa;
+  if (cycleLength <= 0) return null;
+
+  const start = new Date(hireDate);
+  let effectiveDays = 0;
+  const holidayCache: Record<number, Set<string>> = {};
+  const maxIterations = 365 * 3; // garde-fou anti-boucle infinie
+
+  for (let i = 0; i < maxIterations; i++) {
+    const current = new Date(start);
+    current.setDate(current.getDate() + i);
+
+    const dayOfWeek = current.getDay(); // 0 = dimanche, 6 = samedi
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+    const weekIndexInCycle = Math.floor(i / 7) % cycleLength;
+    const isCompanyWeek = weekIndexInCycle < weeksCompany;
+
+    const year = current.getFullYear();
+    if (!holidayCache[year]) holidayCache[year] = getFrenchPublicHolidays(year);
+    const isHoliday = holidayCache[year].has(current.toISOString().slice(0, 10));
+
+    if (!isWeekend && isCompanyWeek && !isHoliday) {
+      effectiveDays++;
+      if (effectiveDays >= 45) return i;
+    }
+  }
+  return null;
+}
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
   return (
@@ -125,6 +225,12 @@ export function EmployeeForm({
   // présente à l'ouverture du formulaire (fiche existante) compte
   // aussi comme "déjà décidée par quelqu'un".
   const [probationTouched, setProbationTouched] = useState(Boolean(defaultValues.probationDuration));
+  // Rythme d'alternance déclaré, uniquement pour aider au calcul —
+  // volontairement non transmis avec le formulaire (pas de `name`),
+  // donc rien de nouveau à stocker en base pour cette première
+  // version.
+  const [weeksCompany, setWeeksCompany] = useState("2");
+  const [weeksCfa, setWeeksCfa] = useState("1");
 
   const showContractEndDate = ["CDD", "APPRENTISSAGE", "PROFESSIONNALISATION"].includes(contractType);
 
@@ -134,7 +240,9 @@ export function EmployeeForm({
       contractType,
       professionalCategory,
       hireDate,
-      contractEndDate
+      contractEndDate,
+      weeksCompany,
+      weeksCfa
     );
     if (suggestion) {
       setProbationDuration(suggestion.duration);
@@ -142,13 +250,15 @@ export function EmployeeForm({
     } else {
       setProbationDuration("");
     }
-  }, [contractType, professionalCategory, hireDate, contractEndDate, probationTouched]);
+  }, [contractType, professionalCategory, hireDate, contractEndDate, weeksCompany, weeksCfa, probationTouched]);
 
   const legalSuggestion = getLegalProbationSuggestion(
     contractType,
     professionalCategory,
     hireDate,
-    contractEndDate
+    contractEndDate,
+    weeksCompany,
+    weeksCfa
   );
 
   return (
@@ -280,6 +390,41 @@ export function EmployeeForm({
           </div>
         )}
 
+        {contractType === "APPRENTISSAGE" && (
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="weeksCompany">Semaines en entreprise</Label>
+              <Input
+                id="weeksCompany"
+                type="number"
+                min={1}
+                max={52}
+                value={weeksCompany}
+                onChange={(event) => setWeeksCompany(event.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="weeksCfa">Semaines en CFA</Label>
+              <Input
+                id="weeksCfa"
+                type="number"
+                min={0}
+                max={52}
+                value={weeksCfa}
+                onChange={(event) => setWeeksCfa(event.target.value)}
+              />
+            </div>
+            <div className="col-span-2">
+              <FieldHint>
+                Rythme d&apos;alternance déclaré par le CFA (ex. 2 semaines en entreprise,
+                1 semaine en CFA), répété en boucle à partir de la date d&apos;embauche.
+                Sert uniquement à estimer la fin de la période probatoire de 45 jours,
+                aucune donnée n&apos;est conservée à part le résultat.
+              </FieldHint>
+            </div>
+          </div>
+        )}
+
         <div>
           <Label htmlFor="probationDuration">Durée de la période d&apos;essai</Label>
           <div className="flex gap-2">
@@ -312,9 +457,9 @@ export function EmployeeForm({
           </div>
           {legalSuggestion ? (
             <FieldHint>{legalSuggestion.hint}</FieldHint>
-          ) : ["APPRENTISSAGE", "PROFESSIONNALISATION"].includes(contractType) ? (
+          ) : contractType === "PROFESSIONNALISATION" ? (
             <FieldHint>
-              Ces contrats suivent un régime différent du CDI et du CDD pour la période
+              Ce contrat suit un régime différent du CDI et du CDD pour la période
               d&apos;essai, RH Pilot ne le pré-calcule pas : renseignez la durée
               vous-même.
             </FieldHint>
