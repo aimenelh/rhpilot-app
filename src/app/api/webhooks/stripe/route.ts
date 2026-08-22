@@ -4,6 +4,16 @@ import type Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
 
+// Depuis la version d'API "Basil" de Stripe (31 mars 2025),
+// current_period_end n'existe plus sur l'abonnement lui-même, il vit
+// sur chaque ligne de facturation (un abonnement peut avoir plusieurs
+// lignes avec des périodes différentes). Nos deux lignes partagent la
+// même périodicité mensuelle, donc la première suffit.
+function getPeriodEnd(subscription: Stripe.Subscription): Date | null {
+  const periodEndSeconds = subscription.items.data[0]?.current_period_end;
+  return periodEndSeconds ? new Date(periodEndSeconds * 1000) : null;
+}
+
 export async function POST(req: NextRequest) {
   const body = await req.text();
   const signature = headers().get("stripe-signature");
@@ -37,7 +47,7 @@ export async function POST(req: NextRequest) {
             stripeCustomerId: session.customer as string,
             stripeSubscriptionId: subscription.id,
             subscriptionStatus: subscription.status,
-            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+            currentPeriodEnd: getPeriodEnd(subscription),
           },
         });
       }
@@ -54,7 +64,7 @@ export async function POST(req: NextRequest) {
         where: { stripeSubscriptionId: subscription.id },
         data: {
           subscriptionStatus: subscription.status,
-          currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+          currentPeriodEnd: getPeriodEnd(subscription),
         },
       });
       break;
