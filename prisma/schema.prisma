@@ -31,6 +31,15 @@ model Organization {
   name                 String
   siret                String?   // facultatif, jamais bloquant à l'inscription — voir CreateOrganizationForm
   conventionCollective String?   // nom libre, renseigné dans les paramètres (jamais à l'inscription, pour ne pas alourdir le premier contact) — sert uniquement à orienter vers la bonne source officielle, jamais à déduire une règle nous-mêmes
+
+  // Facturation Stripe — de simples miroirs de ce que dit Stripe,
+  // aucune logique métier dessus. stripeSubscriptionId reste vide
+  // tant que l'organisation est sur le palier Gratuit.
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  subscriptionStatus   String?   // reflète directement le statut Stripe : active, past_due, canceled...
+  currentPeriodEnd     DateTime?
+
   createdAt            DateTime  @default(now())
   updatedAt            DateTime  @updatedAt
   deletedAt            DateTime?
