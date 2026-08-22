@@ -231,7 +231,6 @@ export async function generateDemoOrganization() {
   }
 
   const createdEmployees: { id: string; firstName: string; lastName: string; hireDate: Date }[] = [];
-
   for (const template of DEMO_EMPLOYEES) {
     const created = await prisma.employee.create({
       data: {
@@ -247,6 +246,12 @@ export async function generateDemoOrganization() {
         nextMedicalVisitDate:
           template.nextMedicalVisitOffset !== null ? daysFromNow(template.nextMedicalVisitOffset) : null,
         managerMembershipId: template.hasManager ? membership.id : null,
+        // Marque explicitement ces fiches comme temporaires : la tâche
+        // planifiée quotidienne les archive après 48h si l'organisation
+        // n'est toujours pas passée sur Pro. Empêche de renommer un jeu
+        // de données gratuit en salariés réels pour contourner la
+        // limite du palier Gratuit.
+        isDemoData: true,
       },
     });
     createdEmployees.push(created);
@@ -285,7 +290,6 @@ export async function generateDemoOrganization() {
   const skipOnboarding = new Set(["Antoine", "Julien"]);
   for (const employee of createdEmployees) {
     if (skipOnboarding.has(employee.firstName)) continue;
-
     const employeeEvent = await triggerEmployeeEvent({
       organizationId: membership.organizationId,
       employeeId: employee.id,
@@ -334,7 +338,7 @@ export async function generateDemoOrganization() {
   revalidatePath("/dashboard/events");
   redirect(
     `/dashboard/employees?flash=${encodeURIComponent(
-      "Entreprise de démonstration générée (15 salariés, plusieurs parcours)"
+      "Entreprise de démonstration générée (15 salariés). Ces fiches sont temporaires et seront automatiquement archivées après 48h, sauf si vous passez sur Pro entre-temps."
     )}`
   );
 }

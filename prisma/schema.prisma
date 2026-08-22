@@ -188,6 +188,7 @@ model Employee {
   probationDurationUnit   DurationUnit? // ex. 45 jours (apprentissage) plutôt que de forcer un raisonnement en mois
   nextMedicalVisitDate    DateTime?     // renseignée via l'étape "Mettre à jour la fiche" du parcours Visite médicale ; alimente les futurs détecteurs (visite dépassée, visite proche...)
   managerMembershipId     String?
+  isDemoData              Boolean       @default(false) // salarié généré par "Entreprise de démonstration" — purgé automatiquement après 48h si l'organisation n'est pas passée sur Pro entre-temps (empêche de renommer un jeu de données gratuit en salariés réels pour contourner la limite du palier Gratuit)
   createdAt               DateTime      @default(now())
   updatedAt               DateTime      @updatedAt
   deletedAt               DateTime?
