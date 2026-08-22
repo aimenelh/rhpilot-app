@@ -14,6 +14,30 @@ import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 
 export type EmployeeFormState = { error: string } | undefined;
 
+// Doit rester identique à FREE_TIER_LIMIT dans
+// app/dashboard/billing/page.tsx — les deux affichent la même limite,
+// l'une la fait respecter, l'autre l'explique visuellement.
+const FREE_TIER_LIMIT = 3;
+
+// Ne bloque que la croissance du nombre de salariés actifs (création,
+// réactivation), jamais la modification ou l'archivage d'une fiche
+// existante. Un abonnement Pro actif lève la limite entièrement.
+async function checkFreeTierLimit(organizationId: string): Promise<string | null> {
+  const organization = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: { subscriptionStatus: true },
+  });
+  if (organization?.subscriptionStatus === "active") return null;
+
+  const activeCount = await prisma.employee.count({
+    where: { organizationId, deletedAt: null },
+  });
+  if (activeCount >= FREE_TIER_LIMIT) {
+    return `Le palier Gratuit est limité à ${FREE_TIER_LIMIT} salariés. Passez sur Pro depuis la page Facturation pour en ajouter davantage.`;
+  }
+  return null;
+}
+
 function parseOptionalManagerId(value: FormDataEntryValue | null) {
   if (!value || typeof value !== "string" || value === "") return null;
   return value;
@@ -95,6 +119,9 @@ export async function createEmployee(
     return { error: "Session expirée, veuillez recharger la page." };
   }
 
+  const limitError = await checkFreeTierLimit(membership.organizationId);
+  if (limitError) return { error: limitError };
+
   const fields = readEmployeeFields(formData);
   const validationError = validateEmployeeFields(fields);
   if (validationError) return { error: validationError };
@@ -117,7 +144,6 @@ export async function createEmployee(
         managerMembershipId: fields.managerMembershipId,
       },
     });
-
     await tx.auditLog.create({
       data: {
         organizationId: membership.organizationId,
@@ -127,7 +153,6 @@ export async function createEmployee(
         entityId: created.id,
       },
     });
-
     return created;
   });
 
@@ -253,6 +278,9 @@ export async function reactivateEmployee(employeeId: string) {
   if (!existing) {
     throw new Error("Salarié archivé introuvable dans cette organisation");
   }
+
+  const limitError = await checkFreeTierLimit(membership.organizationId);
+  if (limitError) throw new Error(limitError);
 
   await prisma.$transaction([
     prisma.employee.update({
