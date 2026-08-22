@@ -106,7 +106,7 @@ export default function TarifsPage() {
               <Link href="/sign-up" className="mt-6 inline-block">
                 <Button className="text-sm">
                   <span className="inline-flex items-center gap-2">
-                    Essayer gratuitement <ArrowRight size={16} />
+                    Créer mon compte <ArrowRight size={16} />
                   </span>
                 </Button>
               </Link>
@@ -123,7 +123,7 @@ export default function TarifsPage() {
           <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
             <div>
               <p className="text-sm font-semibold text-ink">Besoin sur mesure ? Plusieurs sites, SIRH existant, accompagnement dédié.</p>
-              <p className="mt-1 text-sm text-ink-soft">Enterprise sur devis, on en discute directement.</p>
+              <p className="mt-1 text-sm text-ink-soft">Enterprise — sur devis, on en discute directement.</p>
             </div>
             <Link
               href="mailto:aimenoffi@gmail.com"

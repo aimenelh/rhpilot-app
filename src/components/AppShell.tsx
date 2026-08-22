@@ -13,6 +13,7 @@ import {
   UsersRound,
   Settings,
   Bell,
+  CreditCard,
   HelpCircle,
   Menu,
   X,
@@ -47,6 +48,7 @@ const NAV_ITEMS: NavItem[] = [
     icon: UsersRound,
     section: "Administration",
   },
+  { href: "/dashboard/billing", label: "Facturation", available: true, icon: CreditCard },
   { href: "/dashboard/configuration", label: "Configuration", available: true, icon: Settings },
   { href: "/dashboard/notifications", label: "Notifications", available: true, icon: Bell },
 ];

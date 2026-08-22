@@ -49,3 +49,27 @@ export async function createCheckoutSession() {
 
   redirect(session.url);
 }
+
+// Portail hébergé par Stripe : le salarié administrateur peut y
+// changer sa carte, résilier ou consulter ses factures sans qu'on ait
+// à reconstruire cette interface nous-mêmes.
+export async function createPortalSession() {
+  const membership = await getCurrentMembership();
+  if (!membership) {
+    throw new Error("Session expirée, veuillez recharger la page.");
+  }
+
+  const organization = await prisma.organization.findUnique({
+    where: { id: membership.organizationId },
+  });
+  if (!organization?.stripeCustomerId) {
+    throw new Error("Aucun abonnement actif à gérer.");
+  }
+
+  const portalSession = await stripe.billingPortal.sessions.create({
+    customer: organization.stripeCustomerId,
+    return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing`,
+  });
+
+  redirect(portalSession.url);
+}
