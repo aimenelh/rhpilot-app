@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
@@ -57,12 +57,44 @@ const NAV_ITEMS: NavItem[] = [
 // tout en bas, à côté du lien de retour.
 const HELP_ITEM: NavItem = { href: "/dashboard/help", label: "Aide", available: true, icon: HelpCircle };
 
+// Formate le temps restant avant purge en "X h Y min" (ou "Y min" sous
+// l'heure), rafraîchi chaque minute — pas besoin de la seconde près
+// pour une bannière d'information, ça évite des re-renders inutiles.
+function useDemoCountdownLabel(target: Date | null) {
+  const [label, setLabel] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!target) {
+      setLabel(null);
+      return;
+    }
+
+    const update = () => {
+      const diffMs = target.getTime() - Date.now();
+      if (diffMs <= 0) {
+        setLabel("imminente");
+        return;
+      }
+      const hours = Math.floor(diffMs / 3_600_000);
+      const minutes = Math.floor((diffMs % 3_600_000) / 60_000);
+      setLabel(hours > 0 ? `${hours} h ${minutes} min` : `${minutes} min`);
+    };
+
+    update();
+    const interval = setInterval(update, 60_000);
+    return () => clearInterval(interval);
+  }, [target]);
+
+  return label;
+}
+
 export function AppShell({
   organizationName,
   accessRole,
   assistantSummary,
   rhNews,
   aiEnabled,
+  demoExpiresAt,
   children,
 }: {
   organizationName: string;
@@ -70,10 +102,12 @@ export function AppShell({
   assistantSummary: { userDisplayName: string; overdueCount: number; suggestionsCount: number };
   rhNews: RhNewsItem[];
   aiEnabled: boolean;
+  demoExpiresAt: Date | null;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const demoCountdownLabel = useDemoCountdownLabel(demoExpiresAt);
 
   // Contenu de la navigation, partagé entre la sidebar desktop (toujours
   // visible) et le tiroir mobile (ouvert/fermé via l'état ci-dessus) —
@@ -173,6 +207,16 @@ export function AppShell({
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
+        {/* Bannière de purge des données de démonstration — persistante
+            tant que le compte à rebours court, visible sur toutes les
+            pages du dashboard. Pas de badge/icône en cercle, juste une
+            ligne d'information sobre. */}
+        {demoExpiresAt && demoCountdownLabel && (
+          <div className="border-b border-accent-amber/30 bg-accent-amber/10 px-4 py-2 text-center text-xs font-medium text-ink md:px-8">
+            Données de démonstration actives — purge automatique dans {demoCountdownLabel}
+          </div>
+        )}
+
         <header className="flex h-16 items-center gap-3 border-b border-surface-border bg-white px-4 md:gap-6 md:px-8">
           <button
             type="button"

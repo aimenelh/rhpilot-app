@@ -48,18 +48,42 @@ export default async function DashboardLayout({
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const [overdueCount, anomalies, rhNews] = await Promise.all([
-    prisma.task.count({
-      where: {
-        organizationId: currentMembership.organizationId,
-        status: { notIn: ["DONE", "CANCELLED"] },
-        dueDate: { lt: startOfToday },
-        employeeEvent: { employee: { deletedAt: null } },
-      },
-    }),
-    getAnomalies(currentMembership.organizationId),
-    getRhNews(),
-  ]);
+  const [overdueCount, anomalies, rhNews, oldestDemoEmployee, organizationSubscription] =
+    await Promise.all([
+      prisma.task.count({
+        where: {
+          organizationId: currentMembership.organizationId,
+          status: { notIn: ["DONE", "CANCELLED"] },
+          dueDate: { lt: startOfToday },
+          employeeEvent: { employee: { deletedAt: null } },
+        },
+      }),
+      getAnomalies(currentMembership.organizationId),
+      getRhNews(),
+      // Salarié de démo le plus ancien encore actif — sert à calculer
+      // la date de purge automatique (createdAt + 48h) pour la bannière.
+      prisma.employee.findFirst({
+        where: {
+          organizationId: currentMembership.organizationId,
+          isDemoData: true,
+          deletedAt: null,
+        },
+        orderBy: { createdAt: "asc" },
+        select: { createdAt: true },
+      }),
+      // Statut d'abonnement : la purge (et donc la bannière) ne concerne
+      // que les organisations encore sur le palier Gratuit.
+      prisma.organization.findUnique({
+        where: { id: currentMembership.organizationId },
+        select: { subscriptionStatus: true },
+      }),
+    ]);
+
+  const isOnGratuit = organizationSubscription?.subscriptionStatus !== "active";
+  const demoExpiresAt =
+    isOnGratuit && oldestDemoEmployee
+      ? new Date(oldestDemoEmployee.createdAt.getTime() + 48 * 60 * 60 * 1000)
+      : null;
 
   return (
     <AppShell
@@ -72,6 +96,7 @@ export default async function DashboardLayout({
       }}
       rhNews={rhNews}
       aiEnabled={isAiEnabled()}
+      demoExpiresAt={demoExpiresAt}
     >
       {children}
     </AppShell>
