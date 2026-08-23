@@ -1,4 +1,4 @@
-import { CreditCard, CircleCheck, Users } from "lucide-react";
+import { CreditCard, Crown, CircleCheck, Users, Receipt } from "lucide-react";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
@@ -24,9 +24,10 @@ export default async function BillingPage({
 
   const isPro = organization?.subscriptionStatus === "active";
   const monthlyEstimate = isPro ? (15 + employeeCount * 3).toFixed(2) : null;
+  const usageRatio = Math.min(employeeCount / FREE_TIER_LIMIT, 1);
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-4xl">
       <h1 className="text-2xl font-semibold text-ink">Facturation</h1>
       <p className="mt-1 text-sm text-ink-soft">
         Votre palier actuel et vos informations de paiement, gérés directement ici.
@@ -44,71 +45,94 @@ export default async function BillingPage({
         </p>
       )}
 
-      <Card className="mt-6">
-        <div className="flex items-start gap-3.5">
-          <span
-            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
-              isPro ? "bg-accent-teal/10 text-accent-teal" : "bg-brand-blue/10 text-brand-blue"
-            }`}
-          >
-            <CreditCard size={18} />
-          </span>
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="text-sm font-semibold text-ink">
-                Palier {isPro ? "Pro" : "Gratuit"}
-              </p>
-              {isPro && (
+      {isPro ? (
+        // Déjà sur Pro : une seule carte, pas besoin de remettre en avant
+        // l'offre qu'on utilise déjà.
+        <Card className="mt-6 max-w-2xl">
+          <div className="flex items-start gap-3">
+            <CreditCard size={20} className="mt-0.5 shrink-0 text-accent-teal" />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm font-semibold text-ink">Palier Pro</p>
                 <span className="rounded-full bg-accent-teal/10 px-2 py-0.5 text-xs font-medium text-accent-teal">
                   Actif
                 </span>
-              )}
-            </div>
-
-            {isPro ? (
+              </div>
               <p className="mt-1 text-sm text-ink-soft">
                 {monthlyEstimate} € estimés ce mois-ci (15 € + 3 € × {employeeCount} salarié
                 {employeeCount > 1 ? "s" : ""}).
                 {organization?.currentPeriodEnd &&
                   ` Prochain renouvellement le ${formatDate(organization.currentPeriodEnd)}.`}
               </p>
-            ) : (
-              <p className="mt-1 text-sm text-ink-soft">
-                Salariés illimités et facture unique à 15 € + 3 € par salarié / mois en passant sur
-                Pro.
-              </p>
-            )}
-
-            <div className="mt-4">
-              {isPro ? (
+              <div className="mt-4">
                 <form action={createPortalSession}>
                   <Button variant="secondary" type="submit" className="text-sm">
                     Gérer mon abonnement
                   </Button>
                 </form>
-              ) : (
-                <form action={createCheckoutSession}>
-                  <Button type="submit" className="text-sm">
-                    Passer sur Pro
-                  </Button>
-                </form>
-              )}
+              </div>
             </div>
           </div>
+        </Card>
+      ) : (
+        // Palier Gratuit : deux blocs volontairement asymétriques — le
+        // plan actuel en sobre, l'offre Pro mise en avant par une
+        // légère teinte de fond plutôt qu'un habillage identique.
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <Card>
+            <div className="flex items-start gap-3">
+              <CreditCard size={20} className="mt-0.5 shrink-0 text-ink-faint" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-ink">Gratuit</p>
+                <p className="mt-1 text-2xl font-semibold text-ink">0 €<span className="text-sm font-normal text-ink-soft"> / mois</span></p>
+                <p className="mt-1 text-sm text-ink-soft">Jusqu&apos;à {FREE_TIER_LIMIT} salariés</p>
+                <p className="mt-4 flex items-center gap-1.5 text-sm font-medium text-ink-soft">
+                  <CircleCheck size={15} className="text-ink-faint" />
+                  Plan actuel
+                </p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="border-brand-blue/25 bg-brand-blue/[0.03]">
+            <div className="flex items-start gap-3">
+              <Crown size={20} className="mt-0.5 shrink-0 text-brand-blue" />
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-ink">Pro</p>
+                <p className="mt-1 text-2xl font-semibold text-ink">15 €<span className="text-sm font-normal text-ink-soft"> / mois</span></p>
+                <p className="mt-1 text-sm text-ink-soft">+ 3 € par salarié / mois</p>
+                <p className="mt-3 flex items-center gap-1.5 text-sm text-ink-soft">
+                  <CircleCheck size={15} className="shrink-0 text-brand-blue" />
+                  Pas de limite de salariés
+                </p>
+                <div className="mt-4">
+                  <form action={createCheckoutSession}>
+                    <Button type="submit" className="text-sm">
+                      Passer sur Pro
+                    </Button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </Card>
         </div>
-      </Card>
+      )}
 
       {!isPro && (
         <Card className="mt-4" compact>
           <div className="flex items-center gap-3">
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ink/5 text-ink-soft">
-              <Users size={16} />
-            </span>
-            <div className="min-w-0">
+            <Users size={18} className="shrink-0 text-ink-faint" />
+            <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-ink">
                 {employeeCount} / {FREE_TIER_LIMIT} salariés utilisés
               </p>
-              <p className="mt-0.5 text-xs text-ink-faint">
+              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-subtle">
+                <div
+                  className="h-full rounded-full bg-brand-blue transition-all"
+                  style={{ width: `${usageRatio * 100}%` }}
+                />
+              </div>
+              <p className="mt-2 text-xs text-ink-faint">
                 Le palier Gratuit est limité à {FREE_TIER_LIMIT} salariés. Passez sur Pro pour lever
                 cette limite.
               </p>
@@ -116,6 +140,16 @@ export default async function BillingPage({
           </div>
         </Card>
       )}
+
+      <Card className="mt-4" compact>
+        <div className="flex items-center gap-3">
+          <Receipt size={18} className="shrink-0 text-ink-faint" />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-ink">Historique de facturation</p>
+            <p className="mt-0.5 text-xs text-ink-faint">Aucune facture pour le moment.</p>
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }
