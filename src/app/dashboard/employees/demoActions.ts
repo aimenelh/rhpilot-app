@@ -230,32 +230,32 @@ export async function generateDemoOrganization() {
     throw new Error("Votre organisation a déjà des salariés — génération annulée pour éviter un doublon.");
   }
 
-  const createdEmployees: { id: string; firstName: string; lastName: string; hireDate: Date }[] = [];
-  for (const template of DEMO_EMPLOYEES) {
-    const created = await prisma.employee.create({
-      data: {
-        organizationId: membership.organizationId,
-        firstName: template.firstName,
-        lastName: template.lastName,
-        civility: template.civility,
-        position: template.position,
-        hireDate: daysFromNow(template.hireOffset),
-        contractType: template.contractType,
-        probationDuration: template.probationDuration,
-        probationDurationUnit: template.probationDurationUnit,
-        nextMedicalVisitDate:
-          template.nextMedicalVisitOffset !== null ? daysFromNow(template.nextMedicalVisitOffset) : null,
-        managerMembershipId: template.hasManager ? membership.id : null,
-        // Marque explicitement ces fiches comme temporaires : la tâche
-        // planifiée quotidienne les archive après 48h si l'organisation
-        // n'est toujours pas passée sur Pro. Empêche de renommer un jeu
-        // de données gratuit en salariés réels pour contourner la
-        // limite du palier Gratuit.
-        isDemoData: true,
-      },
-    });
-    createdEmployees.push(created);
-  }
+  const createdEmployees = await Promise.all(
+    DEMO_EMPLOYEES.map((template) =>
+      prisma.employee.create({
+        data: {
+          organizationId: membership.organizationId,
+          firstName: template.firstName,
+          lastName: template.lastName,
+          civility: template.civility,
+          position: template.position,
+          hireDate: daysFromNow(template.hireOffset),
+          contractType: template.contractType,
+          probationDuration: template.probationDuration,
+          probationDurationUnit: template.probationDurationUnit,
+          nextMedicalVisitDate:
+            template.nextMedicalVisitOffset !== null ? daysFromNow(template.nextMedicalVisitOffset) : null,
+          managerMembershipId: template.hasManager ? membership.id : null,
+          // Marque explicitement ces fiches comme temporaires : la tâche
+          // planifiée quotidienne les archive après 48h si l'organisation
+          // n'est toujours pas passée sur Pro. Empêche de renommer un jeu
+          // de données gratuit en salariés réels pour contourner la
+          // limite du palier Gratuit.
+          isDemoData: true,
+        },
+      })
+    )
+  );
 
   await prisma.auditLog.create({
     data: {
@@ -267,71 +267,82 @@ export async function generateDemoOrganization() {
     },
   });
 
-  // Antoine (embauché il y a 5 jours) : un vrai parcours Embauche,
-  // avec des tâches naturellement en retard puisque ses échéances sont
-  // calculées par rapport à une date d'embauche déjà passée.
-  const antoine = createdEmployees.find((e) => e.firstName === "Antoine");
-  if (antoine) {
-    await triggerEmployeeEvent({
-      organizationId: membership.organizationId,
-      employeeId: antoine.id,
-      eventTemplateKey: "embauche",
-      triggerDate: antoine.hireDate,
-      actorUserId: user.id,
-    });
-  }
-
-  // Tous les autres salariés (sauf Antoine, déjà couvert, et Julien,
-  // qui illustre volontairement l'oubli) reçoivent un parcours
-  // Embauche historique déjà entièrement terminé — dans une vraie
-  // entreprise, un salarié embauché depuis des mois ou des années a
-  // évidemment déjà été onboardé. Sans ça, le détecteur les signalait
-  // tous, ce qui n'avait aucun sens (bug remonté en test réel).
+  // Antoine, Emma et Manon ont chacun un traitement distinct, et les
+  // 12 autres salariés (hors Antoine et Julien) reçoivent tous un
+  // parcours Embauche historique déjà terminé — aucune de ces
+  // opérations ne dépend des autres, donc tout part en parallèle
+  // plutôt qu'en séquence (c'était le vrai goulot d'étranglement :
+  // jusqu'à 24 allers-retours serveur l'un après l'autre).
   const skipOnboarding = new Set(["Antoine", "Julien"]);
-  for (const employee of createdEmployees) {
-    if (skipOnboarding.has(employee.firstName)) continue;
-    const employeeEvent = await triggerEmployeeEvent({
-      organizationId: membership.organizationId,
-      employeeId: employee.id,
-      eventTemplateKey: "embauche",
-      triggerDate: employee.hireDate,
-      actorUserId: user.id,
-    });
-    await prisma.task.updateMany({
-      where: { employeeEventId: employeeEvent.id },
-      data: { status: "DONE" },
-    });
-  }
-
-  // Emma : un parcours Visite médicale déclenché aujourd'hui.
+  const antoine = createdEmployees.find((e) => e.firstName === "Antoine");
   const emma = createdEmployees.find((e) => e.firstName === "Emma");
-  if (emma) {
-    await triggerEmployeeEvent({
-      organizationId: membership.organizationId,
-      employeeId: emma.id,
-      eventTemplateKey: "visite_medicale",
-      triggerDate: new Date(),
-      actorUserId: user.id,
-    });
-  }
-
-  // Manon : un parcours Fin de période d'essai déjà entièrement
-  // terminé — pour montrer aussi un parcours "à jour", pas seulement
-  // des retards.
   const manon = createdEmployees.find((e) => e.firstName === "Manon");
-  if (manon) {
-    const employeeEvent = await triggerEmployeeEvent({
-      organizationId: membership.organizationId,
-      employeeId: manon.id,
-      eventTemplateKey: "fin_periode_essai",
-      triggerDate: daysFromNow(-650),
-      actorUserId: user.id,
-    });
-    await prisma.task.updateMany({
-      where: { employeeEventId: employeeEvent.id },
-      data: { status: "DONE" },
-    });
-  }
+
+  await Promise.all([
+    // Antoine (embauché il y a 5 jours) : un vrai parcours Embauche,
+    // avec des tâches naturellement en retard puisque ses échéances
+    // sont calculées par rapport à une date d'embauche déjà passée.
+    antoine
+      ? triggerEmployeeEvent({
+          organizationId: membership.organizationId,
+          employeeId: antoine.id,
+          eventTemplateKey: "embauche",
+          triggerDate: antoine.hireDate,
+          actorUserId: user.id,
+        })
+      : Promise.resolve(),
+
+    // Emma : un parcours Visite médicale déclenché aujourd'hui.
+    emma
+      ? triggerEmployeeEvent({
+          organizationId: membership.organizationId,
+          employeeId: emma.id,
+          eventTemplateKey: "visite_medicale",
+          triggerDate: new Date(),
+          actorUserId: user.id,
+        })
+      : Promise.resolve(),
+
+    // Manon : un parcours Fin de période d'essai déjà entièrement
+    // terminé — pour montrer aussi un parcours "à jour", pas
+    // seulement des retards.
+    manon
+      ? triggerEmployeeEvent({
+          organizationId: membership.organizationId,
+          employeeId: manon.id,
+          eventTemplateKey: "fin_periode_essai",
+          triggerDate: daysFromNow(-650),
+          actorUserId: user.id,
+        }).then((employeeEvent) =>
+          prisma.task.updateMany({
+            where: { employeeEventId: employeeEvent.id },
+            data: { status: "DONE" },
+          })
+        )
+      : Promise.resolve(),
+
+    // Tous les autres salariés (sauf Antoine, déjà couvert, et
+    // Julien, qui illustre volontairement l'oubli) reçoivent un
+    // parcours Embauche historique déjà terminé — dans une vraie
+    // entreprise, un salarié embauché depuis des mois ou des années a
+    // évidemment déjà été onboardé.
+    ...createdEmployees
+      .filter((employee) => !skipOnboarding.has(employee.firstName))
+      .map((employee) =>
+        triggerEmployeeEvent({
+          organizationId: membership.organizationId,
+          employeeId: employee.id,
+          eventTemplateKey: "embauche",
+          triggerDate: employee.hireDate,
+          actorUserId: user.id,
+        }).then((employeeEvent) =>
+          prisma.task.updateMany({
+            where: { employeeEventId: employeeEvent.id },
+            data: { status: "DONE" },
+          })
+        )
+      ),
+  ]);
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/employees");
