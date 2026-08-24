@@ -17,7 +17,26 @@ const ACCESS_ROLE_LABELS: Record<string, string> = {
   MEMBER: "Membre",
 };
 
-const AVATAR_COLORS = ["bg-brand-blue", "bg-brand-violet", "bg-accent-teal", "bg-accent-amber", "bg-accent-rose"];
+// Rouge volontairement exclu : accent-rose sert déjà de code couleur
+// "urgent / en retard" ailleurs dans l'app, le réutiliser ici pour un
+// avatar neutre créerait une fausse alerte visuelle.
+const AVATAR_TONES = [
+  { bg: "bg-brand-blue/10", text: "text-brand-blue" },
+  { bg: "bg-brand-violet/10", text: "text-brand-violet" },
+  { bg: "bg-accent-teal/10", text: "text-accent-teal" },
+  { bg: "bg-accent-amber/10", text: "text-accent-amber" },
+];
+
+// Couleur stable par personne (dérivée de son id), plutôt que par
+// position dans la liste — sinon tout le monde change de couleur
+// dès qu'un membre part ou qu'un autre rejoint.
+function avatarTone(id: string) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) {
+    hash = (hash * 31 + id.charCodeAt(i)) % AVATAR_TONES.length;
+  }
+  return AVATAR_TONES[hash];
+}
 
 function getInitials(user: { firstName: string | null; lastName: string | null; email: string }) {
   if (user.firstName && user.lastName) {
@@ -58,9 +77,7 @@ export default async function TeamPage() {
       {canInvite && (
         <Card className="mt-6">
           <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-blue/10 text-brand-blue">
-              <UserPlus size={15} />
-            </span>
+            <UserPlus size={16} className="text-brand-blue" />
             <h2 className="text-sm font-semibold text-ink">Inviter quelqu&apos;un</h2>
           </div>
           <p className="mt-1.5 text-sm text-ink-soft">
@@ -72,14 +89,13 @@ export default async function TeamPage() {
 
       <Card className="mt-4">
         <div className="flex items-center gap-2">
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-surface-subtle text-ink-faint">
-            <Users size={15} />
-          </span>
+          <Users size={16} className="text-ink-faint" />
           <h2 className="text-sm font-semibold text-ink">Membres actuels</h2>
         </div>
         <ul className="mt-3 flex flex-col divide-y divide-surface-border">
-          {members.map((m, index) => {
+          {members.map((m) => {
             const isSelf = m.id === membership.id;
+            const tone = avatarTone(m.user.id);
             return (
               <li
                 key={m.id}
@@ -87,7 +103,7 @@ export default async function TeamPage() {
               >
                 <div className="flex items-center gap-3">
                   <span
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white transition-transform duration-150 ${AVATAR_COLORS[index % AVATAR_COLORS.length]}`}
+                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold ${tone.bg} ${tone.text}`}
                   >
                     {getInitials(m.user)}
                   </span>
@@ -113,9 +129,7 @@ export default async function TeamPage() {
       {canInvite && pendingInvitations.length > 0 && (
         <Card className="mt-4">
           <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-amber/10 text-accent-amber">
-              <Clock size={15} />
-            </span>
+            <Clock size={16} className="text-accent-amber" />
             <h2 className="text-sm font-semibold text-ink">Invitations en attente</h2>
           </div>
           <ul className="mt-3 flex flex-col divide-y divide-surface-border">
@@ -125,9 +139,7 @@ export default async function TeamPage() {
                 className="-mx-2.5 flex items-center justify-between rounded-lg px-2.5 py-3 transition-colors duration-150 hover:bg-surface-subtle/70"
               >
                 <div className="flex items-center gap-2.5">
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-surface-subtle text-ink-faint">
-                    <Mail size={14} />
-                  </span>
+                  <Mail size={15} className="shrink-0 text-ink-faint" />
                   <div>
                     <p className="text-sm font-medium text-ink">{invitation.email}</p>
                     <p className="flex items-center gap-1 text-xs text-ink-faint">

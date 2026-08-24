@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
-import { Sparkles, Send, X, CheckCheck } from "lucide-react";
+import { Sparkles, X, CheckCheck } from "lucide-react";
 import { Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { Logomark } from "@/components/Brand";
@@ -97,10 +97,9 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
     <button
       type="submit"
       disabled={pending || disabled}
-      aria-label="Poser la question"
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-white disabled:opacity-50"
+      className="flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-gradient px-3.5 py-2.5 text-sm font-medium text-white disabled:opacity-50"
     >
-      <Send size={15} />
+      Demander
     </button>
   );
 }
@@ -240,12 +239,7 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
                 </span>
               </div>
               <div>
-                <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-                  Copilote RH Pilot
-                  <span className="rounded-full bg-brand-violet/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-violet">
-                    IA
-                  </span>
-                </p>
+                <p className="text-sm font-semibold text-ink">Copilote RH Pilot</p>
                 <span className="flex items-center gap-1.5 text-xs font-medium text-ink-faint">
                   <span className={`h-1.5 w-1.5 rounded-full ${aiEnabled ? "bg-accent-teal" : "bg-ink-faint"}`} />
                   {aiEnabled ? "En ligne" : "Indisponible"}

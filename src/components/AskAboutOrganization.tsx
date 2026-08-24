@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
-import { Sparkles, Send, Info, CheckCheck } from "lucide-react";
+import { Sparkles, Info, CheckCheck } from "lucide-react";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Field";
@@ -35,10 +35,9 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
     <button
       type="submit"
       disabled={pending || disabled}
-      aria-label="Poser la question"
-      className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-white disabled:opacity-50"
+      className="flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-gradient px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
     >
-      <Send size={16} />
+      Demander
     </button>
   );
 }
@@ -76,12 +75,7 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
               <Sparkles size={9} />
             </span>
           </div>
-          <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-            Copilote RH Pilot
-            <span className="rounded-full bg-brand-violet/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-violet">
-              IA
-            </span>
-          </p>
+          <p className="text-sm font-semibold text-ink">Copilote RH Pilot</p>
         </div>
         <div className="flex items-center gap-2">
           <span className="flex items-center gap-1.5 text-xs font-medium text-ink-faint">
@@ -139,14 +133,14 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
             type="button"
             disabled={!aiEnabled}
             onClick={() => setQuestion(suggestion)}
-            className="rounded-full border border-brand-violet/20 bg-white px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-brand-violet/40 hover:text-brand-violet disabled:opacity-50"
+            className="rounded-lg border border-brand-violet/20 bg-white px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-brand-violet/40 hover:text-brand-violet disabled:opacity-50"
           >
             {suggestion}
           </button>
         ))}
         <Link
           href="/dashboard/calendar"
-          className="rounded-full border border-brand-violet/20 bg-white px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-brand-violet/40 hover:text-brand-violet"
+          className="rounded-lg border border-brand-violet/20 bg-white px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-brand-violet/40 hover:text-brand-violet"
         >
           Voir le calendrier
         </Link>

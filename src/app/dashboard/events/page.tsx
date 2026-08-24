@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/Badge";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Input } from "@/components/ui/Field";
+import { Mascot } from "@/components/Mascot";
 import { formatDate } from "@/lib/format";
 import { getEventTemplateDotColor } from "@/lib/eventTemplateStyle";
 import { summarizeParcours } from "@/lib/parcoursSummary";
@@ -79,15 +80,18 @@ export default async function EventsPage({
       <div className="mt-6">
         {events.length === 0 ? (
           query ? null : (
-            <EmptyState
-              title="Aucun parcours RH pour l'instant"
-              description="Déclenchez un événement (embauche, fin de période d'essai...) depuis la fiche d'un salarié pour générer automatiquement son plan d'action."
-              action={
-                <Link href="/dashboard/employees">
-                  <Button>Voir les salariés →</Button>
-                </Link>
-              }
-            />
+            <div className="flex flex-col items-center gap-4">
+              <Mascot pose="createJourney" className="h-32 w-auto" />
+              <EmptyState
+                title="Aucun parcours RH pour l'instant"
+                description="Déclenchez un événement (embauche, fin de période d'essai...) depuis la fiche d'un salarié pour générer automatiquement son plan d'action."
+                action={
+                  <Link href="/dashboard/employees">
+                    <Button>Voir les salariés →</Button>
+                  </Link>
+                }
+              />
+            </div>
           )
         ) : (
           <div className="flex flex-col gap-3">

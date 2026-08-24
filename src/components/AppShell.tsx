@@ -27,6 +27,7 @@ import { GlobalSearch } from "./GlobalSearch";
 import { RhNewsToast } from "./RhNewsToast";
 import type { RhNewsItem } from "@/lib/rhNews";
 import { IosInstallHint } from "./IosInstallHint";
+import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
 
 type NavItem = {
   href: string;
@@ -174,6 +175,7 @@ export function AppShell({
 
   return (
     <div className="flex min-h-screen">
+      <AmbientNetwork />
       {/* Sidebar desktop — inchangée dans son fonctionnement, juste
           masquée sous md et remplacée par le tiroir ci-dessous. */}
       <aside className="hidden w-64 shrink-0 flex-col border-r border-surface-border bg-white px-4 py-5 md:flex">

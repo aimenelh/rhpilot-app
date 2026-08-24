@@ -5,7 +5,6 @@ import {
   UserRoundX,
   CircleCheck,
   Circle,
-  Sparkles,
   History,
   CalendarDays,
   Users,
@@ -325,75 +324,63 @@ export default async function DashboardPage({
         </div>
         <Mascot pose={mascotPose} className="hidden shrink-0 md:block" />
       </div>
-      <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
-        <Card>
-          <div className="flex items-center gap-3">
+      <Card className="mt-5 p-0">
+        <div className="grid grid-cols-2 divide-x divide-y divide-surface-border sm:grid-cols-4 sm:divide-y-0">
+          <Link
+            href={isEmpty ? "/dashboard/employees/new" : "/dashboard/employees"}
+            className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
+          >
             <Users size={20} className="shrink-0 text-brand-violet" />
             <div>
               <p className="text-2xl font-semibold text-ink">{employeeCount}</p>
               <p className="text-xs text-ink-faint">Salariés</p>
             </div>
-          </div>
-          <Link
-            href={isEmpty ? "/dashboard/employees/new" : "/dashboard/employees"}
-            className="mt-3 inline-block text-xs font-medium text-brand-blue hover:underline"
-          >
-            {isEmpty ? "Ajouter un salarié →" : "Voir les salariés →"}
           </Link>
-        </Card>
-        <Card>
-          <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard/events"
+            className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
+          >
             <ClipboardCheck size={20} className="shrink-0 text-accent-teal" />
             <div>
               <p className="text-2xl font-semibold text-ink">{eventCount}</p>
               <p className="text-xs text-ink-faint">Parcours actifs</p>
             </div>
-          </div>
-          <Link href="/dashboard/events" className="mt-3 inline-block text-xs font-medium text-brand-blue hover:underline">
-            Voir les parcours →
           </Link>
-        </Card>
-        <Card>
-          <div className="flex items-center gap-3">
+          <Link
+            href="/dashboard/calendar"
+            className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
+          >
             <CalendarDays size={20} className="shrink-0 text-accent-amber" />
             <div>
               <p className="text-2xl font-semibold text-ink">{soonCount}</p>
               <p className="text-xs text-ink-faint">Échéances cette semaine</p>
             </div>
-          </div>
-          <Link href="/dashboard/calendar" className="mt-3 inline-block text-xs font-medium text-brand-blue hover:underline">
-            Voir le calendrier →
           </Link>
-        </Card>
-        <Card>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 px-5 py-4">
             <ShieldCheck
               size={20}
               className={`shrink-0 ${percentUpToDate === 100 ? "text-accent-teal" : "text-accent-amber"}`}
             />
             <div>
               <p className="text-2xl font-semibold text-ink">{percentUpToDate}%</p>
-              <p className="text-xs text-ink-faint">Parcours à jour</p>
+              <p className="text-xs text-ink-faint">
+                Parcours à jour
+                {percentUpToDate < 100 && <span className="text-accent-amber"> · à surveiller</span>}
+              </p>
             </div>
           </div>
-          <p className={`mt-3 text-xs font-medium ${percentUpToDate === 100 ? "text-ink-soft" : "text-accent-amber"}`}>
-            {percentUpToDate === 100 ? "Très bien !" : "À surveiller"}
-          </p>
-        </Card>
-      </div>
+        </div>
+      </Card>
       <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
         <div className={`self-start lg:sticky lg:top-4 ${!isEmpty && anomalies.length > 0 ? "lg:col-span-2" : "lg:col-span-3"}`}>
           <AskAboutOrganization aiEnabled={aiEnabled} />
         </div>
         {!isEmpty && anomalies.length > 0 && (
           <Card className="lg:col-span-1">
-            <div className="flex items-center gap-2">
-              <Sparkles size={16} className="text-brand-blue" />
-              <h2 className="text-sm font-semibold text-ink">
-                RH Pilot a observé {anomalies.length} point{anomalies.length > 1 ? "s" : ""}{" "}
-                nécessitant votre attention
-              </h2>
-            </div>
+            <h2 className="text-sm font-semibold text-ink">
+              {anomalies.length} point{anomalies.length > 1 ? "s" : ""} nécessitant votre
+              attention
+            </h2>
             <ul className="mt-2 flex flex-col divide-y divide-surface-border">
               {visibleAnomalies.map((anomaly) => (
                 <AnomalyRow key={anomaly.key} anomaly={anomaly} severityDot={SEVERITY_DOT} />
@@ -417,24 +404,26 @@ export default async function DashboardPage({
       </div>
       {!isEmpty && (
         <>
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-            <Card className="border-accent-rose/20">
-              <p className="text-3xl font-semibold text-accent-rose">{overdueCount}</p>
-              <p className="mt-1 text-xs font-medium text-ink-faint">en retard</p>
-            </Card>
-            <Card className="border-accent-amber/20">
-              <p className="text-3xl font-semibold text-accent-amber">{soonCount}</p>
-              <p className="mt-1 text-xs font-medium text-ink-faint">cette semaine</p>
-            </Card>
-            <Card className="border-brand-blue/20">
-              <p className="text-3xl font-semibold text-brand-blue">{anomalies.length}</p>
-              <p className="mt-1 text-xs font-medium text-ink-faint">à analyser</p>
-            </Card>
-            <Card className="border-accent-teal/20">
-              <p className="text-3xl font-semibold text-accent-teal">{doneCount}</p>
-              <p className="mt-1 text-xs font-medium text-ink-faint">terminées</p>
-            </Card>
-          </div>
+          <Card className="mt-5 p-0">
+            <div className="grid grid-cols-2 divide-x divide-y divide-surface-border sm:grid-cols-4 sm:divide-y-0">
+              <div className="px-5 py-4">
+                <p className="text-3xl font-semibold text-accent-rose">{overdueCount}</p>
+                <p className="mt-1 text-xs font-medium text-ink-faint">en retard</p>
+              </div>
+              <div className="px-5 py-4">
+                <p className="text-3xl font-semibold text-accent-amber">{soonCount}</p>
+                <p className="mt-1 text-xs font-medium text-ink-faint">cette semaine</p>
+              </div>
+              <div className="px-5 py-4">
+                <p className="text-3xl font-semibold text-brand-blue">{anomalies.length}</p>
+                <p className="mt-1 text-xs font-medium text-ink-faint">à analyser</p>
+              </div>
+              <div className="px-5 py-4">
+                <p className="text-3xl font-semibold text-accent-teal">{doneCount}</p>
+                <p className="mt-1 text-xs font-medium text-ink-faint">terminées</p>
+              </div>
+            </div>
+          </Card>
           <p className="mt-3 text-xs text-ink-faint">
             Cette semaine : {newTasksThisWeek} nouvelle{newTasksThisWeek > 1 ? "s" : ""} tâche
             {newTasksThisWeek > 1 ? "s" : ""} · {completedThisWeek} terminée
@@ -569,11 +558,9 @@ export default async function DashboardPage({
           </Card>
         )}
         <Card>
-          <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-            <Sparkles size={15} className="text-brand-violet" /> RH Pilot vous conseille
-          </p>
+          <h2 className="text-sm font-semibold text-ink">À faire ensuite</h2>
           {tip ? (
-            <div className="mt-3 rounded-lg bg-brand-violet/5 p-3">
+            <div className="mt-3">
               <p className="text-sm font-medium text-ink">{tip.heading}</p>
               <p className="mt-1 text-sm text-ink-soft">{tip.description}</p>
               <Link href={tip.ctaHref} className="mt-3 inline-block">
@@ -583,7 +570,7 @@ export default async function DashboardPage({
               </Link>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-ink-soft">Aucun conseil aujourd&apos;hui. Votre organisation est bien configurée.</p>
+            <p className="mt-3 text-sm text-ink-soft">Rien à signaler. Votre organisation est bien configurée.</p>
           )}
         </Card>
         {recentActivity.length > 0 && (
