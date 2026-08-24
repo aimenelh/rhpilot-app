@@ -6,9 +6,9 @@ import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import {
   Mail,
-  LayoutDashboard,
+  Compass,
   Users,
-  ListChecks,
+  Route,
   CalendarDays,
   UsersRound,
   Settings,
@@ -37,9 +37,9 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard", label: "Tableau de bord", available: true, icon: LayoutDashboard },
+  { href: "/dashboard", label: "Tableau de bord", available: true, icon: Compass },
   { href: "/dashboard/employees", label: "Salariés", available: true, icon: Users },
-  { href: "/dashboard/events", label: "Parcours", available: true, icon: ListChecks },
+  { href: "/dashboard/events", label: "Parcours", available: true, icon: Route },
   { href: "/dashboard/calendar", label: "Calendrier", available: true, icon: CalendarDays },
   {
     href: "/dashboard/team",
@@ -140,7 +140,7 @@ export function AppShell({
                     : "text-ink-soft hover:translate-x-0.5 hover:bg-surface-subtle hover:text-ink"
                 }`}
               >
-                <item.icon size={16} />
+                <item.icon size={16} strokeWidth={2.5} />
                 {item.label}
               </Link>
             </div>
@@ -158,7 +158,7 @@ export function AppShell({
               : "text-ink-faint hover:translate-x-0.5 hover:bg-surface-subtle hover:text-ink-soft"
           }`}
         >
-          <HELP_ITEM.icon size={16} />
+          <HELP_ITEM.icon size={16} strokeWidth={2.5} />
           {HELP_ITEM.label}
         </Link>
         <a
