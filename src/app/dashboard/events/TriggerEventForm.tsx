@@ -68,11 +68,9 @@ export function TriggerEventForm({
   }
 
   return (
-    <Card className="border-brand-blue/20 bg-gradient-to-br from-brand-blue/[0.03] to-brand-violet/[0.03]">
+    <Card>
       <div className="flex items-center gap-2">
-        <span className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-gradient text-white">
-          <Rocket size={16} />
-        </span>
+        <Rocket size={16} className="text-brand-blue" />
         <h2 className="text-base font-semibold text-ink">Déclencher un événement RH</h2>
       </div>
       <p className="mt-1.5 text-sm text-ink-soft">
