@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Input } from "@/components/ui/Field";
+import { Mascot } from "@/components/Mascot";
 import { getUserDisplayName } from "@/lib/displayName";
 import { formatDate } from "@/lib/format";
 import { reactivateEmployee } from "./actions";
@@ -103,23 +104,26 @@ export default async function EmployeesPage({
               description="Les salariés archivés depuis leur fiche apparaîtront ici, rien n'est jamais supprimé définitivement."
             />
           ) : (
-            <EmptyState
-              title="Aucun salarié pour l'instant"
-              description="Les salariés que vous ajoutez apparaîtront ici. Chaque fiche pourra ensuite déclencher automatiquement des plans d'action (embauche, fin de période d'essai...)."
-              action={
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  <Link href="/dashboard/employees/new">
-                    <Button data-tour="add-employee">Ajouter mon premier salarié</Button>
-                  </Link>
-                  <Link href="/dashboard/employees/import">
-                    <Button variant="secondary">Importer depuis un fichier CSV</Button>
-                  </Link>
-                  <form action={generateDemoOrganization}>
-                    <DemoOrgSubmitButton />
-                  </form>
-                </div>
-              }
-            />
+            <div className="flex flex-col items-center gap-4">
+              <Mascot pose="hire" className="h-32 w-auto" />
+              <EmptyState
+                title="Aucun salarié pour l'instant"
+                description="Les salariés que vous ajoutez apparaîtront ici. Chaque fiche pourra ensuite déclencher automatiquement des plans d'action (embauche, fin de période d'essai...)."
+                action={
+                  <div className="flex flex-wrap items-center justify-center gap-3">
+                    <Link href="/dashboard/employees/new">
+                      <Button data-tour="add-employee">Ajouter mon premier salarié</Button>
+                    </Link>
+                    <Link href="/dashboard/employees/import">
+                      <Button variant="secondary">Importer depuis un fichier CSV</Button>
+                    </Link>
+                    <form action={generateDemoOrganization}>
+                      <DemoOrgSubmitButton />
+                    </form>
+                  </div>
+                }
+              />
+            </div>
           )
         ) : (
           <Card className="overflow-hidden p-0">

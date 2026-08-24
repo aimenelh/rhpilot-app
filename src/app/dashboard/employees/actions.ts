@@ -159,7 +159,7 @@ export async function createEmployee(
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/employees");
   redirect(
-    `/dashboard/employees/${employee.id}?flash=${encodeURIComponent("Salarié créé")}`
+    `/dashboard/employees/${employee.id}?flash=${encodeURIComponent("Salarié créé")}&welcome=1`
   );
 }
 

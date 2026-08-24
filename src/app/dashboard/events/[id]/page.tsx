@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Select } from "@/components/ui/Field";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { Mascot } from "@/components/Mascot";
 import { TaskStatusForm } from "../TaskStatusForm";
 import { updateTaskStatus, assignTask, moveTask } from "../actions";
 import { sendManualReminder } from "../../notifications/actions";
@@ -56,6 +57,7 @@ export default async function EventDetailPage({
   if (!employeeEvent) notFound();
 
   const doneCount = employeeEvent.tasks.filter((task) => task.status === "DONE").length;
+  const isFullyCompleted = employeeEvent.tasks.length > 0 && doneCount === employeeEvent.tasks.length;
 
   return (
     <div className="max-w-3xl">
@@ -83,6 +85,21 @@ export default async function EventDetailPage({
       <div className="mt-3">
         <ArchiveEventButton eventId={employeeEvent.id} />
       </div>
+
+      {isFullyCompleted && (
+        <Card className="mt-4 flex flex-col items-center gap-3 border-accent-teal/25 bg-accent-teal/5 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div>
+            <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
+              <CircleCheck size={16} className="text-accent-teal" />
+              Parcours terminé
+            </p>
+            <p className="mt-1 text-sm text-ink-soft">
+              Toutes les étapes de ce parcours ont été complétées.
+            </p>
+          </div>
+          <Mascot pose="completedJourney" className="h-24 w-auto shrink-0" />
+        </Card>
+      )}
 
       <div className="mt-6">
         <AddCustomTaskForm employeeEventId={employeeEvent.id} members={members} />

@@ -9,10 +9,11 @@ import { ConfirmArchiveButton } from "../ConfirmArchiveButton";
 import { TriggerEventForm } from "../../events/TriggerEventForm";
 import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
+import { Mascot } from "@/components/Mascot";
 import { getUserDisplayName } from "@/lib/displayName";
 import { formatDate, addDuration, formatDuration } from "@/lib/format";
 import { isOverdue, daysUntil } from "@/lib/urgency";
-import { Stethoscope, TriangleAlert, Hourglass } from "lucide-react";
+import { TriangleAlert, Hourglass } from "lucide-react";
 import { getEventTemplateDotColor } from "@/lib/eventTemplateStyle";
 import { summarizeParcours } from "@/lib/parcoursSummary";
 import { CcnHint } from "@/components/CcnHint";
@@ -21,8 +22,10 @@ export const dynamic = "force-dynamic";
 
 export default async function EmployeeDetailPage({
   params,
+  searchParams,
 }: {
   params: { id: string };
+  searchParams: { welcome?: string };
 }) {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
@@ -68,6 +71,9 @@ export default async function EmployeeDetailPage({
   const archiveEmployeeWithId = archiveEmployee.bind(null, employee.id);
   const triggerEventForEmployee = triggerEvent.bind(null, employee.id);
 
+  const medicalVisitOverdue =
+    employee.nextMedicalVisitDate && isOverdue(employee.nextMedicalVisitDate, "TODO");
+
   return (
     <div className="max-w-3xl">
       <Link href="/dashboard/employees" className="text-sm text-ink-soft hover:text-ink">
@@ -77,6 +83,26 @@ export default async function EmployeeDetailPage({
       <h1 className="mt-3 text-2xl font-semibold text-ink">
         {employee.firstName} {employee.lastName}
       </h1>
+
+      {/* Bannière d'accueil juste après création — suppose que la
+          redirection de création pointe vers cette page avec
+          ?welcome=1 dans l'URL. À vérifier/ajuster dans le fichier de
+          création du salarié (actions.ts du dossier employees/new, ou
+          équivalent) si le paramètre porte un autre nom. */}
+      {searchParams.welcome === "1" && (
+        <Card className="mt-4 flex flex-col items-center gap-4 border-accent-teal/25 bg-accent-teal/5 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div>
+            <p className="text-sm font-semibold text-ink">
+              Bienvenue à {employee.firstName} !
+            </p>
+            <p className="mt-1 text-sm text-ink-soft">
+              La fiche a bien été créée. Vous pouvez déclencher son premier parcours RH
+              ci-dessous.
+            </p>
+          </div>
+          <Mascot pose="newhireHandshake" className="h-28 w-auto shrink-0" />
+        </Card>
+      )}
 
       {organization?.conventionCollective && (
         <div className="mt-4">
@@ -138,40 +164,35 @@ export default async function EmployeeDetailPage({
         </div>
       )}
 
+      {/* Carte agrandie avec la mascotte "medical" — remplace l'ancien
+          bandeau compact à icône circulaire. */}
       {employee.nextMedicalVisitDate && (
         <Card
-          className={`mt-4 flex items-center gap-3 ${
-            isOverdue(employee.nextMedicalVisitDate, "TODO")
+          className={`mt-4 flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left ${
+            medicalVisitOverdue
               ? "border-accent-rose/30 bg-accent-rose/5"
               : "border-brand-blue/20 bg-brand-blue/5"
           }`}
-          compact
         >
-          <span
-            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-              isOverdue(employee.nextMedicalVisitDate, "TODO")
-                ? "bg-accent-rose/10 text-accent-rose"
-                : "bg-brand-blue/10 text-brand-blue"
-            }`}
-          >
-            <Stethoscope size={16} />
-          </span>
           <div>
             <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
               Suivi médical
             </p>
-            <p className="text-sm font-semibold text-ink">
+            <p className="mt-1 text-sm font-semibold text-ink">
               Prochaine visite : {formatDate(employee.nextMedicalVisitDate)}
-              {isOverdue(employee.nextMedicalVisitDate, "TODO") && (
+              {medicalVisitOverdue && (
                 <span className="ml-2 font-normal text-accent-rose">
                   (dépassée de {Math.abs(daysUntil(employee.nextMedicalVisitDate))} jours)
                 </span>
               )}
             </p>
           </div>
+          <Mascot pose="medical" className="h-24 w-auto shrink-0" />
         </Card>
       )}
 
+      {/* Carte "Période d'essai" laissée telle quelle : aucune pose de
+          mascotte dédiée n'existe encore pour ce thème. */}
       {employee.probationDuration && employee.probationDurationUnit && (
         (() => {
           const probationEndDate = addDuration(

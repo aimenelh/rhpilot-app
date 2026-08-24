@@ -7,6 +7,7 @@ import { Sparkles, Send, X, CheckCheck } from "lucide-react";
 import { Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { Logomark } from "@/components/Brand";
+import { Mascot } from "@/components/Mascot";
 import { askAboutOrganizationAction, type AskAboutOrganizationState } from "@/app/dashboard/aiActions";
 import { TOUR_STORAGE_KEY, TOUR_DONE_VALUE, WELCOME_SEEN_KEY } from "@/lib/tourStorage";
 
@@ -21,7 +22,9 @@ const SUGGESTION_QUESTIONS = [
 
 // La page /dashboard affiche déjà une version complète du Copilote en
 // plein écran (voir AskAboutOrganization) — y superposer la bulle
-// flottante créerait un doublon confus. On la masque uniquement là.
+// flottante en mode chat créerait un doublon confus. On la masque sur
+// ces chemins, sauf quand elle affiche l'écran de bienvenue (voir plus
+// bas) : ce n'est pas un chat, donc pas un doublon.
 const HIDDEN_ON_PATHS = ["/dashboard"];
 
 type Message = { role: "user" | "assistant"; text: string; time: string };
@@ -198,7 +201,12 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
     setShowWelcome(false);
   }
 
-  if (HIDDEN_ON_PATHS.includes(pathname ?? "")) return null;
+  // Masquée sur /dashboard pour éviter le doublon avec le chat plein
+  // écran (AskAboutOrganization) — mais l'écran de bienvenue reste
+  // affiché même là, car ce n'est pas un chat, seulement un onboarding
+  // ponctuel. Sinon un nouvel utilisateur qui atterrit directement sur
+  // /dashboard ne verrait jamais la bulle avant d'avoir navigué ailleurs.
+  if (HIDDEN_ON_PATHS.includes(pathname ?? "") && !showWelcome) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-40">
@@ -257,6 +265,7 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
           {showWelcome ? (
             <div className="flex flex-1 flex-col justify-between p-5">
               <div>
+                <Mascot pose="copilot" className="mx-auto mb-3 h-24 w-auto" />
                 <p className="text-sm font-medium text-ink">
                   {renderGreeting(`${timeGreeting()} 👋 Bienvenue sur RH Pilot.`)}
                 </p>

@@ -19,6 +19,7 @@ import { prisma } from "@/lib/prisma";
 import { CreateOrganizationForm } from "./CreateOrganizationForm";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+import { Mascot, isPoseAvailable, type MascotPose } from "@/components/Mascot";
 import { formatRelativeDueDate, isOverdue } from "@/lib/urgency";
 import { getAnomalies } from "@/lib/anomalies";
 import { triggerEventQuick } from "./events/actions";
@@ -284,43 +285,50 @@ export default async function DashboardPage({
   } else {
     synthesis = "Aucune échéance critique aujourd'hui. Tout est sous contrôle.";
   }
+  // Pose de la mascotte alignée sur la même logique que le message de
+  // synthèse ci-dessus — pas une condition séparée à maintenir à part.
+  let mascotPose: MascotPose = "dashboard";
+  if (!isEmpty) {
+    if (overdueCount > 0) mascotPose = "urgent";
+    else if (soonCount > 0) mascotPose = "deadline";
+    else if (flagged.length === 0) mascotPose = "calm";
+  }
   const firstName = user!.firstName || user!.email.split("@")[0];
   return (
     <div className="max-w-5xl">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-6">
+        <div className="min-w-0">
           <h1 data-tour="dashboard-attention" className="text-2xl font-semibold text-ink">
             Bonjour {firstName} 👋
           </h1>
           <p className="mt-1 max-w-xl text-sm text-ink-soft">{synthesis}</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {employeeCount === 0 && (
+              <Link href="/dashboard/employees/new">
+                <Button data-tour="add-employee">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Plus size={16} /> Ajouter un salarié
+                  </span>
+                </Button>
+              </Link>
+            )}
+            {isEmpty && (
+              <Link href="/dashboard/employees">
+                <Button variant="secondary">
+                  <span className="inline-flex items-center gap-1.5">
+                    <Play size={14} /> Découvrir RH Pilot
+                  </span>
+                </Button>
+              </Link>
+            )}
+          </div>
         </div>
-        <div className="flex shrink-0 flex-wrap gap-3">
-          {employeeCount === 0 && (
-            <Link href="/dashboard/employees/new">
-              <Button data-tour="add-employee">
-                <span className="inline-flex items-center gap-1.5">
-                  <Plus size={16} /> Ajouter un salarié
-                </span>
-              </Button>
-            </Link>
-          )}
-          {isEmpty && (
-            <Link href="/dashboard/employees">
-              <Button variant="secondary">
-                <span className="inline-flex items-center gap-1.5">
-                  <Play size={14} /> Découvrir RH Pilot
-                </span>
-              </Button>
-            </Link>
-          )}
-        </div>
+        <Mascot pose={mascotPose} className="hidden shrink-0 md:block" />
       </div>
       <div className="mt-5 grid grid-cols-2 gap-4 sm:grid-cols-4">
         <Card>
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-violet/10 text-brand-violet">
-              <Users size={20} />
-            </span>
+            <Users size={20} className="shrink-0 text-brand-violet" />
             <div>
               <p className="text-2xl font-semibold text-ink">{employeeCount}</p>
               <p className="text-xs text-ink-faint">Salariés</p>
@@ -335,9 +343,7 @@ export default async function DashboardPage({
         </Card>
         <Card>
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-teal/10 text-accent-teal">
-              <ClipboardCheck size={20} />
-            </span>
+            <ClipboardCheck size={20} className="shrink-0 text-accent-teal" />
             <div>
               <p className="text-2xl font-semibold text-ink">{eventCount}</p>
               <p className="text-xs text-ink-faint">Parcours actifs</p>
@@ -349,9 +355,7 @@ export default async function DashboardPage({
         </Card>
         <Card>
           <div className="flex items-center gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-accent-amber/10 text-accent-amber">
-              <CalendarDays size={20} />
-            </span>
+            <CalendarDays size={20} className="shrink-0 text-accent-amber" />
             <div>
               <p className="text-2xl font-semibold text-ink">{soonCount}</p>
               <p className="text-xs text-ink-faint">Échéances cette semaine</p>
@@ -363,13 +367,10 @@ export default async function DashboardPage({
         </Card>
         <Card>
           <div className="flex items-center gap-3">
-            <span
-              className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${
-                percentUpToDate === 100 ? "bg-accent-teal/10 text-accent-teal" : "bg-accent-amber/10 text-accent-amber"
-              }`}
-            >
-              <ShieldCheck size={20} />
-            </span>
+            <ShieldCheck
+              size={20}
+              className={`shrink-0 ${percentUpToDate === 100 ? "text-accent-teal" : "text-accent-amber"}`}
+            />
             <div>
               <p className="text-2xl font-semibold text-ink">{percentUpToDate}%</p>
               <p className="text-xs text-ink-faint">Parcours à jour</p>
@@ -445,9 +446,7 @@ export default async function DashboardPage({
         <Card className="mt-4">
           <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
-              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-accent-teal/10 text-accent-teal">
-                <CircleCheck size={22} />
-              </span>
+              <CircleCheck size={22} className="mt-0.5 shrink-0 text-accent-teal" />
               <div>
                 <h2 className="text-base font-semibold text-ink">Tout est sous contrôle</h2>
                 <p className="mt-1 text-sm text-ink-soft">
@@ -459,23 +458,9 @@ export default async function DashboardPage({
                 </p>
               </div>
             </div>
-            <div className="relative hidden h-28 w-40 shrink-0 sm:block" aria-hidden>
-              <div className="absolute inset-0 rounded-xl border border-surface-border bg-surface-subtle shadow-sm">
-                <div className="flex gap-1 border-b border-surface-border px-2 py-1.5">
-                  <span className="h-1.5 w-1.5 rounded-full bg-accent-rose/40" />
-                  <span className="h-1.5 w-1.5 rounded-full bg-accent-amber/40" />
-                  <span className="h-1.5 w-1.5 rounded-full bg-accent-teal/40" />
-                </div>
-                <div className="space-y-1.5 px-3 py-3">
-                  <div className="h-1.5 w-3/4 rounded-full bg-brand-blue/15" />
-                  <div className="h-1.5 w-1/2 rounded-full bg-surface-border" />
-                  <div className="h-1.5 w-2/3 rounded-full bg-surface-border" />
-                </div>
-              </div>
-              <span className="absolute -right-2 -top-2 flex h-8 w-8 items-center justify-center rounded-full bg-accent-teal text-white shadow-md">
-                <CircleCheck size={16} />
-              </span>
-            </div>
+            {isPoseAvailable("calm") && (
+              <Mascot pose="calm" className="hidden h-28 w-auto shrink-0 sm:block" />
+            )}
           </div>
         </Card>
       ) : (

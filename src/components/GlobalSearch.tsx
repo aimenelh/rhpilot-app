@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, User, ListChecks, Loader2 } from "lucide-react";
+import { Mascot } from "@/components/Mascot";
 
 type SearchResults = {
   employees: { id: string; label: string; meta: string }[];
@@ -92,7 +93,10 @@ export function GlobalSearch() {
       {isOpen && query.trim().length >= 2 && (
         <div className="absolute left-0 right-0 top-full z-20 mt-1.5 max-h-96 overflow-y-auto rounded-lg border border-surface-border bg-white py-1.5 shadow-card">
           {showEmptyState && (
-            <p className="px-3.5 py-3 text-sm text-ink-faint">Aucun résultat pour « {query} ».</p>
+            <div className="flex flex-col items-center gap-2 px-3.5 py-4 text-center">
+              <Mascot pose="search" className="h-16 w-auto" />
+              <p className="text-sm text-ink-faint">Aucun résultat pour « {query} ».</p>
+            </div>
           )}
 
           {results && results.employees.length > 0 && (

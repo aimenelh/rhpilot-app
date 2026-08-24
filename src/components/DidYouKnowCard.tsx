@@ -19,10 +19,17 @@ const ROTATION_MS = 12000;
 const FADE_MS = 300;
 
 export function DidYouKnowCard() {
-  // Départ aléatoire pour ne pas toujours voir la même astuce en
-  // premier à chaque visite — la rotation elle-même reste régulière.
-  const [index, setIndex] = useState(() => Math.floor(Math.random() * DID_YOU_KNOW_TIPS.length));
+  // Départ toujours identique côté serveur et côté client (index 0) —
+  // le tirage aléatoire n'a lieu qu'après le montage, dans l'effet
+  // ci-dessous, pour éviter tout désaccord d'hydratation entre les
+  // deux rendus (Math.random() dans useState() donnait un résultat
+  // différent à chaque exécution serveur/client).
+  const [index, setIndex] = useState(0);
   const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    setIndex(Math.floor(Math.random() * DID_YOU_KNOW_TIPS.length));
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {

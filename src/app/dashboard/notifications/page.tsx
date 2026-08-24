@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Label, Select, FieldHint } from "@/components/ui/Field";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { Mascot } from "@/components/Mascot";
 import { getUserDisplayName } from "@/lib/displayName";
 import { sendDigestsNow, updateNotificationPreference } from "./actions";
 
@@ -83,10 +84,13 @@ export default async function NotificationsPage() {
 
       <div className="mt-6">
         {notifications.length === 0 ? (
-          <EmptyState
-            title="Aucune notification envoyée pour l'instant"
-            description="Les rappels manuels et résumés automatiques apparaîtront ici, avec leur destinataire et la date d'envoi."
-          />
+          <div className="flex flex-col items-center gap-4">
+            <Mascot pose="reminder" className="h-32 w-auto" />
+            <EmptyState
+              title="Aucune notification envoyée pour l'instant"
+              description="Les rappels manuels et résumés automatiques apparaîtront ici, avec leur destinataire et la date d'envoi."
+            />
+          </div>
         ) : (
           <Card className="overflow-hidden p-0">
             <table className="w-full text-left text-sm">
