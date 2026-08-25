@@ -2,20 +2,25 @@
 
 import { useEffect, useState } from "react";
 
-// Séquence en 4 temps : il verse tranquillement -> ça déborde -> tache
-// sur la chemise -> il hausse les épaules, désinvolte. Boucle ensuite
-// à l'infini. Les 4 images ont été découpées d'une même planche
-// générée en un seul appel, avec un cadrage rigoureusement identique
-// (vérifié avant intégration) — condition nécessaire pour un
-// enchaînement fluide sans saut de position.
+// Séquence élargie en 10 temps (remplace l'ancienne version à 4
+// poses) : il boit tranquillement, ça déborde progressivement, tache
+// sur la chemise, il l'essuie, geste désinvolte, retour au calme.
+// Boucle à l'infini. Cadrage vérifié cohérent entre toutes les poses
+// (issues d'un même rendu en une seule planche).
 const FRAMES = [
-  "/illustrations/mascot/coffee-1-anticipation.png",
-  "/illustrations/mascot/coffee-2-debordement.png",
-  "/illustrations/mascot/coffee-3-oups.png",
-  "/illustrations/mascot/coffee-4-desinvolte.png",
+  "/illustrations/mascot/coffee-scene-1-anticipation.png",
+  "/illustrations/mascot/coffee-scene-2-gorgee.png",
+  "/illustrations/mascot/coffee-scene-3-gorgee-2.png",
+  "/illustrations/mascot/coffee-scene-4-debut-debordement.png",
+  "/illustrations/mascot/coffee-scene-5-debordement.png",
+  "/illustrations/mascot/coffee-scene-6-tache-legere.png",
+  "/illustrations/mascot/coffee-scene-7-tache.png",
+  "/illustrations/mascot/coffee-scene-8-essuie.png",
+  "/illustrations/mascot/coffee-scene-9-desinvolte.png",
+  "/illustrations/mascot/coffee-scene-10-normal.png",
 ];
 
-const FRAME_MS = 900;
+const FRAME_MS = 500;
 
 export function CoffeeSpillLoop({ className }: { className?: string }) {
   const [index, setIndex] = useState(0);
@@ -29,10 +34,6 @@ export function CoffeeSpillLoop({ className }: { className?: string }) {
 
   return (
     <div className={`relative ${className ?? ""}`}>
-      {/* Les 4 images restent chargées en permanence, seule leur
-          opacité change — évite tout échange de source en cours de
-          transition (c'est ce qui causait le dédoublement visuel de
-          la version précédente à 2 calques). */}
       {FRAMES.map((src, i) => (
         // eslint-disable-next-line @next/next/no-img-element -- séquence
         // décorative locale, next/image ajoute peu de valeur ici et
@@ -41,7 +42,7 @@ export function CoffeeSpillLoop({ className }: { className?: string }) {
           key={src}
           src={src}
           alt=""
-          className="absolute inset-0 h-full w-full object-contain transition-opacity duration-500 ease-in-out"
+          className="absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ease-in-out"
           style={{ opacity: index === i ? 1 : 0 }}
         />
       ))}
