@@ -13,6 +13,33 @@ function daysFromNow(offset: number): Date {
   return date;
 }
 
+// Exécute jusqu'à `limit` opérations en parallèle, jamais plus —
+// un Promise.all() sans limite sur ~15-30 requêtes a fait planter la
+// génération en production (Neon limite le nombre de connexions
+// simultanées, contrairement à une base locale beaucoup plus
+// tolérante). Toujours bien plus rapide qu'une boucle séquentielle,
+// sans saturer la base.
+async function mapWithConcurrencyLimit<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>
+): Promise<R[]> {
+  const results: R[] = new Array(items.length);
+  let cursor = 0;
+
+  async function worker() {
+    while (cursor < items.length) {
+      const current = cursor++;
+      results[current] = await fn(items[current]);
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
+
+const DB_CONCURRENCY_LIMIT = 5;
+
 // Jeu de données fictif, pensé comme une démonstration pédagogique :
 // chaque salarié illustre UN cas d'usage précis (parcours actif,
 // suggestion, anomalie, fiche incomplète), et la majorité restent
@@ -230,8 +257,10 @@ export async function generateDemoOrganization() {
     throw new Error("Votre organisation a déjà des salariés — génération annulée pour éviter un doublon.");
   }
 
-  const createdEmployees = await Promise.all(
-    DEMO_EMPLOYEES.map((template) =>
+  const createdEmployees = await mapWithConcurrencyLimit(
+    DEMO_EMPLOYEES,
+    DB_CONCURRENCY_LIMIT,
+    (template) =>
       prisma.employee.create({
         data: {
           organizationId: membership.organizationId,
@@ -254,7 +283,6 @@ export async function generateDemoOrganization() {
           isDemoData: true,
         },
       })
-    )
   );
 
   await prisma.auditLog.create({
@@ -269,80 +297,89 @@ export async function generateDemoOrganization() {
 
   // Antoine, Emma et Manon ont chacun un traitement distinct, et les
   // 12 autres salariés (hors Antoine et Julien) reçoivent tous un
-  // parcours Embauche historique déjà terminé — aucune de ces
-  // opérations ne dépend des autres, donc tout part en parallèle
-  // plutôt qu'en séquence (c'était le vrai goulot d'étranglement :
-  // jusqu'à 24 allers-retours serveur l'un après l'autre).
+  // parcours Embauche historique déjà terminé. Toutes ces opérations
+  // sont indépendantes entre elles, mais passent par le même
+  // limiteur de concurrence que la création des salariés — voir
+  // DB_CONCURRENCY_LIMIT plus haut.
   const skipOnboarding = new Set(["Antoine", "Julien"]);
   const antoine = createdEmployees.find((e) => e.firstName === "Antoine");
   const emma = createdEmployees.find((e) => e.firstName === "Emma");
   const manon = createdEmployees.find((e) => e.firstName === "Manon");
 
-  await Promise.all([
-    // Antoine (embauché il y a 5 jours) : un vrai parcours Embauche,
-    // avec des tâches naturellement en retard puisque ses échéances
-    // sont calculées par rapport à une date d'embauche déjà passée.
-    antoine
-      ? triggerEmployeeEvent({
-          organizationId: membership.organizationId,
-          employeeId: antoine.id,
-          eventTemplateKey: "embauche",
-          triggerDate: antoine.hireDate,
-          actorUserId: user.id,
+  const eventTasks: Array<() => Promise<unknown>> = [];
+
+  // Antoine (embauché il y a 5 jours) : un vrai parcours Embauche,
+  // avec des tâches naturellement en retard puisque ses échéances
+  // sont calculées par rapport à une date d'embauche déjà passée.
+  if (antoine) {
+    eventTasks.push(() =>
+      triggerEmployeeEvent({
+        organizationId: membership.organizationId,
+        employeeId: antoine.id,
+        eventTemplateKey: "embauche",
+        triggerDate: antoine.hireDate,
+        actorUserId: user.id,
+      })
+    );
+  }
+
+  // Emma : un parcours Visite médicale déclenché aujourd'hui.
+  if (emma) {
+    eventTasks.push(() =>
+      triggerEmployeeEvent({
+        organizationId: membership.organizationId,
+        employeeId: emma.id,
+        eventTemplateKey: "visite_medicale",
+        triggerDate: new Date(),
+        actorUserId: user.id,
+      })
+    );
+  }
+
+  // Manon : un parcours Fin de période d'essai déjà entièrement
+  // terminé — pour montrer aussi un parcours "à jour", pas
+  // seulement des retards.
+  if (manon) {
+    eventTasks.push(() =>
+      triggerEmployeeEvent({
+        organizationId: membership.organizationId,
+        employeeId: manon.id,
+        eventTemplateKey: "fin_periode_essai",
+        triggerDate: daysFromNow(-650),
+        actorUserId: user.id,
+      }).then((employeeEvent) =>
+        prisma.task.updateMany({
+          where: { employeeEventId: employeeEvent.id },
+          data: { status: "DONE" },
         })
-      : Promise.resolve(),
+      )
+    );
+  }
 
-    // Emma : un parcours Visite médicale déclenché aujourd'hui.
-    emma
-      ? triggerEmployeeEvent({
-          organizationId: membership.organizationId,
-          employeeId: emma.id,
-          eventTemplateKey: "visite_medicale",
-          triggerDate: new Date(),
-          actorUserId: user.id,
+  // Tous les autres salariés (sauf Antoine, déjà couvert, et
+  // Julien, qui illustre volontairement l'oubli) reçoivent un
+  // parcours Embauche historique déjà terminé — dans une vraie
+  // entreprise, un salarié embauché depuis des mois ou des années a
+  // évidemment déjà été onboardé.
+  for (const employee of createdEmployees) {
+    if (skipOnboarding.has(employee.firstName)) continue;
+    eventTasks.push(() =>
+      triggerEmployeeEvent({
+        organizationId: membership.organizationId,
+        employeeId: employee.id,
+        eventTemplateKey: "embauche",
+        triggerDate: employee.hireDate,
+        actorUserId: user.id,
+      }).then((employeeEvent) =>
+        prisma.task.updateMany({
+          where: { employeeEventId: employeeEvent.id },
+          data: { status: "DONE" },
         })
-      : Promise.resolve(),
+      )
+    );
+  }
 
-    // Manon : un parcours Fin de période d'essai déjà entièrement
-    // terminé — pour montrer aussi un parcours "à jour", pas
-    // seulement des retards.
-    manon
-      ? triggerEmployeeEvent({
-          organizationId: membership.organizationId,
-          employeeId: manon.id,
-          eventTemplateKey: "fin_periode_essai",
-          triggerDate: daysFromNow(-650),
-          actorUserId: user.id,
-        }).then((employeeEvent) =>
-          prisma.task.updateMany({
-            where: { employeeEventId: employeeEvent.id },
-            data: { status: "DONE" },
-          })
-        )
-      : Promise.resolve(),
-
-    // Tous les autres salariés (sauf Antoine, déjà couvert, et
-    // Julien, qui illustre volontairement l'oubli) reçoivent un
-    // parcours Embauche historique déjà terminé — dans une vraie
-    // entreprise, un salarié embauché depuis des mois ou des années a
-    // évidemment déjà été onboardé.
-    ...createdEmployees
-      .filter((employee) => !skipOnboarding.has(employee.firstName))
-      .map((employee) =>
-        triggerEmployeeEvent({
-          organizationId: membership.organizationId,
-          employeeId: employee.id,
-          eventTemplateKey: "embauche",
-          triggerDate: employee.hireDate,
-          actorUserId: user.id,
-        }).then((employeeEvent) =>
-          prisma.task.updateMany({
-            where: { employeeEventId: employeeEvent.id },
-            data: { status: "DONE" },
-          })
-        )
-      ),
-  ]);
+  await mapWithConcurrencyLimit(eventTasks, DB_CONCURRENCY_LIMIT, (task) => task());
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/employees");
