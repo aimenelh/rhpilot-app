@@ -12,6 +12,7 @@ export default function SignUpPage() {
       formSubtitle="Quelques minutes pour commencer."
     >
       <SignUp
+        forceRedirectUrl="/creating-account"
         appearance={{
           elements: {
             rootBox: "w-full max-w-md",

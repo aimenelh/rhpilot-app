@@ -12,6 +12,7 @@ export default function SignInPage() {
       formSubtitle="Accédez à votre espace RH Pilot."
     >
       <SignIn
+        forceRedirectUrl="/entering"
         appearance={{
           elements: {
             rootBox: "w-full max-w-md",
