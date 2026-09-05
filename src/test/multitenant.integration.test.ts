@@ -183,9 +183,10 @@ describe("Isolation multi-tenant — mutations critiques", () => {
     formData.set("hireDate", "2026-01-15");
     formData.set("managerMembershipId", fixtures.membershipA.id); // appartient bien à l'organisation A
 
-    const result = await createEmployee(undefined, formData);
-
-    expect(result?.error).toBeUndefined();
+    // Un createEmployee réussi se termine par un redirect(), comme
+    // updateTaskStatus -- il ne "retourne" donc jamais normalement
+    // dans ce cas, il lève NEXT_REDIRECT (voir mockAuth.ts).
+    await expect(createEmployee(undefined, formData)).rejects.toThrow("NEXT_REDIRECT");
 
     const created = await prisma.employee.findFirst({
       where: { organizationId: fixtures.orgA.id, firstName: "Karim", lastName: "Test2" },
