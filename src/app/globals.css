@@ -60,10 +60,10 @@ h1, h2, h3 {
 
 @keyframes tour-pulse-once {
   0% {
-    box-shadow: 0 0 0 0 rgba(47, 111, 237, 0.4);
+    box-shadow: 0 0 0 0 rgba(232, 67, 46, 0.4);
   }
   100% {
-    box-shadow: 0 0 0 10px rgba(47, 111, 237, 0);
+    box-shadow: 0 0 0 10px rgba(232, 67, 46, 0);
   }
 }
 
