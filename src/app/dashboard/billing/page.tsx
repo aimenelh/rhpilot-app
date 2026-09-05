@@ -1,13 +1,22 @@
-import { CreditCard, Crown, CircleCheck, Users, Receipt } from "lucide-react";
+import { CircleCheck, Lock } from "lucide-react";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
-import { Card } from "@/components/ui/Card";
 import { formatDate } from "@/lib/format";
 import { ManageSubscriptionButton } from "./ManageSubscriptionButton";
 import { UpgradeToProButton } from "./UpgradeToProButton";
 
 const FREE_TIER_LIMIT = 3;
+
+// Ce que RH Pilot inclut réellement, identique sur les deux paliers —
+// seul le nombre de salariés distingue Gratuit de Pro. Jamais de
+// fonctionnalité présentée comme incluse si elle ne l'est pas.
+const INCLUDED_FEATURES = [
+  "Parcours RH automatisés (embauche, période d'essai, visite médicale...)",
+  "Détection proactive des anomalies et échéances",
+  "Rappels automatiques par email",
+  "Assistant RH intégré",
+];
 
 export default async function BillingPage({
   searchParams,
@@ -27,11 +36,8 @@ export default async function BillingPage({
   const usageRatio = Math.min(employeeCount / FREE_TIER_LIMIT, 1);
 
   return (
-    <div className="max-w-4xl">
-      <h1 className="text-2xl font-semibold text-ink">Facturation</h1>
-      <p className="mt-1 text-sm text-ink-soft">
-        Votre palier actuel et vos informations de paiement, gérés directement ici.
-      </p>
+    <div className="max-w-xl">
+      <h1 className="text-2xl font-semibold text-ink">Votre abonnement</h1>
 
       {searchParams.success && (
         <p className="mt-4 flex items-center gap-2 rounded-lg border border-accent-teal/30 bg-accent-teal/5 px-3.5 py-2.5 text-sm text-accent-teal">
@@ -45,103 +51,78 @@ export default async function BillingPage({
         </p>
       )}
 
-      {isPro ? (
-        // Déjà sur Pro : une seule carte, pas besoin de remettre en avant
-        // l'offre qu'on utilise déjà.
-        <Card className="mt-6 max-w-2xl">
-          <div className="flex items-start gap-3">
-            <CreditCard size={20} className="mt-0.5 shrink-0 text-accent-teal" />
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <p className="text-sm font-semibold text-ink">Palier Pro</p>
-                <span className="rounded-full bg-accent-teal/10 px-2 py-0.5 text-xs font-medium text-accent-teal">
-                  Actif
-                </span>
-              </div>
-              <p className="mt-1 text-sm text-ink-soft">
-                {monthlyEstimate} € estimés ce mois-ci (15 € + 3 € × {employeeCount} salarié
-                {employeeCount > 1 ? "s" : ""}).
-                {organization?.currentPeriodEnd &&
-                  ` Prochain renouvellement le ${formatDate(organization.currentPeriodEnd)}.`}
-              </p>
-              <div className="mt-4">
-                <ManageSubscriptionButton />
-              </div>
-            </div>
-          </div>
-        </Card>
-      ) : (
-        // Palier Gratuit : deux blocs volontairement asymétriques — le
-        // plan actuel en sobre, l'offre Pro mise en avant par une
-        // légère teinte de fond plutôt qu'un habillage identique.
-        <div className="mt-6 grid gap-4 md:grid-cols-2">
-          <Card>
-            <div className="flex items-start gap-3">
-              <CreditCard size={20} className="mt-0.5 shrink-0 text-ink-faint" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-ink">Gratuit</p>
-                <p className="mt-1 text-2xl font-semibold text-ink">0 €<span className="text-sm font-normal text-ink-soft"> / mois</span></p>
-                <p className="mt-1 text-sm text-ink-soft">Jusqu&apos;à {FREE_TIER_LIMIT} salariés</p>
-                <p className="mt-4 flex items-center gap-1.5 text-sm font-medium text-ink-soft">
-                  <CircleCheck size={15} className="text-ink-faint" />
-                  Plan actuel
-                </p>
-              </div>
-            </div>
-          </Card>
-
-          <Card className="border-brand-primary/25 bg-brand-primary/[0.03]">
-            <div className="flex items-start gap-3">
-              <Crown size={20} className="mt-0.5 shrink-0 text-brand-primary" />
-              <div className="min-w-0 flex-1">
-                <p className="text-sm font-semibold text-ink">Pro</p>
-                <p className="mt-1 text-2xl font-semibold text-ink">15 €<span className="text-sm font-normal text-ink-soft"> / mois</span></p>
-                <p className="mt-1 text-sm text-ink-soft">+ 3 € par salarié / mois</p>
-                <p className="mt-3 flex items-center gap-1.5 text-sm text-ink-soft">
-                  <CircleCheck size={15} className="shrink-0 text-brand-primary" />
-                  Pas de limite de salariés
-                </p>
-                <div className="mt-4">
-                  <UpgradeToProButton />
-                </div>
-              </div>
-            </div>
-          </Card>
+      {/* Bloc principal : éditorial, pas une carte de tarification —
+          l'utilisateur est déjà client, on ne cherche pas à le
+          convaincre. */}
+      <div className="mt-8">
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Palier actuel</p>
+        <div className="mt-2 flex items-baseline gap-2.5">
+          <h2 className="text-3xl font-semibold text-ink">{isPro ? "Pro" : "Gratuit"}</h2>
+          {isPro && (
+            <span className="rounded-full bg-accent-teal/10 px-2 py-0.5 text-xs font-medium text-accent-teal">
+              Actif
+            </span>
+          )}
         </div>
-      )}
+        <p className="mt-2 text-sm text-ink-soft">
+          {isPro
+            ? `${employeeCount} salarié${employeeCount > 1 ? "s" : ""} · ${monthlyEstimate} € estimés ce mois-ci`
+            : `Jusqu'à ${FREE_TIER_LIMIT} salariés inclus, sans engagement`}
+        </p>
+        {isPro && organization?.currentPeriodEnd && (
+          <p className="mt-1 text-sm text-ink-faint">
+            Prochain renouvellement le {formatDate(organization.currentPeriodEnd)}.
+          </p>
+        )}
+        <div className="mt-5">{isPro ? <ManageSubscriptionButton /> : <UpgradeToProButton />}</div>
+      </div>
 
+      {/* Utilisation — seulement pertinent sur Gratuit, où la limite
+          existe réellement. Une ligne + une barre, pas une carte à
+          part entière. */}
       {!isPro && (
-        <Card className="mt-4" compact>
-          <div className="flex items-center gap-3">
-            <Users size={18} className="shrink-0 text-ink-faint" />
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-ink">
-                {employeeCount} / {FREE_TIER_LIMIT} salariés utilisés
-              </p>
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-subtle">
-                <div
-                  className="h-full rounded-full bg-brand-primary transition-all"
-                  style={{ width: `${usageRatio * 100}%` }}
-                />
-              </div>
-              <p className="mt-2 text-xs text-ink-faint">
-                Le palier Gratuit est limité à {FREE_TIER_LIMIT} salariés. Passez sur Pro pour lever
-                cette limite.
-              </p>
-            </div>
+        <div className="mt-6 border-t border-surface-border pt-5">
+          <div className="flex items-center justify-between text-sm text-ink-soft">
+            <span>
+              {employeeCount} / {FREE_TIER_LIMIT} salariés utilisés
+            </span>
           </div>
-        </Card>
-      )}
-
-      <Card className="mt-4" compact>
-        <div className="flex items-center gap-3">
-          <Receipt size={18} className="shrink-0 text-ink-faint" />
-          <div className="min-w-0">
-            <p className="text-sm font-medium text-ink">Historique de facturation</p>
-            <p className="mt-0.5 text-xs text-ink-faint">Aucune facture pour le moment.</p>
+          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-subtle">
+            <div
+              className="h-full rounded-full bg-brand-primary transition-all"
+              style={{ width: `${usageRatio * 100}%` }}
+            />
           </div>
         </div>
-      </Card>
+      )}
+
+      {/* Ce qui est inclus */}
+      <div className="mt-8 border-t border-surface-border pt-6">
+        <h2 className="text-sm font-semibold text-ink">Ce qui est inclus</h2>
+        <ul className="mt-3 flex flex-col gap-2.5">
+          {INCLUDED_FEATURES.map((feature) => (
+            <li key={feature} className="flex items-center gap-2.5 text-sm text-ink-soft">
+              <CircleCheck size={15} className="shrink-0 text-accent-teal" />
+              {feature}
+            </li>
+          ))}
+          <li className={`flex items-center gap-2.5 text-sm ${isPro ? "text-ink-soft" : "text-ink-faint"}`}>
+            {isPro ? (
+              <CircleCheck size={15} className="shrink-0 text-accent-teal" />
+            ) : (
+              <Lock size={13} className="shrink-0" />
+            )}
+            Salariés illimités{!isPro && " (Pro)"}
+          </li>
+        </ul>
+      </div>
+
+      {/* Factures — volontairement discret, pas une grosse carte
+          "Historique de facturation". */}
+      <div className="mt-8 border-t border-surface-border pt-6">
+        <h2 className="text-sm font-semibold text-ink">Factures</h2>
+        <p className="mt-2 text-sm text-ink-faint">Aucune facture pour le moment.</p>
+      </div>
     </div>
   );
 }
