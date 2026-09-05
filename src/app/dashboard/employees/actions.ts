@@ -17,7 +17,7 @@ export type EmployeeFormState = { error: string } | undefined;
 // Doit rester identique à FREE_TIER_LIMIT dans
 // app/dashboard/billing/page.tsx — les deux affichent la même limite,
 // l'une la fait respecter, l'autre l'explique visuellement.
-export const FREE_TIER_LIMIT = 3;
+const FREE_TIER_LIMIT = 3;
 
 // Ne bloque que la croissance du nombre de salariés actifs (création,
 // réactivation, import CSV), jamais la modification ou l'archivage
