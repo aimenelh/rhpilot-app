@@ -36,15 +36,21 @@ vi.mock("@clerk/nextjs/server", () => ({
 }));
 
 /**
- * next/navigation.redirect() lève une exception spéciale en dehors
- * d'un vrai rendu Next.js — on la simule de la même façon (elle lève
- * "NEXT_REDIRECT") pour rester fidèle au comportement réel : le code
- * après un redirect() réussi ne s'exécute jamais, ici comme en
- * production. Un test qui atteint le redirect (donc qui a réussi)
- * doit s'attendre à cette exception plutôt qu'à un retour normal.
+ * next/navigation.redirect() et next/cache.revalidatePath() lèvent
+ * toutes les deux une exception ("Invariant: static generation store
+ * missing...") en dehors d'un vrai rendu Next.js — confirmé par
+ * l'exécution réelle (createEmployee appelle revalidatePath juste
+ * avant son redirect final). On simule les deux à l'identique :
+ * redirect lève une exception reconnaissable, revalidatePath ne fait
+ * simplement rien (on ne teste jamais la vraie invalidation de cache
+ * ici, seulement que le code qui l'appelle ne plante pas).
  */
 vi.mock("next/navigation", () => ({
   redirect: vi.fn(() => {
     throw new Error("NEXT_REDIRECT");
   }),
+}));
+
+vi.mock("next/cache", () => ({
+  revalidatePath: vi.fn(),
 }));

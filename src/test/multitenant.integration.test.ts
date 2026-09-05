@@ -74,7 +74,17 @@ async function createFixtures() {
 
 async function cleanupFixtures(f: Fixtures) {
   // Ordre inverse des dépendances (Restrict empêche de supprimer un
-  // parent tant qu'un enfant existe).
+  // parent tant qu'un enfant existe). auditLog, notification,
+  // reminderRule, invitation et anomalyDismissal sont vides pour ces
+  // organisations dans les scénarios actuels, mais nettoyés par
+  // précaution : les actions réelles (updateTaskStatus, createEmployee)
+  // écrivent dans audit_logs comme effet de bord normal, et un futur
+  // test ajouté ici pourrait toucher les autres.
+  await prisma.auditLog.deleteMany({ where: { organizationId: { in: [f.orgA.id, f.orgB.id] } } });
+  await prisma.notification.deleteMany({ where: { organizationId: { in: [f.orgA.id, f.orgB.id] } } });
+  await prisma.reminderRule.deleteMany({ where: { organizationId: { in: [f.orgA.id, f.orgB.id] } } });
+  await prisma.invitation.deleteMany({ where: { organizationId: { in: [f.orgA.id, f.orgB.id] } } });
+  await prisma.anomalyDismissal.deleteMany({ where: { organizationId: { in: [f.orgA.id, f.orgB.id] } } });
   await prisma.task.deleteMany({ where: { organizationId: { in: [f.orgA.id, f.orgB.id] } } });
   await prisma.employeeEvent.deleteMany({ where: { organizationId: { in: [f.orgA.id, f.orgB.id] } } });
   await prisma.employee.deleteMany({ where: { organizationId: { in: [f.orgA.id, f.orgB.id] } } });
