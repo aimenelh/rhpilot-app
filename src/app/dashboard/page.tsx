@@ -6,7 +6,6 @@ import {
   CircleCheck,
   Circle,
   History,
-  CalendarDays,
   Users,
   ClipboardCheck,
   ShieldCheck,
@@ -148,8 +147,6 @@ export default async function DashboardPage({
     doneCount,
     openTasks,
     anomalies,
-    newTasksThisWeek,
-    completedThisWeek,
     membersInOrgCount,
     recentActivity,
   ] = await Promise.all([
@@ -160,21 +157,6 @@ export default async function DashboardPage({
     }),
     getOpenTasks(organizationId),
     getAnomalies(organizationId),
-    prisma.task.count({
-      where: {
-        organizationId,
-        createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-        employeeEvent: { employee: { deletedAt: null } },
-      },
-    }),
-    prisma.task.count({
-      where: {
-        organizationId,
-        status: "DONE",
-        updatedAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-        employeeEvent: { employee: { deletedAt: null } },
-      },
-    }),
     prisma.membership.count({ where: { organizationId, deletedAt: null } }),
     prisma.auditLog.findMany({
       where: { organizationId },
@@ -324,115 +306,14 @@ export default async function DashboardPage({
         </div>
         <Mascot pose={mascotPose} className="hidden shrink-0 md:block" />
       </div>
-      <Card className="mt-5 p-0">
-        <div className="grid grid-cols-2 divide-x divide-y divide-surface-border sm:grid-cols-4 sm:divide-y-0">
-          <Link
-            href={isEmpty ? "/dashboard/employees/new" : "/dashboard/employees"}
-            className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
-          >
-            <Users size={20} className="shrink-0 text-brand-primary-dark" />
-            <div>
-              <p className="text-2xl font-semibold text-ink">{employeeCount}</p>
-              <p className="text-xs text-ink-faint">Salariés</p>
-            </div>
-          </Link>
-          <Link
-            href="/dashboard/events"
-            className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
-          >
-            <ClipboardCheck size={20} className="shrink-0 text-accent-teal" />
-            <div>
-              <p className="text-2xl font-semibold text-ink">{eventCount}</p>
-              <p className="text-xs text-ink-faint">Parcours actifs</p>
-            </div>
-          </Link>
-          <Link
-            href="/dashboard/calendar"
-            className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
-          >
-            <CalendarDays size={20} className="shrink-0 text-accent-amber" />
-            <div>
-              <p className="text-2xl font-semibold text-ink">{soonCount}</p>
-              <p className="text-xs text-ink-faint">Échéances cette semaine</p>
-            </div>
-          </Link>
-          <div className="flex items-center gap-3 px-5 py-4">
-            <ShieldCheck
-              size={20}
-              className={`shrink-0 ${percentUpToDate === 100 ? "text-accent-teal" : "text-accent-amber"}`}
-            />
-            <div>
-              <p className="text-2xl font-semibold text-ink">{percentUpToDate}%</p>
-              <p className="text-xs text-ink-faint">
-                Parcours à jour
-                {percentUpToDate < 100 && <span className="text-accent-amber"> · à surveiller</span>}
-              </p>
-            </div>
-          </div>
-        </div>
-      </Card>
-      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className={`self-start lg:sticky lg:top-4 ${!isEmpty && anomalies.length > 0 ? "lg:col-span-2" : "lg:col-span-3"}`}>
-          <AskAboutOrganization aiEnabled={aiEnabled} />
-        </div>
-        {!isEmpty && anomalies.length > 0 && (
-          <Card className="lg:col-span-1">
-            <h2 className="text-sm font-semibold text-ink">
-              {anomalies.length} point{anomalies.length > 1 ? "s" : ""} nécessitant votre
-              attention
-            </h2>
-            <ul className="mt-2 flex flex-col divide-y divide-surface-border">
-              {visibleAnomalies.map((anomaly) => (
-                <AnomalyRow key={anomaly.key} anomaly={anomaly} severityDot={SEVERITY_DOT} />
-              ))}
-            </ul>
-            {hiddenAnomaliesCount > 0 && (
-              <details className="mt-1">
-                <summary className="cursor-pointer py-2 text-xs font-medium text-brand-primary">
-                  Voir les {hiddenAnomaliesCount} autre{hiddenAnomaliesCount > 1 ? "s" : ""} suggestion
-                  {hiddenAnomaliesCount > 1 ? "s" : ""}
-                </summary>
-                <ul className="flex flex-col divide-y divide-surface-border border-t border-surface-border">
-                  {hiddenAnomalies.map((anomaly) => (
-                    <AnomalyRow key={anomaly.key} anomaly={anomaly} severityDot={SEVERITY_DOT} />
-                  ))}
-                </ul>
-              </details>
-            )}
-          </Card>
-        )}
-      </div>
-      {!isEmpty && (
-        <>
-          <Card className="mt-5 p-0">
-            <div className="grid grid-cols-2 divide-x divide-y divide-surface-border sm:grid-cols-4 sm:divide-y-0">
-              <div className="px-5 py-4">
-                <p className="text-3xl font-semibold text-accent-rose">{overdueCount}</p>
-                <p className="mt-1 text-xs font-medium text-ink-faint">en retard</p>
-              </div>
-              <div className="px-5 py-4">
-                <p className="text-3xl font-semibold text-accent-amber">{soonCount}</p>
-                <p className="mt-1 text-xs font-medium text-ink-faint">cette semaine</p>
-              </div>
-              <div className="px-5 py-4">
-                <p className="text-3xl font-semibold text-brand-primary">{anomalies.length}</p>
-                <p className="mt-1 text-xs font-medium text-ink-faint">à analyser</p>
-              </div>
-              <div className="px-5 py-4">
-                <p className="text-3xl font-semibold text-accent-teal">{doneCount}</p>
-                <p className="mt-1 text-xs font-medium text-ink-faint">terminées</p>
-              </div>
-            </div>
-          </Card>
-          <p className="mt-3 text-xs text-ink-faint">
-            Cette semaine : {newTasksThisWeek} nouvelle{newTasksThisWeek > 1 ? "s" : ""} tâche
-            {newTasksThisWeek > 1 ? "s" : ""} · {completedThisWeek} terminée
-            {completedThisWeek > 1 ? "s" : ""} · {percentUpToDate}% des parcours à jour
-          </p>
-        </>
-      )}
+
+      {/* Niveau 2 : "Votre attention est requise" — remonté en tout
+          premier après l'en-tête, avant les statistiques. C'est le
+          bloc le plus important de la page (voir Phase 3.5, brief
+          Design & Identité), il ne doit jamais être concurrencé par
+          des chiffres agrégés. */}
       {flagged.length === 0 ? (
-        <Card className="mt-4">
+        <Card className="mt-5">
           <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-start gap-3">
               <CircleCheck size={22} className="mt-0.5 shrink-0 text-accent-teal" />
@@ -453,7 +334,7 @@ export default async function DashboardPage({
           </div>
         </Card>
       ) : (
-        <Card className="mt-4">
+        <Card className="mt-5">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <TriangleAlert size={18} className="text-accent-amber" />
@@ -539,6 +420,94 @@ export default async function DashboardPage({
           )}
         </Card>
       )}
+
+      {/* Niveau 3 : le Copilote et les anomalies détectées, juste
+          après l'attention immédiate. Contenu et logique inchangés. */}
+      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className={`self-start lg:sticky lg:top-4 ${!isEmpty && anomalies.length > 0 ? "lg:col-span-2" : "lg:col-span-3"}`}>
+          <AskAboutOrganization aiEnabled={aiEnabled} />
+        </div>
+        {!isEmpty && anomalies.length > 0 && (
+          <Card className="lg:col-span-1">
+            <h2 className="text-sm font-semibold text-ink">
+              {anomalies.length} point{anomalies.length > 1 ? "s" : ""} nécessitant votre
+              attention
+            </h2>
+            <ul className="mt-2 flex flex-col divide-y divide-surface-border">
+              {visibleAnomalies.map((anomaly) => (
+                <AnomalyRow key={anomaly.key} anomaly={anomaly} severityDot={SEVERITY_DOT} />
+              ))}
+            </ul>
+            {hiddenAnomaliesCount > 0 && (
+              <details className="mt-1">
+                <summary className="cursor-pointer py-2 text-xs font-medium text-brand-primary">
+                  Voir les {hiddenAnomaliesCount} autre{hiddenAnomaliesCount > 1 ? "s" : ""} suggestion
+                  {hiddenAnomaliesCount > 1 ? "s" : ""}
+                </summary>
+                <ul className="flex flex-col divide-y divide-surface-border border-t border-surface-border">
+                  {hiddenAnomalies.map((anomaly) => (
+                    <AnomalyRow key={anomaly.key} anomaly={anomaly} severityDot={SEVERITY_DOT} />
+                  ))}
+                </ul>
+              </details>
+            )}
+          </Card>
+        )}
+      </div>
+
+      {/* Niveau 4 : statistiques secondaires — une seule barre
+          consolidée (auparavant deux barres distinctes qui
+          répétaient plusieurs fois les mêmes chiffres : échéances de
+          la semaine et nombre d'anomalies apparaissaient déjà en
+          détail juste au-dessus). Utile pour une vue d'ensemble,
+          jamais en concurrence avec les priorités du jour. */}
+      {!isEmpty && (
+        <Card className="mt-5 p-0">
+          <div className="grid grid-cols-2 divide-x divide-y divide-surface-border sm:grid-cols-4 sm:divide-y-0">
+            <Link
+              href="/dashboard/employees"
+              className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
+            >
+              <Users size={20} className="shrink-0 text-brand-primary-dark" />
+              <div>
+                <p className="text-2xl font-semibold text-ink">{employeeCount}</p>
+                <p className="text-xs text-ink-faint">Salariés</p>
+              </div>
+            </Link>
+            <Link
+              href="/dashboard/events"
+              className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
+            >
+              <ClipboardCheck size={20} className="shrink-0 text-accent-teal" />
+              <div>
+                <p className="text-2xl font-semibold text-ink">{eventCount}</p>
+                <p className="text-xs text-ink-faint">Parcours actifs</p>
+              </div>
+            </Link>
+            <div className="flex items-center gap-3 px-5 py-4">
+              <CircleCheck size={20} className="shrink-0 text-accent-teal" />
+              <div>
+                <p className="text-2xl font-semibold text-ink">{doneCount}</p>
+                <p className="text-xs text-ink-faint">Tâches terminées</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 px-5 py-4">
+              <ShieldCheck
+                size={20}
+                className={`shrink-0 ${percentUpToDate === 100 ? "text-accent-teal" : "text-accent-amber"}`}
+              />
+              <div>
+                <p className="text-2xl font-semibold text-ink">{percentUpToDate}%</p>
+                <p className="text-xs text-ink-faint">
+                  Parcours à jour
+                  {percentUpToDate < 100 && <span className="text-accent-amber"> · à surveiller</span>}
+                </p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
         {!allStepsDone && (
           <Card>
