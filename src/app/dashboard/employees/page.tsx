@@ -59,8 +59,8 @@ export default async function EmployeesPage({
                 : status === "archived"
                   ? "Aucun salarié archivé."
                   : "Aucun salarié enregistré pour l'instant."
-              : `${employees.length} salarié${employees.length > 1 ? "s" : ""}${
-                  status === "archived" ? " archivé" + (employees.length > 1 ? "s" : "") : ""
+              : `${employees.length} salarié${employees.length > 1 ? "s" : ""} ${
+                  status === "archived" ? "archivé" + (employees.length > 1 ? "s" : "") : "actif" + (employees.length > 1 ? "s" : "")
                 }.`}
           </p>
         </div>
@@ -68,23 +68,26 @@ export default async function EmployeesPage({
           {status === "active" && employees.length > 0 && !query && (
             <ArchiveAllButton action={archiveAllEmployees} count={employees.length} />
           )}
+          <Link href="/dashboard/employees/import">
+            <Button variant="secondary">Importer</Button>
+          </Link>
           <Link href="/dashboard/employees/new">
             <Button data-tour="add-employee">Ajouter un salarié</Button>
           </Link>
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-4">
-        <div className="flex gap-1 rounded-lg bg-surface-subtle p-1 text-xs font-medium w-fit">
+      <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-surface-border bg-white p-1.5">
+        <div className="flex gap-1 rounded-md bg-surface-subtle p-1 text-xs font-medium w-fit">
           <Link
             href={`/dashboard/employees?status=active${query ? `&q=${encodeURIComponent(query)}` : ""}`}
-            className={`rounded-md px-3 py-1.5 ${status === "active" ? "bg-white text-ink shadow-sm" : "text-ink-faint"}`}
+            className={`rounded px-3 py-1.5 ${status === "active" ? "bg-white text-ink shadow-sm" : "text-ink-faint"}`}
           >
             Actifs
           </Link>
           <Link
             href={`/dashboard/employees?status=archived${query ? `&q=${encodeURIComponent(query)}` : ""}`}
-            className={`rounded-md px-3 py-1.5 ${status === "archived" ? "bg-white text-ink shadow-sm" : "text-ink-faint"}`}
+            className={`rounded px-3 py-1.5 ${status === "archived" ? "bg-white text-ink shadow-sm" : "text-ink-faint"}`}
           >
             Archivés
           </Link>
@@ -130,19 +133,19 @@ export default async function EmployeesPage({
             <table className="w-full text-left text-sm">
               <thead className="border-b border-surface-border bg-surface-subtle text-xs uppercase tracking-wide text-ink-faint">
                 <tr>
-                  <th className="px-5 py-3 font-medium">Nom</th>
-                  <th className="px-5 py-3 font-medium">Poste</th>
-                  <th className="px-5 py-3 font-medium">
+                  <th className="px-5 py-3.5 font-medium">Nom</th>
+                  <th className="px-5 py-3.5 font-medium">Poste</th>
+                  <th className="px-5 py-3.5 font-medium">
                     {status === "archived" ? "Archivé le" : "Date d'embauche"}
                   </th>
-                  <th className="px-5 py-3 font-medium">Manager direct</th>
-                  {status === "archived" && <th className="px-5 py-3 font-medium" />}
+                  <th className="px-5 py-3.5 font-medium">Manager direct</th>
+                  {status === "archived" && <th className="px-5 py-3.5 font-medium" />}
                 </tr>
               </thead>
               <tbody className="divide-y divide-surface-border">
                 {employees.map((employee) => (
                   <tr key={employee.id} className="hover:bg-surface-subtle">
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-4">
                       {status === "archived" ? (
                         <span className="font-medium text-ink-soft">
                           {employee.firstName} {employee.lastName}
@@ -156,13 +159,13 @@ export default async function EmployeesPage({
                         </Link>
                       )}
                     </td>
-                    <td className="px-5 py-3 text-ink-soft">
+                    <td className="px-5 py-4 text-ink-soft">
                       {employee.position || "—"}
                     </td>
-                    <td className="px-5 py-3 text-ink-soft">
+                    <td className="px-5 py-4 text-ink-soft">
                       {formatDate(status === "archived" ? employee.deletedAt! : employee.hireDate)}
                     </td>
-                    <td className="px-5 py-3">
+                    <td className="px-5 py-4">
                       {employee.managerMembership ? (
                         <div className="leading-tight">
                           <p className="text-ink">
@@ -177,7 +180,7 @@ export default async function EmployeesPage({
                       )}
                     </td>
                     {status === "archived" && (
-                      <td className="px-5 py-3 text-right">
+                      <td className="px-5 py-4 text-right">
                         <form action={reactivateEmployee.bind(null, employee.id)}>
                           <button
                             type="submit"
