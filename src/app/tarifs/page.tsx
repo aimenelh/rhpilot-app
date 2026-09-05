@@ -25,7 +25,7 @@ export default function TarifsPage() {
       <section className="mx-auto max-w-3xl px-6 py-16 text-center">
         <Reveal variant="scale">
           <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-ink sm:text-5xl">
-            Un prix simple, <span className="bg-brand-gradient bg-clip-text text-transparent">par salarié</span>.
+            Un prix simple, <span className="bg-brand-primary bg-clip-text text-transparent">par salarié</span>.
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-ink-soft">
             Pas de palier caché ni de fonctionnalité verrouillée pour vous faire changer d&apos;offre.
@@ -72,8 +72,8 @@ export default function TarifsPage() {
 
           <div className="sm:col-span-3">
             <Reveal variant="right" delay={100}>
-            <div className="rounded-2xl border border-brand-blue/20 bg-brand-blue/[0.03] p-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-blue">Pro</p>
+            <div className="rounded-2xl border border-brand-primary/20 bg-brand-primary/[0.03] p-8">
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-primary">Pro</p>
               <p className="mt-3 flex items-baseline gap-2">
                 <span className="text-4xl font-bold text-ink">15 €</span>
                 <span className="text-sm text-ink-soft">/ mois</span>
@@ -86,19 +86,19 @@ export default function TarifsPage() {
 
               <div className="mt-6 flex flex-col gap-3 text-sm text-ink-soft">
                 <div className="flex items-start gap-2.5">
-                  <Dot color="bg-brand-blue" />
+                  <Dot color="bg-brand-primary" />
                   <span>Tout ce qui est dans Gratuit, sans limite de salariés</span>
                 </div>
                 <div className="flex items-start gap-2.5">
-                  <Dot color="bg-brand-blue" />
+                  <Dot color="bg-brand-primary" />
                   <span>Copilote IA inclus, gratuit pendant toute la bêta</span>
                 </div>
                 <div className="flex items-start gap-2.5">
-                  <Dot color="bg-brand-blue" />
+                  <Dot color="bg-brand-primary" />
                   <span>Facture unique mensuelle, forfait de base + salariés détaillés</span>
                 </div>
                 <div className="flex items-start gap-2.5">
-                  <Dot color="bg-brand-blue" />
+                  <Dot color="bg-brand-primary" />
                   <span>Résiliable à tout moment</span>
                 </div>
               </div>
@@ -127,7 +127,7 @@ export default function TarifsPage() {
             </div>
             <Link
               href="mailto:aimenoffi@gmail.com"
-              className="shrink-0 text-sm font-medium text-brand-blue hover:underline"
+              className="shrink-0 text-sm font-medium text-brand-primary hover:underline"
             >
               Nous contacter →
             </Link>

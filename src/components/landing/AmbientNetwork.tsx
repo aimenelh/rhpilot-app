@@ -6,33 +6,33 @@ import { useEffect, useRef, useState } from "react";
 // rendu serveur et le rendu client — un réseau statique mais qui a l'air
 // organique, pas parfaitement grillagé.
 const DOTS = [
-  { x: 80, y: 60, r: 2.2, tone: "text-brand-blue", o: 0.35 },
-  { x: 240, y: 140, r: 1.6, tone: "text-brand-violet", o: 0.3 },
-  { x: 150, y: 260, r: 1.8, tone: "text-brand-blue", o: 0.25 },
+  { x: 80, y: 60, r: 2.2, tone: "text-brand-primary", o: 0.35 },
+  { x: 240, y: 140, r: 1.6, tone: "text-brand-primary-dark", o: 0.3 },
+  { x: 150, y: 260, r: 1.8, tone: "text-brand-primary", o: 0.25 },
   { x: 380, y: 90, r: 2, tone: "text-accent-teal", o: 0.3 },
-  { x: 430, y: 240, r: 1.6, tone: "text-brand-violet", o: 0.25 },
-  { x: 60, y: 400, r: 1.8, tone: "text-brand-blue", o: 0.3 },
-  { x: 260, y: 380, r: 2.2, tone: "text-brand-blue", o: 0.3 },
+  { x: 430, y: 240, r: 1.6, tone: "text-brand-primary-dark", o: 0.25 },
+  { x: 60, y: 400, r: 1.8, tone: "text-brand-primary", o: 0.3 },
+  { x: 260, y: 380, r: 2.2, tone: "text-brand-primary", o: 0.3 },
   { x: 560, y: 180, r: 1.6, tone: "text-accent-teal", o: 0.25 },
-  { x: 650, y: 60, r: 1.8, tone: "text-brand-violet", o: 0.3 },
-  { x: 720, y: 300, r: 2, tone: "text-brand-blue", o: 0.28 },
-  { x: 480, y: 420, r: 1.6, tone: "text-brand-violet", o: 0.25 },
-  { x: 900, y: 140, r: 2, tone: "text-brand-blue", o: 0.3 },
+  { x: 650, y: 60, r: 1.8, tone: "text-brand-primary-dark", o: 0.3 },
+  { x: 720, y: 300, r: 2, tone: "text-brand-primary", o: 0.28 },
+  { x: 480, y: 420, r: 1.6, tone: "text-brand-primary-dark", o: 0.25 },
+  { x: 900, y: 140, r: 2, tone: "text-brand-primary", o: 0.3 },
   { x: 980, y: 320, r: 1.8, tone: "text-accent-teal", o: 0.28 },
-  { x: 850, y: 400, r: 1.6, tone: "text-brand-violet", o: 0.25 },
-  { x: 1120, y: 80, r: 2.2, tone: "text-brand-blue", o: 0.32 },
-  { x: 1180, y: 260, r: 1.8, tone: "text-brand-violet", o: 0.28 },
-  { x: 1050, y: 460, r: 1.6, tone: "text-brand-blue", o: 0.24 },
+  { x: 850, y: 400, r: 1.6, tone: "text-brand-primary-dark", o: 0.25 },
+  { x: 1120, y: 80, r: 2.2, tone: "text-brand-primary", o: 0.32 },
+  { x: 1180, y: 260, r: 1.8, tone: "text-brand-primary-dark", o: 0.28 },
+  { x: 1050, y: 460, r: 1.6, tone: "text-brand-primary", o: 0.24 },
   { x: 1320, y: 160, r: 2, tone: "text-accent-teal", o: 0.3 },
-  { x: 1400, y: 380, r: 1.8, tone: "text-brand-blue", o: 0.28 },
-  { x: 1250, y: 440, r: 1.6, tone: "text-brand-violet", o: 0.24 },
-  { x: 1500, y: 100, r: 2, tone: "text-brand-blue", o: 0.3 },
-  { x: 1540, y: 300, r: 1.6, tone: "text-brand-violet", o: 0.26 },
-  { x: 200, y: 620, r: 1.8, tone: "text-brand-blue", o: 0.24 },
+  { x: 1400, y: 380, r: 1.8, tone: "text-brand-primary", o: 0.28 },
+  { x: 1250, y: 440, r: 1.6, tone: "text-brand-primary-dark", o: 0.24 },
+  { x: 1500, y: 100, r: 2, tone: "text-brand-primary", o: 0.3 },
+  { x: 1540, y: 300, r: 1.6, tone: "text-brand-primary-dark", o: 0.26 },
+  { x: 200, y: 620, r: 1.8, tone: "text-brand-primary", o: 0.24 },
   { x: 420, y: 680, r: 1.6, tone: "text-accent-teal", o: 0.22 },
-  { x: 700, y: 630, r: 2, tone: "text-brand-violet", o: 0.26 },
-  { x: 950, y: 700, r: 1.6, tone: "text-brand-blue", o: 0.22 },
-  { x: 1200, y: 650, r: 1.8, tone: "text-brand-violet", o: 0.24 },
+  { x: 700, y: 630, r: 2, tone: "text-brand-primary-dark", o: 0.26 },
+  { x: 950, y: 700, r: 1.6, tone: "text-brand-primary", o: 0.22 },
+  { x: 1200, y: 650, r: 1.8, tone: "text-brand-primary-dark", o: 0.24 },
   { x: 1450, y: 720, r: 1.6, tone: "text-accent-teal", o: 0.22 },
 ];
 
@@ -111,7 +111,7 @@ export function AmbientNetwork() {
               x2={DOTS[b].x}
               y2={DOTS[b].y}
               stroke="currentColor"
-              className="text-brand-blue/[0.07]"
+              className="text-brand-primary/[0.07]"
               strokeWidth="1"
             />
           ))}
@@ -131,7 +131,7 @@ export function AmbientNetwork() {
                     fill="none"
                     stroke="none"
                   />
-                  <circle r="2.6" className="text-brand-blue" fill="currentColor" opacity="0.65">
+                  <circle r="2.6" className="text-brand-primary" fill="currentColor" opacity="0.65">
                     <animateMotion
                       dur={`${6.5 + i * 0.7}s`}
                       begin={`${i * 1.1}s`}

@@ -94,15 +94,15 @@ export default async function BillingPage({
             </div>
           </Card>
 
-          <Card className="border-brand-blue/25 bg-brand-blue/[0.03]">
+          <Card className="border-brand-primary/25 bg-brand-primary/[0.03]">
             <div className="flex items-start gap-3">
-              <Crown size={20} className="mt-0.5 shrink-0 text-brand-blue" />
+              <Crown size={20} className="mt-0.5 shrink-0 text-brand-primary" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-ink">Pro</p>
                 <p className="mt-1 text-2xl font-semibold text-ink">15 €<span className="text-sm font-normal text-ink-soft"> / mois</span></p>
                 <p className="mt-1 text-sm text-ink-soft">+ 3 € par salarié / mois</p>
                 <p className="mt-3 flex items-center gap-1.5 text-sm text-ink-soft">
-                  <CircleCheck size={15} className="shrink-0 text-brand-blue" />
+                  <CircleCheck size={15} className="shrink-0 text-brand-primary" />
                   Pas de limite de salariés
                 </p>
                 <div className="mt-4">
@@ -128,7 +128,7 @@ export default async function BillingPage({
               </p>
               <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-subtle">
                 <div
-                  className="h-full rounded-full bg-brand-blue transition-all"
+                  className="h-full rounded-full bg-brand-primary transition-all"
                   style={{ width: `${usageRatio * 100}%` }}
                 />
               </div>

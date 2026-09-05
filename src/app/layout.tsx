@@ -30,16 +30,15 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#2F6FED",
+  themeColor: "#E8432E",
 };
 
 export const metadata: Metadata = {
   title: "RH Pilot, votre copilote d'organisation RH",
   description:
     "RH Pilot transforme chaque événement RH en plan d'action complet : tâches, échéances, responsables et preuves.",
-  // Bêta ouverte à l'indexation depuis [aujourd'hui] — décision
-  // explicite prise avec Aimen, pas un oubli. Voir aussi
-  // src/app/robots.ts pour le blocage des pages privées.
+  // Bêta ouverte à l'indexation ; les pages privées restent bloquées
+  // séparément (voir src/app/robots.ts).
   robots: {
     index: true,
     follow: true,
@@ -61,16 +60,15 @@ export const metadata: Metadata = {
 
 // Habille les écrans Clerk (connexion, inscription, gestion du
 // compte) avec les jetons de la charte RH Pilot plutôt que de les
-// laisser à l'apparence par défaut — c'était le vrai trou visuel du
-// produit, pas le reste de l'application.
+// laisser à l'apparence par défaut.
 const clerkAppearance = {
   variables: {
-    colorPrimary: "#2F6FED",
-    colorText: "#0F1B3D",
-    colorTextSecondary: "#3D4A6B",
+    colorPrimary: "#E8432E",
+    colorText: "#14151A",
+    colorTextSecondary: "#4A4A4D",
     colorBackground: "#FFFFFF",
     colorInputBackground: "#FFFFFF",
-    colorInputText: "#0F1B3D",
+    colorInputText: "#14151A",
     borderRadius: "0.625rem",
     // Inter en priorité, avec le même repli système qu'avant si la
     // variable n'est pour une raison quelconque pas encore prête.
@@ -80,8 +78,8 @@ const clerkAppearance = {
   elements: {
     card: "shadow-lg border border-surface-border",
     formButtonPrimary:
-      "bg-brand-gradient hover:opacity-95 text-sm normal-case shadow-none",
-    footerActionLink: "text-brand-blue hover:text-brand-violet",
+      "bg-brand-primary hover:opacity-95 text-sm normal-case shadow-none",
+    footerActionLink: "text-brand-primary hover:text-brand-primary-dark",
   },
 };
 

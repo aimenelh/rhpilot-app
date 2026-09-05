@@ -24,7 +24,7 @@ export function AuthCardStack({ children }: { children: React.ReactNode }) {
         }}
       >
         <div className="flex items-center gap-2">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-blue/10 text-brand-blue">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-primary/10 text-brand-primary">
             <Stethoscope size={13} />
           </span>
           <div>

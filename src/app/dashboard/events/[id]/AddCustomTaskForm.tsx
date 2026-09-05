@@ -24,7 +24,7 @@ export function AddCustomTaskForm({
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-blue hover:underline"
+        className="inline-flex items-center gap-1.5 text-sm font-medium text-brand-primary hover:underline"
       >
         <Plus size={15} />
         Ajouter une étape à ce parcours

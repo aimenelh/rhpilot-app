@@ -6,9 +6,9 @@
 const EVENT_TEMPLATE_DOT_COLORS: Record<string, string> = {
   embauche: "bg-accent-teal",
   fin_periode_essai: "bg-accent-amber",
-  visite_medicale: "bg-brand-blue",
+  visite_medicale: "bg-brand-primary",
 };
 
 export function getEventTemplateDotColor(key: string) {
-  return EVENT_TEMPLATE_DOT_COLORS[key] ?? "bg-brand-blue";
+  return EVENT_TEMPLATE_DOT_COLORS[key] ?? "bg-brand-primary";
 }

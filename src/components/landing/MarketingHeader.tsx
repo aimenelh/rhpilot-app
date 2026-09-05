@@ -40,7 +40,7 @@ export function MarketingHeader() {
               key={link.href}
               href={link.href}
               className={`text-sm font-medium transition-colors ${
-                isActive(link.href) ? "text-brand-blue" : "text-ink-soft hover:text-ink"
+                isActive(link.href) ? "text-brand-primary" : "text-ink-soft hover:text-ink"
               }`}
             >
               {link.label}
@@ -50,7 +50,7 @@ export function MarketingHeader() {
           <Link
             href="/sign-in"
             className={`text-sm font-medium transition-colors ${
-              isActive("/sign-in") ? "text-brand-blue" : "text-ink-soft hover:text-ink"
+              isActive("/sign-in") ? "text-brand-primary" : "text-ink-soft hover:text-ink"
             }`}
           >
             Se connecter
@@ -81,7 +81,7 @@ export function MarketingHeader() {
               href={link.href}
               onClick={() => setOpen(false)}
               className={`rounded-lg px-3 py-2.5 text-sm font-medium ${
-                isActive(link.href) ? "bg-brand-blue/10 text-brand-blue" : "text-ink-soft hover:bg-surface-subtle"
+                isActive(link.href) ? "bg-brand-primary/10 text-brand-primary" : "text-ink-soft hover:bg-surface-subtle"
               }`}
             >
               {link.label}

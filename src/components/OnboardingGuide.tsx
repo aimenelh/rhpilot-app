@@ -63,7 +63,7 @@ export function OnboardingGuide() {
         <ol className="mt-5 flex flex-col gap-3">
           {STEPS.map((step) => (
             <li key={step.number} className="flex items-center gap-3">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-gradient text-xs font-semibold text-white">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-primary text-xs font-semibold text-white">
                 {step.number}
               </span>
               <span className="text-sm text-ink">{step.label}</span>

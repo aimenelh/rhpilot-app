@@ -12,7 +12,7 @@ export default function CguPage() {
       <div className="relative mx-auto max-w-2xl px-6 py-16">
         <Reveal>
           <div className="rounded-2xl border border-surface-border bg-white/75 p-8 shadow-sm backdrop-blur-md sm:p-10">
-            <p className="text-xs font-medium uppercase tracking-wide text-brand-blue">
+            <p className="text-xs font-medium uppercase tracking-wide text-brand-primary">
               Version bêta, document en cours de finalisation
             </p>
             <h1 className="mt-2 text-3xl font-semibold text-ink">

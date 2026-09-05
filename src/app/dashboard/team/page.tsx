@@ -21,8 +21,8 @@ const ACCESS_ROLE_LABELS: Record<string, string> = {
 // "urgent / en retard" ailleurs dans l'app, le réutiliser ici pour un
 // avatar neutre créerait une fausse alerte visuelle.
 const AVATAR_TONES = [
-  { bg: "bg-brand-blue/10", text: "text-brand-blue" },
-  { bg: "bg-brand-violet/10", text: "text-brand-violet" },
+  { bg: "bg-brand-primary/10", text: "text-brand-primary" },
+  { bg: "bg-brand-primary-dark/10", text: "text-brand-primary-dark" },
   { bg: "bg-accent-teal/10", text: "text-accent-teal" },
   { bg: "bg-accent-amber/10", text: "text-accent-amber" },
 ];
@@ -77,7 +77,7 @@ export default async function TeamPage() {
       {canInvite && (
         <Card className="mt-6">
           <div className="flex items-center gap-2">
-            <UserPlus size={16} className="text-brand-blue" />
+            <UserPlus size={16} className="text-brand-primary" />
             <h2 className="text-sm font-semibold text-ink">Inviter quelqu&apos;un</h2>
           </div>
           <p className="mt-1.5 text-sm text-ink-soft">

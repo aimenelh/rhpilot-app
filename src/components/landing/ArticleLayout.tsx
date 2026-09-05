@@ -33,7 +33,7 @@ export function ArticleLayout({
 
         <Reveal delay={80}>
           <div className="mt-6 flex items-center gap-3">
-            <span className="rounded-full bg-brand-blue/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-blue">
+            <span className="rounded-full bg-brand-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-brand-primary">
               {category}
             </span>
             <span className="flex items-center gap-1 text-xs text-ink-faint">
@@ -70,7 +70,7 @@ export function List({ items }: { items: React.ReactNode[] }) {
     <ul className="mt-4 flex flex-col gap-2.5">
       {items.map((item, i) => (
         <li key={i} className="flex items-start gap-2.5 text-base leading-relaxed text-ink-soft">
-          <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-brand-blue" />
+          <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-brand-primary" />
           {item}
         </li>
       ))}

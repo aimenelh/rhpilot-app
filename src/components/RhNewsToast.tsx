@@ -51,7 +51,7 @@ export function RhNewsToast({ items }: { items: RhNewsItem[] }) {
           <X size={14} />
         </button>
         <div className="flex items-start gap-2.5 pr-5">
-          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-blue/10 text-brand-blue">
+          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-brand-primary/10 text-brand-primary">
             <Newspaper size={13} />
           </span>
           <div className="min-w-0">
@@ -63,7 +63,7 @@ export function RhNewsToast({ items }: { items: RhNewsItem[] }) {
               target="_blank"
               rel="noopener noreferrer"
               onClick={dismiss}
-              className="mt-1 block text-sm font-medium leading-snug text-ink hover:text-brand-blue"
+              className="mt-1 block text-sm font-medium leading-snug text-ink hover:text-brand-primary"
             >
               {item.title}
             </a>

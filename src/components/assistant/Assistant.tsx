@@ -193,7 +193,7 @@ export function Assistant({ summary }: { summary: AssistantSummary }) {
 
       <button
         onClick={() => setOpen(true)}
-        className="assistant-fab fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-brand-gradient px-4 py-3 text-sm font-medium text-white shadow-card transition-transform duration-150 hover:scale-105 hover:[animation-play-state:paused] active:scale-95"
+        className="assistant-fab fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full bg-brand-primary px-4 py-3 text-sm font-medium text-white shadow-card transition-transform duration-150 hover:scale-105 hover:[animation-play-state:paused] active:scale-95"
         aria-label="Ouvrir l'aide RH Pilot"
       >
         <MessageCircleQuestion size={18} />
@@ -273,7 +273,7 @@ export function Assistant({ summary }: { summary: AssistantSummary }) {
                         <button
                           key={example}
                           onClick={() => setQuery(example)}
-                          className="rounded-full bg-surface-subtle px-2.5 py-1 text-xs text-ink-soft transition-colors duration-150 hover:bg-brand-blue/10 hover:text-brand-blue"
+                          className="rounded-full bg-surface-subtle px-2.5 py-1 text-xs text-ink-soft transition-colors duration-150 hover:bg-brand-primary/10 hover:text-brand-primary"
                         >
                           {example}
                         </button>
@@ -316,7 +316,7 @@ export function Assistant({ summary }: { summary: AssistantSummary }) {
                   <Link
                     href="/dashboard/help"
                     onClick={() => setOpen(false)}
-                    className="text-xs font-medium text-brand-blue hover:underline"
+                    className="text-xs font-medium text-brand-primary hover:underline"
                   >
                     Voir toutes les questions →
                   </Link>

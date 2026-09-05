@@ -26,15 +26,15 @@ export function CcnHint({
   if (!conventionCollective) return null;
 
   return (
-    <div className="flex items-start gap-2.5 rounded-lg bg-brand-blue/5 px-3.5 py-3 text-sm">
-      <BookOpen size={16} className="mt-0.5 shrink-0 text-brand-blue" />
+    <div className="flex items-start gap-2.5 rounded-lg bg-brand-primary/5 px-3.5 py-3 text-sm">
+      <BookOpen size={16} className="mt-0.5 shrink-0 text-brand-primary" />
       <div>
         <p className="text-ink-soft">{MESSAGES[context]}</p>
         <a
           href={OFFICIAL_TOOL_URL}
           target="_blank"
           rel="noopener noreferrer"
-          className="mt-1 inline-block font-medium text-brand-blue hover:underline"
+          className="mt-1 inline-block font-medium text-brand-primary hover:underline"
         >
           Consulter la convention collective {conventionCollective} →
         </a>

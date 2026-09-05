@@ -61,8 +61,8 @@ const QUESTIONS = [
 
 const REVEAL_GROUPS = [
   { title: "Anticiper", items: "Échéances · Notifications · Suggestions", tone: "text-accent-rose bg-accent-rose/10" },
-  { title: "Structurer", items: "Parcours · Collaborateurs · Calendrier", tone: "text-brand-blue bg-brand-blue/10" },
-  { title: "Assister", items: "Assistant IA · Résumé du mois", tone: "text-brand-violet bg-brand-violet/10" },
+  { title: "Structurer", items: "Parcours · Collaborateurs · Calendrier", tone: "text-brand-primary bg-brand-primary/10" },
+  { title: "Assister", items: "Assistant IA · Résumé du mois", tone: "text-brand-primary-dark bg-brand-primary-dark/10" },
   { title: "Piloter", items: "Tableau de bord · Suivi global", tone: "text-accent-teal bg-accent-teal/10" },
 ];
 
@@ -267,7 +267,7 @@ export function ServicesExperience() {
         {step > 0 && step < TOTAL_STEPS && (
           <div className="mb-10 flex items-center justify-center gap-1.5">
             {Array.from({ length: TOTAL_STEPS - 1 }).map((_, i) => (
-              <span key={i} className={`h-1 rounded-full transition-all duration-500 ${i < step ? "w-8 bg-brand-blue" : "w-4 bg-surface-border"}`} />
+              <span key={i} className={`h-1 rounded-full transition-all duration-500 ${i < step ? "w-8 bg-brand-primary" : "w-4 bg-surface-border"}`} />
             ))}
           </div>
         )}
@@ -323,10 +323,10 @@ export function ServicesExperience() {
                     <div className="w-16 rounded-md border-2 border-[#2a2a2a] bg-[#0c1b33] p-1.5 shadow-lg">
                       <div className="flex gap-1">
                         <span className="h-1.5 w-1.5 rounded-full bg-white/20" />
-                        <span className="h-1.5 w-4 rounded-full bg-brand-blue/70" />
+                        <span className="h-1.5 w-4 rounded-full bg-brand-primary/70" />
                       </div>
                       <div className="mt-1 flex gap-1">
-                        <span className="h-3 flex-1 rounded-sm bg-brand-violet/40" />
+                        <span className="h-3 flex-1 rounded-sm bg-brand-primary-dark/40" />
                         <span className="h-3 flex-1 rounded-sm bg-accent-teal/40" />
                         <span className="h-3 flex-1 rounded-sm bg-accent-amber/40" />
                       </div>
@@ -467,7 +467,7 @@ export function ServicesExperience() {
                     </li>
                   ))}
                 </ul>
-                <button type="button" onClick={addStep} className="mt-3 flex items-center gap-1.5 text-xs font-medium text-brand-blue hover:underline">
+                <button type="button" onClick={addStep} className="mt-3 flex items-center gap-1.5 text-xs font-medium text-brand-primary hover:underline">
                   <Plus size={13} /> Ajouter une étape
                 </button>
               </Card>
@@ -484,7 +484,7 @@ export function ServicesExperience() {
               <p className="text-sm font-semibold text-ink-faint">Une question ? Votre assistant est déjà là.</p>
               <Card className="mx-auto mt-6 max-w-md text-left shadow-lg">
                 <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-                  <Sparkles size={14} className="text-brand-violet" /> Assistant RH Pilot
+                  <Sparkles size={14} className="text-brand-primary-dark" /> Assistant RH Pilot
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {QUESTIONS.map((item, i) => (
@@ -493,7 +493,7 @@ export function ServicesExperience() {
                       type="button"
                       onClick={() => setAskedIndex(i)}
                       className={`press-fx rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                        askedIndex === i ? "border-brand-blue bg-brand-blue text-white" : "border-brand-violet/20 text-ink-soft hover:border-brand-violet/40 hover:text-brand-violet"
+                        askedIndex === i ? "border-brand-primary bg-brand-primary text-white" : "border-brand-primary-dark/20 text-ink-soft hover:border-brand-primary-dark/40 hover:text-brand-primary-dark"
                       }`}
                     >
                       {item.q}
@@ -527,13 +527,13 @@ export function ServicesExperience() {
                   <p className="text-[11px] text-ink-faint">cette semaine</p>
                 </Card>
                 <Card compact>
-                  <p className="text-xl font-semibold text-brand-blue">8</p>
+                  <p className="text-xl font-semibold text-brand-primary">8</p>
                   <p className="text-[11px] text-ink-faint">parcours actifs</p>
                 </Card>
               </div>
 
               <Card className="mx-auto mt-4 max-w-sm text-left shadow-sm">
-                <button type="button" onClick={() => setSummaryShown(true)} className="press-fx flex items-center gap-1.5 text-sm font-semibold text-brand-violet">
+                <button type="button" onClick={() => setSummaryShown(true)} className="press-fx flex items-center gap-1.5 text-sm font-semibold text-brand-primary-dark">
                   <Sparkles size={14} /> Résumer mon mois
                 </button>
                 {summaryShown && (

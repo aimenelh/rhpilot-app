@@ -11,7 +11,7 @@ const SUPPORTING = [
     quote:
       "Ce qui demande le plus de vigilance, c'est le suivi des périodes d'essai : les délais de prévenance, les entretiens à organiser, les décisions à formaliser, et les absences qui peuvent la prolonger. Il faut vérifier régulièrement les échéances pour ne rien oublier.",
     role: "Responsable RH",
-    accent: "bg-brand-blue",
+    accent: "bg-brand-primary",
   },
   {
     quote:
@@ -41,7 +41,7 @@ export function TestimonialsCarousel() {
           <div className="relative flex h-full flex-col justify-center py-6">
             <Quote
               size={140}
-              className="pointer-events-none absolute -left-6 -top-10 text-brand-blue/[0.05]"
+              className="pointer-events-none absolute -left-6 -top-10 text-brand-primary/[0.05]"
               aria-hidden
               strokeWidth={1}
             />

@@ -15,10 +15,10 @@ import { Button } from "@/components/ui/Button";
 import { acknowledgeWelcome } from "./actions";
 
 const ORBIT_ICONS = [
-  { icon: Users, top: "14%", left: "10%", tone: "bg-brand-violet/10 text-brand-violet" },
+  { icon: Users, top: "14%", left: "10%", tone: "bg-brand-primary-dark/10 text-brand-primary-dark" },
   { icon: FileText, top: "14%", left: "90%", tone: "bg-accent-amber/10 text-accent-amber" },
   { icon: CalendarDays, top: "86%", left: "9%", tone: "bg-accent-teal/10 text-accent-teal" },
-  { icon: ShieldCheck, top: "86%", left: "91%", tone: "bg-brand-blue/10 text-brand-blue" },
+  { icon: ShieldCheck, top: "86%", left: "91%", tone: "bg-brand-primary/10 text-brand-primary" },
 ];
 
 const PREVIEW_NAV = [
@@ -30,12 +30,12 @@ const PREVIEW_NAV = [
   { icon: Settings, label: "Configuration" },
 ];
 const PREVIEW_KPIS = [
-  { icon: Users, value: "12", label: "Salariés", tone: "bg-brand-violet/10 text-brand-violet" },
+  { icon: Users, value: "12", label: "Salariés", tone: "bg-brand-primary-dark/10 text-brand-primary-dark" },
   { icon: ListChecks, value: "8", label: "Parcours actifs", tone: "bg-accent-teal/10 text-accent-teal" },
   { icon: CalendarDays, value: "15", label: "Échéances", tone: "bg-accent-amber/10 text-accent-amber" },
-  { icon: ShieldCheck, value: "100%", label: "À jour", tone: "bg-brand-blue/10 text-brand-blue" },
+  { icon: ShieldCheck, value: "100%", label: "À jour", tone: "bg-brand-primary/10 text-brand-primary" },
 ];
-const PREVIEW_ROWS = ["bg-brand-blue", "bg-accent-teal", "bg-accent-amber"];
+const PREVIEW_ROWS = ["bg-brand-primary", "bg-accent-teal", "bg-accent-amber"];
 const PREVIEW_DAYS = [28, 29, 30, 1, 2, 3, 4];
 
 export default function WelcomePage({
@@ -46,16 +46,16 @@ export default function WelcomePage({
   const next = searchParams.next || "/";
 
   return (
-    <div className="bg-gradient-to-br from-surface-subtle via-white to-brand-blue/5">
+    <div className="bg-gradient-to-br from-surface-subtle via-white to-brand-primary/5">
       <section className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-20">
         <div
           aria-hidden
-          className="welcome-shape-1 pointer-events-none absolute h-72 w-72 rounded-full bg-brand-blue/10 blur-3xl"
+          className="welcome-shape-1 pointer-events-none absolute h-72 w-72 rounded-full bg-brand-primary/10 blur-3xl"
           style={{ top: "4%", left: "4%" }}
         />
         <div
           aria-hidden
-          className="welcome-shape-2 pointer-events-none absolute h-64 w-64 rounded-full bg-brand-violet/10 blur-3xl"
+          className="welcome-shape-2 pointer-events-none absolute h-64 w-64 rounded-full bg-brand-primary-dark/10 blur-3xl"
           style={{ bottom: "6%", right: "6%" }}
         />
         <div
@@ -77,12 +77,12 @@ export default function WelcomePage({
               aria-hidden
               viewBox="0 0 100 100"
               preserveAspectRatio="none"
-              className="pointer-events-none absolute inset-0 h-full w-full text-brand-violet/15"
+              className="pointer-events-none absolute inset-0 h-full w-full text-brand-primary-dark/15"
             >
               <ellipse cx="50" cy="50" rx="46" ry="42" fill="none" stroke="currentColor" strokeWidth="0.4" strokeDasharray="1.6 2.2" />
             </svg>
-            <span aria-hidden className="absolute left-[24%] top-[6%] h-1.5 w-1.5 rotate-45 rounded-[2px] bg-brand-violet/40" />
-            <span aria-hidden className="absolute right-[26%] top-[10%] h-2 w-2 rotate-45 rounded-[2px] bg-brand-blue/30" />
+            <span aria-hidden className="absolute left-[24%] top-[6%] h-1.5 w-1.5 rotate-45 rounded-[2px] bg-brand-primary-dark/40" />
+            <span aria-hidden className="absolute right-[26%] top-[10%] h-2 w-2 rotate-45 rounded-[2px] bg-brand-primary/30" />
             <span aria-hidden className="absolute bottom-[10%] left-[30%] h-1.5 w-1.5 rounded-full bg-accent-teal/40" />
             <span aria-hidden className="absolute bottom-[6%] right-[28%] h-2 w-2 rotate-45 rounded-[2px] bg-accent-amber/40" />
 
@@ -101,26 +101,26 @@ export default function WelcomePage({
             <div className="welcome-logo-float absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
               <div
                 aria-hidden
-                className="absolute inset-0 -z-10 scale-[2.4] rounded-full bg-brand-gradient opacity-25 blur-2xl"
+                className="absolute inset-0 -z-10 scale-[2.4] rounded-full bg-brand-primary opacity-25 blur-2xl"
               />
               <div className="flex h-24 w-24 items-center justify-center rounded-[1.75rem] bg-white shadow-xl">
                 <Logomark size={48} />
               </div>
               <span className="absolute -right-1 -top-1 flex h-4 w-4">
-                <span className="absolute inline-flex h-full w-full animate-ping welcome-pulse-dot rounded-full bg-brand-violet opacity-60" />
-                <span className="relative inline-flex h-4 w-4 rounded-full bg-brand-violet" />
+                <span className="absolute inline-flex h-full w-full animate-ping welcome-pulse-dot rounded-full bg-brand-primary-dark opacity-60" />
+                <span className="relative inline-flex h-4 w-4 rounded-full bg-brand-primary-dark" />
               </span>
             </div>
           </div>
 
-          <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-brand-violet">
+          <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-brand-primary-dark">
             <Rocket size={13} />
             Bêta
           </span>
 
           <h1 className="mt-5 max-w-2xl text-center text-4xl font-bold leading-tight text-ink sm:text-5xl">
             Bienvenue sur la bêta de{" "}
-            <span className="bg-brand-gradient bg-clip-text text-transparent">RH Pilot</span>
+            <span className="bg-brand-primary bg-clip-text text-transparent">RH Pilot</span>
           </h1>
 
           <p className="mt-4 max-w-xl text-center text-base leading-relaxed text-ink-soft">
@@ -149,7 +149,7 @@ export default function WelcomePage({
                   <div
                     key={item.label}
                     className={`flex items-center gap-2 rounded-lg px-2 py-1.5 text-[11px] ${
-                      item.active ? "bg-white font-medium text-brand-blue shadow-sm" : "text-ink-faint"
+                      item.active ? "bg-white font-medium text-brand-primary shadow-sm" : "text-ink-faint"
                     }`}
                   >
                     <item.icon size={12} />
@@ -196,7 +196,7 @@ export default function WelcomePage({
                     {PREVIEW_DAYS.map((d, i) => (
                       <span
                         key={i}
-                        className={i === 3 ? "mx-auto flex h-3.5 w-3.5 items-center justify-center rounded-full bg-brand-blue text-white" : ""}
+                        className={i === 3 ? "mx-auto flex h-3.5 w-3.5 items-center justify-center rounded-full bg-brand-primary text-white" : ""}
                       >
                         {d}
                       </span>

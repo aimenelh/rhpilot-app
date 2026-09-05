@@ -48,13 +48,13 @@ export function ObservatoryFlow() {
 
       <div
         aria-hidden
-        className="absolute bottom-4 left-1/2 top-4 w-px origin-top -translate-x-1/2 bg-gradient-to-b from-brand-blue/10 via-brand-blue/35 to-brand-violet/20 transition-transform duration-[1400ms] ease-out"
+        className="absolute bottom-4 left-1/2 top-4 w-px origin-top -translate-x-1/2 bg-gradient-to-b from-brand-primary/10 via-brand-primary/35 to-brand-primary-dark/20 transition-transform duration-[1400ms] ease-out"
         style={{ transform: visible ? "scaleY(1)" : "scaleY(0)" }}
       />
       {visible && !reducedMotion && (
         <span
           aria-hidden
-          className="absolute left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-brand-blue shadow-[0_0_8px_2px_rgba(46,111,242,0.5)]"
+          className="absolute left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-brand-primary shadow-[0_0_8px_2px_rgba(46,111,242,0.5)]"
           style={{ animation: "observatoryPulse 4s ease-in-out infinite", animationDelay: "1.4s" }}
         />
       )}
@@ -69,7 +69,7 @@ export function ObservatoryFlow() {
             transitionDelay: visible ? `${i * 220}ms` : "0ms",
           }}
         >
-          <span className={`text-sm font-medium ${stop.accent ? "font-semibold text-brand-blue" : "text-ink"}`}>
+          <span className={`text-sm font-medium ${stop.accent ? "font-semibold text-brand-primary" : "text-ink"}`}>
             {stop.title}
           </span>
           <span className="text-xs text-ink-faint">{stop.meta}</span>

@@ -89,7 +89,7 @@ function EUFlag({ size = 22 }: { size?: number }) {
 function SectionMark({ number, label }: { number: string; label: string }) {
   return (
     <div className="flex items-baseline gap-3">
-      <span className="text-2xl font-bold text-brand-blue/25">{number}</span>
+      <span className="text-2xl font-bold text-brand-primary/25">{number}</span>
       <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">{label}</span>
     </div>
   );
@@ -126,7 +126,7 @@ export default function SecurityPage() {
             {PILLARS.map((item, index) => (
               <Reveal key={item.title} variant="left" delay={index * 90}>
                 <div className="flex items-start gap-4 border-t border-surface-border py-5 first:border-t-0">
-                  <item.icon size={18} className="mt-0.5 shrink-0 text-brand-blue" />
+                  <item.icon size={18} className="mt-0.5 shrink-0 text-brand-primary" />
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm font-semibold text-ink">{item.title}</h3>
@@ -194,7 +194,7 @@ export default function SecurityPage() {
             </div>
             <Link
               href="/confidentialite"
-              className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-brand-blue hover:underline"
+              className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-brand-primary hover:underline"
             >
               Lire la politique de confidentialité complète <ExternalLink size={14} />
             </Link>

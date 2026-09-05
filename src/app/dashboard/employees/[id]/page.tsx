@@ -131,7 +131,7 @@ export default async function EmployeeDetailPage({
             const summary = summarizeParcours(event.tasks);
             return (
               <Link key={event.id} href={`/dashboard/events/${event.id}`}>
-                <Card className="transition-colors hover:border-brand-blue/40">
+                <Card className="transition-colors hover:border-brand-primary/40">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-2.5">
                       <span
@@ -171,7 +171,7 @@ export default async function EmployeeDetailPage({
           className={`mt-4 flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left ${
             medicalVisitOverdue
               ? "border-accent-rose/30 bg-accent-rose/5"
-              : "border-brand-blue/20 bg-brand-blue/5"
+              : "border-brand-primary/20 bg-brand-primary/5"
           }`}
         >
           <div>
@@ -204,13 +204,13 @@ export default async function EmployeeDetailPage({
           return (
             <Card
               className={`mt-4 flex items-center gap-3 ${
-                overdue ? "border-accent-rose/30 bg-accent-rose/5" : "border-brand-blue/20 bg-brand-blue/5"
+                overdue ? "border-accent-rose/30 bg-accent-rose/5" : "border-brand-primary/20 bg-brand-primary/5"
               }`}
               compact
             >
               <span
                 className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                  overdue ? "bg-accent-rose/10 text-accent-rose" : "bg-brand-blue/10 text-brand-blue"
+                  overdue ? "bg-accent-rose/10 text-accent-rose" : "bg-brand-primary/10 text-brand-primary"
                 }`}
               >
                 <Hourglass size={16} />

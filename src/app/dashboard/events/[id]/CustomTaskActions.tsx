@@ -96,7 +96,7 @@ export function CustomTaskActions({
       <button
         type="button"
         onClick={() => setIsEditing(true)}
-        className="inline-flex items-center gap-1 text-xs text-ink-faint hover:text-brand-blue"
+        className="inline-flex items-center gap-1 text-xs text-ink-faint hover:text-brand-primary"
       >
         <Pencil size={11} />
         Modifier

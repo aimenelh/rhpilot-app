@@ -18,11 +18,11 @@ export function StoryStep2() {
   return (
     <div className="w-56 rounded-xl border border-surface-border bg-white px-4 py-3 shadow-sm">
       <div className="flex items-center gap-2">
-        <ListChecks size={15} className="text-brand-blue" />
+        <ListChecks size={15} className="text-brand-primary" />
         <p className="text-xs font-semibold text-ink">Parcours Embauche</p>
       </div>
       <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-surface-subtle">
-        <div className="h-full rounded-full bg-brand-gradient" style={{ width: "37%" }} />
+        <div className="h-full rounded-full bg-brand-primary" style={{ width: "37%" }} />
       </div>
       <p className="mt-1.5 text-[11px] text-ink-faint">3 tâches sur 8 déjà prêtes</p>
     </div>

@@ -13,7 +13,7 @@ export function AnomalyReasoning({ reasoning }: { reasoning: string[] }) {
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
-        className="inline-flex items-center gap-1 text-xs font-medium text-brand-blue hover:underline"
+        className="inline-flex items-center gap-1 text-xs font-medium text-brand-primary hover:underline"
       >
         <ChevronDown size={12} className={`transition-transform ${isOpen ? "rotate-180" : ""}`} />
         Pourquoi cette suggestion ?

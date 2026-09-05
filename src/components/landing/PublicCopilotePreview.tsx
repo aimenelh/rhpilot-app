@@ -51,17 +51,17 @@ export function PublicCopilotePreview() {
     <div className="fixed bottom-6 right-6 z-50">
       {isOpen && (
         <div className="mb-3 flex w-[23rem] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-surface-border bg-white shadow-2xl">
-          <div className="flex items-center justify-between border-b border-surface-border bg-gradient-to-br from-brand-violet/[0.04] to-brand-blue/[0.04] px-4 py-3">
+          <div className="flex items-center justify-between border-b border-surface-border bg-gradient-to-br from-brand-primary-dark/[0.04] to-brand-primary/[0.04] px-4 py-3">
             <div className="flex items-center gap-2.5">
               <div className="relative shrink-0">
                 <Logomark size={26} />
-                <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-brand-violet text-white ring-2 ring-white">
+                <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-brand-primary-dark text-white ring-2 ring-white">
                   <Sparkles size={8} />
                 </span>
               </div>
               <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
                 Copilote RH Pilot
-                <span className="rounded-full bg-brand-violet/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-violet">
+                <span className="rounded-full bg-brand-primary-dark/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-primary-dark">
                   IA
                 </span>
               </p>
@@ -84,7 +84,7 @@ export function PublicCopilotePreview() {
             ) : (
               answered.map((turn) => (
                 <div key={turn.question} className="flex flex-col gap-2">
-                  <div className="self-end max-w-[85%] rounded-2xl rounded-tr-sm bg-brand-blue px-3.5 py-2 text-sm text-white">
+                  <div className="self-end max-w-[85%] rounded-2xl rounded-tr-sm bg-brand-primary px-3.5 py-2 text-sm text-white">
                     {turn.question}
                   </div>
                   <div className="flex items-end gap-2">
@@ -106,7 +106,7 @@ export function PublicCopilotePreview() {
                     key={f.question}
                     type="button"
                     onClick={() => setAnswered((prev) => [...prev, f])}
-                    className="rounded-full border border-brand-violet/20 bg-white px-3 py-1.5 text-left text-xs font-medium text-ink-soft transition-colors hover:border-brand-violet/40 hover:text-brand-violet"
+                    className="rounded-full border border-brand-primary-dark/20 bg-white px-3 py-1.5 text-left text-xs font-medium text-ink-soft transition-colors hover:border-brand-primary-dark/40 hover:text-brand-primary-dark"
                   >
                     {f.question}
                   </button>
@@ -137,7 +137,7 @@ export function PublicCopilotePreview() {
         ) : (
           <span className="relative inline-flex">
             <Logomark size={30} />
-            <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand-violet text-white ring-2 ring-white">
+            <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand-primary-dark text-white ring-2 ring-white">
               <Sparkles size={9} />
             </span>
           </span>

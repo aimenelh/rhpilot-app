@@ -172,7 +172,7 @@ export default function QuestionsPage() {
                     <FaqItem question="Mes données sont-elles en sécurité ?">
                       Isolation stricte entre organisations, base de données hébergée en Europe,
                       authentification déléguée à un spécialiste.{" "}
-                      <Link href="/confidentialite" className="font-medium text-brand-blue hover:underline">
+                      <Link href="/confidentialite" className="font-medium text-brand-primary hover:underline">
                         Voir le détail →
                       </Link>
                     </FaqItem>

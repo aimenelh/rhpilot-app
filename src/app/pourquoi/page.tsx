@@ -48,7 +48,7 @@ export default function WhyPage() {
       <section className="mx-auto max-w-3xl px-6 py-20">
         <Reveal variant="left">
           <h1 className="max-w-xl text-4xl font-semibold leading-[1.1] tracking-tight text-ink sm:text-5xl">
-            La mémoire ne devrait <span className="text-brand-blue">jamais</span> être le
+            La mémoire ne devrait <span className="text-brand-primary">jamais</span> être le
             principal outil d&apos;une équipe RH.
           </h1>
         </Reveal>
@@ -90,7 +90,7 @@ export default function WhyPage() {
                         )}
                         <div
                           className={`rounded-2xl px-3.5 py-2 text-sm leading-snug ${
-                            msg.mine ? "rounded-br-sm bg-brand-blue text-white" : "rounded-bl-sm bg-surface-subtle text-ink"
+                            msg.mine ? "rounded-br-sm bg-brand-primary text-white" : "rounded-bl-sm bg-surface-subtle text-ink"
                           }`}
                         >
                           {msg.text}
@@ -126,7 +126,7 @@ export default function WhyPage() {
           {PHILOSOPHY.map((line, index) => (
             <Reveal key={line} variant="left" delay={140 + index * 90}>
               <div className="flex items-start gap-4 border-t border-surface-border py-4 first:border-t-0">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-blue" />
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-brand-primary" />
                 <p className="text-base text-ink-soft">{line}</p>
               </div>
             </Reveal>
@@ -159,7 +159,7 @@ export default function WhyPage() {
             </Reveal>
             <Reveal variant="right" delay={200}>
               <div>
-                <p className="text-3xl font-bold text-brand-blue">RH Pilot</p>
+                <p className="text-3xl font-bold text-brand-primary">RH Pilot</p>
                 <ul className="mt-4 flex flex-col gap-1.5 text-sm font-medium text-ink">
                   <li>Organise</li>
                   <li>Anticipe</li>
@@ -212,8 +212,8 @@ export default function WhyPage() {
                   <span className="text-sm text-ink-soft">{item.need}</span>
                 </div>
                 <div className="hidden shrink-0 items-center sm:flex" aria-hidden>
-                  <span className="h-px w-6 bg-brand-blue/30" />
-                  <ArrowRight size={18} strokeWidth={2.5} className="text-brand-blue" />
+                  <span className="h-px w-6 bg-brand-primary/30" />
+                  <ArrowRight size={18} strokeWidth={2.5} className="text-brand-primary" />
                 </div>
                 <div className="flex flex-1 items-center gap-2 sm:justify-end">
                   <CheckCircle2 size={16} className="shrink-0 text-accent-teal" aria-hidden />

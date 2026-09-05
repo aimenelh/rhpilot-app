@@ -4,7 +4,7 @@ export function ProgressBar({ value, max }: { value: number; max: number }) {
     <div className="flex items-center gap-2">
       <div className="h-2 flex-1 overflow-hidden rounded-full bg-surface-subtle">
         <div
-          className="h-full rounded-full bg-brand-gradient transition-all"
+          className="h-full rounded-full bg-brand-primary transition-all"
           style={{ width: `${percent}%` }}
         />
       </div>

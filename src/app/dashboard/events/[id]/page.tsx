@@ -139,7 +139,7 @@ export default async function EventDetailPage({
                           <form action={sendManualReminder.bind(null, task.id)}>
                             <button
                               type="submit"
-                              className="ml-1.5 inline-flex items-center gap-1 text-brand-blue hover:underline"
+                              className="ml-1.5 inline-flex items-center gap-1 text-brand-primary hover:underline"
                             >
                               <Send size={11} />
                               Relancer
@@ -171,7 +171,7 @@ export default async function EventDetailPage({
                           </Select>
                           <button
                             type="submit"
-                            className="text-brand-blue hover:underline"
+                            className="text-brand-primary hover:underline"
                           >
                             OK
                           </button>
@@ -185,7 +185,7 @@ export default async function EventDetailPage({
                     </p>
                   )}
                   {task.taskTemplateId === null && (
-                    <p className="mt-0.5 text-[11px] font-medium text-brand-blue">
+                    <p className="mt-0.5 text-[11px] font-medium text-brand-primary">
                       Étape ajoutée manuellement
                     </p>
                   )}
@@ -208,7 +208,7 @@ export default async function EventDetailPage({
                         disabled={task.stepOrder === employeeEvent.tasks[0]?.stepOrder}
                         aria-label="Monter cette tâche"
                         title="Monter cette tâche"
-                        className="flex h-7 w-7 items-center justify-center text-ink-soft hover:bg-surface-subtle hover:text-brand-blue disabled:opacity-30 disabled:hover:bg-transparent"
+                        className="flex h-7 w-7 items-center justify-center text-ink-soft hover:bg-surface-subtle hover:text-brand-primary disabled:opacity-30 disabled:hover:bg-transparent"
                       >
                         <ChevronUp size={16} />
                       </button>
@@ -222,7 +222,7 @@ export default async function EventDetailPage({
                         }
                         aria-label="Descendre cette tâche"
                         title="Descendre cette tâche"
-                        className="flex h-7 w-7 items-center justify-center text-ink-soft hover:bg-surface-subtle hover:text-brand-blue disabled:opacity-30 disabled:hover:bg-transparent"
+                        className="flex h-7 w-7 items-center justify-center text-ink-soft hover:bg-surface-subtle hover:text-brand-primary disabled:opacity-30 disabled:hover:bg-transparent"
                       >
                         <ChevronDown size={16} />
                       </button>

@@ -16,11 +16,11 @@ import { Card } from "@/components/ui/Card";
 import { MonthSummaryButton } from "./MonthSummaryButton";
 export const dynamic = "force-dynamic";
 const CATEGORY_STYLES: Record<string, { dot: string; badgeBg: string; badgeText: string }> = {
-  "Embauche": { dot: "bg-brand-violet", badgeBg: "bg-brand-violet/10", badgeText: "text-brand-violet" },
+  "Embauche": { dot: "bg-brand-primary-dark", badgeBg: "bg-brand-primary-dark/10", badgeText: "text-brand-primary-dark" },
   "Visite médicale": { dot: "bg-accent-teal", badgeBg: "bg-accent-teal/10", badgeText: "text-accent-teal" },
   "Fin de période d'essai": { dot: "bg-accent-amber", badgeBg: "bg-accent-amber/10", badgeText: "text-accent-amber" },
 };
-const DEFAULT_CATEGORY_STYLE = { dot: "bg-brand-blue", badgeBg: "bg-brand-blue/10", badgeText: "text-brand-blue" };
+const DEFAULT_CATEGORY_STYLE = { dot: "bg-brand-primary", badgeBg: "bg-brand-primary/10", badgeText: "text-brand-primary" };
 function categoryStyle(label: string | undefined) {
   return (label && CATEGORY_STYLES[label]) || DEFAULT_CATEGORY_STYLE;
 }
@@ -209,7 +209,7 @@ export default async function CalendarPage({
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Card compact>
           <p className="text-xs font-medium text-ink-faint">Aujourd&apos;hui</p>
-          <p className="mt-1 text-2xl font-semibold text-brand-blue">{todayTasks.length}</p>
+          <p className="mt-1 text-2xl font-semibold text-brand-primary">{todayTasks.length}</p>
           <p className="text-xs text-ink-faint">tâche{todayTasks.length > 1 ? "s" : ""}</p>
         </Card>
         <Card compact>
@@ -262,7 +262,7 @@ export default async function CalendarPage({
           <div className="flex items-center justify-center gap-3">
             <Link
               href={`/dashboard/calendar?month=${monthParam(prevMonth.year, prevMonth.month)}&view=${view}`}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-surface-border text-ink-faint hover:border-brand-blue hover:text-brand-blue"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-surface-border text-ink-faint hover:border-brand-primary hover:text-brand-primary"
               aria-label="Mois précédent"
             >
               <ChevronLeft size={16} />
@@ -272,7 +272,7 @@ export default async function CalendarPage({
             </p>
             <Link
               href={`/dashboard/calendar?month=${monthParam(nextMonth.year, nextMonth.month)}&view=${view}`}
-              className="flex h-8 w-8 items-center justify-center rounded-lg border border-surface-border text-ink-faint hover:border-brand-blue hover:text-brand-blue"
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-surface-border text-ink-faint hover:border-brand-primary hover:text-brand-primary"
               aria-label="Mois suivant"
             >
               <ChevronRight size={16} />
@@ -280,7 +280,7 @@ export default async function CalendarPage({
             {!isCurrentRealMonth && (
               <Link
                 href={`/dashboard/calendar?view=${view}`}
-                className="ml-1 rounded-lg border border-surface-border px-2.5 py-1 text-xs font-medium text-ink-soft hover:border-brand-blue hover:text-brand-blue"
+                className="ml-1 rounded-lg border border-surface-border px-2.5 py-1 text-xs font-medium text-ink-soft hover:border-brand-primary hover:text-brand-primary"
               >
                 Aujourd&apos;hui
               </Link>
@@ -311,13 +311,13 @@ export default async function CalendarPage({
                   key={key}
                   href={`/dashboard/calendar?${baseParams}${activeCategory ? `&category=${encodeURIComponent(activeCategory)}` : ""}&day=${key}`}
                   className={`min-h-[100px] p-1.5 transition-colors ${
-                    day.isToday ? "bg-brand-blue/5" : isWeekend ? "bg-surface-subtle/50" : "bg-white"
-                  } ${!day.isCurrentMonth ? "opacity-50" : ""} ${isSelected ? "ring-2 ring-inset ring-brand-blue/40" : ""} hover:bg-surface-subtle`}
+                    day.isToday ? "bg-brand-primary/5" : isWeekend ? "bg-surface-subtle/50" : "bg-white"
+                  } ${!day.isCurrentMonth ? "opacity-50" : ""} ${isSelected ? "ring-2 ring-inset ring-brand-primary/40" : ""} hover:bg-surface-subtle`}
                 >
                   <p
                     className={`mb-1 text-xs font-medium ${
                       day.isToday
-                        ? "flex h-5 w-5 items-center justify-center rounded-full bg-brand-blue text-white"
+                        ? "flex h-5 w-5 items-center justify-center rounded-full bg-brand-primary text-white"
                         : day.isCurrentMonth
                           ? "text-ink-soft"
                           : "text-ink-faint/50"
@@ -383,7 +383,7 @@ export default async function CalendarPage({
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold text-ink">Échéances aujourd&apos;hui</h2>
               {todayTasks.length > 0 && (
-                <span className="rounded-full bg-brand-blue/10 px-2 py-0.5 text-xs font-semibold text-brand-blue">
+                <span className="rounded-full bg-brand-primary/10 px-2 py-0.5 text-xs font-semibold text-brand-primary">
                   {todayTasks.length}
                 </span>
               )}
@@ -450,7 +450,7 @@ export default async function CalendarPage({
             )}
             <Link
               href="/dashboard?view=tasks"
-              className="mt-2 inline-block text-xs font-medium text-brand-blue hover:underline"
+              className="mt-2 inline-block text-xs font-medium text-brand-primary hover:underline"
             >
               Voir toutes les échéances →
             </Link>

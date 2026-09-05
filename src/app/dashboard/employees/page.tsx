@@ -150,7 +150,7 @@ export default async function EmployeesPage({
                       ) : (
                         <Link
                           href={`/dashboard/employees/${employee.id}`}
-                          className="font-medium text-ink hover:text-brand-blue"
+                          className="font-medium text-ink hover:text-brand-primary"
                         >
                           {employee.firstName} {employee.lastName}
                         </Link>
@@ -181,7 +181,7 @@ export default async function EmployeesPage({
                         <form action={reactivateEmployee.bind(null, employee.id)}>
                           <button
                             type="submit"
-                            className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-blue hover:underline"
+                            className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-primary hover:underline"
                           >
                             <ArchiveRestore size={13} />
                             Réactiver

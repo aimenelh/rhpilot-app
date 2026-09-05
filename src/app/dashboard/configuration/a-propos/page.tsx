@@ -53,16 +53,16 @@ export default async function AboutConfigPage() {
       <Card className="mt-4">
         <h2 className="text-sm font-semibold text-ink">Ressources</h2>
         <div className="mt-3 flex flex-col gap-2 text-sm">
-          <Link href="/pourquoi" className="text-brand-blue hover:underline">
+          <Link href="/pourquoi" className="text-brand-primary hover:underline">
             Pourquoi RH Pilot ?
           </Link>
-          <Link href="/cgu" className="text-brand-blue hover:underline">
+          <Link href="/cgu" className="text-brand-primary hover:underline">
             Conditions générales d&apos;utilisation
           </Link>
-          <Link href="/confidentialite" className="text-brand-blue hover:underline">
+          <Link href="/confidentialite" className="text-brand-primary hover:underline">
             Politique de confidentialité
           </Link>
-          <Link href="/cookies" className="text-brand-blue hover:underline">
+          <Link href="/cookies" className="text-brand-primary hover:underline">
             Cookies
           </Link>
         </div>

@@ -126,7 +126,7 @@ function Logo({ light = false }: { light?: boolean }) {
     <div className="flex items-center gap-2.5">
       <Image src="/icon-192.png" alt="" width={40} height={40} className="h-10 w-10" />
       <span className={`text-2xl font-semibold ${light ? "text-white" : "text-ink"}`}>
-        RH <span className="text-brand-blue">Pilot</span>
+        RH <span className="text-brand-primary">Pilot</span>
       </span>
     </div>
   );
@@ -260,7 +260,7 @@ export function InteractiveDemo() {
       <div className="mx-auto max-w-4xl">
         {hasStarted && !isFinished && (
           <div className="mb-3 min-h-[3rem]">
-            <span className="text-xs font-semibold uppercase tracking-wide text-brand-blue">
+            <span className="text-xs font-semibold uppercase tracking-wide text-brand-primary">
               Étape {index + 1} / {DEMO_STEPS.length}
             </span>
             <p className="mt-1 text-sm text-ink-soft">{DEMO_STEPS[index].instruction}</p>
@@ -450,10 +450,10 @@ export function InteractiveDemo() {
                   className="relative inline-flex disabled:cursor-default"
                 >
                   {phase === "waiting" && (
-                    <span className="absolute -inset-3 animate-ping rounded-full bg-brand-blue/30" />
+                    <span className="absolute -inset-3 animate-ping rounded-full bg-brand-primary/30" />
                   )}
                   <span
-                    className={`relative inline-flex items-center justify-center whitespace-nowrap rounded-lg bg-brand-gradient px-6 py-3 text-base font-medium text-white shadow-card transition-transform ${
+                    className={`relative inline-flex items-center justify-center whitespace-nowrap rounded-lg bg-brand-primary px-6 py-3 text-base font-medium text-white shadow-card transition-transform ${
                       phase === "clicking" ? "scale-95" : "scale-100"
                     }`}
                   >
@@ -532,7 +532,7 @@ export function InteractiveDemo() {
             >
               <span className="relative flex h-11 w-11 items-center justify-center">
                   {phase === "waiting" && (
-                    <span className="absolute h-8 w-8 animate-ping rounded-full bg-brand-blue/40" />
+                    <span className="absolute h-8 w-8 animate-ping rounded-full bg-brand-primary/40" />
                   )}
                   <span
                     className={`relative flex items-center justify-center transition-transform ${
@@ -596,11 +596,11 @@ export function InteractiveDemo() {
         <div className="order-1 lg:order-2">
           <div className="rounded-2xl border border-surface-border bg-white p-5 shadow-card">
             <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-blue text-xs font-bold text-white">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-primary text-xs font-bold text-white">
                 R
               </span>
               <span className="text-sm font-semibold text-ink">Copilote RH Pilot</span>
-              <span className="rounded-full bg-brand-blue/10 px-2 py-0.5 text-[10px] font-medium text-brand-blue">
+              <span className="rounded-full bg-brand-primary/10 px-2 py-0.5 text-[10px] font-medium text-brand-primary">
                 IA
               </span>
             </div>
@@ -616,19 +616,19 @@ export function InteractiveDemo() {
                   </p>
                   <ul className="mt-2 space-y-1.5 text-sm text-ink-soft">
                     <li className="flex items-start gap-2">
-                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand-blue" />
+                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand-primary" />
                       Parcours personnalisables pour chaque type d&apos;événement RH
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand-blue" />
+                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand-primary" />
                       Rappels automatiques, quotidiens ou hebdomadaires
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand-blue" />
+                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand-primary" />
                       Recherche globale sur les salariés et les tâches
                     </li>
                     <li className="flex items-start gap-2">
-                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand-blue" />
+                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand-primary" />
                       Et bien d&apos;autres choses à découvrir
                     </li>
                   </ul>
@@ -657,7 +657,7 @@ export function InteractiveDemo() {
             {DEMO_STEPS.map((_, i) => (
               <span
                 key={i}
-                className={`h-1.5 w-6 rounded-full ${i <= index ? "bg-brand-blue/60" : "bg-surface-border"}`}
+                className={`h-1.5 w-6 rounded-full ${i <= index ? "bg-brand-primary/60" : "bg-surface-border"}`}
               />
             ))}
           </div>

@@ -27,7 +27,7 @@ export default async function NotificationsConfigPage() {
       <h1 className="mt-3 text-2xl font-semibold text-ink">Notifications</h1>
       <p className="mt-1 text-sm text-ink-soft">
         Les résumés programmés (quotidien / hebdomadaire) se gèrent depuis la page{" "}
-        <Link href="/dashboard/notifications" className="text-brand-blue hover:underline">
+        <Link href="/dashboard/notifications" className="text-brand-primary hover:underline">
           Notifications
         </Link>{" "}
         du menu. Les relances ci-dessous sont spécifiques aux échéances de vos parcours RH.

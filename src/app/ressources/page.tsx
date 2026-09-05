@@ -55,7 +55,7 @@ export default function ResourcesPage() {
                 href={`/ressources/${article.slug}`}
                 className="group flex h-full flex-col rounded-2xl border border-surface-border bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
               >
-                <span className="inline-flex w-fit items-center rounded-full bg-brand-blue/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-brand-blue">
+                <span className="inline-flex w-fit items-center rounded-full bg-brand-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-brand-primary">
                   {article.category}
                 </span>
                 <h2 className="mt-3 text-lg font-semibold text-ink">{article.title}</h2>
@@ -64,7 +64,7 @@ export default function ResourcesPage() {
                   <span className="flex items-center gap-1 text-xs text-ink-faint">
                     <Clock size={12} /> {article.readTime} de lecture
                   </span>
-                  <span className="flex items-center gap-1 text-xs font-medium text-brand-blue opacity-0 transition-opacity group-hover:opacity-100">
+                  <span className="flex items-center gap-1 text-xs font-medium text-brand-primary opacity-0 transition-opacity group-hover:opacity-100">
                     Lire <ArrowRight size={12} />
                   </span>
                 </div>

@@ -13,7 +13,7 @@ body {
 /* Focus visible clair et cohérent partout, y compris au clavier —
    ne jamais le supprimer pour des raisons esthétiques. */
 :focus-visible {
-  outline: 2px solid theme("colors.brand.blue");
+  outline: 2px solid theme("colors.brand.primary");
   outline-offset: 2px;
 }
 

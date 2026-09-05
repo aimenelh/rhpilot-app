@@ -21,7 +21,7 @@ export function Wordmark() {
   return (
     <span className="flex items-center gap-1.5">
       <span className="text-[15px] font-semibold tracking-tight text-ink">
-        RH <span className="bg-brand-gradient bg-clip-text text-transparent">Pilot</span>
+        RH <span className="bg-brand-primary bg-clip-text text-transparent">Pilot</span>
       </span>
       <span className="rounded-full bg-surface-subtle px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
         Bêta

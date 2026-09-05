@@ -330,7 +330,7 @@ export default async function DashboardPage({
             href={isEmpty ? "/dashboard/employees/new" : "/dashboard/employees"}
             className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
           >
-            <Users size={20} className="shrink-0 text-brand-violet" />
+            <Users size={20} className="shrink-0 text-brand-primary-dark" />
             <div>
               <p className="text-2xl font-semibold text-ink">{employeeCount}</p>
               <p className="text-xs text-ink-faint">Salariés</p>
@@ -388,7 +388,7 @@ export default async function DashboardPage({
             </ul>
             {hiddenAnomaliesCount > 0 && (
               <details className="mt-1">
-                <summary className="cursor-pointer py-2 text-xs font-medium text-brand-blue">
+                <summary className="cursor-pointer py-2 text-xs font-medium text-brand-primary">
                   Voir les {hiddenAnomaliesCount} autre{hiddenAnomaliesCount > 1 ? "s" : ""} suggestion
                   {hiddenAnomaliesCount > 1 ? "s" : ""}
                 </summary>
@@ -415,7 +415,7 @@ export default async function DashboardPage({
                 <p className="mt-1 text-xs font-medium text-ink-faint">cette semaine</p>
               </div>
               <div className="px-5 py-4">
-                <p className="text-3xl font-semibold text-brand-blue">{anomalies.length}</p>
+                <p className="text-3xl font-semibold text-brand-primary">{anomalies.length}</p>
                 <p className="mt-1 text-xs font-medium text-ink-faint">à analyser</p>
               </div>
               <div className="px-5 py-4">
@@ -479,7 +479,7 @@ export default async function DashboardPage({
               <ul className="mt-4 flex flex-col divide-y divide-surface-border">
                 {visibleEmployeeGroups.map((group) => (
                   <li key={group.employeeId} className="flex items-center justify-between gap-4 py-3">
-                    <Link href={`/dashboard/employees/${group.employeeId}`} className="flex-1 hover:text-brand-blue">
+                    <Link href={`/dashboard/employees/${group.employeeId}`} className="flex-1 hover:text-brand-primary">
                       <p className="text-sm font-medium text-ink">{group.employeeName}</p>
                       <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-faint">
                         {group.overdueCount > 0 && (
@@ -488,7 +488,7 @@ export default async function DashboardPage({
                           </span>
                         )}
                         {group.unassignedCount > 0 && (
-                          <span className="flex items-center gap-1 text-brand-blue">
+                          <span className="flex items-center gap-1 text-brand-primary">
                             <UserRoundX size={12} /> {group.unassignedCount} à assigner
                           </span>
                         )}
@@ -499,7 +499,7 @@ export default async function DashboardPage({
                         )}
                       </p>
                     </Link>
-                    <Link href={`/dashboard/employees/${group.employeeId}`} className="shrink-0 text-xs font-medium text-brand-blue hover:underline">
+                    <Link href={`/dashboard/employees/${group.employeeId}`} className="shrink-0 text-xs font-medium text-brand-primary hover:underline">
                       Voir le parcours →
                     </Link>
                   </li>
@@ -509,7 +509,7 @@ export default async function DashboardPage({
                 <p className="mt-3 text-xs text-ink-faint">
                   + {hiddenEmployeeGroupsCount} autre{hiddenEmployeeGroupsCount > 1 ? "s" : ""}{" "}
                   salarié{hiddenEmployeeGroupsCount > 1 ? "s" : ""} nécessitant votre attention, affinez via{" "}
-                  <Link href="/dashboard?view=tasks" className="text-brand-blue hover:underline">
+                  <Link href="/dashboard?view=tasks" className="text-brand-primary hover:underline">
                     Toutes les tâches
                   </Link>
                   .
@@ -522,10 +522,10 @@ export default async function DashboardPage({
                 <li key={task.id} className="flex items-center justify-between gap-4 py-3">
                   <Link href={`/dashboard/events/${task.employeeEventId}`} className="flex items-center gap-3">
                     {reason === "overdue" && <TriangleAlert size={16} className="shrink-0 text-accent-rose" />}
-                    {reason === "unassigned" && <UserRoundX size={16} className="shrink-0 text-brand-blue" />}
+                    {reason === "unassigned" && <UserRoundX size={16} className="shrink-0 text-brand-primary" />}
                     {reason === "soon" && <Clock size={16} className="shrink-0 text-accent-amber" />}
                     <div>
-                      <p className="text-sm font-medium text-ink hover:text-brand-blue">
+                      <p className="text-sm font-medium text-ink hover:text-brand-primary">
                         {task.label} ({task.employeeEvent.employee.firstName} {task.employeeEvent.employee.lastName})
                       </p>
                       <p className="mt-0.5 text-xs text-ink-faint">
@@ -586,7 +586,7 @@ export default async function DashboardPage({
                 return (
                   <li key={entry.id} className="relative flex gap-3 pb-4 last:pb-0">
                     {!isLast && <span className="absolute left-[4px] top-3 h-full w-px bg-surface-border" />}
-                    <span className="relative mt-1.5 h-[9px] w-[9px] shrink-0 rounded-full border-2 border-brand-blue bg-white" />
+                    <span className="relative mt-1.5 h-[9px] w-[9px] shrink-0 rounded-full border-2 border-brand-primary bg-white" />
                     <div className="flex-1">
                       <p className="text-xs text-ink-soft">{label}</p>
                       <p className="mt-0.5 text-[11px] text-ink-faint">

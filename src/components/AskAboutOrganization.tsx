@@ -35,7 +35,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
     <button
       type="submit"
       disabled={pending || disabled}
-      className="flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-gradient px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
+      className="flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
     >
       Demander
     </button>
@@ -66,12 +66,12 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
   return (
-    <Card className="border-brand-violet/25 bg-gradient-to-br from-brand-violet/[0.04] to-brand-blue/[0.04]">
+    <Card className="border-brand-primary-dark/25 bg-gradient-to-br from-brand-primary-dark/[0.04] to-brand-primary/[0.04]">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="relative shrink-0">
             <Logomark size={30} />
-            <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand-violet text-white ring-2 ring-white">
+            <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand-primary-dark text-white ring-2 ring-white">
               <Sparkles size={9} />
             </span>
           </div>
@@ -98,11 +98,11 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
           {messages.map((m, i) =>
             m.role === "user" ? (
               <div key={i} className="flex flex-col items-end gap-1">
-                <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-brand-blue px-3.5 py-2 text-sm text-white">
+                <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-brand-primary px-3.5 py-2 text-sm text-white">
                   {m.text}
                 </div>
                 <span className="flex items-center gap-1 pr-1 text-[10px] text-ink-faint">
-                  {m.time} <CheckCheck size={12} className="text-brand-blue" aria-hidden />
+                  {m.time} <CheckCheck size={12} className="text-brand-primary" aria-hidden />
                 </span>
               </div>
             ) : (
@@ -133,14 +133,14 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
             type="button"
             disabled={!aiEnabled}
             onClick={() => setQuestion(suggestion)}
-            className="rounded-lg border border-brand-violet/20 bg-white px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-brand-violet/40 hover:text-brand-violet disabled:opacity-50"
+            className="rounded-lg border border-brand-primary-dark/20 bg-white px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-brand-primary-dark/40 hover:text-brand-primary-dark disabled:opacity-50"
           >
             {suggestion}
           </button>
         ))}
         <Link
           href="/dashboard/calendar"
-          className="rounded-lg border border-brand-violet/20 bg-white px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-brand-violet/40 hover:text-brand-violet"
+          className="rounded-lg border border-brand-primary-dark/20 bg-white px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-brand-primary-dark/40 hover:text-brand-primary-dark"
         >
           Voir le calendrier
         </Link>

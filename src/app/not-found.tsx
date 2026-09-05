@@ -12,10 +12,10 @@ export default function NotFound() {
       <MarketingHeader />
 
       <section className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">
-        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-blue/10 text-brand-blue">
+        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-primary/10 text-brand-primary">
           <Compass size={26} />
         </span>
-        <p className="mt-6 text-sm font-semibold uppercase tracking-wide text-brand-blue">Erreur 404</p>
+        <p className="mt-6 text-sm font-semibold uppercase tracking-wide text-brand-primary">Erreur 404</p>
         <h1 className="mt-2 text-3xl font-semibold text-ink sm:text-4xl">
           Cette page a été oubliée.
         </h1>

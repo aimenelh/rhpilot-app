@@ -14,7 +14,7 @@ export function JourneyStrip() {
         <div key={step.title} className="flex items-center gap-2">
           <Card compact className="w-44 shadow-sm">
             <div className="flex items-center gap-2.5">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-blue/10 text-brand-blue">
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-primary/10 text-brand-primary">
                 <step.icon size={16} />
               </span>
               <div className="min-w-0">

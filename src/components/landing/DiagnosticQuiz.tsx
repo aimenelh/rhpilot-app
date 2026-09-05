@@ -165,7 +165,7 @@ export function DiagnosticQuiz() {
             <span
               key={i}
               className={`h-1 rounded-full transition-all duration-500 ${
-                i <= step ? "w-8 bg-brand-blue" : "w-4 bg-surface-border"
+                i <= step ? "w-8 bg-brand-primary" : "w-4 bg-surface-border"
               }`}
             />
           ))}
@@ -184,7 +184,7 @@ export function DiagnosticQuiz() {
                 key={option.label}
                 type="button"
                 onClick={() => answer(option.label)}
-                className="rounded-xl border border-surface-border px-4 py-3 text-left text-sm font-medium text-ink transition-colors hover:border-brand-blue hover:bg-brand-blue/5"
+                className="rounded-xl border border-surface-border px-4 py-3 text-left text-sm font-medium text-ink transition-colors hover:border-brand-primary hover:bg-brand-primary/5"
               >
                 {option.label}
               </button>
@@ -243,13 +243,13 @@ export function DiagnosticQuiz() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="vous@entreprise.fr"
-                  className="flex-1 rounded-lg border border-surface-border px-3 py-2 text-sm outline-none focus:border-brand-blue"
+                  className="flex-1 rounded-lg border border-surface-border px-3 py-2 text-sm outline-none focus:border-brand-primary"
                 />
                 <button
                   type="button"
                   onClick={handleEmailSubmit}
                   disabled={submitting || !email.trim()}
-                  className="rounded-lg bg-brand-blue px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+                  className="rounded-lg bg-brand-primary px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
                   {submitting ? "..." : "Envoyer"}
                 </button>

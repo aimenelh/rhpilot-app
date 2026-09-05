@@ -193,7 +193,7 @@ export function CreateOrganizationForm() {
                 nom fictif.
               </FieldHint>
               {lookupResult && (
-                <p className="mt-2 rounded-lg bg-brand-blue/5 px-3 py-2 text-xs text-ink-soft">
+                <p className="mt-2 rounded-lg bg-brand-primary/5 px-3 py-2 text-xs text-ink-soft">
                   <strong className="text-ink">{lookupResult.name}</strong>
                   {lookupResult.address && <>, {lookupResult.address}</>}
                   {lookupResult.city && <>, {lookupResult.city}</>}

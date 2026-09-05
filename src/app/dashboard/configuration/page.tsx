@@ -56,7 +56,7 @@ export default async function ConfigurationPage() {
             href="/dashboard/configuration/organisation"
             className="flex items-start gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
           >
-            <User size={18} className="mt-0.5 shrink-0 text-brand-violet" />
+            <User size={18} className="mt-0.5 shrink-0 text-brand-primary-dark" />
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-semibold text-ink">Organisation</h2>
               <p className="mt-0.5 text-sm text-ink-soft">
@@ -71,7 +71,7 @@ export default async function ConfigurationPage() {
           href="/dashboard/configuration/parcours"
           className="flex items-start gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
         >
-          <Waypoints size={18} className="mt-0.5 shrink-0 text-brand-blue" />
+          <Waypoints size={18} className="mt-0.5 shrink-0 text-brand-primary" />
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-ink">Parcours RH</h2>
             <p className="mt-0.5 text-sm text-ink-soft">
@@ -139,7 +139,7 @@ export default async function ConfigurationPage() {
           href="/dashboard/configuration/a-propos"
           className="flex items-start gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
         >
-          <Info size={18} className="mt-0.5 shrink-0 text-brand-blue" />
+          <Info size={18} className="mt-0.5 shrink-0 text-brand-primary" />
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-ink">À propos</h2>
             <p className="mt-0.5 text-sm text-ink-soft">

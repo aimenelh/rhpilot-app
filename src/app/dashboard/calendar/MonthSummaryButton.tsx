@@ -8,7 +8,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-brand-violet/30 bg-brand-violet/5 px-3 py-1.5 text-sm font-medium text-brand-violet transition-colors hover:bg-brand-violet/10 disabled:opacity-50"
+      className="flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-brand-primary-dark/30 bg-brand-primary-dark/5 px-3 py-1.5 text-sm font-medium text-brand-primary-dark transition-colors hover:bg-brand-primary-dark/10 disabled:opacity-50"
     >
       <Sparkles size={14} />
       {pending ? "Analyse en cours…" : "Résumer mon mois"}
@@ -29,7 +29,7 @@ export function MonthSummaryButton({ year, month }: { year: number; month: numbe
       </form>
       {state?.error && <p className="mt-2 text-xs text-accent-rose">{state.error}</p>}
       {state?.summary && (
-        <p className="mt-2 max-w-sm whitespace-pre-wrap rounded-lg bg-brand-violet/5 px-3 py-2.5 text-xs leading-relaxed text-ink">
+        <p className="mt-2 max-w-sm whitespace-pre-wrap rounded-lg bg-brand-primary-dark/5 px-3 py-2.5 text-xs leading-relaxed text-ink">
           {state.summary}
         </p>
       )}

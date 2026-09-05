@@ -1,6 +1,6 @@
 const TONE_CLASSES = {
   neutral: "bg-surface-subtle text-ink-soft",
-  brand: "bg-brand-blue/10 text-brand-blue",
+  brand: "bg-brand-primary/10 text-brand-primary",
   teal: "bg-accent-teal/10 text-accent-teal",
 } as const;
 

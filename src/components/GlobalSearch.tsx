@@ -83,7 +83,7 @@ export function GlobalSearch() {
           }}
           onFocus={() => setIsOpen(true)}
           placeholder="Rechercher un salarié, une tâche..."
-          className="w-full rounded-lg border border-surface-border bg-surface-subtle py-2 pl-9 pr-8 text-sm text-ink placeholder:text-ink-faint focus-visible:border-brand-blue focus-visible:bg-white focus-visible:outline-none"
+          className="w-full rounded-lg border border-surface-border bg-surface-subtle py-2 pl-9 pr-8 text-sm text-ink placeholder:text-ink-faint focus-visible:border-brand-primary focus-visible:bg-white focus-visible:outline-none"
         />
         {isLoading && (
           <Loader2 size={14} className="absolute right-3 top-1/2 -translate-y-1/2 animate-spin text-ink-faint" />

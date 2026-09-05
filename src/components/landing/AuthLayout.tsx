@@ -39,7 +39,7 @@ export function AuthLayout({
           <Link href="/" className="auth-in mb-8 flex items-center gap-2">
             <Logomark size={30} />
             <span className="text-[15px] font-semibold tracking-tight text-ink">
-              RH <span className="bg-brand-gradient bg-clip-text text-transparent">Pilot</span>
+              RH <span className="bg-brand-primary bg-clip-text text-transparent">Pilot</span>
             </span>
           </Link>
 

@@ -104,7 +104,7 @@ export function JourneyFlow() {
       <div className="relative hidden items-start justify-between md:flex">
         <div
           aria-hidden
-          className="absolute left-0 right-0 top-[52px] h-px origin-left bg-gradient-to-r from-brand-blue/10 via-brand-blue/30 to-brand-violet/10 transition-transform duration-[1200ms] ease-out"
+          className="absolute left-0 right-0 top-[52px] h-px origin-left bg-gradient-to-r from-brand-primary/10 via-brand-primary/30 to-brand-primary-dark/10 transition-transform duration-[1200ms] ease-out"
           style={{ transform: visible ? "scaleX(1)" : "scaleX(0)" }}
         />
         {visible && !reducedMotion && (
@@ -147,7 +147,7 @@ export function JourneyFlow() {
       <div className="relative mx-auto flex max-w-xs flex-col items-center gap-3 md:hidden">
         <div
           aria-hidden
-          className="absolute bottom-4 left-1/2 top-4 w-px origin-top -translate-x-1/2 bg-gradient-to-b from-brand-blue/10 via-brand-blue/30 to-brand-violet/10 transition-transform duration-[1200ms] ease-out"
+          className="absolute bottom-4 left-1/2 top-4 w-px origin-top -translate-x-1/2 bg-gradient-to-b from-brand-primary/10 via-brand-primary/30 to-brand-primary-dark/10 transition-transform duration-[1200ms] ease-out"
           style={{ transform: visible ? "scaleY(1)" : "scaleY(0)" }}
         />
 

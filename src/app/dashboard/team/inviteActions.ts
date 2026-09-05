@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import type { AccessRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, escapeHtml } from "@/lib/email";
 
 const INVITATION_VALID_DAYS = 7;
 
@@ -97,20 +97,21 @@ export async function createInvitation(
   });
 
   const joinUrl = `${getAppUrl()}/join/${token}`;
+  const organizationName = escapeHtml(organization?.name ?? "une organisation");
   const emailResult = await sendEmail({
     to: email,
     subject: `Vous êtes invité·e à rejoindre ${organization?.name ?? "une organisation"} sur RH Pilot`,
     html: `
       <div style="font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 480px; margin: 0 auto; padding: 24px;">
-        <p style="color: #0F1B3D; font-size: 15px;">Bonjour,</p>
-        <p style="color: #3D4A6B; font-size: 14px;">
-          Vous avez été invité·e à rejoindre <strong>${organization?.name ?? "une organisation"}</strong>
+        <p style="color: #14151A; font-size: 15px;">Bonjour,</p>
+        <p style="color: #4A4A4D; font-size: 14px;">
+          Vous avez été invité·e à rejoindre <strong>${organizationName}</strong>
           sur RH Pilot, le copilote d'organisation RH.
         </p>
-        <a href="${joinUrl}" style="display: inline-block; margin-top: 20px; background: linear-gradient(135deg, #2F6FED, #7C5CFC); color: white; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600;">
+        <a href="${joinUrl}" style="display: inline-block; margin-top: 20px; background: #E8432E; color: white; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600;">
           Rejoindre l'organisation
         </a>
-        <p style="color: #8A93AB; font-size: 12px; margin-top: 24px;">
+        <p style="color: #8C8C90; font-size: 12px; margin-top: 24px;">
           Ce lien est valable 7 jours. Si vous ne vous attendiez pas à cette invitation,
           vous pouvez simplement ignorer cet email.
         </p>

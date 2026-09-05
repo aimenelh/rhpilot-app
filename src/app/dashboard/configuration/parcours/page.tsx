@@ -70,7 +70,7 @@ export default async function ParcoursConfigPage() {
                             {override.action === "MODIFIED" && (
                               <>
                                 <ArrowRight size={12} className="shrink-0 text-ink-faint" />
-                                <span className="truncate font-medium text-brand-blue">
+                                <span className="truncate font-medium text-brand-primary">
                                   {override.label}
                                 </span>
                               </>
@@ -100,8 +100,8 @@ export default async function ParcoursConfigPage() {
           );
         })}
       </div>
-      <div className="mt-4 flex items-start gap-2.5 rounded-lg bg-brand-blue/5 px-4 py-3 text-sm text-ink-soft">
-        <Sparkles size={16} className="mt-0.5 shrink-0 text-brand-blue" />
+      <div className="mt-4 flex items-start gap-2.5 rounded-lg bg-brand-primary/5 px-4 py-3 text-sm text-ink-soft">
+        <Sparkles size={16} className="mt-0.5 shrink-0 text-brand-primary" />
         <p>
           Pour personnaliser une étape, ouvrez un parcours déjà généré, modifiez ou
           supprimez l&apos;étape concernée, puis cochez « Appliquer aussi ce changement aux

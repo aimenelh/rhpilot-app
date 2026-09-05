@@ -160,7 +160,7 @@ export function TourGuide() {
       {/* Halo autour de la cible réelle — pulse une fois à l'apparition de chaque étape */}
       <div
         key={`halo-${stepIndex}`}
-        className="pointer-events-none fixed z-[60] rounded-lg ring-4 ring-brand-blue/50 tour-pulse-once transition-[top,left,width,height] duration-200"
+        className="pointer-events-none fixed z-[60] rounded-lg ring-4 ring-brand-primary/50 tour-pulse-once transition-[top,left,width,height] duration-200"
         style={{
           top: rect.top - 4,
           left: rect.left - 4,
@@ -200,7 +200,7 @@ export function TourGuide() {
           {isLastStep && (
             <button
               onClick={skip}
-              className="text-xs font-medium text-brand-blue hover:underline"
+              className="text-xs font-medium text-brand-primary hover:underline"
             >
               Terminer la découverte
             </button>

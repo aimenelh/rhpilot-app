@@ -25,7 +25,7 @@ export function InitializingScreen() {
     <div className="flex min-h-screen items-center justify-center bg-surface-subtle px-6">
       <div className="flex flex-col items-center gap-3 text-center">
         {!tookLong && (
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-brand-blue border-t-transparent" />
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-brand-primary border-t-transparent" />
         )}
         <p className="text-sm text-ink-soft">
           {tookLong
@@ -39,7 +39,7 @@ export function InitializingScreen() {
               setAttempt(0);
               router.refresh();
             }}
-            className="text-sm font-medium text-brand-blue hover:underline"
+            className="text-sm font-medium text-brand-primary hover:underline"
           >
             Réessayer
           </button>

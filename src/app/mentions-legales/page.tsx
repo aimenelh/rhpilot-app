@@ -56,7 +56,7 @@ export default function MentionsLegalesPage() {
           <p>TVA non applicable, article 293 B du Code général des impôts.</p>
           <p>
             Contact :{" "}
-            <Link href="mailto:aimenoffi@gmail.com" className="font-medium text-brand-blue hover:underline">
+            <Link href="mailto:aimenoffi@gmail.com" className="font-medium text-brand-primary hover:underline">
               aimenoffi@gmail.com
             </Link>
             .
@@ -76,7 +76,7 @@ export default function MentionsLegalesPage() {
               href="https://vercel.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium text-brand-blue hover:underline"
+              className="font-medium text-brand-primary hover:underline"
             >
               vercel.com
             </a>
@@ -95,7 +95,7 @@ export default function MentionsLegalesPage() {
         <Section title="Données personnelles">
           <p>
             Pour tout ce qui concerne la collecte et le traitement de vos données, consultez la{" "}
-            <Link href="/confidentialite" className="font-medium text-brand-blue hover:underline">
+            <Link href="/confidentialite" className="font-medium text-brand-primary hover:underline">
               politique de confidentialité
             </Link>
             .

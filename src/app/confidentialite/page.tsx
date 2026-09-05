@@ -215,7 +215,7 @@ export default function ConfidentialitePage() {
         <Section title="10. Contact">
           <p>
             Pour toute question sur cette politique ou pour exercer vos droits, écrivez à{" "}
-            <Link href="mailto:aimenoffi@gmail.com" className="font-medium text-brand-blue hover:underline">
+            <Link href="mailto:aimenoffi@gmail.com" className="font-medium text-brand-primary hover:underline">
               aimenoffi@gmail.com
             </Link>
             .

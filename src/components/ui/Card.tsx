@@ -19,7 +19,7 @@ export function Card({
     <div
       id={id}
       className={`rounded-xl border border-surface-border bg-white shadow-card transition-all duration-200 ${
-        interactive ? "hover:-translate-y-0.5 hover:border-brand-blue/30 hover:shadow-lg" : ""
+        interactive ? "hover:-translate-y-0.5 hover:border-brand-primary/30 hover:shadow-lg" : ""
       } ${compact ? "p-4" : "p-6"} ${className}`}
     >
       {children}

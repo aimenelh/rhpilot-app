@@ -137,7 +137,7 @@ export function AppShell({
                 onClick={() => setMobileNavOpen(false)}
                 className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
                   isActive
-                    ? "bg-brand-blue/10 text-brand-blue"
+                    ? "bg-brand-primary/10 text-brand-primary"
                     : "text-ink-soft hover:translate-x-0.5 hover:bg-surface-subtle hover:text-ink"
                 }`}
               >
@@ -155,7 +155,7 @@ export function AppShell({
           onClick={() => setMobileNavOpen(false)}
           className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
             pathname.startsWith(HELP_ITEM.href)
-              ? "bg-brand-blue/10 text-brand-blue"
+              ? "bg-brand-primary/10 text-brand-primary"
               : "text-ink-faint hover:translate-x-0.5 hover:bg-surface-subtle hover:text-ink-soft"
           }`}
         >

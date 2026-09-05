@@ -22,7 +22,7 @@ const BENEFITS = [
     title: "Des suggestions, pas seulement des données",
     description:
       "RH Pilot détecte les oublis probables, comme une période d'essai qui approche ou un parcours jamais créé, et propose l'action en un clic.",
-    dot: "bg-brand-violet",
+    dot: "bg-brand-primary-dark",
   },
   {
     title: "Des rappels qui partent tout seuls",
@@ -34,7 +34,7 @@ const BENEFITS = [
     title: "Un vrai parcours, pas une case à cocher",
     description:
       "Chaque événement RH devient un plan complet (tâches, échéances, preuves attendues), pas juste un rappel isolé.",
-    dot: "bg-brand-blue",
+    dot: "bg-brand-primary",
   },
 ];
 
@@ -49,7 +49,7 @@ export function LandingPage() {
           <Reveal variant="scale">
             <h1 className="text-5xl font-bold leading-[1.05] tracking-tight text-ink sm:text-6xl lg:text-[4.5rem]">
               La mémoire ne devrait{" "}
-              <span className="bg-brand-gradient bg-clip-text text-transparent">jamais</span>{" "}
+              <span className="bg-brand-primary bg-clip-text text-transparent">jamais</span>{" "}
               être le principal outil d&apos;une équipe RH.
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg text-ink-soft">
@@ -153,7 +153,7 @@ export function LandingPage() {
                       key={label}
                       className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold ${
                         i === 2
-                          ? "bg-brand-blue text-white"
+                          ? "bg-brand-primary text-white"
                           : i < 2
                             ? "bg-accent-teal/15 text-accent-teal"
                             : "bg-white text-ink-faint ring-1 ring-surface-border"
@@ -171,7 +171,7 @@ export function LandingPage() {
                   <p className="text-sm font-medium text-ink">Mathis, développeur</p>
                   <p className="text-xs text-accent-amber">Étape actuelle : Période d&apos;essai</p>
                   <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-subtle">
-                    <div className="h-full rounded-full bg-brand-gradient" style={{ width: "66%" }} />
+                    <div className="h-full rounded-full bg-brand-primary" style={{ width: "66%" }} />
                   </div>
                 </Card>
               </div>
@@ -189,8 +189,8 @@ export function LandingPage() {
                     <p className="text-xs font-medium text-ink">Événement : Nouvelle embauche</p>
                   </Card>
                   <span className="text-ink-faint">↓</span>
-                  <Card compact className="w-full border-brand-blue/20 bg-brand-blue/5 text-center">
-                    <p className="text-xs font-medium text-brand-blue">
+                  <Card compact className="w-full border-brand-primary/20 bg-brand-primary/5 text-center">
+                    <p className="text-xs font-medium text-brand-primary">
                       RH Pilot crée le parcours d&apos;intégration
                     </p>
                   </Card>
@@ -213,7 +213,7 @@ export function LandingPage() {
 
                 <Card className="mt-6">
                   <div className="flex justify-end">
-                    <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-brand-blue px-3 py-1.5 text-xs text-white">
+                    <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-brand-primary px-3 py-1.5 text-xs text-white">
                       Quelles échéances cette semaine ?
                     </div>
                   </div>
@@ -269,7 +269,7 @@ export function LandingPage() {
             <div className="flex flex-col gap-8 sm:col-span-3 sm:pl-4">
               <div>
                 <p className="text-2xl font-bold text-ink">
-                  45<span className="text-brand-blue">%</span>{" "}
+                  45<span className="text-brand-primary">%</span>{" "}
                   <span className="text-base font-normal text-ink-soft">
                     des salariés français travaillent dans une TPE ou une PME.
                   </span>
@@ -278,7 +278,7 @@ export function LandingPage() {
               </div>
               <div>
                 <p className="text-2xl font-bold text-ink">
-                  60<span className="text-brand-violet">%</span>{" "}
+                  60<span className="text-brand-primary-dark">%</span>{" "}
                   <span className="text-base font-normal text-ink-soft">
                     du temps d&apos;une équipe RH part dans l&apos;administratif plutôt que dans
                     l&apos;humain.
@@ -310,7 +310,7 @@ export function LandingPage() {
             <Reveal>
               <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-5 lg:gap-12">
                 <div className="lg:col-span-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue">Calendrier</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-primary">Calendrier</p>
                   <h3 className="mt-2 text-xl font-semibold text-ink">
                     Toutes les échéances au même endroit.
                   </h3>
@@ -358,7 +358,7 @@ export function LandingPage() {
                   </div>
                 </div>
                 <div className="order-1 lg:order-2 lg:col-span-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue">Notifications</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-primary">Notifications</p>
                   <h3 className="mt-2 text-xl font-semibold text-ink">
                     Qui a été relancé, et quand.
                   </h3>
@@ -374,7 +374,7 @@ export function LandingPage() {
             <Reveal delay={200}>
               <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-5 lg:gap-12">
                 <div className="lg:col-span-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-blue">Assistant</p>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-primary">Assistant</p>
                   <h3 className="mt-2 text-xl font-semibold text-ink">
                     Une réponse à chaque question, sur chaque écran.
                   </h3>
@@ -473,7 +473,7 @@ export function LandingPage() {
         />
         <Reveal>
           <div className="relative mx-auto max-w-2xl px-6 text-center">
-            <p className="font-mono text-xs font-semibold tabular-nums tracking-wide text-brand-blue">
+            <p className="font-mono text-xs font-semibold tabular-nums tracking-wide text-brand-primary">
               AUJOURD&apos;HUI
             </p>
             <h2 className="mt-3 text-2xl font-semibold text-white">
