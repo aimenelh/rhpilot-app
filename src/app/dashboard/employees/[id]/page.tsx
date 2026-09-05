@@ -80,9 +80,28 @@ export default async function EmployeeDetailPage({
         ← Retour aux salariés
       </Link>
 
-      <h1 className="mt-3 text-2xl font-semibold text-ink">
-        {employee.firstName} {employee.lastName}
-      </h1>
+      {/* En-tête façon dossier : nom, résumé en une ligne, actions
+          rapides vers les sections existantes plus bas (le formulaire
+          d'édition et la carte d'archivage ne bougent pas, on ajoute
+          juste un raccourci visible immédiatement). */}
+      <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold text-ink">
+            {employee.firstName} {employee.lastName}
+          </h1>
+          <p className="mt-1 text-sm text-ink-soft">
+            {employee.position || "Poste non renseigné"} · Embauché·e le {formatDate(employee.hireDate)} · Actif
+          </p>
+        </div>
+        <div className="flex items-center gap-4 pt-1 text-sm font-medium">
+          <a href="#informations" className="text-brand-primary hover:underline">
+            Modifier
+          </a>
+          <a href="#archiver" className="text-ink-faint hover:text-ink-soft">
+            Archiver
+          </a>
+        </div>
+      </div>
 
       {/* Bannière d'accueil juste après création — suppose que la
           redirection de création pointe vers cette page avec
@@ -110,59 +129,42 @@ export default async function EmployeeDetailPage({
         </div>
       )}
 
-      <div className="mt-6">
-        <TriggerEventForm
-          action={triggerEventForEmployee}
-          eventTemplates={eventTemplates.map((t) => ({ key: t.key, label: t.label }))}
-          employee={{
-            hireDate: employee.hireDate.toISOString(),
-            probationDuration: employee.probationDuration,
-            probationDurationUnit: employee.probationDurationUnit,
-          }}
-          conventionCollective={organization?.conventionCollective}
-        />
-      </div>
-
-      {employeeEvents.length > 0 && (
-        <div className="mt-4 flex flex-col gap-3">
-          <h2 className="text-sm font-semibold text-ink">Parcours RH de {employee.firstName}</h2>
-          {employeeEvents.map((event) => {
-            const doneCount = event.tasks.filter((task) => task.status === "DONE").length;
-            const summary = summarizeParcours(event.tasks);
-            return (
-              <Link key={event.id} href={`/dashboard/events/${event.id}`}>
-                <Card className="transition-colors hover:border-brand-primary/40">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className={`h-2.5 w-2.5 shrink-0 rounded-full ${getEventTemplateDotColor(event.eventTemplate.key)}`}
-                      />
-                      <div>
-                        <p className="text-sm font-semibold text-ink">
-                          {event.eventTemplate.label}
-                        </p>
-                        <p className="mt-0.5 text-xs text-ink-soft">
-                          Déclenché le {formatDate(event.triggerDate)}
-                        </p>
-                        {summary.overdueCount > 0 && (
-                          <p className="mt-1 flex items-center gap-1 text-xs font-medium text-accent-rose">
-                            <TriangleAlert size={12} />
-                            {summary.overdueCount} tâche{summary.overdueCount > 1 ? "s" : ""} en
-                            retard
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="w-32 shrink-0">
-                      <ProgressBar value={doneCount} max={event.tasks.length} />
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            );
-          })}
-        </div>
-      )}
+      {/* Bloc résumé : lecture seule, les informations essentielles
+          d'un coup d'œil -- distinct du formulaire d'édition plus bas
+          (section "Informations du salarié"), qui reste la même
+          édition complète qu'avant. */}
+      <Card className="mt-5">
+        <h2 className="text-sm font-semibold text-ink">Résumé</h2>
+        <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
+          <div>
+            <dt className="text-xs text-ink-faint">Poste</dt>
+            <dd className="mt-0.5 text-sm text-ink">{employee.position || "—"}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-ink-faint">Date d&apos;embauche</dt>
+            <dd className="mt-0.5 text-sm text-ink">{formatDate(employee.hireDate)}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-ink-faint">Type de contrat</dt>
+            <dd className="mt-0.5 text-sm text-ink">{employee.contractType ?? "—"}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-ink-faint">Manager direct</dt>
+            <dd className="mt-0.5 text-sm text-ink">
+              {(() => {
+                const manager = memberships.find(
+                  (m: { id: string }) => m.id === employee.managerMembershipId
+                );
+                return manager ? getUserDisplayName(manager.user) : "Non défini";
+              })()}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs text-ink-faint">Catégorie professionnelle</dt>
+            <dd className="mt-0.5 text-sm text-ink">{employee.professionalCategory ?? "—"}</dd>
+          </div>
+        </dl>
+      </Card>
 
       {/* Carte agrandie avec la mascotte "medical" — remplace l'ancien
           bandeau compact à icône circulaire. */}
@@ -234,7 +236,80 @@ export default async function EmployeeDetailPage({
         })()
       )}
 
-      <div className="mt-8 max-w-xl">
+      {/* Parcours RH : le formulaire de déclenchement vit ici
+          maintenant (auparavant tout en haut de page, avant même le
+          résumé) -- c'est l'action naturelle de cette section, pas
+          une action à part entière avant d'avoir vu qui est le
+          salarié. */}
+      <div className="mt-8">
+        <h2 className="text-sm font-semibold text-ink">Parcours RH de {employee.firstName}</h2>
+        <div className="mt-3">
+          <TriggerEventForm
+            action={triggerEventForEmployee}
+            eventTemplates={eventTemplates.map((t) => ({ key: t.key, label: t.label }))}
+            employee={{
+              hireDate: employee.hireDate.toISOString(),
+              probationDuration: employee.probationDuration,
+              probationDurationUnit: employee.probationDurationUnit,
+            }}
+            conventionCollective={organization?.conventionCollective}
+          />
+        </div>
+        {employeeEvents.length > 0 && (
+          <div className="mt-3 flex flex-col gap-3">
+            {employeeEvents.map((event) => {
+              const doneCount = event.tasks.filter((task) => task.status === "DONE").length;
+              const summary = summarizeParcours(event.tasks);
+              return (
+                <Link key={event.id} href={`/dashboard/events/${event.id}`}>
+                  <Card className="transition-colors hover:border-brand-primary/40">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className={`h-2.5 w-2.5 shrink-0 rounded-full ${getEventTemplateDotColor(event.eventTemplate.key)}`}
+                        />
+                        <div>
+                          <p className="text-sm font-semibold text-ink">
+                            {event.eventTemplate.label}
+                          </p>
+                          <p className="mt-0.5 text-xs text-ink-soft">
+                            Déclenché le {formatDate(event.triggerDate)}
+                          </p>
+                          {summary.overdueCount > 0 && (
+                            <p className="mt-1 flex items-center gap-1 text-xs font-medium text-accent-rose">
+                              <TriangleAlert size={12} />
+                              {summary.overdueCount} tâche{summary.overdueCount > 1 ? "s" : ""} en
+                              retard
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="w-32 shrink-0">
+                        <ProgressBar value={doneCount} max={event.tasks.length} />
+                      </div>
+                    </div>
+                  </Card>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Documents : la fonctionnalité elle-même n'existe pas encore
+          (voir audit Phase 2 -- le modèle Attachment existe en base
+          mais aucune route d'upload/téléchargement n'est construite).
+          On rend la zone visible dès maintenant, honnêtement vide,
+          plutôt que de l'omettre -- ça prépare le terrain visuel pour
+          plus tard, notamment la paie. */}
+      <div className="mt-8">
+        <h2 className="text-sm font-semibold text-ink">Documents</h2>
+        <Card className="mt-3 border-dashed" compact>
+          <p className="text-sm text-ink-faint">Aucun document pour le moment.</p>
+        </Card>
+      </div>
+
+      <div id="informations" className="mt-8 max-w-xl scroll-mt-6">
         <h2 className="text-sm font-semibold text-ink">Informations du salarié</h2>
         <div className="mt-3">
           <EmployeeForm
@@ -262,7 +337,7 @@ export default async function EmployeeDetailPage({
           />
         </div>
 
-        <Card className="mt-4">
+        <Card id="archiver" className="mt-4 scroll-mt-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-sm font-semibold text-ink">Archiver ce salarié</h2>
