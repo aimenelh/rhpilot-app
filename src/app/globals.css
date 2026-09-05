@@ -78,33 +78,6 @@ h1, h2, h3 {
   }
 }
 
-@keyframes auth-float-slow {
-  0%, 100% { transform: scale(0.8) rotate(-11deg) translateY(0px); }
-  50% { transform: scale(0.8) rotate(-11deg) translateY(-7px); }
-}
-@keyframes auth-float-slower {
-  0%, 100% { transform: scale(0.75) rotate(10deg) translateY(0px); }
-  50% { transform: scale(0.75) rotate(10deg) translateY(6px); }
-}
-
-.auth-float-slow {
-  animation: auth-float-slow 6s ease-in-out infinite;
-}
-.auth-float-slower {
-  animation: auth-float-slower 7s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .auth-float-slow,
-  .auth-float-slower,
-  .auth-pulse-dot {
-    animation: none;
-  }
-}
-
-/* Page de bienvenue bêta — mouvements lents et discrets uniquement,
-   jamais spectaculaires (esprit Stripe/Linear, pas "gadget"). */
-
 @keyframes welcome-logo-float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-6px); }

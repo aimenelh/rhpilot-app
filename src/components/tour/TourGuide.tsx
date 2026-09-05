@@ -172,7 +172,7 @@ export function TourGuide() {
       {/* Bulle d'explication avec flèche — rejoue son apparition à chaque étape */}
       <div
         key={`bubble-${stepIndex}`}
-        className={`tour-fade-in fixed z-[60] w-72 rounded-xl border border-surface-border bg-white p-4 shadow-lg transition-[top,left] duration-200 ${
+        className={`tour-fade-in fixed z-[60] w-72 rounded-xl border border-surface-border bg-white p-4 shadow-elevated transition-[top,left] duration-200 ${
           step.placement === "top" ? "-translate-y-full" : ""
         }`}
         style={{ top: bubbleTop, left: bubbleLeft }}

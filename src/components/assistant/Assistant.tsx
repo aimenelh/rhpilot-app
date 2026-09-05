@@ -208,7 +208,7 @@ export function Assistant({ summary }: { summary: AssistantSummary }) {
           <div
             role="dialog"
             aria-label="Aide RH Pilot"
-            className="assistant-panel-in flex h-[34rem] w-full max-w-sm flex-col rounded-xl border border-surface-border bg-white shadow-lg"
+            className="assistant-panel-in flex h-[34rem] w-full max-w-sm flex-col rounded-xl border border-surface-border bg-white shadow-elevated"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex items-start justify-between border-b border-surface-border px-4 py-3">

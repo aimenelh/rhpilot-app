@@ -45,7 +45,7 @@ export function OnboardingGuide() {
       <div
         role="dialog"
         aria-label="Bienvenue sur RH Pilot"
-        className="w-full max-w-sm rounded-xl border border-surface-border bg-white p-6 shadow-lg"
+        className="w-full max-w-sm rounded-xl border border-surface-border bg-white p-6 shadow-elevated"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="flex items-start justify-between">

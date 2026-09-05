@@ -41,7 +41,7 @@ export function RhNewsToast({ items }: { items: RhNewsItem[] }) {
         @keyframes newsIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         @media (prefers-reduced-motion: reduce) { .animate-\\[newsIn_0\\.4s_ease-out_both\\] { animation: none; } }
       `}</style>
-      <div className="relative rounded-xl border border-surface-border bg-white p-4 shadow-xl">
+      <div className="relative rounded-xl border border-surface-border bg-white p-4 shadow-elevated">
         <button
           type="button"
           onClick={dismiss}

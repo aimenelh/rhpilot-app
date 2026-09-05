@@ -46,7 +46,7 @@ export function IosInstallHint() {
         @keyframes iosHintIn { from { opacity: 0; transform: translateY(-100%); } to { opacity: 1; transform: translateY(0); } }
         @media (prefers-reduced-motion: reduce) { .ios-hint-in { animation: none; } }
       `}</style>
-      <div className="flex items-center gap-3 bg-ink px-4 py-2.5 text-white shadow-lg">
+      <div className="flex items-center gap-3 bg-ink px-4 py-2.5 text-white shadow-elevated">
         <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/15">
           <Share size={13} />
         </span>

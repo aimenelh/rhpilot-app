@@ -229,7 +229,7 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
       `}</style>
 
       {isOpen && (
-        <div className="mb-3 flex h-[32rem] w-[23rem] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-surface-border bg-white shadow-2xl">
+        <div className="mb-3 flex h-[32rem] w-[23rem] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-surface-border bg-white shadow-elevated">
           <div className="flex items-center justify-between border-b border-surface-border bg-gradient-to-br from-brand-primary-dark/[0.04] to-brand-primary/[0.04] px-4 py-3">
             <div className="flex items-center gap-2.5">
               <div className="relative shrink-0">
@@ -367,7 +367,7 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
         onClick={() => setIsOpen((o) => !o)}
         aria-label={isOpen ? "Fermer le Copilote" : "Ouvrir le Copilote RH Pilot"}
         aria-expanded={isOpen}
-        className={`motion-reduce:transition-none relative flex h-14 w-14 items-center justify-center rounded-full border border-surface-border bg-white shadow-xl transition-transform hover:scale-105 hover:[animation-play-state:paused] active:scale-95 ${
+        className={`motion-reduce:transition-none relative flex h-14 w-14 items-center justify-center rounded-full border border-surface-border bg-white shadow-card transition-transform hover:scale-105 hover:[animation-play-state:paused] active:scale-95 ${
           isOpen ? "" : "copilote-fab"
         }`}
       >

@@ -23,7 +23,7 @@ export function ConfirmDialog({
       <span onClick={() => dialogRef.current?.showModal()}>{trigger}</span>
       <dialog
         ref={dialogRef}
-        className="rounded-xl border border-surface-border p-0 shadow-card backdrop:bg-ink/40"
+        className="rounded-xl border border-surface-border p-0 shadow-elevated backdrop:bg-ink/40"
       >
         <div className="w-80 p-5">
           <h2 className="text-sm font-semibold text-ink">{title}</h2>
