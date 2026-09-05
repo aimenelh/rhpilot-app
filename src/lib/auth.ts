@@ -53,9 +53,10 @@ export const getCurrentMemberships = cache(async function getCurrentMemberships(
 });
 
 /**
- * Sprint 1-2 : une seule organisation active à la fois (la première
- * du compte). Le sélecteur multi-organisations (consultant RH externe
- * suivant plusieurs clients) est prévu mais hors périmètre actuel.
+ * Retourne l'organisation active du compte (la première créée).
+ * Le multi-organisation (consultant RH externe suivant plusieurs
+ * clients) n'est pas encore exposé dans l'interface, mais le modèle
+ * de données le permet déjà — voir Membership.
  * Retourne null si l'utilisateur n'a encore aucune organisation.
  */
 export const getCurrentMembership = cache(async function getCurrentMembership() {
