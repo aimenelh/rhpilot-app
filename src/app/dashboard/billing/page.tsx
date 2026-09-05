@@ -3,9 +3,9 @@ import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
 import { formatDate } from "@/lib/format";
-import { createCheckoutSession, createPortalSession } from "./actions";
+import { ManageSubscriptionButton } from "./ManageSubscriptionButton";
+import { UpgradeToProButton } from "./UpgradeToProButton";
 
 const FREE_TIER_LIMIT = 3;
 
@@ -65,11 +65,7 @@ export default async function BillingPage({
                   ` Prochain renouvellement le ${formatDate(organization.currentPeriodEnd)}.`}
               </p>
               <div className="mt-4">
-                <form action={createPortalSession}>
-                  <Button variant="secondary" type="submit" className="text-sm">
-                    Gérer mon abonnement
-                  </Button>
-                </form>
+                <ManageSubscriptionButton />
               </div>
             </div>
           </div>
@@ -106,11 +102,7 @@ export default async function BillingPage({
                   Pas de limite de salariés
                 </p>
                 <div className="mt-4">
-                  <form action={createCheckoutSession}>
-                    <Button type="submit" className="text-sm">
-                      Passer sur Pro
-                    </Button>
-                  </form>
+                  <UpgradeToProButton />
                 </div>
               </div>
             </div>
