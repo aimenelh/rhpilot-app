@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { parseEmployeeCsv } from "@/lib/employeeCsv";
+import { checkFreeTierLimit } from "./actions";
 
 export type ImportState = { error: string } | undefined;
 
@@ -28,6 +29,12 @@ export async function importEmployeesCsv(
   if (rows.length === 0) {
     return { error: errors[0]?.message ?? "Aucune ligne valide trouvée dans ce contenu." };
   }
+
+  // Même limite que pour une création individuelle — un import ne
+  // doit pas être un moyen de la contourner en ajoutant plusieurs
+  // salariés d'un coup (voir aussi createEmployee/reactivateEmployee).
+  const limitError = await checkFreeTierLimit(membership.organizationId, rows.length);
+  if (limitError) return { error: limitError };
 
   for (const row of rows) {
     await prisma.employee.create({

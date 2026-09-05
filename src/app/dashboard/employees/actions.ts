@@ -17,12 +17,17 @@ export type EmployeeFormState = { error: string } | undefined;
 // Doit rester identique à FREE_TIER_LIMIT dans
 // app/dashboard/billing/page.tsx — les deux affichent la même limite,
 // l'une la fait respecter, l'autre l'explique visuellement.
-const FREE_TIER_LIMIT = 3;
+export const FREE_TIER_LIMIT = 3;
 
 // Ne bloque que la croissance du nombre de salariés actifs (création,
-// réactivation), jamais la modification ou l'archivage d'une fiche
-// existante. Un abonnement Pro actif lève la limite entièrement.
-async function checkFreeTierLimit(organizationId: string): Promise<string | null> {
+// réactivation, import CSV), jamais la modification ou l'archivage
+// d'une fiche existante. Un abonnement Pro actif lève la limite
+// entièrement. `additionalCount` permet de vérifier l'ajout de
+// plusieurs salariés d'un coup (import CSV), pas seulement un par un.
+export async function checkFreeTierLimit(
+  organizationId: string,
+  additionalCount: number = 1
+): Promise<string | null> {
   const organization = await prisma.organization.findUnique({
     where: { id: organizationId },
     select: { subscriptionStatus: true },
@@ -32,7 +37,7 @@ async function checkFreeTierLimit(organizationId: string): Promise<string | null
   const activeCount = await prisma.employee.count({
     where: { organizationId, deletedAt: null },
   });
-  if (activeCount >= FREE_TIER_LIMIT) {
+  if (activeCount + additionalCount > FREE_TIER_LIMIT) {
     return `Le palier Gratuit est limité à ${FREE_TIER_LIMIT} salariés. Passez sur Pro depuis la page Facturation pour en ajouter davantage.`;
   }
   return null;
@@ -126,6 +131,17 @@ export async function createEmployee(
   const validationError = validateEmployeeFields(fields);
   if (validationError) return { error: validationError };
 
+  // Isolation multi-tenant : le manager choisi doit appartenir à
+  // cette organisation, jamais faire confiance à l'id transmis par le
+  // formulaire seul (même règle que pour assignTask/addCustomTask
+  // dans events/actions.ts).
+  if (fields.managerMembershipId) {
+    const manager = await prisma.membership.findFirst({
+      where: { id: fields.managerMembershipId, organizationId: membership.organizationId, deletedAt: null },
+    });
+    if (!manager) return { error: "Ce manager ne fait pas partie de votre organisation." };
+  }
+
   const employee = await prisma.$transaction(async (tx) => {
     const created = await tx.employee.create({
       data: {
@@ -187,6 +203,15 @@ export async function updateEmployee(
   const fields = readEmployeeFields(formData);
   const validationError = validateEmployeeFields(fields);
   if (validationError) return { error: validationError };
+
+  // Isolation multi-tenant : même contrôle qu'à la création — voir
+  // createEmployee.
+  if (fields.managerMembershipId) {
+    const manager = await prisma.membership.findFirst({
+      where: { id: fields.managerMembershipId, organizationId: membership.organizationId, deletedAt: null },
+    });
+    if (!manager) return { error: "Ce manager ne fait pas partie de votre organisation." };
+  }
 
   await prisma.$transaction([
     prisma.employee.update({

@@ -1,8 +1,10 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-// Routes publiques : landing (future), pages d'auth, et le webhook Clerk
+// Routes publiques : landing (future), pages d'auth, le webhook Clerk
 // (qui doit rester accessible sans session utilisateur — sa sécurité
-// vient de la vérification de signature Svix, pas de Clerk auth()).
+// vient de la vérification de signature Svix, pas de Clerk auth()),
+// et le cron des rappels (protégé par CRON_SECRET en interne, pas par
+// une session Clerk — l'appel de Vercel Cron n'en a aucune).
 const isPublicRoute = createRouteMatcher([
   "/",
   "/services",
@@ -23,6 +25,7 @@ const isPublicRoute = createRouteMatcher([
   "/sign-up(.*)",
   "/api/webhooks/clerk",
   "/api/webhooks/stripe",
+  "/api/cron/reminders",
 ]);
 
 export default clerkMiddleware((auth, request) => {
