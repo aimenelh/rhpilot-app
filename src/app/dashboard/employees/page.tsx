@@ -130,72 +130,74 @@ export default async function EmployeesPage({
           )
         ) : (
           <Card className="overflow-hidden p-0">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-surface-border bg-surface-subtle text-xs uppercase tracking-wide text-ink-faint">
-                <tr>
-                  <th className="px-5 py-3.5 font-medium">Nom</th>
-                  <th className="px-5 py-3.5 font-medium">Poste</th>
-                  <th className="px-5 py-3.5 font-medium">
-                    {status === "archived" ? "Archivé le" : "Date d'embauche"}
-                  </th>
-                  <th className="px-5 py-3.5 font-medium">Manager direct</th>
-                  {status === "archived" && <th className="px-5 py-3.5 font-medium" />}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-border">
-                {employees.map((employee) => (
-                  <tr key={employee.id} className="hover:bg-surface-subtle">
-                    <td className="px-5 py-4">
-                      {status === "archived" ? (
-                        <span className="font-medium text-ink-soft">
-                          {employee.firstName} {employee.lastName}
-                        </span>
-                      ) : (
-                        <Link
-                          href={`/dashboard/employees/${employee.id}`}
-                          className="font-medium text-ink hover:text-brand-primary"
-                        >
-                          {employee.firstName} {employee.lastName}
-                        </Link>
-                      )}
-                    </td>
-                    <td className="px-5 py-4 text-ink-soft">
-                      {employee.position || "—"}
-                    </td>
-                    <td className="px-5 py-4 text-ink-soft">
-                      {formatDate(status === "archived" ? employee.deletedAt! : employee.hireDate)}
-                    </td>
-                    <td className="px-5 py-4">
-                      {employee.managerMembership ? (
-                        <div className="leading-tight">
-                          <p className="text-ink">
-                            {getUserDisplayName(employee.managerMembership.user)}
-                          </p>
-                          <p className="text-xs text-ink-faint">
-                            {employee.managerMembership.user.email}
-                          </p>
-                        </div>
-                      ) : (
-                        <span className="text-ink-faint">Non défini</span>
-                      )}
-                    </td>
-                    {status === "archived" && (
-                      <td className="px-5 py-4 text-right">
-                        <form action={reactivateEmployee.bind(null, employee.id)}>
-                          <button
-                            type="submit"
-                            className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-primary hover:underline"
-                          >
-                            <ArchiveRestore size={13} />
-                            Réactiver
-                          </button>
-                        </form>
-                      </td>
-                    )}
+            <div className="overflow-x-auto">
+              <table className="min-w-[760px] w-full text-left text-sm">
+                <thead className="border-b border-surface-border bg-surface-subtle text-xs uppercase tracking-wide text-ink-faint">
+                  <tr>
+                    <th className="px-5 py-3.5 font-medium">Nom</th>
+                    <th className="px-5 py-3.5 font-medium">Poste</th>
+                    <th className="px-5 py-3.5 font-medium">
+                      {status === "archived" ? "Archivé le" : "Date d'embauche"}
+                    </th>
+                    <th className="px-5 py-3.5 font-medium">Manager direct</th>
+                    {status === "archived" && <th className="px-5 py-3.5 font-medium" />}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-surface-border">
+                  {employees.map((employee) => (
+                    <tr key={employee.id} className="hover:bg-surface-subtle">
+                      <td className="px-5 py-4">
+                        {status === "archived" ? (
+                          <span className="font-medium text-ink-soft">
+                            {employee.firstName} {employee.lastName}
+                          </span>
+                        ) : (
+                          <Link
+                            href={`/dashboard/employees/${employee.id}`}
+                            className="font-medium text-ink hover:text-brand-primary"
+                          >
+                            {employee.firstName} {employee.lastName}
+                          </Link>
+                        )}
+                      </td>
+                      <td className="px-5 py-4 text-ink-soft">
+                        {employee.position || "—"}
+                      </td>
+                      <td className="px-5 py-4 text-ink-soft">
+                        {formatDate(status === "archived" ? employee.deletedAt! : employee.hireDate)}
+                      </td>
+                      <td className="px-5 py-4">
+                        {employee.managerMembership ? (
+                          <div className="leading-tight">
+                            <p className="text-ink">
+                              {getUserDisplayName(employee.managerMembership.user)}
+                            </p>
+                            <p className="text-xs text-ink-faint">
+                              {employee.managerMembership.user.email}
+                            </p>
+                          </div>
+                        ) : (
+                          <span className="text-ink-faint">Non défini</span>
+                        )}
+                      </td>
+                      {status === "archived" && (
+                        <td className="px-5 py-4 text-right">
+                          <form action={reactivateEmployee.bind(null, employee.id)}>
+                            <button
+                              type="submit"
+                              className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-primary hover:underline"
+                            >
+                              <ArchiveRestore size={13} />
+                              Réactiver
+                            </button>
+                          </form>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </Card>
         )}
       </div>
