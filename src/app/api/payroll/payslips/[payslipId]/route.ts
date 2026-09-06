@@ -31,7 +31,7 @@ export async function GET(
 
   try {
     const pdf = readPayslipDocument(payslip.storageKey);
-    return new NextResponse(pdf as BodyInit, {
+    return new NextResponse(new Uint8Array(pdf), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
