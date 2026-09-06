@@ -17,6 +17,7 @@ import {
   HelpCircle,
   Menu,
   X,
+  WalletCards,
   type LucideIcon,
 } from "lucide-react";
 import { Logomark, Wordmark } from "./Brand";
@@ -34,12 +35,13 @@ type NavItem = {
   label: string;
   available: boolean;
   icon: LucideIcon;
-  section?: string; // affiche un séparateur avec ce titre juste avant cette entrée
+  section?: string;
 };
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Tableau de bord", available: true, icon: Compass, section: "Accueil" },
   { href: "/dashboard/employees", label: "Salariés", available: true, icon: Users, section: "Gestion RH" },
+  { href: "/dashboard/payroll", label: "Paie", available: true, icon: WalletCards },
   { href: "/dashboard/events", label: "Parcours", available: true, icon: Route },
   { href: "/dashboard/calendar", label: "Calendrier", available: true, icon: CalendarDays },
   {
@@ -54,13 +56,8 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/notifications", label: "Notifications", available: true, icon: Bell },
 ];
 
-// Aide n'est pas de l'administration — elle reste disponible partout,
-// tout en bas, à côté du lien de retour.
 const HELP_ITEM: NavItem = { href: "/dashboard/help", label: "Aide", available: true, icon: HelpCircle };
 
-// Formate le temps restant avant purge en "X h Y min" (ou "Y min" sous
-// l'heure), rafraîchi chaque minute — pas besoin de la seconde près
-// pour une bannière d'information, ça évite des re-renders inutiles.
 function useDemoCountdownLabel(target: Date | null) {
   const [label, setLabel] = useState<string | null>(null);
 
@@ -110,9 +107,6 @@ export function AppShell({
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const demoCountdownLabel = useDemoCountdownLabel(demoExpiresAt);
 
-  // Contenu de la navigation, partagé entre la sidebar desktop (toujours
-  // visible) et le tiroir mobile (ouvert/fermé via l'état ci-dessus) —
-  // un seul endroit à maintenir pour les deux versions.
   const navContent = (
     <>
       <div className="flex items-center gap-2 px-2">
@@ -176,14 +170,10 @@ export function AppShell({
   return (
     <div className="flex min-h-screen">
       <AmbientNetwork />
-      {/* Sidebar desktop — inchangée dans son fonctionnement, juste
-          masquée sous md et remplacée par le tiroir ci-dessous. */}
       <aside className="hidden w-64 shrink-0 flex-col border-r border-surface-border bg-white px-4 py-5 md:flex">
         {navContent}
       </aside>
 
-      {/* Tiroir mobile — fond assombri cliquable pour fermer, contenu
-          qui ne ferme pas au clic à l'intérieur (stopPropagation). */}
       {mobileNavOpen && (
         <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-label="Menu de navigation">
           <div
@@ -209,10 +199,6 @@ export function AppShell({
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Bannière de purge des données de démonstration — persistante
-            tant que le compte à rebours court, visible sur toutes les
-            pages du dashboard. Pas de badge/icône en cercle, juste une
-            ligne d'information sobre. */}
         {demoExpiresAt && demoCountdownLabel && (
           <div className="border-b border-accent-amber/30 bg-accent-amber/10 px-4 py-2 text-center text-xs font-medium text-ink md:px-8">
             Données de démonstration actives — purge automatique dans {demoCountdownLabel}
@@ -251,10 +237,6 @@ export function AppShell({
       </div>
 
       <FlashToast />
-      {/* Le Copilote a repris tout ce que faisait l'ancien Assistant
-          ("Aide") : accueil personnalisé, onboarding des nouveaux
-          utilisateurs, entrée vers le tour guidé — en plus des
-          questions libres sur l'organisation et sur RH Pilot. */}
       <AppCopilote summary={assistantSummary} aiEnabled={aiEnabled} />
       <TourGuide />
       <RhNewsToast items={rhNews} />
