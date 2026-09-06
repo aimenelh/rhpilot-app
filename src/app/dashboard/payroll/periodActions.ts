@@ -10,6 +10,7 @@ const VARIABLE_UNITS = ["EUR", "DAYS", "HOURS", "PERCENT"] as const;
 type VariableUnit = (typeof VARIABLE_UNITS)[number];
 export type PayrollVariableFormState = { error: string } | undefined;
 export type PayrollCalculationFormState = { error: string } | undefined;
+export type PayrollReviewFormState = { error: string } | undefined;
 
 type EditablePayrollPeriod = {
   id: string;
@@ -204,4 +205,79 @@ export async function calculatePayrollPeriodAction(
       error: error instanceof Error ? error.message : "Le calcul de la période a échoué.",
     };
   }
+}
+
+export async function movePayrollPeriodToReviewAction(
+  _prevState: PayrollReviewFormState,
+  formData: FormData,
+): Promise<PayrollReviewFormState> {
+  const membership = await getCurrentMembership();
+  const user = await getCurrentUser();
+
+  if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
+  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {
+    return { error: "Seuls les administrateurs peuvent ouvrir le contrôle de paie." };
+  }
+
+  const periodId = String(formData.get("periodId") ?? "").trim();
+  if (!periodId) return { error: "La période de paie est obligatoire." };
+
+  const period = await prisma.payrollPeriod.findFirst({
+    where: {
+      id: periodId,
+      organizationId: membership.organizationId,
+    },
+    select: { id: true, status: true },
+  });
+
+  if (!period) return { error: "Période de paie introuvable." };
+  if (period.status !== "CALCULATED") {
+    return { error: "La période doit être calculée avant de passer au contrôle." };
+  }
+
+  const [employeeCount, calculationCount] = await Promise.all([
+    prisma.employee.count({
+      where: {
+        organizationId: membership.organizationId,
+        deletedAt: null,
+      },
+    }),
+    prisma.payrollCalculation.count({
+      where: {
+        organizationId: membership.organizationId,
+        payrollPeriodId: period.id,
+      },
+    }),
+  ]);
+
+  if (employeeCount === 0) return { error: "Aucun salarié actif n'est disponible pour cette période." };
+  if (calculationCount !== employeeCount) {
+    return {
+      error: `Contrôle impossible : ${calculationCount}/${employeeCount} salarié${employeeCount > 1 ? "s" : ""} calculé${employeeCount > 1 ? "s" : ""}.`,
+    };
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.payrollPeriod.update({
+      where: { id: period.id },
+      data: {
+        status: "REVIEW",
+      },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        organizationId: membership.organizationId,
+        actorUserId: user.id,
+        action: "payroll.period.review.started",
+        entityType: "PayrollPeriod",
+        entityId: period.id,
+        metadata: { employeeCount, calculationCount },
+      },
+    });
+  });
+
+  revalidatePath(`/dashboard/payroll/${periodId}`);
+  revalidatePath("/dashboard/payroll");
+  return undefined;
 }
