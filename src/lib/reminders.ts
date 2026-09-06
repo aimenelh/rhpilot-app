@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, renderNotificationEmail } from "@/lib/email";
 import { getUserDisplayName } from "@/lib/displayName";
@@ -107,13 +108,14 @@ export async function sendConfiguredReminders(): Promise<{
 
         await prisma.notification.create({
           data: {
+            id: randomUUID(),
             organizationId: rule.organizationId,
             recipientMembershipId: recipient.membershipId,
             type: `reminder_rule_${rule.id}`,
             subject,
             taskId: task.id,
             employeeEventId: task.employeeEventId,
-            sentByUserId: null, // envoi automatique
+            sentByUserId: null,
             delivered: result.ok,
           },
         });
