@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "node:crypto";
 import type { ContractType, Civility, DurationUnit, ProfessionalCategory } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
@@ -162,6 +163,7 @@ export async function createEmployee(
     });
     await tx.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId: membership.organizationId,
         actorUserId: user.id,
         action: "employee.created",
@@ -233,6 +235,7 @@ export async function updateEmployee(
     }),
     prisma.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId: membership.organizationId,
         actorUserId: user.id,
         action: "employee.updated",
@@ -270,6 +273,7 @@ export async function archiveEmployee(employeeId: string) {
     }),
     prisma.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId: membership.organizationId,
         actorUserId: user.id,
         action: "employee.archived",
@@ -314,6 +318,7 @@ export async function reactivateEmployee(employeeId: string) {
     }),
     prisma.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId: membership.organizationId,
         actorUserId: user.id,
         action: "employee.reactivated",
