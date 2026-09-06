@@ -38,8 +38,8 @@ type NavItem = {
 };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard", label: "Tableau de bord", available: true, icon: Compass },
-  { href: "/dashboard/employees", label: "Salariés", available: true, icon: Users },
+  { href: "/dashboard", label: "Tableau de bord", available: true, icon: Compass, section: "Accueil" },
+  { href: "/dashboard/employees", label: "Salariés", available: true, icon: Users, section: "Gestion RH" },
   { href: "/dashboard/events", label: "Parcours", available: true, icon: Route },
   { href: "/dashboard/calendar", label: "Calendrier", available: true, icon: CalendarDays },
   {
@@ -47,7 +47,7 @@ const NAV_ITEMS: NavItem[] = [
     label: "Équipe",
     available: true,
     icon: UsersRound,
-    section: "Administration",
+    section: "Espace",
   },
   { href: "/dashboard/billing", label: "Facturation", available: true, icon: CreditCard },
   { href: "/dashboard/configuration", label: "Configuration", available: true, icon: Settings },
