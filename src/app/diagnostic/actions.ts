@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 
 export type DiagnosticAnswers = {
@@ -21,6 +22,7 @@ export async function submitDiagnostic(
   try {
     await prisma.diagnosticResponse.create({
       data: {
+        id: randomUUID(),
         answers,
         riskAreas,
         email: email || null,
