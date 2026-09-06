@@ -1,36 +1,52 @@
 import { spawnSync } from "node:child_process";
 
-const FAILED_MIGRATION = "20260811190209_add_diagnostic_response";
+const RECOVERABLE_FAILED_MIGRATIONS = [
+  "20260811190209_add_diagnostic_response",
+  "20260906130000_paie_foundation",
+];
 
-function run(args) {
+function runCapture(args) {
   const result = spawnSync("npx", ["prisma", ...args], {
-    stdio: "inherit",
+    encoding: "utf8",
     shell: true,
   });
 
-  if (result.error) throw result.error;
-  return result.status ?? 1;
+  const output = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+  if (output) process.stdout.write(output);
+
+  return {
+    status: result.status ?? 1,
+    output,
+  };
 }
 
-let status = run(["migrate", "deploy"]);
+let result = runCapture(["migrate", "deploy"]);
 
-if (status !== 0) {
-  console.warn(
-    `Prisma migrate deploy failed. Resolving only the known failed migration ${FAILED_MIGRATION} and retrying.`
+if (result.status !== 0) {
+  const failedMigration = RECOVERABLE_FAILED_MIGRATIONS.find((migration) =>
+    result.output.includes(migration)
   );
 
-  const resolveStatus = run([
+  if (!result.output.includes("P3009") || !failedMigration) {
+    process.exit(result.status);
+  }
+
+  console.warn(
+    `Prisma a détecté la migration bloquée ${failedMigration}. Elle est marquée rolled-back puis relancée.`
+  );
+
+  const resolve = runCapture([
     "migrate",
     "resolve",
     "--rolled-back",
-    FAILED_MIGRATION,
+    failedMigration,
   ]);
 
-  if (resolveStatus !== 0) {
-    process.exit(resolveStatus);
+  if (resolve.status !== 0) {
+    process.exit(resolve.status);
   }
 
-  status = run(["migrate", "deploy"]);
+  result = runCapture(["migrate", "deploy"]);
 }
 
-process.exit(status);
+process.exit(result.status);
