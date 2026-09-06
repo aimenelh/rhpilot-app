@@ -78,18 +78,77 @@ function snapshotForEmployee(input: {
 }): Prisma.InputJsonObject {
   return {
     calculatedAt: new Date().toISOString(),
-    period: input.period,
-    profile: input.profile,
-    variables: input.variables,
-    variableTreatments: input.variableTreatments,
-    ruleSet: input.ruleSet,
+    period: {
+      id: input.period.id,
+      year: input.period.year,
+      month: input.period.month,
+    },
+    profile: {
+      id: input.profile.id,
+      baseSalaryCents: input.profile.baseSalaryCents,
+      monthlyHours: input.profile.monthlyHours,
+      effectiveFrom: input.profile.effectiveFrom,
+      effectiveUntil: input.profile.effectiveUntil,
+      collectiveAgreementId: input.profile.collectiveAgreementId,
+      classificationCode: input.profile.classificationCode,
+      classificationLabel: input.profile.classificationLabel,
+      level: input.profile.level,
+      coefficient: input.profile.coefficient,
+    },
+    variables: input.variables.map((variable) => ({
+      code: variable.code,
+      label: variable.label,
+      amount: variable.amount,
+      unit: variable.unit,
+      source: variable.source,
+    })),
+    variableTreatments: input.variableTreatments.map((treatment) => ({
+      code: treatment.code,
+      ruleVersionId: treatment.ruleVersionId,
+      grossDelta: treatment.grossDelta,
+    })),
+    ruleSet: {
+      version: input.ruleSet.version,
+      rules: input.ruleSet.rules.map((rule) => ({
+        code: rule.code,
+        label: rule.label,
+        side: rule.side,
+        rate: rule.rate,
+        base: rule.base,
+        ruleVersionId: rule.ruleVersionId,
+      })),
+    },
     ruleSource: {
       sourceName: input.ruleSource.sourceName,
       sourceUrl: input.ruleSource.sourceUrl,
       validFrom: input.ruleSource.validFrom.toISOString(),
       validUntil: input.ruleSource.validUntil?.toISOString() ?? null,
     },
-    result: input.result,
+    result: {
+      ruleSetVersion: input.result.ruleSetVersion,
+      grossAmount: input.result.grossAmount,
+      employeeContributions: input.result.employeeContributions,
+      employerContributions: input.result.employerContributions,
+      netBeforeTax: input.result.netBeforeTax,
+      withholdingTax: input.result.withholdingTax,
+      netPaid: input.result.netPaid,
+      contributions: input.result.contributions.map((contribution) => ({
+        code: contribution.code,
+        label: contribution.label,
+        side: contribution.side,
+        baseAmount: contribution.baseAmount,
+        rate: contribution.rate,
+        amount: contribution.amount,
+        ruleVersionId: contribution.ruleVersionId,
+      })),
+      variables: input.result.variables.map((variable) => ({
+        code: variable.code,
+        label: variable.label,
+        amount: variable.amount,
+        unit: variable.unit,
+        source: variable.source,
+      })),
+    },
   };
 }
 
