@@ -58,7 +58,6 @@ export default function PayrollVariablesSection({
 }) {
   const action = addPayrollVariable.bind(null, periodId);
   const [state, formAction] = useFormState<PayrollVariableFormState, FormData>(action, undefined);
-  const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
   const grouped = employees.map((employee) => ({
     employee,
     variables: variables.filter((variable) => variable.employeeId === employee.id),
