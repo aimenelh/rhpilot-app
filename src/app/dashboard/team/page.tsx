@@ -17,6 +17,11 @@ const ACCESS_ROLE_LABELS: Record<string, string> = {
   MEMBER: "Membre",
 };
 
+const FUNCTIONAL_ROLE_LABELS: Record<string, string> = {
+  RH: "RH",
+  DIRIGEANT: "Dirigeant",
+};
+
 // Rouge volontairement exclu : accent-rose sert déjà de code couleur
 // "urgent / en retard" ailleurs dans l'app, le réutiliser ici pour un
 // avatar neutre créerait une fausse alerte visuelle.
@@ -116,7 +121,12 @@ export default async function TeamPage() {
                         </span>
                       )}
                     </p>
-                    <p className="text-xs text-ink-faint">{m.user.email}</p>
+                    <p className="text-xs text-ink-faint">
+                      {m.user.email}
+                      {m.functionalRole && FUNCTIONAL_ROLE_LABELS[m.functionalRole] && (
+                        <> · {FUNCTIONAL_ROLE_LABELS[m.functionalRole]}</>
+                      )}
+                    </p>
                   </div>
                 </div>
                 <Badge tone="neutral">{ACCESS_ROLE_LABELS[m.accessRole] ?? m.accessRole}</Badge>
