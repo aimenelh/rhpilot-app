@@ -56,7 +56,7 @@ export default async function ConfigurationPage() {
             href="/dashboard/configuration/organisation"
             className="flex items-start gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
           >
-            <User size={18} className="mt-0.5 shrink-0 text-brand-primary-dark" />
+            <User size={18} className="mt-0.5 shrink-0 text-ink-faint" />
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-semibold text-ink">Organisation</h2>
               <p className="mt-0.5 text-sm text-ink-soft">
@@ -71,7 +71,7 @@ export default async function ConfigurationPage() {
           href="/dashboard/configuration/parcours"
           className="flex items-start gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
         >
-          <Waypoints size={18} className="mt-0.5 shrink-0 text-brand-primary" />
+          <Waypoints size={18} className="mt-0.5 shrink-0 text-ink-faint" />
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-ink">Parcours RH</h2>
             <p className="mt-0.5 text-sm text-ink-soft">
@@ -87,7 +87,7 @@ export default async function ConfigurationPage() {
           href="/dashboard/configuration/notifications"
           className="flex items-start gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
         >
-          <Bell size={18} className="mt-0.5 shrink-0 text-accent-teal" />
+          <Bell size={18} className="mt-0.5 shrink-0 text-ink-faint" />
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-ink">Notifications</h2>
             <p className="mt-0.5 text-sm text-ink-soft">
@@ -101,7 +101,7 @@ export default async function ConfigurationPage() {
         </Link>
 
         <div className="flex items-start gap-3 px-5 py-4">
-          <Database size={18} className="mt-0.5 shrink-0 text-accent-amber" />
+          <Database size={18} className="mt-0.5 shrink-0 text-ink-faint" />
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-ink">Données</h2>
             <p className="mt-0.5 text-sm text-ink-soft">
@@ -139,7 +139,7 @@ export default async function ConfigurationPage() {
           href="/dashboard/configuration/a-propos"
           className="flex items-start gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
         >
-          <Info size={18} className="mt-0.5 shrink-0 text-brand-primary" />
+          <Info size={18} className="mt-0.5 shrink-0 text-ink-faint" />
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-ink">À propos</h2>
             <p className="mt-0.5 text-sm text-ink-soft">
