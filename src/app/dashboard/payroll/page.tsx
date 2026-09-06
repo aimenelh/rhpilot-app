@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMemberships } from "@/lib/auth";
@@ -17,20 +18,8 @@ async function createPayrollPeriod(formData: FormData) {
   if (!Number.isInteger(month) || month < 1 || month > 12) throw new Error("Mois de paie invalide.");
 
   await prisma.payrollPeriod.upsert({
-    where: {
-      organizationId_year_month: {
-        organizationId: membership.organizationId,
-        year,
-        month,
-      },
-    },
-    create: {
-      id: crypto.randomUUID(),
-      organizationId: membership.organizationId,
-      year,
-      month,
-      status: "DRAFT",
-    },
+    where: { organizationId_year_month: { organizationId: membership.organizationId, year, month } },
+    create: { id: crypto.randomUUID(), organizationId: membership.organizationId, year, month, status: "DRAFT" },
     update: {},
   });
 
@@ -58,45 +47,15 @@ async function savePayrollProfile(formData: FormData) {
 
   const effectiveFrom = new Date();
   effectiveFrom.setHours(0, 0, 0, 0);
-
   await prisma.payrollProfile.updateMany({
-    where: {
-      organizationId: membership.organizationId,
-      employeeId: employee.id,
-      effectiveUntil: null,
-      effectiveFrom: { lt: effectiveFrom },
-    },
-    data: {
-      effectiveUntil: effectiveFrom,
-      updatedAt: new Date(),
-    },
+    where: { organizationId: membership.organizationId, employeeId: employee.id, effectiveUntil: null, effectiveFrom: { lt: effectiveFrom } },
+    data: { effectiveUntil: effectiveFrom, updatedAt: new Date() },
   });
-
   await prisma.payrollProfile.upsert({
-    where: {
-      organizationId_employeeId_effectiveFrom: {
-        organizationId: membership.organizationId,
-        employeeId: employee.id,
-        effectiveFrom,
-      },
-    },
-    create: {
-      id: crypto.randomUUID(),
-      organizationId: membership.organizationId,
-      employeeId: employee.id,
-      payFrequency: "MONTHLY",
-      currency: "EUR",
-      baseSalaryCents: Math.round(salaryEuros * 100),
-      monthlyHours,
-      effectiveFrom,
-    },
-    update: {
-      baseSalaryCents: Math.round(salaryEuros * 100),
-      monthlyHours,
-      updatedAt: new Date(),
-    },
+    where: { organizationId_employeeId_effectiveFrom: { organizationId: membership.organizationId, employeeId: employee.id, effectiveFrom } },
+    create: { id: crypto.randomUUID(), organizationId: membership.organizationId, employeeId: employee.id, payFrequency: "MONTHLY", currency: "EUR", baseSalaryCents: Math.round(salaryEuros * 100), monthlyHours, effectiveFrom },
+    update: { baseSalaryCents: Math.round(salaryEuros * 100), monthlyHours, updatedAt: new Date() },
   });
-
   revalidatePath("/dashboard/payroll");
 }
 
@@ -111,32 +70,13 @@ export default async function PayrollPage() {
   if (!membership) return null;
 
   const [periods, employees, profileRows] = await Promise.all([
-    prisma.payrollPeriod.findMany({
-      where: { organizationId: membership.organizationId },
-      select: { id: true, year: true, month: true, status: true },
-      orderBy: [{ year: "desc" }, { month: "desc" }],
-      take: 12,
-    }),
-    prisma.employee.findMany({
-      where: { organizationId: membership.organizationId, deletedAt: null },
-      select: { id: true, firstName: true, lastName: true, position: true },
-      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-    }),
-    prisma.payrollProfile.findMany({
-      where: {
-        organizationId: membership.organizationId,
-        OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: new Date() } }],
-      },
-      select: { employeeId: true, baseSalaryCents: true, monthlyHours: true, effectiveFrom: true },
-      orderBy: [{ employeeId: "asc" }, { effectiveFrom: "desc" }],
-    }),
+    prisma.payrollPeriod.findMany({ where: { organizationId: membership.organizationId }, select: { id: true, year: true, month: true, status: true }, orderBy: [{ year: "desc" }, { month: "desc" }], take: 12 }),
+    prisma.employee.findMany({ where: { organizationId: membership.organizationId, deletedAt: null }, select: { id: true, firstName: true, lastName: true, position: true }, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] }),
+    prisma.payrollProfile.findMany({ where: { organizationId: membership.organizationId, OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: new Date() } }] }, select: { employeeId: true, baseSalaryCents: true, monthlyHours: true, effectiveFrom: true }, orderBy: [{ employeeId: "asc" }, { effectiveFrom: "desc" }] }),
   ]);
 
   const profileByEmployee = new Map<string, (typeof profileRows)[number]>();
-  for (const profile of profileRows) {
-    if (!profileByEmployee.has(profile.employeeId)) profileByEmployee.set(profile.employeeId, profile);
-  }
-
+  for (const profile of profileRows) if (!profileByEmployee.has(profile.employeeId)) profileByEmployee.set(profile.employeeId, profile);
   const configuredCount = employees.filter((employee) => profileByEmployee.has(employee.id)).length;
   const now = new Date();
   const currentPeriod = periods.find((period) => period.year === now.getFullYear() && period.month === now.getMonth() + 1);
@@ -189,7 +129,12 @@ export default async function PayrollPage() {
         <div className="border-b border-surface-border px-5 py-4"><h2 className="font-semibold text-ink">Périodes de paie</h2><p className="mt-1 text-xs text-ink-faint">Cycle prévu : brouillon → calculée → contrôle → validée → verrouillée.</p></div>
         <div className="divide-y divide-surface-border">
           {periods.length === 0 && <p className="px-5 py-8 text-sm text-ink-soft">Aucune période ouverte pour le moment.</p>}
-          {periods.map((period) => <div key={period.id} className="flex items-center justify-between px-5 py-4"><p className="font-medium text-ink">{MONTHS[period.month - 1]} {period.year}</p><span className="rounded-full bg-surface-subtle px-3 py-1 text-xs font-semibold text-ink-soft">{period.status}</span></div>)}
+          {periods.map((period) => (
+            <Link key={period.id} href={`/dashboard/payroll/${period.id}`} className="flex items-center justify-between px-5 py-4 transition-colors hover:bg-surface-subtle/50">
+              <div><p className="font-medium text-ink">{MONTHS[period.month - 1]} {period.year}</p><p className="mt-0.5 text-xs text-ink-faint">Ouvrir le détail de la période</p></div>
+              <span className="rounded-full bg-surface-subtle px-3 py-1 text-xs font-semibold text-ink-soft">{period.status}</span>
+            </Link>
+          ))}
         </div>
       </section>
     </div>
