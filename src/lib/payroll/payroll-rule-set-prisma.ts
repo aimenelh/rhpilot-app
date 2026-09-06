@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import type { PayrollRuleSet } from "./domain";
+import type { PayrollContributionRule, PayrollRuleSet } from "./domain";
 
 type PersistedPayrollRuleSetParameters = {
   withholdingTaxRate?: unknown;
@@ -46,12 +46,14 @@ function parseParameters(parameters: unknown, ruleVersionId: string): {
   const value = parameters as PersistedPayrollRuleSetParameters;
   if (!Array.isArray(value.rules)) return null;
 
-  const rules = value.rules.map((candidate) => {
+  const rules: PayrollContributionRule[] = [];
+  for (const candidate of value.rules) {
     if (!isRecord(candidate)) return null;
+
     const code = typeof candidate.code === "string" ? candidate.code.trim() : "";
     const label = typeof candidate.label === "string" ? candidate.label.trim() : "";
     const side = candidate.side === "EMPLOYEE" || candidate.side === "EMPLOYER" ? candidate.side : null;
-    const base = candidate.base === "GROSS" ? candidate.base : null;
+    const base = candidate.base === "GROSS" ? "GROSS" : null;
     const rate = typeof candidate.rate === "number" ? candidate.rate : null;
     const candidateRuleVersionId =
       typeof candidate.ruleVersionId === "string" && candidate.ruleVersionId.trim()
@@ -62,10 +64,16 @@ function parseParameters(parameters: unknown, ruleVersionId: string): {
       return null;
     }
 
-    return { code, label, side, rate, base, ruleVersionId: candidateRuleVersionId };
-  });
-
-  if (rules.some((rule) => rule === null)) return null;
+    const contributionRule: PayrollContributionRule = {
+      code,
+      label,
+      side,
+      rate,
+      base,
+      ruleVersionId: candidateRuleVersionId,
+    };
+    rules.push(contributionRule);
+  }
 
   const withholdingTaxRate = value.withholdingTaxRate ?? 0;
   if (
@@ -77,34 +85,31 @@ function parseParameters(parameters: unknown, ruleVersionId: string): {
     return null;
   }
 
-  const variableTreatments = Array.isArray(value.variableTreatments)
-    ? value.variableTreatments.map((candidate) => {
-        if (!isRecord(candidate)) return null;
-        const code = typeof candidate.code === "string" ? candidate.code.trim() : "";
-        const grossEffect =
-          candidate.grossEffect === "ADD_TO_GROSS" ||
-          candidate.grossEffect === "SUBTRACT_FROM_GROSS" ||
-          candidate.grossEffect === "EXCLUDE_FROM_GROSS"
-            ? candidate.grossEffect
-            : null;
-        const supportedUnits = Array.isArray(candidate.supportedUnits)
-          ? candidate.supportedUnits.filter((unit): unit is "EUR" => unit === "EUR")
-          : [];
+  const variableTreatments: PersistedVariableTreatment[] = [];
+  if (Array.isArray(value.variableTreatments)) {
+    for (const candidate of value.variableTreatments) {
+      if (!isRecord(candidate)) return null;
 
-        if (!code || !grossEffect || supportedUnits.length === 0) return null;
-        return { code, grossEffect, supportedUnits };
-      })
-    : [];
+      const code = typeof candidate.code === "string" ? candidate.code.trim() : "";
+      const grossEffect =
+        candidate.grossEffect === "ADD_TO_GROSS" ||
+        candidate.grossEffect === "SUBTRACT_FROM_GROSS" ||
+        candidate.grossEffect === "EXCLUDE_FROM_GROSS"
+          ? candidate.grossEffect
+          : null;
+      const supportedUnits = Array.isArray(candidate.supportedUnits)
+        ? candidate.supportedUnits.filter((unit): unit is "EUR" => unit === "EUR")
+        : [];
 
-  if (variableTreatments.some((treatment) => treatment === null)) return null;
+      if (!code || !grossEffect || supportedUnits.length === 0) return null;
+      variableTreatments.push({ code, grossEffect, supportedUnits });
+    }
+  }
 
   return {
-    ruleSet: {
-      version: ruleVersionId,
-      rules: rules as NonNullable<(typeof rules)[number]>[],
-    },
+    ruleSet: { version: ruleVersionId, rules },
     withholdingTaxRate,
-    variableTreatments: variableTreatments as NonNullable<(typeof variableTreatments)[number]>[],
+    variableTreatments,
   };
 }
 
