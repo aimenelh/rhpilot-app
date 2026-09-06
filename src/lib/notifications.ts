@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, renderNotificationEmail } from "@/lib/email";
 import { formatRelativeDueDate, isOverdue, daysUntil } from "@/lib/urgency";
@@ -9,13 +10,6 @@ function getAppUrl() {
   return process.env.APP_URL ?? "http://localhost:3000";
 }
 
-/**
- * Tâches ouvertes assignées à un membre précis, en retard ou à
- * échéance dans les 7 jours — le même calcul que "Votre attention est
- * requise" sur le tableau de bord, mais filtré sur une seule personne
- * plutôt que sur toute l'organisation. Une seule source de vérité pour
- * "qu'est-ce qui est urgent" (src/lib/urgency.ts), réutilisée ici.
- */
 async function getAttentionTasksForMembership(organizationId: string, membershipId: string) {
   const tasks = await prisma.task.findMany({
     where: {
@@ -37,12 +31,6 @@ async function getAttentionTasksForMembership(organizationId: string, membership
   });
 }
 
-/**
- * Envoie un rappel immédiat pour UNE tâche précise, à la personne qui
- * lui est assignée — le "un clic pour relancer" demandé. Enregistre la
- * notification dans le journal quel que soit le résultat de l'envoi
- * (utile même en cas d'échec, pour comprendre ce qui a été tenté).
- */
 export async function sendManualReminder({
   taskId,
   organizationId,
@@ -95,6 +83,7 @@ export async function sendManualReminder({
 
   await prisma.notification.create({
     data: {
+      id: randomUUID(),
       organizationId,
       recipientMembershipId: task.assignedMembership.id,
       type: "manual_reminder",
@@ -109,11 +98,6 @@ export async function sendManualReminder({
   return result;
 }
 
-/**
- * Envoie le résumé personnel d'un membre (ses tâches urgentes), et
- * journalise l'envoi. Ne envoie rien si sa liste est vide — un résumé
- * vide serait du bruit, pas de l'aide.
- */
 async function sendDigestToMembership(
   organizationId: string,
   membership: { id: string; user: { email: string; firstName: string | null; lastName: string | null } },
@@ -132,9 +116,6 @@ async function sendDigestToMembership(
     url: `${appUrl}/dashboard/events/${task.employeeEventId}#task-${task.id}`,
   });
 
-  // Regroupement par urgence plutôt qu'une liste plate — reste lisible
-  // même avec beaucoup de salariés (même logique que la vue "Par
-  // salarié" du tableau de bord, transposée à l'email).
   const overdue = tasks.filter((task) => isOverdue(task.dueDate, task.status));
   const today = tasks.filter(
     (task) => !isOverdue(task.dueDate, task.status) && daysUntil(task.dueDate) === 0
@@ -143,9 +124,6 @@ async function sendDigestToMembership(
     (task) => !isOverdue(task.dueDate, task.status) && daysUntil(task.dueDate) > 0
   );
 
-  // Plafond global : on garde les plus urgentes en premier (retard,
-  // puis aujourd'hui, puis le reste de la semaine), le surplus est
-  // résumé par un lien plutôt que d'allonger l'email indéfiniment.
   const ordered = [...overdue, ...today, ...thisWeek];
   const visible = new Set(ordered.slice(0, DIGEST_ITEMS_LIMIT).map((task) => task.id));
   const moreCount = Math.max(0, tasks.length - DIGEST_ITEMS_LIMIT);
@@ -173,11 +151,12 @@ async function sendDigestToMembership(
 
   await prisma.notification.create({
     data: {
+      id: randomUUID(),
       organizationId,
       recipientMembershipId: membership.id,
       type,
       subject,
-      sentByUserId: null, // envoi automatique
+      sentByUserId: null,
       delivered: result.ok,
     },
   });
@@ -185,13 +164,6 @@ async function sendDigestToMembership(
   return result.ok ? "sent" : "failed";
 }
 
-/**
- * Envoie les résumés à tous les membres actifs de l'organisation dont
- * la préférence correspond (hors "OFF"). Déclenché manuellement pour
- * l'instant via un bouton ("Envoyer maintenant") — le vrai
- * déclenchement automatique quotidien/hebdomadaire nécessite un cron,
- * qui ne peut fonctionner correctement qu'une fois RH Pilot déployé.
- */
 export async function sendDueDigests(organizationId: string) {
   const memberships = await prisma.membership.findMany({
     where: {
