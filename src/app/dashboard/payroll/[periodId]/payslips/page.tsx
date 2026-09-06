@@ -3,6 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import PayrollPayslipPrepareButton from "../../PayrollPayslipPrepareButton";
+import PayrollPayslipGenerateButton from "../../PayrollPayslipGenerateButton";
 
 const MONTHS = [
   "Janvier",
@@ -77,8 +78,10 @@ export default async function PayrollPayslipsPage({
       payrollPeriodId: period.id,
     },
     select: {
+      id: true,
       employeeId: true,
       documentStatus: true,
+      storageKey: true,
       generatedAt: true,
       publishedAt: true,
     },
@@ -86,6 +89,7 @@ export default async function PayrollPayslipsPage({
 
   const payslipByEmployee = new Map(payslips.map((payslip) => [payslip.employeeId, payslip]));
   const preparedCount = employees.filter((employee) => payslipByEmployee.has(employee.id)).length;
+  const generatedCount = employees.filter((employee) => payslipByEmployee.get(employee.id)?.documentStatus === "GENERATED").length;
   const isLocked = period.status === "LOCKED";
   const canPrepare =
     isLocked &&
@@ -109,7 +113,7 @@ export default async function PayrollPayslipsPage({
             {MONTHS[period.month - 1]} {period.year}
           </h1>
           <p className="mt-1 text-sm text-ink-soft">
-            Les bulletins seront générés exclusivement à partir des calculs verrouillés de la période.
+            Les bulletins sont produits exclusivement depuis les calculs verrouillés de la période.
           </p>
         </div>
         <span className="rounded-full bg-surface-subtle px-3 py-1.5 text-sm font-semibold text-ink-soft">
@@ -134,7 +138,7 @@ export default async function PayrollPayslipsPage({
             La période est verrouillée. Les données de paie ne peuvent plus être modifiées dans ce cycle.
           </p>
           <p className="mt-1 text-sm text-ink-soft">
-            Étape suivante : préparer les documents individuels à partir des calculs enregistrés.
+            Les bulletins sont préparés puis générés à partir des calculs enregistrés.
           </p>
         </section>
       )}
@@ -144,11 +148,11 @@ export default async function PayrollPayslipsPage({
           <div>
             <h2 className="font-semibold text-ink">État des bulletins</h2>
             <p className="mt-1 text-sm text-ink-soft">
-              {preparedCount}/{employees.length} salarié{employees.length > 1 ? "s" : ""} dispose{employees.length > 1 ? "nt" : ""} d’un enregistrement de bulletin.
+              {preparedCount}/{employees.length} préparés · {generatedCount}/{employees.length} générés
             </p>
           </div>
           <span className="rounded-full bg-surface-subtle px-3 py-1.5 text-xs font-semibold text-ink-soft">
-            {preparedCount}/{employees.length}
+            {generatedCount}/{employees.length}
           </span>
         </div>
 
@@ -157,11 +161,21 @@ export default async function PayrollPayslipsPage({
             periodId={period.id}
             disabled={
               !isLocked ||
-              membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN" ||
+              (membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN") ||
               employees.length === 0 ||
               preparedCount >= employees.length
             }
           />
+        ) : null}
+
+        {isLocked && preparedCount === employees.length && generatedCount < employees.length ? (
+          <PayrollPayslipGenerateButton periodId={period.id} />
+        ) : null}
+
+        {isLocked && preparedCount === employees.length && generatedCount === employees.length && employees.length > 0 ? (
+          <div className="mt-4 rounded-lg border border-accent-teal/30 bg-accent-teal/10 px-4 py-3 text-sm text-ink">
+            Tous les bulletins sont générés et stockés. Ils sont disponibles individuellement ci-dessous.
+          </div>
         ) : null}
 
         {isLocked && preparedCount === 0 && employees.length === 0 ? (
@@ -169,35 +183,33 @@ export default async function PayrollPayslipsPage({
             Aucun salarié actif n’est disponible pour cette période.
           </p>
         ) : null}
-
-        {isLocked && preparedCount === employees.length && employees.length > 0 ? (
-          <div className="mt-4 rounded-lg border border-accent-teal/30 bg-accent-teal/10 px-4 py-3 text-sm text-ink">
-            Tous les bulletins sont préparés. La prochaine étape sera la génération du document PDF réglementaire.
-          </div>
-        ) : null}
       </section>
 
       <section className="mt-7 overflow-hidden rounded-xl border border-surface-border bg-white">
         <div className="border-b border-surface-border px-5 py-4">
           <h2 className="font-semibold text-ink">Salariés</h2>
           <p className="mt-1 text-xs text-ink-faint">
-            Aucun PDF n’est considéré comme généré tant que le document réglementaire n’est pas réellement produit et stocké.
+            Un PDF n’est disponible que lorsque le bulletin est effectivement généré et stocké.
           </p>
         </div>
 
         <div className="overflow-x-auto">
-          <table className="min-w-[720px] w-full text-sm">
+          <table className="min-w-[820px] w-full text-sm">
             <thead>
               <tr className="border-b border-surface-border bg-surface-subtle/50 text-left text-xs font-semibold text-ink-faint">
                 <th className="px-5 py-3">Salarié</th>
                 <th className="px-5 py-3">Statut bulletin</th>
-                <th className="px-5 py-3">Préparé le</th>
+                <th className="px-5 py-3">Généré le</th>
                 <th className="px-5 py-3">Publié le</th>
+                <th className="px-5 py-3">Document</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-surface-border">
               {employees.map((employee) => {
                 const payslip = payslipByEmployee.get(employee.id);
+                const canDownload =
+                  (payslip?.documentStatus === "GENERATED" || payslip?.documentStatus === "PUBLISHED") &&
+                  Boolean(payslip.storageKey);
                 return (
                   <tr key={employee.id}>
                     <td className="px-5 py-4">
@@ -222,6 +234,18 @@ export default async function PayrollPayslipsPage({
                       {payslip?.publishedAt
                         ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(payslip.publishedAt)
                         : "—"}
+                    </td>
+                    <td className="px-5 py-4">
+                      {canDownload ? (
+                        <a
+                          href={`/api/payroll/payslips/${payslip.id}`}
+                          className="text-sm font-semibold text-brand-primary hover:underline"
+                        >
+                          Télécharger le PDF
+                        </a>
+                      ) : (
+                        <span className="text-sm text-ink-faint">Indisponible</span>
+                      )}
                     </td>
                   </tr>
                 );
