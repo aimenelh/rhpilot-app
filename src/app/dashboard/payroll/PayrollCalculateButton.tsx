@@ -17,7 +17,7 @@ function CalculateSubmitButton({ disabled }: { disabled: boolean }) {
       disabled={disabled || pending}
       className="inline-flex items-center justify-center rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
     >
-      {pending ? "Calcul en cours…" : "Calculer la période"}
+      {pending ? "Calcul en cours…" : "Calculer la paie"}
     </button>
   );
 }
@@ -31,7 +31,7 @@ function ReviewSubmitButton() {
       disabled={pending}
       className="inline-flex items-center justify-center rounded-lg border border-surface-border bg-white px-4 py-2.5 text-sm font-semibold text-ink transition hover:bg-surface-subtle disabled:cursor-not-allowed disabled:opacity-50"
     >
-      {pending ? "Ouverture du contrôle…" : "Passer au contrôle"}
+      {pending ? "Ouverture du contrôle…" : "Voir les contrôles"}
     </button>
   );
 }
@@ -65,12 +65,12 @@ export default function PayrollCalculateButton({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <p className="text-sm font-semibold text-ink">
-            {isReferenceOnlyRule ? "Référentiel SMIC" : "Calcul de la période"}
+            {isReferenceOnlyRule ? "SMIC" : "Calcul de la paie"}
           </p>
           <p className="mt-1 text-xs text-ink-faint">
             {isReferenceOnlyRule
-              ? "Le référentiel SMIC sert au contrôle du minimum de rémunération. Il ne constitue pas à lui seul un jeu complet de règles de calcul de paie."
-              : "Le calcul utilise uniquement les règles validées disponibles dans le référentiel."}
+              ? "Le SMIC sert à vérifier le minimum légal. Il ne suffit pas à calculer toute la paie."
+              : "Le calcul utilise les règles de paie disponibles pour cette période."}
           </p>
         </div>
 
@@ -95,7 +95,7 @@ export default function PayrollCalculateButton({
 
       {isReferenceOnlyRule ? (
         <p className="mt-3 rounded-md bg-accent-amber/10 px-3 py-2 text-sm text-accent-amber" role="status">
-          Données salarié prêtes. Aucun jeu complet de règles sociales validé n&apos;est actuellement disponible pour lancer le calcul.
+          Les données du salarié sont prêtes. Les règles nécessaires pour calculer la paie ne sont pas encore disponibles.
         </p>
       ) : null}
 
