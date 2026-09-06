@@ -1,7 +1,7 @@
 "use client";
 
 import { useFormState, useFormStatus } from "react-dom";
-import { createAbsence, type ActionState } from "./actions";
+import { createAbsence } from "./actions";
 import { Button } from "@/components/ui/Button";
 
 type Employee = { id: string; firstName: string; lastName: string };
@@ -29,7 +29,7 @@ function SubmitButton() {
 }
 
 export default function AbsenceCreateForm({ employees }: { employees: Employee[] }) {
-  const [state, formAction] = useFormState<ActionState, FormData>(createAbsence, undefined);
+  const [state, formAction] = useFormState(createAbsence, undefined);
 
   return (
     <form action={formAction} className="mt-5 space-y-4">
