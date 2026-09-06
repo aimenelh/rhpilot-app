@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sparkles, X, Lock } from "lucide-react";
+import { X, Lock } from "lucide-react";
 import { Logomark } from "@/components/Brand";
 
 // Réponses pré-écrites, reprises mot pour mot de la page /questions —
@@ -55,9 +55,6 @@ export function PublicCopilotePreview() {
             <div className="flex items-center gap-2.5">
               <div className="relative shrink-0">
                 <Logomark size={26} />
-                <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-brand-primary-dark text-white ring-2 ring-white">
-                  <Sparkles size={8} />
-                </span>
               </div>
               <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
                 Copilote RH Pilot
@@ -137,9 +134,6 @@ export function PublicCopilotePreview() {
         ) : (
           <span className="relative inline-flex">
             <Logomark size={30} />
-            <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand-primary-dark text-white ring-2 ring-white">
-              <Sparkles size={9} />
-            </span>
           </span>
         )}
       </button>

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
-import { Sparkles, Info, CheckCheck } from "lucide-react";
+import { Info, CheckCheck } from "lucide-react";
 import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Field";
@@ -71,9 +71,6 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
         <div className="flex items-center gap-2.5">
           <div className="relative shrink-0">
             <Logomark size={30} />
-            <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand-primary-dark text-white ring-2 ring-white">
-              <Sparkles size={9} />
-            </span>
           </div>
           <p className="text-sm font-semibold text-ink">Copilote RH Pilot</p>
         </div>

@@ -2,7 +2,7 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import { useState } from "react";
-import { Rocket } from "lucide-react";
+import { CalendarPlus } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select } from "@/components/ui/Field";
@@ -70,7 +70,7 @@ export function TriggerEventForm({
   return (
     <Card>
       <div className="flex items-center gap-2">
-        <Rocket size={16} className="text-brand-primary" />
+        <CalendarPlus size={16} className="text-brand-primary" />
         <h2 className="text-base font-semibold text-ink">Déclencher un événement RH</h2>
       </div>
       <p className="mt-1.5 text-sm text-ink-soft">

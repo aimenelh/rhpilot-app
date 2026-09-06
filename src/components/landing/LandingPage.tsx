@@ -178,7 +178,7 @@ export function LandingPage() {
 
               {/* Automatisations */}
               <div>
-                <h3 className="text-lg font-semibold text-ink">Gagnez du temps. Restez serein.</h3>
+                <h3 className="text-lg font-semibold text-ink">Un événement RH, un parcours complet.</h3>
                 <p className="mt-2 text-sm text-ink-soft">
                   RH Pilot déclenche les bonnes actions au bon moment, dès qu&apos;un
                   événement RH survient.

@@ -1,5 +1,4 @@
 import {
-  Rocket,
   ArrowRight,
   Users,
   FileText,
@@ -114,7 +113,6 @@ export default function WelcomePage({
           </div>
 
           <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-brand-primary-dark">
-            <Rocket size={13} />
             Bêta
           </span>
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, Sparkles, ArrowRight } from "lucide-react";
+import { ArrowLeft, Info, ArrowRight } from "lucide-react";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
@@ -101,7 +101,7 @@ export default async function ParcoursConfigPage() {
         })}
       </div>
       <div className="mt-4 flex items-start gap-2.5 rounded-lg bg-brand-primary/5 px-4 py-3 text-sm text-ink-soft">
-        <Sparkles size={16} className="mt-0.5 shrink-0 text-brand-primary" />
+        <Info size={16} className="mt-0.5 shrink-0 text-brand-primary" />
         <p>
           Pour personnaliser une étape, ouvrez un parcours déjà généré, modifiez ou
           supprimez l&apos;étape concernée, puis cochez « Appliquer aussi ce changement aux

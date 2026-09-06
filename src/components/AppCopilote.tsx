@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
-import { Sparkles, X, CheckCheck } from "lucide-react";
+import { X, CheckCheck } from "lucide-react";
 import { Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { Logomark } from "@/components/Brand";
@@ -234,9 +234,6 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
             <div className="flex items-center gap-2.5">
               <div className="relative shrink-0">
                 <Logomark size={26} />
-                <span className="absolute -bottom-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-brand-primary-dark text-white ring-2 ring-white">
-                  <Sparkles size={8} />
-                </span>
               </div>
               <div>
                 <p className="text-sm font-semibold text-ink">Copilote RH Pilot</p>
@@ -376,9 +373,6 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
         ) : (
           <span className="relative inline-flex">
             <Logomark size={30} />
-            <span className="absolute -bottom-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-brand-primary-dark text-white ring-2 ring-white">
-              <Sparkles size={9} />
-            </span>
           </span>
         )}
         {!isOpen && summary.overdueCount > 0 && (
