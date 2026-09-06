@@ -2,7 +2,7 @@
 -- Cette migration pose uniquement le modèle de données et l'historisation.
 -- Aucun taux social n'est codé ici : les règles seront versionnées séparément.
 
-CREATE TABLE "payroll_profiles" (
+CREATE TABLE IF NOT EXISTS "payroll_profiles" (
   "id" TEXT NOT NULL,
   "organization_id" TEXT NOT NULL,
   "employee_id" TEXT NOT NULL,
@@ -30,12 +30,12 @@ CREATE TABLE "payroll_profiles" (
     CHECK ("monthly_hours" IS NULL OR "monthly_hours" > 0)
 );
 
-CREATE UNIQUE INDEX "payroll_profiles_organization_employee_effective_from_key"
+CREATE UNIQUE INDEX IF NOT EXISTS "payroll_profiles_organization_employee_effective_from_key"
   ON "payroll_profiles" ("organization_id", "employee_id", "effective_from");
-CREATE INDEX "payroll_profiles_organization_employee_idx"
+CREATE INDEX IF NOT EXISTS "payroll_profiles_organization_employee_idx"
   ON "payroll_profiles" ("organization_id", "employee_id");
 
-CREATE TABLE "payroll_periods" (
+CREATE TABLE IF NOT EXISTS "payroll_periods" (
   "id" TEXT NOT NULL,
   "organization_id" TEXT NOT NULL,
   "year" INTEGER NOT NULL,
@@ -56,12 +56,14 @@ CREATE TABLE "payroll_periods" (
     CHECK ("status" IN ('DRAFT', 'CALCULATED', 'REVIEW', 'VALIDATED', 'LOCKED'))
 );
 
-CREATE UNIQUE INDEX "payroll_periods_organization_year_month_key"
+CREATE UNIQUE INDEX IF NOT EXISTS "payroll_periods_organization_year_month_key"
   ON "payroll_periods" ("organization_id", "year", "month");
-CREATE INDEX "payroll_periods_organization_status_idx"
+CREATE UNIQUE INDEX IF NOT EXISTS "payroll_periods_organization_id_id_key"
+  ON "payroll_periods" ("organization_id", "id");
+CREATE INDEX IF NOT EXISTS "payroll_periods_organization_status_idx"
   ON "payroll_periods" ("organization_id", "status");
 
-CREATE TABLE "payroll_variables" (
+CREATE TABLE IF NOT EXISTS "payroll_variables" (
   "id" TEXT NOT NULL,
   "organization_id" TEXT NOT NULL,
   "payroll_period_id" TEXT NOT NULL,
@@ -86,10 +88,10 @@ CREATE TABLE "payroll_variables" (
   CONSTRAINT "payroll_variables_source_check" CHECK ("source" IN ('MANUAL', 'IMPORT', 'SYSTEM'))
 );
 
-CREATE INDEX "payroll_variables_period_employee_idx"
+CREATE INDEX IF NOT EXISTS "payroll_variables_period_employee_idx"
   ON "payroll_variables" ("organization_id", "payroll_period_id", "employee_id");
 
-CREATE TABLE "payroll_rule_versions" (
+CREATE TABLE IF NOT EXISTS "payroll_rule_versions" (
   "id" TEXT NOT NULL,
   "code" TEXT NOT NULL,
   "version" INTEGER NOT NULL,
@@ -107,12 +109,12 @@ CREATE TABLE "payroll_rule_versions" (
   CONSTRAINT "payroll_rule_versions_dates_check" CHECK ("valid_until" IS NULL OR "valid_until" >= "valid_from")
 );
 
-CREATE UNIQUE INDEX "payroll_rule_versions_code_version_scope_key"
+CREATE UNIQUE INDEX IF NOT EXISTS "payroll_rule_versions_code_version_scope_key"
   ON "payroll_rule_versions" ("code", "version", "scope");
-CREATE INDEX "payroll_rule_versions_lookup_idx"
+CREATE INDEX IF NOT EXISTS "payroll_rule_versions_lookup_idx"
   ON "payroll_rule_versions" ("code", "scope", "valid_from", "valid_until", "status");
 
-CREATE TABLE "payroll_calculations" (
+CREATE TABLE IF NOT EXISTS "payroll_calculations" (
   "id" TEXT NOT NULL,
   "organization_id" TEXT NOT NULL,
   "payroll_period_id" TEXT NOT NULL,
@@ -139,10 +141,10 @@ CREATE TABLE "payroll_calculations" (
     CHECK ("gross_amount" >= 0 AND "employee_contributions" >= 0 AND "employer_contributions" >= 0 AND "withholding_tax" >= 0)
 );
 
-CREATE UNIQUE INDEX "payroll_calculations_period_employee_key"
+CREATE UNIQUE INDEX IF NOT EXISTS "payroll_calculations_period_employee_key"
   ON "payroll_calculations" ("organization_id", "payroll_period_id", "employee_id");
 
-CREATE TABLE "payroll_contributions" (
+CREATE TABLE IF NOT EXISTS "payroll_contributions" (
   "id" TEXT NOT NULL,
   "calculation_id" TEXT NOT NULL,
   "code" TEXT NOT NULL,
@@ -165,10 +167,10 @@ CREATE TABLE "payroll_contributions" (
   CONSTRAINT "payroll_contributions_amount_check" CHECK ("base_amount" >= 0 AND "amount" >= 0)
 );
 
-CREATE INDEX "payroll_contributions_calculation_idx"
+CREATE INDEX IF NOT EXISTS "payroll_contributions_calculation_idx"
   ON "payroll_contributions" ("calculation_id");
 
-CREATE TABLE "payslips" (
+CREATE TABLE IF NOT EXISTS "payslips" (
   "id" TEXT NOT NULL,
   "organization_id" TEXT NOT NULL,
   "payroll_period_id" TEXT NOT NULL,
@@ -195,5 +197,5 @@ CREATE TABLE "payslips" (
   CONSTRAINT "payslips_status_check" CHECK ("document_status" IN ('DRAFT', 'GENERATED', 'PUBLISHED'))
 );
 
-CREATE UNIQUE INDEX "payslips_calculation_key" ON "payslips" ("calculation_id");
-CREATE UNIQUE INDEX "payslips_period_employee_key" ON "payslips" ("organization_id", "payroll_period_id", "employee_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "payslips_calculation_key" ON "payslips" ("calculation_id");
+CREATE UNIQUE INDEX IF NOT EXISTS "payslips_period_employee_key" ON "payslips" ("organization_id", "payroll_period_id", "employee_id");
