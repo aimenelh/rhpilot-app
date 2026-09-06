@@ -7,6 +7,7 @@ import PayrollVariablesSection from "../PayrollVariablesSection";
 import PayrollCalculateButton from "../PayrollCalculateButton";
 import PayrollReviewButton from "../PayrollReviewButton";
 import PayrollValidateButton from "../PayrollValidateButton";
+import PayrollLockButton from "../PayrollLockButton";
 
 const MONTHS = [
   "Janvier",
@@ -225,6 +226,10 @@ export default async function PayrollPeriodPage({
     membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN"
       ? true
       : period.status !== "REVIEW" || calculatedCount !== employees.length || employees.length === 0;
+  const lockDisabled =
+    membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN"
+      ? true
+      : period.status !== "VALIDATED" || calculatedCount !== employees.length || employees.length === 0;
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -410,6 +415,10 @@ export default async function PayrollPeriodPage({
         <PayrollValidateButton periodId={period.id} disabled={validationDisabled} />
       ) : null}
 
+      {period.status === "VALIDATED" ? (
+        <PayrollLockButton periodId={period.id} disabled={lockDisabled} />
+      ) : null}
+
       <section className="mt-7 overflow-hidden rounded-xl border border-surface-border bg-white">
         <div className="border-b border-surface-border px-5 py-4">
           <h2 className="font-semibold text-ink">Salariés de la période</h2>
@@ -479,7 +488,10 @@ export default async function PayrollPeriodPage({
           lastName: employee.lastName,
         }))}
         variables={variableRows}
-        readOnly={membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN"}
+        readOnly={
+          (membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN") ||
+          period.status !== "DRAFT"
+        }
       />
 
       <section className="mt-7 rounded-xl border border-surface-border bg-white p-5">
@@ -508,7 +520,9 @@ export default async function PayrollPeriodPage({
                         ? "Passer au contrôle de la période"
                         : period.status === "REVIEW"
                           ? "Valider la période après contrôle"
-                          : "Continuer le cycle de paie"}
+                          : period.status === "VALIDATED"
+                            ? "Verrouiller la période après validation"
+                            : "Continuer le cycle de paie"}
             </p>
           </div>
         </div>
