@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ChevronLeft, ChevronRight, CalendarDays, TriangleAlert, CalendarClock } from "lucide-react";
+import { ChevronLeft, ChevronRight, CalendarDays, TriangleAlert, CalendarClock, User } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership } from "@/lib/auth";
 import { formatDate } from "@/lib/format";
+import { isOverdue } from "@/lib/urgency";
+import { getUserDisplayName } from "@/lib/displayName";
 import {
   getMonthGrid,
   dateKey,
@@ -15,14 +17,27 @@ import {
 import { Card } from "@/components/ui/Card";
 import { MonthSummaryButton } from "./MonthSummaryButton";
 export const dynamic = "force-dynamic";
-const CATEGORY_STYLES: Record<string, { dot: string; badgeBg: string; badgeText: string }> = {
-  "Embauche": { dot: "bg-brand-primary-dark", badgeBg: "bg-brand-primary-dark/10", badgeText: "text-brand-primary-dark" },
-  "Visite médicale": { dot: "bg-accent-teal", badgeBg: "bg-accent-teal/10", badgeText: "text-accent-teal" },
-  "Fin de période d'essai": { dot: "bg-accent-amber", badgeBg: "bg-accent-amber/10", badgeText: "text-accent-amber" },
+// Uniquement pour les puces de filtre par catégorie (leur rôle est
+// justement de distinguer les catégories) -- jamais utilisé ailleurs.
+// Sur les tâches elles-mêmes (liste, grille du mois), la couleur
+// signale l'urgence, pas le type d'événement : le corail/l'ambre/le
+// teal partout donnait l'impression d'un calendrier générique
+// multicolore plutôt qu'un calendrier d'échéances RH.
+const CATEGORY_FILTER_DOT: Record<string, string> = {
+  "Embauche": "bg-brand-primary-dark",
+  "Visite médicale": "bg-accent-teal",
+  "Fin de période d'essai": "bg-accent-amber",
 };
-const DEFAULT_CATEGORY_STYLE = { dot: "bg-brand-primary", badgeBg: "bg-brand-primary/10", badgeText: "text-brand-primary" };
-function categoryStyle(label: string | undefined) {
-  return (label && CATEGORY_STYLES[label]) || DEFAULT_CATEGORY_STYLE;
+const DEFAULT_CATEGORY_FILTER_DOT = "bg-brand-primary";
+function categoryFilterDot(label: string | undefined) {
+  return (label && CATEGORY_FILTER_DOT[label]) || DEFAULT_CATEGORY_FILTER_DOT;
+}
+// Urgence d'une tâche -- c'est cette valeur, pas sa catégorie, qui
+// détermine sa couleur partout où une tâche individuelle est affichée.
+function taskUrgencyDot(task: { dueDate: Date; status: string }): string {
+  if (isOverdue(task.dueDate, task.status as never)) return "bg-accent-rose";
+  if (dateKey(task.dueDate) === dateKey(new Date())) return "bg-brand-primary";
+  return "bg-ink-faint";
 }
 function parseDayKey(key: string): Date {
   const [y, m, d] = key.split("-").map(Number);
@@ -34,20 +49,20 @@ type TaskForDisplay = {
   label: string;
   status: string;
   dueDate: Date;
+  assignedMembership: { user: { firstName: string | null; lastName: string | null; email: string } } | null;
   employeeEvent: {
     employee: { firstName: string; lastName: string };
     eventTemplate: { label: string } | null;
   };
 };
 function TaskRow({ task }: { task: TaskForDisplay }) {
-  const style = categoryStyle(task.employeeEvent.eventTemplate?.label);
   const isDone = task.status === "DONE";
   return (
     <Link
       href={`/dashboard/events/${task.employeeEventId}#task-${task.id}`}
       className="flex items-start gap-2.5 rounded-lg px-2 py-2 hover:bg-surface-subtle"
     >
-      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${style.dot}`} />
+      <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${taskUrgencyDot(task)}`} />
       <div className="min-w-0 flex-1">
         <p className={`truncate text-sm font-medium ${isDone ? "text-ink-faint line-through" : "text-ink"}`}>
           {task.label}
@@ -55,8 +70,12 @@ function TaskRow({ task }: { task: TaskForDisplay }) {
         <p className="truncate text-xs text-ink-faint">
           {task.employeeEvent.employee.firstName} {task.employeeEvent.employee.lastName}
         </p>
+        <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-ink-faint">
+          <User size={10} className="shrink-0" />
+          {task.assignedMembership ? getUserDisplayName(task.assignedMembership.user) : "Non assigné"}
+        </p>
         {task.employeeEvent.eventTemplate?.label && (
-          <span className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${style.badgeBg} ${style.badgeText}`}>
+          <span className="mt-1 inline-block rounded bg-surface-subtle px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-ink-faint">
             {task.employeeEvent.eventTemplate.label}
           </span>
         )}
@@ -87,7 +106,10 @@ export default async function CalendarPage({
   const rangeEnd = weeks[weeks.length - 1][6].date;
   const rangeEndExclusive = new Date(rangeEnd);
   rangeEndExclusive.setDate(rangeEndExclusive.getDate() + 1);
-  const taskInclude = { employeeEvent: { include: { employee: true, eventTemplate: true } } } as const;
+  const taskInclude = {
+    employeeEvent: { include: { employee: true, eventTemplate: true } },
+    assignedMembership: { include: { user: true } },
+  } as const;
   const [monthGridTasks, todayTasks, overdueTasks, overdueCount, weekCount, upcomingTasks, selectedDayTasks] =
     await Promise.all([
       prisma.task.findMany({
@@ -241,7 +263,7 @@ export default async function CalendarPage({
             Tous
           </Link>
           {categoriesPresent.map((cat) => {
-            const style = categoryStyle(cat);
+            const dot = categoryFilterDot(cat);
             const isActive = activeCategory === cat;
             return (
               <Link
@@ -251,7 +273,7 @@ export default async function CalendarPage({
                   isActive ? "border-ink bg-ink text-white" : "border-surface-border text-ink-soft hover:border-ink-faint"
                 }`}
               >
-                <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-white" : style.dot}`} /> {cat}
+                <span className={`h-1.5 w-1.5 rounded-full ${isActive ? "bg-white" : dot}`} /> {cat}
               </Link>
             );
           })}
@@ -327,10 +349,9 @@ export default async function CalendarPage({
                   </p>
                   <div className="flex flex-col gap-1">
                     {dayTasks.slice(0, 2).map((task) => {
-                      const style = categoryStyle(task.employeeEvent.eventTemplate?.label);
                       return (
                         <div key={task.id} className="flex items-center gap-1 truncate text-[11px]">
-                          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${style.dot}`} />
+                          <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${taskUrgencyDot(task)}`} />
                           <span
                             className={`truncate ${task.status === "DONE" ? "text-ink-faint line-through" : "text-ink-soft"}`}
                           >
