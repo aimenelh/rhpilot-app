@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import PayrollVariablesSection from "../PayrollVariablesSection";
 
 const MONTHS = [
   "Janvier",
@@ -57,7 +58,12 @@ export default async function PayrollPeriodPage({
 
   if (!period) notFound();
 
-  const [employees, profiles, calculations] = await Promise.all([
+  const periodStart = new Date(period.year, period.month - 1, 1);
+  const periodEnd = new Date(period.year, period.month, 0);
+  periodStart.setHours(0, 0, 0, 0);
+  periodEnd.setHours(23, 59, 59, 999);
+
+  const [employees, profiles, calculations, variables] = await Promise.all([
     prisma.employee.findMany({
       where: {
         organizationId: membership.organizationId,
@@ -75,10 +81,10 @@ export default async function PayrollPeriodPage({
     prisma.payrollProfile.findMany({
       where: {
         organizationId: membership.organizationId,
-        effectiveFrom: { lte: new Date(period.year, period.month, 0) },
+        effectiveFrom: { lte: periodEnd },
         OR: [
           { effectiveUntil: null },
-          { effectiveUntil: { gte: new Date(period.year, period.month - 1, 1) } },
+          { effectiveUntil: { gte: periodStart } },
         ],
       },
       select: {
@@ -104,6 +110,22 @@ export default async function PayrollPeriodPage({
         netPaid: true,
       },
     }),
+    prisma.payrollVariable.findMany({
+      where: {
+        organizationId: membership.organizationId,
+        payrollPeriodId: period.id,
+      },
+      select: {
+        id: true,
+        employeeId: true,
+        code: true,
+        label: true,
+        amount: true,
+        unit: true,
+        source: true,
+      },
+      orderBy: [{ employeeId: "asc" }, { createdAt: "asc" }],
+    }),
   ]);
 
   const profileByEmployee = new Map<string, (typeof profiles)[number]>();
@@ -119,6 +141,16 @@ export default async function PayrollPeriodPage({
   const configuredCount = employees.filter((employee) => profileByEmployee.has(employee.id)).length;
   const calculatedCount = employees.filter((employee) => calculationByEmployee.has(employee.id)).length;
   const missingProfileCount = employees.length - configuredCount;
+
+  const variableRows = variables.map((variable) => ({
+    id: variable.id,
+    employeeId: variable.employeeId,
+    code: variable.code,
+    label: variable.label,
+    amount: String(variable.amount),
+    unit: variable.unit,
+    source: variable.source,
+  }));
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -214,7 +246,9 @@ export default async function PayrollPeriodPage({
                       </span>
                     </td>
                     <td className="px-5 py-4 font-medium text-ink">
-                      {calculation?.netBeforeTax ? String(calculation.netBeforeTax) : "—"}
+                      {calculation?.netBeforeTax !== null && calculation?.netBeforeTax !== undefined
+                        ? String(calculation.netBeforeTax)
+                        : "—"}
                     </td>
                   </tr>
                 );
@@ -223,6 +257,17 @@ export default async function PayrollPeriodPage({
           </table>
         </div>
       </section>
+
+      <PayrollVariablesSection
+        periodId={period.id}
+        employees={employees.map((employee) => ({
+          id: employee.id,
+          firstName: employee.firstName,
+          lastName: employee.lastName,
+        }))}
+        variables={variableRows}
+        readOnly={membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN"}
+      />
 
       <section className="mt-7 rounded-xl border border-surface-border bg-white p-5">
         <h2 className="font-semibold text-ink">Contrôles</h2>
@@ -238,7 +283,7 @@ export default async function PayrollPeriodPage({
           <div className="rounded-lg border border-surface-border bg-surface-subtle/40 p-4">
             <p className="text-xs text-ink-faint">Étape suivante</p>
             <p className="mt-1 text-sm font-semibold text-ink">
-              {missingProfileCount > 0 ? "Compléter les profils" : "Préparer les variables"}
+              {missingProfileCount > 0 ? "Compléter les profils" : variables.length === 0 ? "Saisir les variables" : "Préparer le calcul réglementaire"}
             </p>
           </div>
         </div>
