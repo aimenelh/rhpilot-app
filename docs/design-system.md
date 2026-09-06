@@ -15,6 +15,68 @@ la formalise à partir de ce qui existe déjà et fonctionne.
   besoin d'un peu d'humanité (état vide, chargement long, succès
   important) — jamais en décoration systématique.
 
+## Langage produit
+
+Le design system RH Pilot ne couvre pas que le visuel. Un nettoyage
+visuel parfait avec des textes "SaaS générique" en dessous ne change
+rien à l'impression d'ensemble — c'est même souvent ce qui se voit en
+premier. Cette section s'applique partout : titres, boutons, messages
+d'erreur, états vides, notifications, Copilote, confirmations,
+onboarding.
+
+**Principe central : l'IA est une fonctionnalité de RH Pilot, pas son
+identité.** Le cœur visuel et verbal du produit reste le domaine RH
+(salariés, événements, parcours, tâches, échéances) — le Copilote
+intervient comme une capacité parmi d'autres, jamais comme la vitrine
+du produit. Concrètement : pas de badge "IA", pas d'étoile scintillante
+pour signaler artificiellement qu'une fonctionnalité est intelligente.
+Quand l'IA fait réellement quelque chose (ex. "Résumer mon mois", qui
+appelle un vrai LLM), un marqueur discret et non généralisé reste
+honnête — la limite est l'usage décoratif répété, pas l'IA elle-même.
+
+**Concret plutôt qu'abstrait.** Une phrase qui pourrait être copiée
+telle quelle sur n'importe quel autre SaaS RH est probablement à
+revoir, même si elle ne contient aucun mot suspect ("IA",
+"intelligent", "nouvelle génération"). Le test : est-ce que cette
+phrase dit quelque chose de vrai sur ce que fait *concrètement* RH
+Pilot, ou est-ce qu'elle pourrait appartenir à n'importe quel produit ?
+
+**Vocabulaire et structures à éviter :**
+- Adjectifs creux utilisés comme remplissage : "intelligent(e)",
+  "puissant", "magique", "innovant".
+- Formules de réassurance génériques : "sans engagement", "en
+  quelques minutes", "simplifiez votre quotidien", "gagnez du temps
+  grâce à".
+- CTA promotionnels plutôt que factuels : "Découvrez...", "Donnez vie
+  à...", "Passez à la vitesse supérieure" — préférer un verbe d'action
+  concret ("Ajouter un salarié", pas "Donnez vie à vos processus RH").
+- Étiquette de section (eyebrow) + titre vague côte à côte, sans
+  qu'aucun des deux ne dise rien de spécifique à RH Pilot (ex. "Ce qui
+  change vraiment" / "Pourquoi les RH choisissent RH Pilot" — corrigé
+  en "Comment RH Pilot se comporte au quotidien", sans étiquette).
+  Une étiquette n'est légitime que si elle nomme vraiment le contenu
+  qui suit (ex. "Les fondamentaux", "Notre infrastructure" sur la page
+  Sécurité — conservées, elles sont informatives).
+- Numérotation décorative ("01", "02", "03") qui n'ajoute aucune
+  information au-delà de l'esthétique éditoriale.
+
+**Exemples corrigés pendant l'audit, comme référence :**
+
+| Générique | RH Pilot |
+|---|---|
+| "Créez votre espace en quelques minutes, sans engagement." | "Ajoutez votre premier salarié et commencez à suivre vos échéances RH." |
+| "Votre espace RH Pilot est prêt à vous accompagner. Commencez par..." | "Ajoutez votre premier salarié pour commencer à suivre ses échéances RH." |
+| ✨ "Copilote IA" | "Copilote" / "Que souhaitez-vous faire ?" |
+| ✨ "Notifications intelligentes" | "Vos notifications" / "Les informations qui nécessitent votre attention." |
+| "RH Pilot vous conseille" | "À faire ensuite" |
+
+**Ce qu'on ne fait pas non plus :** supprimer une animation, une
+illustration ou toute référence à l'IA uniquement parce qu'elle
+*pourrait* évoquer un SaaS générique. La mascotte, les animations de
+chargement et le Copilote lui-même restent — c'est la manière de les
+présenter (décoration systématique vs. apparition qui a un rôle) qui
+fait la différence.
+
 ## Couleurs (`tailwind.config.ts`)
 
 | Rôle | Token | Valeur |
