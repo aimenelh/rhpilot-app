@@ -56,33 +56,48 @@ export default function PayrollCalculateButton({
     undefined,
   );
 
+  const isReferenceOnlyRule = ruleCode === "FR.SMIC.MONTHLY_GROSS";
+  const calculationUnavailable = disabled || isReferenceOnlyRule;
   const error = calculationState?.error ?? reviewState?.error;
 
   return (
     <div className="mt-5 rounded-lg border border-surface-border bg-surface-subtle/30 p-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm font-semibold text-ink">Calcul de la période</p>
+          <p className="text-sm font-semibold text-ink">
+            {isReferenceOnlyRule ? "Référentiel SMIC" : "Calcul de la période"}
+          </p>
           <p className="mt-1 text-xs text-ink-faint">
-            Le calcul utilise uniquement les règles validées disponibles dans le référentiel.
+            {isReferenceOnlyRule
+              ? "Le référentiel SMIC sert au contrôle du minimum de rémunération. Il ne constitue pas à lui seul un jeu complet de règles de calcul de paie."
+              : "Le calcul utilise uniquement les règles validées disponibles dans le référentiel."}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <form action={calculationFormAction}>
-            <input type="hidden" name="periodId" value={periodId} />
-            <input type="hidden" name="ruleCode" value={ruleCode} />
-            <input type="hidden" name="ruleScope" value={ruleScope} />
-            <CalculateSubmitButton disabled={disabled} />
-          </form>
 
-          {disabled ? (
-            <form action={reviewFormAction}>
+        {isReferenceOnlyRule ? null : (
+          <div className="flex flex-wrap gap-2">
+            <form action={calculationFormAction}>
               <input type="hidden" name="periodId" value={periodId} />
-              <ReviewSubmitButton />
+              <input type="hidden" name="ruleCode" value={ruleCode} />
+              <input type="hidden" name="ruleScope" value={ruleScope} />
+              <CalculateSubmitButton disabled={calculationUnavailable} />
             </form>
-          ) : null}
-        </div>
+
+            {calculationUnavailable ? (
+              <form action={reviewFormAction}>
+                <input type="hidden" name="periodId" value={periodId} />
+                <ReviewSubmitButton />
+              </form>
+            ) : null}
+          </div>
+        )}
       </div>
+
+      {isReferenceOnlyRule ? (
+        <p className="mt-3 rounded-md bg-accent-amber/10 px-3 py-2 text-sm text-accent-amber" role="status">
+          Données salarié prêtes. Aucun jeu complet de règles sociales validé n&apos;est actuellement disponible pour lancer le calcul.
+        </p>
+      ) : null}
 
       {error ? (
         <p className="mt-3 rounded-md bg-accent-amber/10 px-3 py-2 text-sm text-accent-amber" role="alert">
