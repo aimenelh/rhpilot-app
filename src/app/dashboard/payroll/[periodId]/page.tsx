@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { checkPayrollPeriodReadiness } from "@/lib/payroll/period-preflight";
 import PayrollVariablesSection from "../PayrollVariablesSection";
 
 const MONTHS = [
@@ -142,6 +143,19 @@ export default async function PayrollPeriodPage({
   const calculatedCount = employees.filter((employee) => calculationByEmployee.has(employee.id)).length;
   const missingProfileCount = employees.length - configuredCount;
 
+  const readiness = checkPayrollPeriodReadiness(
+    employees.map((employee) => {
+      const profile = profileByEmployee.get(employee.id);
+      return {
+        employeeId: employee.id,
+        firstName: employee.firstName,
+        lastName: employee.lastName,
+        baseSalaryCents: profile?.baseSalaryCents,
+        monthlyHours: profile?.monthlyHours == null ? null : Number(profile.monthlyHours),
+      };
+    }),
+  );
+
   const variableRows = variables.map((variable) => ({
     id: variable.id,
     employeeId: variable.employeeId,
@@ -188,13 +202,27 @@ export default async function PayrollPeriodPage({
         </div>
       </div>
 
-      {missingProfileCount > 0 && (
-        <div className="mt-6 rounded-xl border border-accent-amber/30 bg-accent-amber/10 px-4 py-3 text-sm text-ink">
-          <p className="font-semibold">{missingProfileCount} salarié{missingProfileCount > 1 ? "s" : ""} sans profil de paie</p>
-          <p className="mt-1 text-ink-soft">
-            Complétez le profil paie de chaque salarié avant de lancer un calcul. RH Pilot ne doit pas estimer une donnée absente.
-          </p>
-        </div>
+      {!readiness.ready ? (
+        <section className="mt-6 rounded-xl border border-accent-amber/30 bg-accent-amber/10 px-5 py-4">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-accent-amber">Préparation</p>
+              <p className="mt-1 font-semibold text-ink">Le calcul est bloqué tant que les données de base sont incomplètes.</p>
+            </div>
+            <span className="rounded-full bg-white/70 px-3 py-1.5 text-xs font-semibold text-ink-soft">{readiness.issues.length} point{readiness.issues.length > 1 ? "s" : ""} à corriger</span>
+          </div>
+          <div className="mt-3 space-y-1.5 text-sm text-ink-soft">
+            {readiness.issues.map((issue, index) => (
+              <p key={`${issue.code}-${issue.employeeId ?? "period"}-${index}`}>• {issue.message}</p>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <section className="mt-6 rounded-xl border border-accent-teal/30 bg-accent-teal/10 px-5 py-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-accent-teal">Préparation</p>
+          <p className="mt-1 font-semibold text-ink">Les données salarié de base sont prêtes pour l’étape de calcul.</p>
+          <p className="mt-1 text-sm text-ink-soft">Cela ne signifie pas encore que les règles légales et conventionnelles nécessaires sont disponibles et validées.</p>
+        </section>
       )}
 
       <section className="mt-7 overflow-hidden rounded-xl border border-surface-border bg-white">
@@ -283,7 +311,7 @@ export default async function PayrollPeriodPage({
           <div className="rounded-lg border border-surface-border bg-surface-subtle/40 p-4">
             <p className="text-xs text-ink-faint">Étape suivante</p>
             <p className="mt-1 text-sm font-semibold text-ink">
-              {missingProfileCount > 0 ? "Compléter les profils" : variables.length === 0 ? "Saisir les variables" : "Préparer le calcul réglementaire"}
+              {!readiness.ready ? "Compléter les données de base" : variables.length === 0 ? "Saisir les variables" : "Préparer le calcul réglementaire"}
             </p>
           </div>
         </div>
