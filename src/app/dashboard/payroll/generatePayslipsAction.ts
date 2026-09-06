@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -167,7 +168,7 @@ export async function generatePayrollPayslipsAction(
       await prisma.payslip.upsert({
         where: { calculationId: calculation.id },
         create: {
-          id: payslipByEmployee.get(employee.id)?.id ?? crypto.randomUUID(),
+          id: payslipByEmployee.get(employee.id)?.id ?? randomUUID(),
           organizationId: membership.organizationId,
           payrollPeriodId: period.id,
           employeeId: employee.id,
@@ -192,6 +193,7 @@ export async function generatePayrollPayslipsAction(
 
   await prisma.auditLog.create({
     data: {
+      id: randomUUID(),
       organizationId: membership.organizationId,
       actorUserId: user.id,
       action: "payroll.payslips.generated",
