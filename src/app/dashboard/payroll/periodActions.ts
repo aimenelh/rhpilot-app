@@ -3,11 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { calculatePayrollPeriod } from "@/lib/payroll/payroll-period-calculation";
 
 const VARIABLE_UNITS = ["EUR", "DAYS", "HOURS", "PERCENT"] as const;
 
 type VariableUnit = (typeof VARIABLE_UNITS)[number];
 export type PayrollVariableFormState = { error: string } | undefined;
+export type PayrollCalculationFormState = { error: string } | undefined;
 
 type EditablePayrollPeriod = {
   id: string;
@@ -159,4 +161,47 @@ export async function deletePayrollVariable(
 
   revalidatePath(`/dashboard/payroll/${periodId}`);
   return undefined;
+}
+
+export async function calculatePayrollPeriodAction(
+  _prevState: PayrollCalculationFormState,
+  formData: FormData,
+): Promise<PayrollCalculationFormState> {
+  const membership = await getCurrentMembership();
+  const user = await getCurrentUser();
+
+  if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
+  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {
+    return { error: "Seuls les administrateurs peuvent lancer le calcul de paie." };
+  }
+
+  const periodId = String(formData.get("periodId") ?? "").trim();
+  const ruleCode = String(formData.get("ruleCode") ?? "").trim();
+  const ruleScope = String(formData.get("ruleScope") ?? "").trim();
+
+  if (!periodId) return { error: "La période de paie est obligatoire." };
+  if (!ruleCode || !ruleScope) return { error: "Une règle de paie validée doit être sélectionnée." };
+
+  try {
+    const result = await calculatePayrollPeriod({
+      periodId,
+      organizationId: membership.organizationId,
+      ruleCode,
+      ruleScope,
+      actorUserId: user.id,
+    });
+
+    revalidatePath(`/dashboard/payroll/${periodId}`);
+    revalidatePath("/dashboard/payroll");
+
+    if (result.employeeCount === 0) {
+      return { error: "Aucun salarié actif n'est disponible pour cette période." };
+    }
+
+    return undefined;
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : "Le calcul de la période a échoué.",
+    };
+  }
 }
