@@ -9,6 +9,15 @@ const VARIABLE_UNITS = ["EUR", "DAYS", "HOURS", "PERCENT"] as const;
 type VariableUnit = (typeof VARIABLE_UNITS)[number];
 export type PayrollVariableFormState = { error: string } | undefined;
 
+type EditablePayrollPeriod = {
+  id: string;
+  status: string;
+};
+
+type EditablePayrollPeriodResult =
+  | { period: EditablePayrollPeriod }
+  | { error: string };
+
 function parseUnit(value: FormDataEntryValue | null): VariableUnit | null {
   if (typeof value !== "string") return null;
   return VARIABLE_UNITS.includes(value as VariableUnit) ? (value as VariableUnit) : null;
@@ -20,18 +29,21 @@ function parseNumber(value: FormDataEntryValue | null): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-async function getEditablePayrollPeriod(periodId: string, organizationId: string) {
+async function getEditablePayrollPeriod(
+  periodId: string,
+  organizationId: string,
+): Promise<EditablePayrollPeriodResult> {
   const period = await prisma.payrollPeriod.findFirst({
     where: { id: periodId, organizationId },
     select: { id: true, status: true },
   });
 
-  if (!period) return { error: "Période de paie introuvable." } as const;
+  if (!period) return { error: "Période de paie introuvable." };
   if (period.status !== "DRAFT") {
-    return { error: "Les variables ne peuvent être modifiées que sur une période en brouillon." } as const;
+    return { error: "Les variables ne peuvent être modifiées que sur une période en brouillon." };
   }
 
-  return { period } as const;
+  return { period };
 }
 
 export async function addPayrollVariable(
@@ -47,7 +59,7 @@ export async function addPayrollVariable(
   }
 
   const periodResult = await getEditablePayrollPeriod(periodId, membership.organizationId);
-  if ("error" in periodResult) return periodResult;
+  if ("error" in periodResult) return { error: periodResult.error };
   const { period } = periodResult;
 
   const employeeId = String(formData.get("employeeId") ?? "").trim();
@@ -118,7 +130,7 @@ export async function deletePayrollVariable(
   }
 
   const periodResult = await getEditablePayrollPeriod(periodId, membership.organizationId);
-  if ("error" in periodResult) return periodResult;
+  if ("error" in periodResult) return { error: periodResult.error };
 
   const variable = await prisma.payrollVariable.findFirst({
     where: {
