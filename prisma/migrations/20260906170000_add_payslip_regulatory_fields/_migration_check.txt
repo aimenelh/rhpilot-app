@@ -1,0 +1,1 @@
+Migration intentionally adds nullable fields only. Schema synchronization is applied separately after verifying the exact current schema blob.
