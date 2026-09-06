@@ -4,7 +4,7 @@
 // Le référentiel conventionnel est versionné et séparé des règles
 // de paie. Aucune règle sociale ou juridique n'est déduite par l'IA.
 
- generator client {
+generator client {
   provider = "prisma-client-js"
 }
 
@@ -14,29 +14,29 @@ datasource db {
 }
 
 model Organization {
-  id                   String    @id @default(cuid())
-  name                 String
-  siret                String?
-  conventionCollective String?
+  id                    String    @id @default(cuid())
+  name                  String
+  siret                 String?
+  conventionCollective  String?
   collectiveAgreementId String?
-  stripeCustomerId     String?   @unique
-  stripeSubscriptionId String?   @unique
-  subscriptionStatus   String?
-  currentPeriodEnd     DateTime?
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
-  deletedAt            DateTime?
+  stripeCustomerId      String?   @unique
+  stripeSubscriptionId  String?   @unique
+  subscriptionStatus    String?
+  currentPeriodEnd      DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
 
-  memberships    Membership[]
-  employees      Employee[]
-  employeeEvents EmployeeEvent[]
-  auditLogs      AuditLog[]
-  notifications  Notification[]
-  invitations    Invitation[]
-  taskTemplateOverrides TaskTemplateOverride[]
-  reminderRules         ReminderRule[]
-  anomalyDismissals     AnomalyDismissal[]
-  collectiveAgreement  CollectiveAgreement? @relation(fields: [collectiveAgreementId], references: [id], onDelete: Restrict)
+  memberships             Membership[]
+  employees               Employee[]
+  employeeEvents          EmployeeEvent[]
+  auditLogs               AuditLog[]
+  notifications           Notification[]
+  invitations             Invitation[]
+  taskTemplateOverrides   TaskTemplateOverride[]
+  reminderRules           ReminderRule[]
+  anomalyDismissals       AnomalyDismissal[]
+  collectiveAgreement     CollectiveAgreement? @relation(fields: [collectiveAgreementId], references: [id], onDelete: Restrict)
 
   @@index([collectiveAgreementId])
   @@map("organizations")
@@ -73,9 +73,22 @@ model User {
   @@map("users")
 }
 
-enum AccessRole { OWNER ADMIN MEMBER }
-enum FunctionalRole { RH DIRIGEANT }
-enum NotificationFrequency { DAILY WEEKLY OFF }
+enum AccessRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum FunctionalRole {
+  RH
+  DIRIGEANT
+}
+
+enum NotificationFrequency {
+  DAILY
+  WEEKLY
+  OFF
+}
 
 model Membership {
   id                    String                @id @default(cuid())
@@ -99,10 +112,32 @@ model Membership {
   @@map("memberships")
 }
 
-enum ContractType { CDI CDD APPRENTISSAGE PROFESSIONNALISATION }
-enum Civility { MME M AUTRE }
-enum DurationUnit { DAYS WEEKS MONTHS }
-enum ProfessionalCategory { CADRE AGENT_DE_MAITRISE EMPLOYE OUVRIER AUTRE }
+enum ContractType {
+  CDI
+  CDD
+  APPRENTISSAGE
+  PROFESSIONNALISATION
+}
+
+enum Civility {
+  MME
+  M
+  AUTRE
+}
+
+enum DurationUnit {
+  DAYS
+  WEEKS
+  MONTHS
+}
+
+enum ProfessionalCategory {
+  CADRE
+  AGENT_DE_MAITRISE
+  EMPLOYE
+  OUVRIER
+  AUTRE
+}
 
 model Employee {
   id                      String        @id @default(cuid())
@@ -144,9 +179,22 @@ model EventTemplate {
   @@map("event_templates")
 }
 
-enum FunctionalRoleResolution { RH DIRIGEANT MANAGER_DIRECT }
-enum DeadlineType { LEGAL_DEADLINE ORGANIZATIONAL_DEFAULT USER_DEFINED }
-enum OverrideAction { MODIFIED REMOVED }
+enum FunctionalRoleResolution {
+  RH
+  DIRIGEANT
+  MANAGER_DIRECT
+}
+
+enum DeadlineType {
+  LEGAL_DEADLINE
+  ORGANIZATIONAL_DEFAULT
+  USER_DEFINED
+}
+
+enum OverrideAction {
+  MODIFIED
+  REMOVED
+}
 
 model TaskTemplateOverride {
   id             String         @id @default(cuid())
@@ -204,7 +252,14 @@ model EmployeeEvent {
   @@map("employee_events")
 }
 
-enum TaskStatus { TO_PREPARE TODO IN_PROGRESS WAITING_EXTERNAL DONE CANCELLED }
+enum TaskStatus {
+  TO_PREPARE
+  TODO
+  IN_PROGRESS
+  WAITING_EXTERNAL
+  DONE
+  CANCELLED
+}
 
 model Task {
   id                   String                   @id @default(cuid())
@@ -212,17 +267,17 @@ model Task {
   employeeEventId      String
   taskTemplateId       String?
   label                String
-  stepOrder            Int
-  dueDate              DateTime
-  deadlineType         DeadlineType
-  resolutionRole       FunctionalRoleResolution
+  stepOrder             Int
+  dueDate               DateTime
+  deadlineType          DeadlineType
+  resolutionRole        FunctionalRoleResolution
   assignedMembershipId String?
   status               TaskStatus               @default(TO_PREPARE)
-  completedAt          DateTime?
-  proofRequired        Boolean                  @default(false)
-  proofLabel           String?
-  createdAt            DateTime                 @default(now())
-  updatedAt            DateTime                 @updatedAt
+  completedAt           DateTime?
+  proofRequired         Boolean                  @default(false)
+  proofLabel            String?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
   employeeEvent      EmployeeEvent  @relation(fields: [organizationId, employeeEventId], references: [organizationId, id], onDelete: Cascade)
   taskTemplate       TaskTemplate?  @relation(fields: [taskTemplateId], references: [id], onDelete: Restrict)
   assignedMembership Membership?    @relation(fields: [organizationId, assignedMembershipId], references: [organizationId, id], onDelete: Restrict)
@@ -304,7 +359,7 @@ model AuditLog {
   entityType     String
   entityId       String
   metadata       Json?
-  createdAt      DateTime  @default(now())
+  createdAt      DateTime @default(now())
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   actor        User?        @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
   @@index([organizationId, createdAt])
@@ -322,10 +377,6 @@ model DiagnosticResponse {
   @@map("diagnostic_responses")
 }
 
-// ------------------------------------------------------------
-// Référentiel conventionnel
-// ------------------------------------------------------------
-
 model CollectiveAgreement {
   id         String   @id
   idcc       String
@@ -335,11 +386,9 @@ model CollectiveAgreement {
   status     String   @default("ACTIVE")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
-
-  organizations Organization[]
-  versions      CollectiveAgreementVersion[]
+  organizations   Organization[]
+  versions        CollectiveAgreementVersion[]
   payrollProfiles PayrollProfile[]
-
   @@unique([idcc])
   @@map("collective_agreements")
 }
@@ -356,10 +405,8 @@ model CollectiveAgreementVersion {
   status                String   @default("DRAFT")
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
-
   collectiveAgreement CollectiveAgreement @relation(fields: [collectiveAgreementId], references: [id], onDelete: Restrict)
   rules                CollectiveAgreementRule[]
-
   @@unique([collectiveAgreementId, version])
   @@index([collectiveAgreementId, validFrom, validUntil, status])
   @@map("collective_agreement_versions")
@@ -378,17 +425,11 @@ model CollectiveAgreementRule {
   status          String   @default("DRAFT")
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-
   version CollectiveAgreementVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
-
   @@unique([versionId, code])
   @@index([versionId, category, validFrom, validUntil, status])
   @@map("collective_agreement_rules")
 }
-
-// ------------------------------------------------------------
-// Paie — socle de données versionné
-// ------------------------------------------------------------
 
 model PayrollProfile {
   id                    String   @id
@@ -408,9 +449,7 @@ model PayrollProfile {
   effectiveUntil        DateTime?
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
-
   collectiveAgreement CollectiveAgreement? @relation(fields: [collectiveAgreementId], references: [id], onDelete: Restrict)
-
   @@unique([organizationId, employeeId, effectiveFrom])
   @@index([organizationId, employeeId])
   @@index([collectiveAgreementId])
@@ -418,16 +457,16 @@ model PayrollProfile {
 }
 
 model PayrollPeriod {
-  id             String   @id
+  id             String    @id
   organizationId String
   year           Int
   month          Int
-  status         String   @default("DRAFT")
+  status         String    @default("DRAFT")
   calculatedAt   DateTime?
   validatedAt    DateTime?
   lockedAt       DateTime?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
   @@unique([organizationId, year, month])
   @@index([organizationId, status])
   @@map("payroll_periods")
