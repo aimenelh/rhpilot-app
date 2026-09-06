@@ -422,11 +422,8 @@ export function LandingPage() {
 
       <section className="mx-auto max-w-4xl px-6 py-16">
         <Reveal variant="left">
-          <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">
-            Ce qui change vraiment
-          </span>
           <h2 className="mt-3 text-2xl font-semibold text-ink">
-            Pourquoi les RH choisissent RH Pilot
+            Comment RH Pilot se comporte au quotidien
           </h2>
         </Reveal>
 
@@ -473,14 +470,11 @@ export function LandingPage() {
         />
         <Reveal>
           <div className="relative mx-auto max-w-2xl px-6 text-center">
-            <p className="font-mono text-xs font-semibold tabular-nums tracking-wide text-brand-primary">
-              AUJOURD&apos;HUI
-            </p>
-            <h2 className="mt-3 text-2xl font-semibold text-white">
+            <h2 className="text-2xl font-semibold text-white">
               Rien n&apos;est encore oublié. Gardons ça comme ça.
             </h2>
             <p className="mt-3 text-sm text-white/70">
-              Créez votre espace en quelques minutes, sans engagement.
+              Ajoutez votre premier salarié et commencez à suivre vos échéances RH.
             </p>
             <Link href="/sign-up" className="mt-6 inline-block">
               <Button className="px-6 py-3 text-base">Essayer gratuitement</Button>

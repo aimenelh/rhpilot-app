@@ -258,7 +258,7 @@ export default async function DashboardPage({
   let synthesis: string;
   if (isEmpty) {
     synthesis =
-      "Votre espace RH Pilot est prêt à vous accompagner. Commencez par ajouter votre premier salarié ou explorez les fonctionnalités.";
+      "Ajoutez votre premier salarié pour commencer à suivre ses échéances RH.";
   } else if (overdueCount > 0) {
     synthesis = `${overdueCount} tâche${overdueCount > 1 ? "s" : ""} en retard nécessite${overdueCount > 1 ? "nt" : ""} votre attention.`;
   } else if (soonCount > 0) {

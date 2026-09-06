@@ -86,10 +86,9 @@ function EUFlag({ size = 22 }: { size?: number }) {
   );
 }
 
-function SectionMark({ number, label }: { number: string; label: string }) {
+function SectionMark({ label }: { label: string }) {
   return (
     <div className="flex items-baseline gap-3">
-      <span className="text-2xl font-bold text-brand-primary/25">{number}</span>
       <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">{label}</span>
     </div>
   );
@@ -120,7 +119,7 @@ export default function SecurityPage() {
       <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
         <div className="mx-auto max-w-2xl px-6">
           <Reveal>
-            <SectionMark number="01" label="Les fondamentaux" />
+            <SectionMark label="Les fondamentaux" />
           </Reveal>
           <div className="mt-6 flex flex-col">
             {PILLARS.map((item, index) => (
@@ -144,7 +143,7 @@ export default function SecurityPage() {
       {/* Sous-traitants réels */}
       <section className="mx-auto max-w-3xl px-6 py-16">
         <Reveal variant="left">
-          <SectionMark number="02" label="Notre infrastructure" />
+          <SectionMark label="Notre infrastructure" />
           <h2 className="mt-4 text-2xl font-semibold text-ink">Avec qui nous travaillons</h2>
           <p className="mt-3 max-w-lg text-sm text-ink-soft">
             Aucun mystère : voici l&apos;infrastructure réelle derrière RH Pilot, listée en
@@ -175,7 +174,7 @@ export default function SecurityPage() {
       <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
         <Reveal variant="left">
           <div className="mx-auto max-w-2xl px-6">
-            <SectionMark number="03" label="Vos droits" />
+            <SectionMark label="Vos droits" />
             <h2 className="mt-4 text-2xl font-semibold text-ink">Vos droits, sans détour</h2>
             <p className="mt-3 max-w-lg text-sm text-ink-soft">
               RH Pilot agit comme sous-traitant au sens du RGPD, l&apos;entreprise cliente
