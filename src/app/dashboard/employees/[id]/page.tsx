@@ -17,6 +17,7 @@ import { TriangleAlert, Hourglass } from "lucide-react";
 import { getEventTemplateDotColor } from "@/lib/eventTemplateStyle";
 import { summarizeParcours } from "@/lib/parcoursSummary";
 import { CcnHint } from "@/components/CcnHint";
+import { PayrollProfileSection } from "../../payroll/PayrollProfileSection";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +45,7 @@ export default async function EmployeeDetailPage({
 
   if (!employee) notFound();
 
-  const [memberships, eventTemplates, employeeEvents, organization] = await Promise.all([
+  const [memberships, eventTemplates, employeeEvents, organization, payrollProfile, collectiveAgreements] = await Promise.all([
     prisma.membership.findMany({
       where: { organizationId: membership.organizationId, deletedAt: null },
       include: { user: true },
@@ -60,6 +61,20 @@ export default async function EmployeeDetailPage({
       orderBy: { triggerDate: "desc" },
     }),
     prisma.organization.findUnique({ where: { id: membership.organizationId } }),
+    prisma.payrollProfile.findFirst({
+      where: {
+        organizationId: membership.organizationId,
+        employeeId: employee.id,
+        effectiveFrom: { lte: new Date() },
+        OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: new Date() } }],
+      },
+      orderBy: { effectiveFrom: "desc" },
+    }),
+    prisma.collectiveAgreement.findMany({
+      where: { status: "ACTIVE" },
+      select: { id: true, idcc: true, name: true },
+      orderBy: { name: "asc" },
+    }),
   ]);
 
   const potentialManagers = memberships.map((m) => ({
@@ -94,12 +109,8 @@ export default async function EmployeeDetailPage({
           </p>
         </div>
         <div className="flex items-center gap-4 pt-1 text-sm font-medium">
-          <a href="#informations" className="text-brand-primary hover:underline">
-            Modifier
-          </a>
-          <a href="#archiver" className="text-ink-faint hover:text-ink-soft">
-            Archiver
-          </a>
+          <a href="#informations" className="text-brand-primary hover:underline">Modifier</a>
+          <a href="#archiver" className="text-ink-faint hover:text-ink-soft">Archiver</a>
         </div>
       </div>
 
@@ -166,8 +177,6 @@ export default async function EmployeeDetailPage({
         </dl>
       </Card>
 
-      {/* Carte agrandie avec la mascotte "medical" — remplace l'ancien
-          bandeau compact à icône circulaire. */}
       {employee.nextMedicalVisitDate && (
         <Card
           className={`mt-4 flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left ${
@@ -236,11 +245,28 @@ export default async function EmployeeDetailPage({
         })()
       )}
 
-      {/* Parcours RH : le formulaire de déclenchement vit ici
-          maintenant (auparavant tout en haut de page, avant même le
-          résumé) -- c'est l'action naturelle de cette section, pas
-          une action à part entière avant d'avoir vu qui est le
-          salarié. */}
+      <PayrollProfileSection
+        employeeId={employee.id}
+        firstName={employee.firstName}
+        canEdit={["OWNER", "ADMIN"].includes(membership.accessRole)}
+        profile={
+          payrollProfile
+            ? {
+                baseSalaryCents: payrollProfile.baseSalaryCents,
+                monthlyHours: payrollProfile.monthlyHours?.toString() ?? null,
+                collectiveAgreementId: payrollProfile.collectiveAgreementId,
+                classificationCode: payrollProfile.classificationCode,
+                classificationLabel: payrollProfile.classificationLabel,
+                level: payrollProfile.level,
+                coefficient: payrollProfile.coefficient,
+                seniorityDate: payrollProfile.seniorityDate?.toISOString() ?? null,
+                effectiveFrom: payrollProfile.effectiveFrom.toISOString(),
+              }
+            : null
+        }
+        agreements={collectiveAgreements}
+      />
+
       <div className="mt-8">
         <h2 className="text-sm font-semibold text-ink">Parcours RH de {employee.firstName}</h2>
         <div className="mt-3">
@@ -269,17 +295,12 @@ export default async function EmployeeDetailPage({
                           className={`h-2.5 w-2.5 shrink-0 rounded-full ${getEventTemplateDotColor(event.eventTemplate.key)}`}
                         />
                         <div>
-                          <p className="text-sm font-semibold text-ink">
-                            {event.eventTemplate.label}
-                          </p>
-                          <p className="mt-0.5 text-xs text-ink-soft">
-                            Déclenché le {formatDate(event.triggerDate)}
-                          </p>
+                          <p className="text-sm font-semibold text-ink">{event.eventTemplate.label}</p>
+                          <p className="mt-0.5 text-xs text-ink-soft">Déclenché le {formatDate(event.triggerDate)}</p>
                           {summary.overdueCount > 0 && (
                             <p className="mt-1 flex items-center gap-1 text-xs font-medium text-accent-rose">
                               <TriangleAlert size={12} />
-                              {summary.overdueCount} tâche{summary.overdueCount > 1 ? "s" : ""} en
-                              retard
+                              {summary.overdueCount} tâche{summary.overdueCount > 1 ? "s" : ""} en retard
                             </p>
                           )}
                         </div>
@@ -296,12 +317,6 @@ export default async function EmployeeDetailPage({
         )}
       </div>
 
-      {/* Documents : la fonctionnalité elle-même n'existe pas encore
-          (voir audit Phase 2 -- le modèle Attachment existe en base
-          mais aucune route d'upload/téléchargement n'est construite).
-          On rend la zone visible dès maintenant, honnêtement vide,
-          plutôt que de l'omettre -- ça prépare le terrain visuel pour
-          plus tard, notamment la paie. */}
       <div className="mt-8">
         <h2 className="text-sm font-semibold text-ink">Documents</h2>
         <Card className="mt-3 border-dashed" compact>
