@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
@@ -71,6 +72,7 @@ export async function switchOrganization(token: string) {
     });
     await tx.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId: currentMembership.organizationId,
         actorUserId: user.id,
         action: "membership.left_for_another_org",
@@ -80,6 +82,7 @@ export async function switchOrganization(token: string) {
     });
     await tx.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId: invitation.organizationId,
         actorUserId: user.id,
         action: "invitation.accepted",
