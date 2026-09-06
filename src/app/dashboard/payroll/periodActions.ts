@@ -3,7 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { assertPayrollPeriodMutable } from "@/lib/payroll/domain";
 
 const VARIABLE_UNITS = ["EUR", "DAYS", "HOURS", "PERCENT"] as const;
 
@@ -21,6 +20,20 @@ function parseNumber(value: FormDataEntryValue | null): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+async function getEditablePayrollPeriod(periodId: string, organizationId: string) {
+  const period = await prisma.payrollPeriod.findFirst({
+    where: { id: periodId, organizationId },
+    select: { id: true, status: true },
+  });
+
+  if (!period) return { error: "Période de paie introuvable." } as const;
+  if (period.status !== "DRAFT") {
+    return { error: "Les variables ne peuvent être modifiées que sur une période en brouillon." } as const;
+  }
+
+  return { period } as const;
+}
+
 export async function addPayrollVariable(
   periodId: string,
   _prevState: PayrollVariableFormState,
@@ -33,17 +46,9 @@ export async function addPayrollVariable(
     return { error: "Seuls les administrateurs peuvent modifier les variables de paie." };
   }
 
-  const period = await prisma.payrollPeriod.findFirst({
-    where: { id: periodId, organizationId: membership.organizationId },
-    select: { id: true, status: true, year: true, month: true },
-  });
-  if (!period) return { error: "Période de paie introuvable." };
-
-  try {
-    assertPayrollPeriodMutable(period.status as Parameters<typeof assertPayrollPeriodMutable>[0]);
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "La période ne peut plus être modifiée." };
-  }
+  const periodResult = await getEditablePayrollPeriod(periodId, membership.organizationId);
+  if ("error" in periodResult) return periodResult;
+  const { period } = periodResult;
 
   const employeeId = String(formData.get("employeeId") ?? "").trim();
   const code = String(formData.get("code") ?? "").trim().toUpperCase();
@@ -112,25 +117,18 @@ export async function deletePayrollVariable(
     return { error: "Seuls les administrateurs peuvent modifier les variables de paie." };
   }
 
+  const periodResult = await getEditablePayrollPeriod(periodId, membership.organizationId);
+  if ("error" in periodResult) return periodResult;
+
   const variable = await prisma.payrollVariable.findFirst({
     where: {
       id: variableId,
       organizationId: membership.organizationId,
       payrollPeriodId: periodId,
     },
-    select: {
-      id: true,
-      code: true,
-      payrollPeriod: { select: { id: true, status: true } },
-    },
+    select: { id: true, code: true },
   });
   if (!variable) return { error: "Variable de paie introuvable." };
-
-  try {
-    assertPayrollPeriodMutable(variable.payrollPeriod.status as Parameters<typeof assertPayrollPeriodMutable>[0]);
-  } catch (error) {
-    return { error: error instanceof Error ? error.message : "La période ne peut plus être modifiée." };
-  }
 
   await prisma.$transaction(async (tx) => {
     await tx.payrollVariable.delete({ where: { id: variable.id } });
