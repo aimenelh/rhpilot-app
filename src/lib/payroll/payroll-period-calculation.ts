@@ -1,3 +1,4 @@
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { calculatePayroll } from "./engine";
 import { composeGrossAmount, resolvePayrollVariableTreatment } from "./variable-treatment";
@@ -38,13 +39,43 @@ function toVariableInput(variable: {
 
 function snapshotForEmployee(input: {
   period: { id: string; year: number; month: number };
-  profile: Record<string, unknown>;
+  profile: {
+    id: string;
+    baseSalaryCents: number;
+    monthlyHours: string | null;
+    effectiveFrom: string;
+    effectiveUntil: string | null;
+    collectiveAgreementId: string | null;
+    classificationCode: string | null;
+    classificationLabel: string | null;
+    level: string | null;
+    coefficient: string | null;
+  };
   variables: PayrollVariableInput[];
-  variableTreatments: unknown[];
-  ruleSet: unknown;
-  ruleSource: unknown;
-  result: unknown;
-}) {
+  variableTreatments: Array<{
+    code: string;
+    ruleVersionId: string;
+    grossDelta: number;
+  }>;
+  ruleSet: {
+    version: string;
+    rules: Array<{
+      code: string;
+      label: string;
+      side: "EMPLOYEE" | "EMPLOYER";
+      rate: number;
+      base: "GROSS";
+      ruleVersionId: string;
+    }>;
+  };
+  ruleSource: {
+    sourceName: string;
+    sourceUrl: string | null;
+    validFrom: Date;
+    validUntil: Date | null;
+  };
+  result: ReturnType<typeof calculatePayroll>;
+}): Prisma.InputJsonObject {
   return {
     calculatedAt: new Date().toISOString(),
     period: input.period,
@@ -52,7 +83,12 @@ function snapshotForEmployee(input: {
     variables: input.variables,
     variableTreatments: input.variableTreatments,
     ruleSet: input.ruleSet,
-    ruleSource: input.ruleSource,
+    ruleSource: {
+      sourceName: input.ruleSource.sourceName,
+      sourceUrl: input.ruleSource.sourceUrl,
+      validFrom: input.ruleSource.validFrom.toISOString(),
+      validUntil: input.ruleSource.validUntil?.toISOString() ?? null,
+    },
     result: input.result,
   };
 }
