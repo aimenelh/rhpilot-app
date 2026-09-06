@@ -158,11 +158,6 @@ function snapshotForEmployee(input: {
   };
 }
 
-/**
- * Calcule et persiste toute la période. Une erreur sur un seul salarié
- * bloque toute la période : aucune période partiellement calculée n'est
- * exposée comme fiable.
- */
 export async function calculatePayrollPeriod(input: {
   periodId: string;
   organizationId: string;
@@ -396,6 +391,7 @@ export async function calculatePayrollPeriod(input: {
 
     await tx.auditLog.create({
       data: {
+        id: crypto.randomUUID(),
         organizationId: input.organizationId,
         actorUserId: input.actorUserId,
         action: "payroll.period.calculated",
