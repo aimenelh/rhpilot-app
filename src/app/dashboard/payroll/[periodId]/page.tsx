@@ -4,6 +4,7 @@ import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { checkPayrollPeriodReadiness } from "@/lib/payroll/period-preflight";
 import PayrollVariablesSection from "../PayrollVariablesSection";
+import PayrollCalculateButton from "../PayrollCalculateButton";
 
 const MONTHS = [
   "Janvier",
@@ -63,8 +64,9 @@ export default async function PayrollPeriodPage({
   const periodEnd = new Date(period.year, period.month, 0);
   periodStart.setHours(0, 0, 0, 0);
   periodEnd.setHours(23, 59, 59, 999);
+  const calculationDate = new Date(period.year, period.month - 1, 1, 12, 0, 0, 0);
 
-  const [employees, profiles, calculations, variables] = await Promise.all([
+  const [employees, profiles, calculations, variables, validatedRules] = await Promise.all([
     prisma.employee.findMany({
       where: {
         organizationId: membership.organizationId,
@@ -127,6 +129,22 @@ export default async function PayrollPeriodPage({
       },
       orderBy: [{ employeeId: "asc" }, { createdAt: "asc" }],
     }),
+    prisma.payrollRuleVersion.findMany({
+      where: {
+        status: "VALIDATED",
+        validFrom: { lte: calculationDate },
+        OR: [{ validUntil: null }, { validUntil: { gte: calculationDate } }],
+      },
+      select: {
+        id: true,
+        code: true,
+        version: true,
+        scope: true,
+        sourceName: true,
+        sourceUrl: true,
+      },
+      orderBy: [{ code: "asc" }, { scope: "asc" }, { version: "desc" }],
+    }),
   ]);
 
   const profileByEmployee = new Map<string, (typeof profiles)[number]>();
@@ -165,6 +183,12 @@ export default async function PayrollPeriodPage({
     unit: variable.unit,
     source: variable.source,
   }));
+
+  const hasValidatedRule = validatedRules.length > 0;
+  const calculationDisabled =
+    membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN"
+      ? true
+      : period.status !== "DRAFT" || !readiness.ready || !hasValidatedRule;
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -224,6 +248,33 @@ export default async function PayrollPeriodPage({
           <p className="mt-1 text-sm text-ink-soft">Cela ne signifie pas encore que les règles légales et conventionnelles nécessaires sont disponibles et validées.</p>
         </section>
       )}
+
+      <section className="mt-7 rounded-xl border border-surface-border bg-white p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h2 className="font-semibold text-ink">Règle de paie applicable</h2>
+            <p className="mt-1 text-sm text-ink-soft">
+              Le calcul ne peut démarrer qu’avec une version de règle validée et applicable à la période.
+            </p>
+          </div>
+          <span className="rounded-full bg-surface-subtle px-3 py-1.5 text-xs font-semibold text-ink-soft">
+            {validatedRules.length} version{validatedRules.length > 1 ? "s" : ""} disponible{validatedRules.length > 1 ? "s" : ""}
+          </span>
+        </div>
+
+        {hasValidatedRule ? (
+          <PayrollCalculateButton
+            periodId={period.id}
+            disabled={calculationDisabled}
+            ruleCode={validatedRules[0].code}
+            ruleScope={validatedRules[0].scope}
+          />
+        ) : (
+          <p className="mt-4 rounded-lg bg-accent-amber/10 px-3 py-2 text-sm text-accent-amber">
+            Aucune version de règle de paie validée n’est disponible pour cette période.
+          </p>
+        )}
+      </section>
 
       <section className="mt-7 overflow-hidden rounded-xl border border-surface-border bg-white">
         <div className="border-b border-surface-border px-5 py-4">
@@ -311,7 +362,13 @@ export default async function PayrollPeriodPage({
           <div className="rounded-lg border border-surface-border bg-surface-subtle/40 p-4">
             <p className="text-xs text-ink-faint">Étape suivante</p>
             <p className="mt-1 text-sm font-semibold text-ink">
-              {!readiness.ready ? "Compléter les données de base" : variables.length === 0 ? "Saisir les variables" : "Préparer le calcul réglementaire"}
+              {!readiness.ready
+                ? "Compléter les données de base"
+                : !hasValidatedRule
+                  ? "Publier une règle de paie validée"
+                  : variables.length === 0
+                    ? "Saisir les variables"
+                    : "Lancer le calcul de la période"}
             </p>
           </div>
         </div>
