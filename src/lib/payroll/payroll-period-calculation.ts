@@ -199,7 +199,7 @@ export async function calculatePayrollPeriod(input: {
         },
         variables: calculated.variables,
         variableTreatments: calculated.treatments,
-        ruleSet: calculated.result.ruleSetVersion,
+        ruleSet: rules.ruleSet,
         ruleSource: rules.source,
         result: calculated.result,
       });
