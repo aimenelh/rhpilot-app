@@ -18,6 +18,7 @@ import {
   Menu,
   X,
   WalletCards,
+  ClipboardCheck,
   type LucideIcon,
 } from "lucide-react";
 import { Logomark, Wordmark } from "./Brand";
@@ -41,6 +42,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Tableau de bord", available: true, icon: Compass, section: "Accueil" },
   { href: "/dashboard/employees", label: "Salariés", available: true, icon: Users, section: "Gestion RH" },
+  { href: "/dashboard/absences", label: "Absences", available: true, icon: ClipboardCheck },
   { href: "/dashboard/payroll", label: "Paie", available: true, icon: WalletCards },
   { href: "/dashboard/events", label: "Parcours", available: true, icon: Route },
   { href: "/dashboard/calendar", label: "Calendrier", available: true, icon: CalendarDays },
