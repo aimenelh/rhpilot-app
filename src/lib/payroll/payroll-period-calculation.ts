@@ -51,7 +51,13 @@ function snapshotForEmployee(input: {
     level: string | null;
     coefficient: string | null;
   };
-  variables: PayrollVariableInput[];
+  variables: Array<{
+    code: string;
+    label: string;
+    amount: number;
+    unit: string;
+    source: string;
+  }>;
   variableTreatments: Array<{
     code: string;
     ruleVersionId: string;
@@ -227,10 +233,24 @@ export async function calculatePayrollPeriod(input: {
     variablesByEmployee.set(variable.employeeId, current);
   }
 
+  type CalculatedProfile = {
+    id: string;
+    employeeId: string;
+    baseSalaryCents: number;
+    monthlyHours: (typeof profiles)[number]["monthlyHours"];
+    effectiveFrom: Date;
+    effectiveUntil: Date | null;
+    collectiveAgreementId: string | null;
+    classificationCode: string | null;
+    classificationLabel: string | null;
+    level: string | null;
+    coefficient: string | null;
+  };
+
   const calculatedEmployees: Array<{
     employeeId: string;
     result: ReturnType<typeof calculatePayroll>;
-    profile: (typeof profiles)[number];
+    profile: CalculatedProfile;
     variables: PayrollVariableInput[];
     treatments: ReturnType<typeof resolvePayrollVariableTreatment>[];
   }> = [];
@@ -273,7 +293,25 @@ export async function calculatePayrollPeriod(input: {
       withholdingTaxRate: rules.withholdingTaxRate,
     });
 
-    calculatedEmployees.push({ employeeId: employee.id, result, profile, variables: employeeVariables, treatments });
+    calculatedEmployees.push({
+      employeeId: employee.id,
+      result,
+      profile: {
+        id: profile.id,
+        employeeId: profile.employeeId,
+        baseSalaryCents: profile.baseSalaryCents,
+        monthlyHours: profile.monthlyHours,
+        effectiveFrom: profile.effectiveFrom,
+        effectiveUntil: profile.effectiveUntil,
+        collectiveAgreementId: profile.collectiveAgreementId,
+        classificationCode: profile.classificationCode,
+        classificationLabel: profile.classificationLabel,
+        level: profile.level,
+        coefficient: profile.coefficient,
+      },
+      variables: employeeVariables,
+      treatments,
+    });
   }
 
   await prisma.$transaction(async (tx) => {
