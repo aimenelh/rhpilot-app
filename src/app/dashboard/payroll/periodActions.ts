@@ -11,6 +11,7 @@ type VariableUnit = (typeof VARIABLE_UNITS)[number];
 export type PayrollVariableFormState = { error: string } | undefined;
 export type PayrollCalculationFormState = { error: string } | undefined;
 export type PayrollReviewFormState = { error: string } | undefined;
+export type PayrollValidationFormState = { error: string } | undefined;
 
 type EditablePayrollPeriod = {
   id: string;
@@ -273,6 +274,115 @@ export async function movePayrollPeriodToReviewAction(
         entityType: "PayrollPeriod",
         entityId: period.id,
         metadata: { employeeCount, calculationCount },
+      },
+    });
+  });
+
+  revalidatePath(`/dashboard/payroll/${periodId}`);
+  revalidatePath("/dashboard/payroll");
+  return undefined;
+}
+
+export async function validatePayrollPeriodAction(
+  _prevState: PayrollValidationFormState,
+  formData: FormData,
+): Promise<PayrollValidationFormState> {
+  const membership = await getCurrentMembership();
+  const user = await getCurrentUser();
+
+  if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
+  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {
+    return { error: "Seuls les administrateurs peuvent valider la paie." };
+  }
+
+  const periodId = String(formData.get("periodId") ?? "").trim();
+  if (!periodId) return { error: "La période de paie est obligatoire." };
+
+  const period = await prisma.payrollPeriod.findFirst({
+    where: {
+      id: periodId,
+      organizationId: membership.organizationId,
+    },
+    select: { id: true, status: true },
+  });
+
+  if (!period) return { error: "Période de paie introuvable." };
+  if (period.status !== "REVIEW") {
+    return { error: "La période doit être en contrôle avant d'être validée." };
+  }
+
+  const employeeCount = await prisma.employee.count({
+    where: {
+      organizationId: membership.organizationId,
+      deletedAt: null,
+    },
+  });
+
+  if (employeeCount === 0) return { error: "Aucun salarié actif n'est disponible pour cette période." };
+
+  const calculations = await prisma.payrollCalculation.findMany({
+    where: {
+      organizationId: membership.organizationId,
+      payrollPeriodId: period.id,
+    },
+    select: {
+      employeeId: true,
+      grossAmount: true,
+      employeeContributions: true,
+      employerContributions: true,
+      netBeforeTax: true,
+      withholdingTax: true,
+      netPaid: true,
+      ruleSetVersion: true,
+      calculationSnapshot: true,
+    },
+  });
+
+  if (calculations.length !== employeeCount) {
+    return {
+      error: `Validation impossible : ${calculations.length}/${employeeCount} calcul${employeeCount > 1 ? "s" : ""} disponible${employeeCount > 1 ? "s" : ""}.`,
+    };
+  }
+
+  const invalidCalculation = calculations.find(
+    (calculation) =>
+      !calculation.ruleSetVersion ||
+      calculation.calculationSnapshot === null ||
+      Number(calculation.grossAmount) < 0 ||
+      Number(calculation.employeeContributions) < 0 ||
+      Number(calculation.employerContributions) < 0 ||
+      Number(calculation.netBeforeTax) < 0 ||
+      Number(calculation.withholdingTax) < 0 ||
+      Number(calculation.netPaid) < 0,
+  );
+
+  if (invalidCalculation) {
+    return { error: "Validation impossible : un calcul enregistré est incohérent ou incomplet." };
+  }
+
+  const validatedAt = new Date();
+
+  await prisma.$transaction(async (tx) => {
+    await tx.payrollPeriod.update({
+      where: { id: period.id },
+      data: {
+        status: "VALIDATED",
+        validatedAt,
+      },
+    });
+
+    await tx.auditLog.create({
+      data: {
+        organizationId: membership.organizationId,
+        actorUserId: user.id,
+        action: "payroll.period.validated",
+        entityType: "PayrollPeriod",
+        entityId: period.id,
+        metadata: {
+          employeeCount,
+          calculationCount: calculations.length,
+          validatedAt: validatedAt.toISOString(),
+        },
       },
     });
   });
