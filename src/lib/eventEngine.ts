@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { FunctionalRole, FunctionalRoleResolution, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
@@ -69,6 +70,7 @@ export async function triggerEmployeeEvent({
 
     const employeeEvent = await tx.employeeEvent.create({
       data: {
+        id: randomUUID(),
         organizationId,
         employeeId,
         eventTemplateId: eventTemplate.id,
@@ -133,6 +135,7 @@ export async function triggerEmployeeEvent({
 
     await tx.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId,
         actorUserId,
         action: "employee_event.created",
