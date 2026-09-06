@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
@@ -130,6 +131,7 @@ export async function bulkTriggerEvents(
   if (successCount > 0) {
     await prisma.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId: membership.organizationId,
         actorUserId: user.id,
         action: "events.bulk_triggered",
