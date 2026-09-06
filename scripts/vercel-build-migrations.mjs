@@ -3,6 +3,7 @@ import { spawnSync } from "node:child_process";
 const RECOVERABLE_FAILED_MIGRATIONS = [
   "20260811190209_add_diagnostic_response",
   "20260906130000_paie_foundation",
+  "20260906195500_align_payroll_columns_with_prisma",
 ];
 
 function runCapture(args) {
