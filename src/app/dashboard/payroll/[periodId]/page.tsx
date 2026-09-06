@@ -56,7 +56,7 @@ function formatDecimal(value: unknown) {
 }
 
 function sumPayrollEuros(values: unknown[]) {
-  const total = values.reduce((sum, value) => {
+  const total = values.reduce<number>((sum, value) => {
     if (value === null || value === undefined) return sum;
     const amount = Number(value);
     return Number.isFinite(amount) ? sum + amount : sum;
