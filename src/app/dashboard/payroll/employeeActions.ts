@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 
@@ -130,6 +131,7 @@ export async function saveEmployeePayrollProfile(
 
     await tx.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId: membership.organizationId,
         actorUserId: user.id,
         action: "payroll.profile.updated",

@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -57,8 +58,8 @@ export async function addPayrollVariable(periodId: string, _prevState: PayrollVa
   const employee = await prisma.employee.findFirst({ where: { id: employeeId, organizationId: membership.organizationId, deletedAt: null }, select: { id: true } });
   if (!employee) return { error: "Salarié introuvable dans cette organisation." };
   await prisma.$transaction(async (tx) => {
-    await tx.payrollVariable.create({ data: { id: crypto.randomUUID(), organizationId: membership.organizationId, payrollPeriodId: period.id, employeeId: employee.id, code, label, amount, unit, source: "MANUAL" } });
-    await tx.auditLog.create({ data: { organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.variable.created", entityType: "PayrollVariable", entityId: period.id, metadata: { employeeId, code, unit } } });
+    await tx.payrollVariable.create({ data: { id: randomUUID(), organizationId: membership.organizationId, payrollPeriodId: period.id, employeeId: employee.id, code, label, amount, unit, source: "MANUAL" } });
+    await tx.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.variable.created", entityType: "PayrollVariable", entityId: period.id, metadata: { employeeId, code, unit } } });
   });
   revalidatePath(`/dashboard/payroll/${periodId}`);
   return undefined;
@@ -75,7 +76,7 @@ export async function deletePayrollVariable(periodId: string, variableId: string
   if (!variable) return { error: "Variable de paie introuvable." };
   await prisma.$transaction(async (tx) => {
     await tx.payrollVariable.delete({ where: { id: variable.id } });
-    await tx.auditLog.create({ data: { organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.variable.deleted", entityType: "PayrollVariable", entityId: variable.id, metadata: { periodId, code: variable.code } } });
+    await tx.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.variable.deleted", entityType: "PayrollVariable", entityId: variable.id, metadata: { periodId, code: variable.code } } });
   });
   revalidatePath(`/dashboard/payroll/${periodId}`);
   return undefined;
@@ -120,7 +121,7 @@ export async function movePayrollPeriodToReviewAction(_prevState: PayrollReviewF
   if (calculationCount !== employeeCount) return { error: `Contrôle impossible : ${calculationCount}/${employeeCount} salarié${employeeCount > 1 ? "s" : ""} calculé${employeeCount > 1 ? "s" : ""}.` };
   await prisma.$transaction(async (tx) => {
     await tx.payrollPeriod.update({ where: { id: period.id }, data: { status: "REVIEW" } });
-    await tx.auditLog.create({ data: { organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.period.review.started", entityType: "PayrollPeriod", entityId: period.id, metadata: { employeeCount, calculationCount } } });
+    await tx.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.period.review.started", entityType: "PayrollPeriod", entityId: period.id, metadata: { employeeCount, calculationCount } } });
   });
   revalidatePath(`/dashboard/payroll/${periodId}`);
   revalidatePath("/dashboard/payroll");
@@ -146,7 +147,7 @@ export async function validatePayrollPeriodAction(_prevState: PayrollValidationF
   const validatedAt = new Date();
   await prisma.$transaction(async (tx) => {
     await tx.payrollPeriod.update({ where: { id: period.id }, data: { status: "VALIDATED", validatedAt } });
-    await tx.auditLog.create({ data: { organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.period.validated", entityType: "PayrollPeriod", entityId: period.id, metadata: { employeeCount, calculationCount: calculations.length, validatedAt: validatedAt.toISOString() } } });
+    await tx.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.period.validated", entityType: "PayrollPeriod", entityId: period.id, metadata: { employeeCount, calculationCount: calculations.length, validatedAt: validatedAt.toISOString() } } });
   });
   revalidatePath(`/dashboard/payroll/${periodId}`);
   revalidatePath("/dashboard/payroll");
@@ -170,7 +171,7 @@ export async function lockPayrollPeriodAction(_prevState: PayrollLockFormState, 
   const lockedAt = new Date();
   await prisma.$transaction(async (tx) => {
     await tx.payrollPeriod.update({ where: { id: period.id }, data: { status: "LOCKED", lockedAt } });
-    await tx.auditLog.create({ data: { organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.period.locked", entityType: "PayrollPeriod", entityId: period.id, metadata: { employeeCount, calculationCount, lockedAt: lockedAt.toISOString() } } });
+    await tx.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.period.locked", entityType: "PayrollPeriod", entityId: period.id, metadata: { employeeCount, calculationCount, lockedAt: lockedAt.toISOString() } } });
   });
   revalidatePath(`/dashboard/payroll/${periodId}`);
   revalidatePath("/dashboard/payroll");
@@ -220,7 +221,7 @@ export async function preparePayrollPayslipsAction(_prevState: PayrollPayslipPre
       await tx.payslip.upsert({
         where: { calculationId: calculation.id },
         create: {
-          id: crypto.randomUUID(),
+          id: randomUUID(),
           organizationId: membership.organizationId,
           payrollPeriodId: period.id,
           employeeId: calculation.employeeId,
@@ -237,6 +238,7 @@ export async function preparePayrollPayslipsAction(_prevState: PayrollPayslipPre
 
     await tx.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId: membership.organizationId,
         actorUserId: user.id,
         action: "payroll.payslips.prepared",
