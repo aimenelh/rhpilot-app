@@ -38,9 +38,31 @@ function formatEuros(cents: number | null) {
   }).format(cents / 100);
 }
 
+function formatPayrollEuros(value: unknown) {
+  if (value === null || value === undefined) return "—";
+  const amount = Number(value);
+  if (!Number.isFinite(amount)) return String(value);
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+}
+
 function formatDecimal(value: unknown) {
   if (value === null || value === undefined) return "Non renseigné";
   return String(value);
+}
+
+function sumPayrollEuros(values: unknown[]) {
+  const total = values.reduce((sum, value) => {
+    if (value === null || value === undefined) return sum;
+    const amount = Number(value);
+    return Number.isFinite(amount) ? sum + amount : sum;
+  }, 0);
+
+  return formatPayrollEuros(total);
 }
 
 export default async function PayrollPeriodPage({
@@ -184,6 +206,10 @@ export default async function PayrollPeriodPage({
     source: variable.source,
   }));
 
+  const calculatedRows = employees
+    .map((employee) => calculationByEmployee.get(employee.id))
+    .filter((calculation): calculation is (typeof calculations)[number] => Boolean(calculation));
+
   const hasValidatedRule = validatedRules.length > 0;
   const calculationDisabled =
     membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN"
@@ -276,6 +302,96 @@ export default async function PayrollPeriodPage({
         )}
       </section>
 
+      {calculatedRows.length > 0 ? (
+        <section className="mt-7 rounded-xl border border-surface-border bg-white p-5">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-accent-teal">Résultat enregistré</p>
+              <h2 className="mt-1 text-lg font-semibold text-ink">Synthèse du calcul de paie</h2>
+              <p className="mt-1 text-sm text-ink-soft">
+                Cette synthèse reprend uniquement les montants enregistrés par le moteur de paie pour cette période.
+              </p>
+            </div>
+            <span className="rounded-full bg-accent-teal/10 px-3 py-1.5 text-xs font-semibold text-accent-teal">
+              {calculatedRows.length}/{employees.length} salarié{calculatedRows.length > 1 ? "s" : ""} calculé{calculatedRows.length > 1 ? "s" : ""}
+            </span>
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="rounded-lg border border-surface-border bg-surface-subtle/40 p-4">
+              <p className="text-xs text-ink-faint">Brut total</p>
+              <p className="mt-1 text-lg font-semibold text-ink">
+                {sumPayrollEuros(calculatedRows.map((calculation) => calculation.grossAmount))}
+              </p>
+            </div>
+            <div className="rounded-lg border border-surface-border bg-surface-subtle/40 p-4">
+              <p className="text-xs text-ink-faint">Cotisations salariales</p>
+              <p className="mt-1 text-lg font-semibold text-ink">
+                {sumPayrollEuros(calculatedRows.map((calculation) => calculation.employeeContributions))}
+              </p>
+            </div>
+            <div className="rounded-lg border border-surface-border bg-surface-subtle/40 p-4">
+              <p className="text-xs text-ink-faint">Net avant impôt</p>
+              <p className="mt-1 text-lg font-semibold text-ink">
+                {sumPayrollEuros(calculatedRows.map((calculation) => calculation.netBeforeTax))}
+              </p>
+            </div>
+            <div className="rounded-lg border border-surface-border bg-surface-subtle/40 p-4">
+              <p className="text-xs text-ink-faint">PAS</p>
+              <p className="mt-1 text-lg font-semibold text-ink">
+                {sumPayrollEuros(calculatedRows.map((calculation) => calculation.withholdingTax))}
+              </p>
+            </div>
+            <div className="rounded-lg border border-surface-border bg-surface-subtle/40 p-4">
+              <p className="text-xs text-ink-faint">Net payé</p>
+              <p className="mt-1 text-lg font-semibold text-ink">
+                {sumPayrollEuros(calculatedRows.map((calculation) => calculation.netPaid))}
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5 overflow-x-auto">
+            <table className="min-w-[1180px] w-full text-sm">
+              <thead>
+                <tr className="border-b border-surface-border bg-surface-subtle/50 text-left text-xs font-semibold text-ink-faint">
+                  <th className="px-4 py-3">Salarié</th>
+                  <th className="px-4 py-3">Brut</th>
+                  <th className="px-4 py-3">Cotisations salariales</th>
+                  <th className="px-4 py-3">Cotisations employeur</th>
+                  <th className="px-4 py-3">Net avant impôt</th>
+                  <th className="px-4 py-3">PAS</th>
+                  <th className="px-4 py-3">Net payé</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-surface-border">
+                {employees.map((employee) => {
+                  const calculation = calculationByEmployee.get(employee.id);
+                  if (!calculation) return null;
+                  return (
+                    <tr key={employee.id}>
+                      <td className="px-4 py-4">
+                        <p className="font-medium text-ink">
+                          {employee.firstName} {employee.lastName}
+                        </p>
+                        <p className="mt-0.5 text-xs text-ink-faint">
+                          {employee.position || "Poste non renseigné"}
+                        </p>
+                      </td>
+                      <td className="px-4 py-4 font-medium text-ink">{formatPayrollEuros(calculation.grossAmount)}</td>
+                      <td className="px-4 py-4 text-ink-soft">{formatPayrollEuros(calculation.employeeContributions)}</td>
+                      <td className="px-4 py-4 text-ink-soft">{formatPayrollEuros(calculation.employerContributions)}</td>
+                      <td className="px-4 py-4 font-medium text-ink">{formatPayrollEuros(calculation.netBeforeTax)}</td>
+                      <td className="px-4 py-4 text-ink-soft">{formatPayrollEuros(calculation.withholdingTax)}</td>
+                      <td className="px-4 py-4 font-semibold text-ink">{formatPayrollEuros(calculation.netPaid)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
       <section className="mt-7 overflow-hidden rounded-xl border border-surface-border bg-white">
         <div className="border-b border-surface-border px-5 py-4">
           <h2 className="font-semibold text-ink">Salariés de la période</h2>
@@ -326,7 +442,7 @@ export default async function PayrollPeriodPage({
                     </td>
                     <td className="px-5 py-4 font-medium text-ink">
                       {calculation?.netBeforeTax !== null && calculation?.netBeforeTax !== undefined
-                        ? String(calculation.netBeforeTax)
+                        ? formatPayrollEuros(calculation.netBeforeTax)
                         : "—"}
                     </td>
                   </tr>
@@ -368,7 +484,11 @@ export default async function PayrollPeriodPage({
                   ? "Publier une règle de paie validée"
                   : variables.length === 0
                     ? "Saisir les variables"
-                    : "Lancer le calcul de la période"}
+                    : calculatedCount < employees.length
+                      ? "Contrôler les calculs manquants"
+                      : period.status === "CALCULATED"
+                        ? "Passer au contrôle de la période"
+                        : "Continuer le cycle de paie"}
             </p>
           </div>
         </div>
