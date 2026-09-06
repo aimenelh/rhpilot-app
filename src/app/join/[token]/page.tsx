@@ -8,6 +8,7 @@ import { Logomark, Wordmark } from "@/components/Brand";
 import { switchOrganization } from "../actions";
 import { InitializingScreen } from "@/components/InitializingScreen";
 import Link from "next/link";
+import { randomUUID } from "node:crypto";
 
 function ErrorScreen({ title, description }: { title: string; description: string }) {
   return (
@@ -159,6 +160,7 @@ export default async function JoinPage({ params }: { params: { token: string } }
     });
     await tx.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId: invitation.organizationId,
         actorUserId: user.id,
         action: "invitation.accepted",

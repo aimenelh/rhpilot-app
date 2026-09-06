@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
@@ -24,6 +25,7 @@ export async function dismissAnomaly(anomalyKey: string, mode: "later" | "ignore
   await prisma.anomalyDismissal.upsert({
     where: { organizationId_anomalyKey: { organizationId: membership.organizationId, anomalyKey } },
     create: {
+      id: randomUUID(),
       organizationId: membership.organizationId,
       anomalyKey,
       snoozedUntil,

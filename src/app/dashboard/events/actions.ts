@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { triggerEmployeeEvent } from "@/lib/eventEngine";
@@ -114,6 +115,7 @@ export async function updateTaskStatus(taskId: string, formData: FormData) {
     }),
     prisma.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId: membership.organizationId,
         actorUserId: user.id,
         action: "task.status_updated",
@@ -165,6 +167,7 @@ export async function assignTask(taskId: string, formData: FormData) {
     }),
     prisma.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId: membership.organizationId,
         actorUserId: user.id,
         action: "task.assigned_manually",
@@ -205,6 +208,7 @@ export async function archiveEmployeeEvent(eventId: string) {
     }),
     prisma.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId: membership.organizationId,
         actorUserId: user.id,
         action: "employeeEvent.archived",
@@ -275,6 +279,7 @@ export async function addCustomTask(employeeEventId: string, formData: FormData)
     }),
     prisma.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId: membership.organizationId,
         actorUserId: user.id,
         action: "task.added_manually",
@@ -366,6 +371,7 @@ export async function updateCustomTask(taskId: string, formData: FormData) {
     }),
     prisma.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId: membership.organizationId,
         actorUserId: user.id,
         action: "task.edited_manually",
@@ -431,6 +437,7 @@ export async function deleteCustomTask(taskId: string, rememberForFuture: boolea
     prisma.task.delete({ where: { id: taskId } }),
     prisma.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId: membership.organizationId,
         actorUserId: user.id,
         action: "task.deleted_manually",

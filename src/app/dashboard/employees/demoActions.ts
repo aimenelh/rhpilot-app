@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
@@ -287,6 +288,7 @@ export async function generateDemoOrganization() {
 
   await prisma.auditLog.create({
     data: {
+      id: randomUUID(),
       organizationId: membership.organizationId,
       actorUserId: user.id,
       action: "organization.demo_generated",
@@ -411,6 +413,7 @@ export async function archiveAllEmployees() {
 
   await prisma.auditLog.create({
     data: {
+      id: randomUUID(),
       organizationId: membership.organizationId,
       actorUserId: user.id,
       action: "employees.bulk_archived",

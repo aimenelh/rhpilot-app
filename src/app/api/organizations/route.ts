@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
@@ -33,6 +34,7 @@ export async function POST(request: Request) {
 
     await tx.auditLog.create({
       data: {
+        id: randomUUID(),
         organizationId: org.id,
         actorUserId: user.id,
         action: "organization.created",

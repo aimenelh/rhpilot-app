@@ -120,6 +120,7 @@ export async function createInvitation(
 
   await prisma.auditLog.create({
     data: {
+      id: randomUUID(),
       organizationId: membership.organizationId,
       actorUserId: user.id,
       action: "invitation.created",

@@ -1,17 +1,8 @@
 // ============================================================
 // RH Pilot — Schéma de données MVP (v4)
 // ============================================================
-// Ajouts par rapport à la v3 :
-// - DeadlineType (LEGAL_DEADLINE / ORGANIZATIONAL_DEFAULT /
-//   USER_DEFINED) sur TaskTemplate, copié sur Task. Distingue
-//   une échéance réglementaire vérifiée d'une recommandation
-//   interne modifiable. Au MVP, aucune tâche n'est classée
-//   LEGAL_DEADLINE tant qu'il n'existe pas de moteur juridique
-//   vérifié et contextualisé — toutes sont ORGANIZATIONAL_DEFAULT.
-// - TaskTemplate.key : clé technique stable et unique par tâche
-//   type (ex. "embauche_dpae"), pour permettre des seeds
-//   rejouables par upsert plutôt que par deleteMany/createMany.
-// ============================================================
+// Le référentiel conventionnel est versionné et séparé des règles
+// de paie. Aucune règle sociale ou juridique n'est déduite par l'IA.
 
 generator client {
   provider = "prisma-client-js"
@@ -22,46 +13,40 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ------------------------------------------------------------
-// Organisations et accès
-// ------------------------------------------------------------
-
 model Organization {
-  id                   String    @id @default(cuid())
-  name                 String
-  siret                String?   // facultatif, jamais bloquant à l'inscription — voir CreateOrganizationForm
-  conventionCollective String?   // nom libre, renseigné dans les paramètres (jamais à l'inscription, pour ne pas alourdir le premier contact) — sert uniquement à orienter vers la bonne source officielle, jamais à déduire une règle nous-mêmes
+  id                    String    @id @default(cuid())
+  name                  String
+  siret                 String?
+  conventionCollective  String?
+  collectiveAgreementId String?
+  payrollAddress        String?
+  payrollPostalCode     String?
+  payrollCity           String?
+  payrollNafCode        String?
+  payrollUrssafReference String?
+  stripeCustomerId      String?   @unique
+  stripeSubscriptionId  String?   @unique
+  subscriptionStatus    String?
+  currentPeriodEnd      DateTime?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+  deletedAt             DateTime?
 
-  // Facturation Stripe — de simples miroirs de ce que dit Stripe,
-  // aucune logique métier dessus. stripeSubscriptionId reste vide
-  // tant que l'organisation est sur le palier Gratuit.
-  stripeCustomerId     String?   @unique
-  stripeSubscriptionId String?   @unique
-  subscriptionStatus   String?   // reflète directement le statut Stripe : active, past_due, canceled...
-  currentPeriodEnd     DateTime?
+  memberships             Membership[]
+  employees               Employee[]
+  employeeEvents          EmployeeEvent[]
+  auditLogs               AuditLog[]
+  notifications           Notification[]
+  invitations             Invitation[]
+  taskTemplateOverrides   TaskTemplateOverride[]
+  reminderRules           ReminderRule[]
+  anomalyDismissals       AnomalyDismissal[]
+  collectiveAgreement     CollectiveAgreement? @relation(fields: [collectiveAgreementId], references: [id], onDelete: Restrict)
 
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
-  deletedAt            DateTime?
-
-  memberships    Membership[]
-  employees      Employee[]
-  employeeEvents EmployeeEvent[]
-  auditLogs      AuditLog[]
-  notifications  Notification[]
-  invitations    Invitation[]
-  taskTemplateOverrides TaskTemplateOverride[]
-  reminderRules         ReminderRule[]
-  anomalyDismissals     AnomalyDismissal[]
-
+  @@index([collectiveAgreementId])
   @@map("organizations")
 }
 
-// Invitation à rejoindre une organisation existante — sans ça, la
-// seule porte d'entrée était "créer sa propre organisation", ce qui
-// cassait complètement l'usage en équipe (un DRH ne peut pas montrer
-// RH Pilot à son assistante). Un jeton à usage unique, avec
-// expiration, plutôt qu'un lien permanent partageable indéfiniment.
 model Invitation {
   id              String     @id @default(cuid())
   organizationId  String
@@ -72,28 +57,24 @@ model Invitation {
   createdAt       DateTime   @default(now())
   expiresAt       DateTime
   acceptedAt      DateTime?
-
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-
   @@index([organizationId])
   @@map("invitations")
 }
 
 model User {
   id             String    @id @default(cuid())
-  email          String    @unique // remplacé par un placeholder généré lors de la désactivation
-  firstName      String?   // reçu depuis Clerk (webhook user.created/user.updated)
-  lastName       String?   // idem — nullable : peut manquer selon la méthode d'inscription
-  authProviderId String?   @unique // nullable : vidé lors de la désactivation (coupe l'accès immédiatement)
+  email          String    @unique
+  firstName      String?
+  lastName       String?
+  authProviderId String?   @unique
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
-  deletedAt      DateTime? // désactivation (temps 1) — la suppression physique (temps 3) est un job séparé
-
+  deletedAt      DateTime?
   memberships       Membership[]
   auditLogs         AuditLog[]
   anomalyDismissals AnomalyDismissal[]
   sentNotifications Notification[]
-
   @@map("users")
 }
 
@@ -103,9 +84,6 @@ enum AccessRole {
   MEMBER
 }
 
-// Rôles globaux à l'organisation uniquement. Le manager direct
-// n'est PAS ici : il est propre à chaque salarié via
-// Employee.managerMembershipId.
 enum FunctionalRole {
   RH
   DIRIGEANT
@@ -127,24 +105,17 @@ model Membership {
   createdAt             DateTime              @default(now())
   updatedAt             DateTime              @updatedAt
   deletedAt             DateTime?
-
   user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-
-  managedEmployees     Employee[]     @relation("EmployeeManager")
-  assignedTasks        Task[]
-  uploadedAttachments  Attachment[]
+  managedEmployees      Employee[]     @relation("EmployeeManager")
+  assignedTasks         Task[]
+  uploadedAttachments   Attachment[]
   receivedNotifications Notification[]
-
   @@unique([userId, organizationId])
   @@unique([organizationId, id])
   @@index([organizationId, functionalRole])
   @@map("memberships")
 }
-
-// ------------------------------------------------------------
-// Salariés
-// ------------------------------------------------------------
 
 enum ContractType {
   CDI
@@ -180,32 +151,25 @@ model Employee {
   lastName                String
   civility                Civility?
   position                String?
-  professionalCategory    ProfessionalCategory? // cadre, agent de maîtrise... — donnée d'identité, pas encore exploitée par des règles automatiques (ça viendrait avec la convention collective, volontairement pas construit tant qu'on n'a pas de source fiable)
+  professionalCategory    ProfessionalCategory?
   hireDate                DateTime
   contractType            ContractType?
-  contractEndDate         DateTime?     // pertinent pour CDD/apprentissage/professionnalisation — jamais pour un CDI. Alimente un détecteur simple ("contrat arrivant à échéance"), pas un parcours automatisé.
-  probationDuration       Int?          // quantité, à interpréter avec probationDurationUnit — jamais imposé, juste une pré-saisie modifiable
-  probationDurationUnit   DurationUnit? // ex. 45 jours (apprentissage) plutôt que de forcer un raisonnement en mois
-  nextMedicalVisitDate    DateTime?     // renseignée via l'étape "Mettre à jour la fiche" du parcours Visite médicale ; alimente les futurs détecteurs (visite dépassée, visite proche...)
+  contractEndDate         DateTime?
+  probationDuration       Int?
+  probationDurationUnit   DurationUnit?
+  nextMedicalVisitDate    DateTime?
   managerMembershipId     String?
-  isDemoData              Boolean       @default(false) // salarié généré par "Entreprise de démonstration" — purgé automatiquement après 48h si l'organisation n'est pas passée sur Pro entre-temps (empêche de renommer un jeu de données gratuit en salariés réels pour contourner la limite du palier Gratuit)
+  isDemoData              Boolean       @default(false)
   createdAt               DateTime      @default(now())
   updatedAt               DateTime      @updatedAt
   deletedAt               DateTime?
-
   organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   managerMembership Membership?  @relation("EmployeeManager", fields: [organizationId, managerMembershipId], references: [organizationId, id], onDelete: Restrict)
-
-  events EmployeeEvent[]
-
+  events            EmployeeEvent[]
   @@unique([organizationId, id])
   @@index([organizationId])
   @@map("employees")
 }
-
-// ------------------------------------------------------------
-// Gabarits
-// ------------------------------------------------------------
 
 model EventTemplate {
   id          String    @id @default(cuid())
@@ -215,22 +179,17 @@ model EventTemplate {
   archivedAt  DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-
   taskTemplates  TaskTemplate[]
   employeeEvents EmployeeEvent[]
-
   @@map("event_templates")
 }
 
 enum FunctionalRoleResolution {
   RH
   DIRIGEANT
-  MANAGER_DIRECT // résolu via Employee.managerMembershipId
+  MANAGER_DIRECT
 }
 
-// LEGAL_DEADLINE : délai réglementaire issu d'une règle vérifiée (aucune au MVP).
-// ORGANIZATIONAL_DEFAULT : recommandation interne, modifiable (toutes les tâches du MVP).
-// USER_DEFINED : échéance choisie librement par l'entreprise (usage futur).
 enum DeadlineType {
   LEGAL_DEADLINE
   ORGANIZATIONAL_DEFAULT
@@ -242,25 +201,17 @@ enum OverrideAction {
   REMOVED
 }
 
-// Mémorise qu'une organisation a personnalisé une étape d'un gabarit
-// standard — soit en changeant son libellé/délai, soit en décidant
-// qu'elle ne s'applique jamais chez elle. Jamais imposé : uniquement
-// créé quand un RH modifie ou supprime une étape et choisit
-// explicitement "appliquer aussi aux futurs parcours". Le gabarit
-// global reste inchangé pour toutes les autres organisations.
 model TaskTemplateOverride {
   id             String         @id @default(cuid())
   organizationId String
   taskTemplateId String
   action         OverrideAction
-  label          String? // nouveau libellé, uniquement si action = MODIFIED
-  dueOffsetDays  Int? // nouveau délai en jours après le déclenchement, uniquement si action = MODIFIED
+  label          String?
+  dueOffsetDays  Int?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
-
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   taskTemplate TaskTemplate @relation(fields: [taskTemplateId], references: [id], onDelete: Restrict)
-
   @@unique([organizationId, taskTemplateId])
   @@index([organizationId])
   @@map("task_template_overrides")
@@ -268,7 +219,7 @@ model TaskTemplateOverride {
 
 model TaskTemplate {
   id                    String                   @id @default(cuid())
-  key                   String                   @unique // ex: "embauche_dpae" — cible stable pour les upserts de seed
+  key                   String                   @unique
   eventTemplateId       String
   label                 String
   stepOrder             Int
@@ -280,35 +231,26 @@ model TaskTemplate {
   archivedAt            DateTime?
   createdAt             DateTime                 @default(now())
   updatedAt             DateTime                 @updatedAt
-
   eventTemplate EventTemplate @relation(fields: [eventTemplateId], references: [id], onDelete: Restrict)
   tasks         Task[]
   overrides     TaskTemplateOverride[]
-
   @@index([eventTemplateId])
   @@map("task_templates")
 }
 
-// ------------------------------------------------------------
-// Instances réelles
-// ------------------------------------------------------------
-
 model EmployeeEvent {
-  id              String    @id @default(cuid())
+  id              String    @id
   organizationId  String
   employeeId      String
   eventTemplateId String
   triggerDate     DateTime
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
-  deletedAt       DateTime? // supprimer un doublon archive, ne détruit jamais l'historique
-
+  deletedAt       DateTime?
   organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   employee      Employee      @relation(fields: [organizationId, employeeId], references: [organizationId, id], onDelete: Restrict)
   eventTemplate EventTemplate @relation(fields: [eventTemplateId], references: [id], onDelete: Restrict)
-
-  tasks Task[]
-
+  tasks         Task[]
   @@unique([organizationId, id])
   @@index([organizationId])
   @@index([employeeId])
@@ -328,26 +270,23 @@ model Task {
   id                   String                   @id @default(cuid())
   organizationId       String
   employeeEventId      String
-  taskTemplateId       String?                  // copié du template — vide pour une tâche ajoutée manuellement
-  label                String                   // copié du template
-  stepOrder            Int                      // copié, modifiable ensuite (réordonnancement manuel)
-  dueDate              DateTime                 // calculée
-  deadlineType         DeadlineType             // copié — ne change jamais rétroactivement si le template évolue
-  resolutionRole       FunctionalRoleResolution // copié
+  taskTemplateId       String?
+  label                String
+  stepOrder             Int
+  dueDate               DateTime
+  deadlineType          DeadlineType
+  resolutionRole        FunctionalRoleResolution
   assignedMembershipId String?
   status               TaskStatus               @default(TO_PREPARE)
-  completedAt          DateTime?
-  proofRequired        Boolean                  @default(false)
-  proofLabel           String?                  // copié
-  createdAt            DateTime                 @default(now())
-  updatedAt            DateTime                 @updatedAt
-
+  completedAt           DateTime?
+  proofRequired         Boolean                  @default(false)
+  proofLabel            String?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
   employeeEvent      EmployeeEvent  @relation(fields: [organizationId, employeeEventId], references: [organizationId, id], onDelete: Cascade)
   taskTemplate       TaskTemplate?  @relation(fields: [taskTemplateId], references: [id], onDelete: Restrict)
   assignedMembership Membership?    @relation(fields: [organizationId, assignedMembershipId], references: [organizationId, id], onDelete: Restrict)
-
-  attachments Attachment[]
-
+  attachments        Attachment[]
   @@unique([organizationId, id])
   @@index([employeeEventId])
   @@index([assignedMembershipId])
@@ -355,62 +294,31 @@ model Task {
   @@map("tasks")
 }
 
-// Pièces justificatives — stockage privé uniquement.
 model Attachment {
   id                     String   @id @default(cuid())
   organizationId         String
   taskId                 String
-  storageKey             String
+  storageKey              String
   fileName               String?
   mimeType               String
   sizeBytes              Int
   uploadedByMembershipId String?
   createdAt              DateTime @default(now())
-
   task                 Task        @relation(fields: [organizationId, taskId], references: [organizationId, id], onDelete: Cascade)
   uploadedByMembership Membership? @relation(fields: [organizationId, uploadedByMembershipId], references: [organizationId, id], onDelete: Restrict)
-
   @@index([taskId])
   @@map("attachments")
 }
 
-// ------------------------------------------------------------
-// Traçabilité
-// ------------------------------------------------------------
-
-// ------------------------------------------------------------
-// Notifications
-// ------------------------------------------------------------
-
-// Journal des notifications envoyées — pas un doublon du calcul
-// "Votre attention est requise" (qui reflète l'état actuel), mais un
-// historique : qui a été prévenu, de quoi, quand, par qui (ou
-// automatiquement). Répond au besoin concret remonté par le fondateur :
-// savoir si quelqu'un a déjà été relancé, sans avoir à deviner.
-//
-// taskId / employeeEventId : identifiants informatifs, PAS des clés
-// étrangères strictes. Un journal d'envoi n'a pas besoin d'intégrité
-// référentielle forte (aucune suppression physique de Task n'existe
-// dans l'application) ; les garder en scalaire simple évite la
-// complexité des clés composites pour une table qui n'est qu'un
-// historique de lecture.
-// Règle de relance automatique : "X jours avant l'échéance d'une
-// tâche, prévenir telle personne". Propre à chaque organisation —
-// jamais de valeur par défaut imposée à tout le monde. La logique
-// d'envoi vit dans src/lib/reminders.ts, déclenchée une fois par jour
-// par une tâche planifiée Vercel (voir vercel.json et
-// /api/cron/reminders).
 model ReminderRule {
   id             String   @id @default(cuid())
   organizationId String
-  daysBeforeDue  Int // ex : 7 → rappel envoyé 7 jours avant l'échéance
+  daysBeforeDue  Int
   notifyAssignee Boolean  @default(true)
   notifyManager  Boolean  @default(false)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-
   @@unique([organizationId, daysBeforeDue])
   @@index([organizationId])
   @@map("reminder_rules")
@@ -420,47 +328,36 @@ model Notification {
   id                    String   @id @default(cuid())
   organizationId        String
   recipientMembershipId String
-  type                  String   // "digest_daily" | "digest_weekly" | "manual_reminder"
+  type                  String
   subject               String
   taskId                String?
   employeeEventId       String?
-  sentByUserId          String?  // null = envoi automatique (résumé programmé)
-  delivered             Boolean  @default(true) // reflète le vrai résultat Resend, pas seulement la tentative
+  sentByUserId          String?
+  delivered             Boolean  @default(true)
   sentAt                DateTime @default(now())
-
-  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   recipientMembership  Membership   @relation(fields: [organizationId, recipientMembershipId], references: [organizationId, id], onDelete: Restrict)
-  sentByUser           User?        @relation(fields: [sentByUserId], references: [id], onDelete: SetNull)
-
+  sentByUser            User?        @relation(fields: [sentByUserId], references: [id], onDelete: SetNull)
   @@index([organizationId, sentAt])
   @@map("notifications")
 }
 
-// Mémorise qu'un utilisateur a choisi "Ignorer" ou "Plus tard" sur
-// une suggestion précise — les suggestions elles-mêmes ne sont jamais
-// stockées (recalculées à chaque affichage à partir des vraies
-// données), donc c'est ce modèle qui porte la seule vraie décision
-// humaine à retenir. `snoozedUntil` vide = ignorée définitivement pour
-// cette clé précise ; renseigné = réapparaît automatiquement après
-// cette date.
 model AnomalyDismissal {
-  id             String    @id @default(cuid())
-  organizationId String
-  anomalyKey     String // même valeur que Anomaly.key (ex: "probation-abc123")
-  snoozedUntil   DateTime?
+  id                String    @id
+  organizationId    String
+  anomalyKey        String
+  snoozedUntil      DateTime?
   dismissedByUserId String?
-  createdAt      DateTime  @default(now())
-
+  createdAt         DateTime  @default(now())
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   dismissedBy  User?        @relation(fields: [dismissedByUserId], references: [id], onDelete: SetNull)
-
   @@unique([organizationId, anomalyKey])
   @@index([organizationId])
   @@map("anomaly_dismissals")
 }
 
 model AuditLog {
-  id             String   @id @default(cuid())
+  id             String   @id
   organizationId String
   actorUserId    String?
   action         String
@@ -468,33 +365,202 @@ model AuditLog {
   entityId       String
   metadata       Json?
   createdAt      DateTime @default(now())
-
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   actor        User?        @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
-
   @@index([organizationId, createdAt])
   @@map("audit_logs")
 }
 
-// ------------------------------------------------------------
-// Marketing — diagnostic public
-// ------------------------------------------------------------
-
-// Réponses au quiz "Diagnostic RH" (/diagnostic), rempli par des
-// visiteurs anonymes avant toute création de compte — jamais lié à
-// une Organization ou un User, puisqu'aucun des deux n'existe encore
-// à ce stade. answers stocke les réponses brutes (Json) pour ne pas
-// figer le schéma si les questions évoluent ; riskAreas est calculé
-// côté serveur au moment de l'enregistrement, pour permettre un
-// filtrage rapide sans reparser answers à chaque requête.
 model DiagnosticResponse {
-  id          String   @id @default(cuid())
+  id          String   @id
   answers     Json
   riskAreas   String[]
   email       String?
   companySize String?
   createdAt   DateTime @default(now())
-
   @@index([createdAt])
   @@map("diagnostic_responses")
+}
+
+model CollectiveAgreement {
+  id         String   @id
+  idcc       String
+  name       String
+  sourceName String?
+  sourceUrl  String?
+  status     String   @default("ACTIVE")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  organizations   Organization[]
+  versions        CollectiveAgreementVersion[]
+  payrollProfiles PayrollProfile[]
+  @@unique([idcc])
+  @@map("collective_agreements")
+}
+
+model CollectiveAgreementVersion {
+  id                    String   @id
+  collectiveAgreementId String
+  version               Int
+  validFrom             DateTime @db.Date
+  validUntil            DateTime? @db.Date
+  sourceName            String
+  sourceUrl             String?
+  sourceReference       String?
+  status                String   @default("DRAFT")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  collectiveAgreement CollectiveAgreement @relation(fields: [collectiveAgreementId], references: [id], onDelete: Restrict)
+  rules                CollectiveAgreementRule[]
+  @@unique([collectiveAgreementId, version])
+  @@index([collectiveAgreementId, validFrom, validUntil, status])
+  @@map("collective_agreement_versions")
+}
+
+model CollectiveAgreementRule {
+  id              String   @id
+  versionId       String
+  code            String
+  category        String
+  parameters      Json
+  sourceReference String
+  sourceUrl       String?
+  validFrom       DateTime @db.Date
+  validUntil      DateTime? @db.Date
+  status          String   @default("DRAFT")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  version CollectiveAgreementVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
+  @@unique([versionId, code])
+  @@index([versionId, category, validFrom, validUntil, status])
+  @@map("collective_agreement_rules")
+}
+
+model PayrollProfile {
+  id                    String   @id
+  organizationId        String
+  employeeId            String
+  payFrequency          String   @default("MONTHLY")
+  currency              String   @default("EUR")
+  baseSalaryCents       Int?
+  monthlyHours          Decimal? @db.Decimal(8, 2)
+  collectiveAgreementId String?
+  classificationCode    String?
+  classificationLabel   String?
+  employeeAddress       String?
+  level                 String?
+  coefficient            String?
+  seniorityDate         DateTime?
+  effectiveFrom         DateTime
+  effectiveUntil        DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  collectiveAgreement CollectiveAgreement? @relation(fields: [collectiveAgreementId], references: [id], onDelete: Restrict)
+  @@unique([organizationId, employeeId, effectiveFrom])
+  @@index([organizationId, employeeId])
+  @@index([collectiveAgreementId])
+  @@map("payroll_profiles")
+}
+
+model PayrollPeriod {
+  id             String    @id
+  organizationId String
+  year           Int
+  month          Int
+  status         String    @default("DRAFT")
+  calculatedAt   DateTime?
+  validatedAt    DateTime?
+  lockedAt       DateTime?
+  paymentDate    DateTime? @db.Date
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  @@unique([organizationId, year, month])
+  @@index([organizationId, status])
+  @@map("payroll_periods")
+}
+
+model PayrollVariable {
+  id              String   @id
+  organizationId  String
+  payrollPeriodId String
+  employeeId      String
+  code            String
+  label           String
+  amount          Decimal  @db.Decimal(12, 2)
+  unit            String   @default("EUR")
+  source          String   @default("MANUAL")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  @@index([organizationId, payrollPeriodId, employeeId])
+  @@map("payroll_variables")
+}
+
+model PayrollRuleVersion {
+  id         String   @id
+  code       String
+  version    Int
+  scope      String
+  validFrom  DateTime @db.Date
+  validUntil DateTime? @db.Date
+  sourceName String
+  sourceUrl  String?
+  parameters Json
+  status     String   @default("DRAFT")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@unique([code, version, scope])
+  @@index([code, scope, validFrom, validUntil, status])
+  @@map("payroll_rule_versions")
+}
+
+model PayrollCalculation {
+  id                    String   @id
+  organizationId        String
+  payrollPeriodId       String
+  employeeId            String
+  ruleSetVersion        String
+  grossAmount           Decimal  @db.Decimal(12, 2)
+  employeeContributions Decimal  @default(0) @db.Decimal(12, 2)
+  employerContributions Decimal  @default(0) @db.Decimal(12, 2)
+  netBeforeTax          Decimal  @db.Decimal(12, 2)
+  withholdingTax        Decimal  @default(0) @db.Decimal(12, 2)
+  netPaid               Decimal  @db.Decimal(12, 2)
+  netTaxableAmount      Decimal? @db.Decimal(12, 2)
+  netSocialAmount       Decimal? @db.Decimal(12, 2)
+  calculationSnapshot   Json
+  createdAt             DateTime @default(now())
+  @@unique([organizationId, payrollPeriodId, employeeId])
+  @@map("payroll_calculations")
+}
+
+model PayrollContribution {
+  id             String   @id
+  calculationId  String
+  code           String
+  label          String
+  side           String
+  baseAmount     Decimal  @db.Decimal(12, 2)
+  rate           Decimal  @db.Decimal(10, 6)
+  amount         Decimal  @db.Decimal(12, 2)
+  ruleVersionId  String?
+  createdAt      DateTime @default(now())
+  @@index([calculationId])
+  @@map("payroll_contributions")
+}
+
+model Payslip {
+  id              String    @id
+  organizationId  String
+  payrollPeriodId String
+  employeeId      String
+  calculationId   String
+  documentStatus  String    @default("DRAFT")
+  storageKey      String?
+  generatedAt     DateTime?
+  publishedAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  @@unique([calculationId])
+  @@unique([organizationId, payrollPeriodId, employeeId])
+  @@map("payslips")
 }
