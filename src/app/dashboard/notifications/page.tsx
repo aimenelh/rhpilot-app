@@ -35,6 +35,33 @@ export default async function NotificationsPage() {
     take: 50,
   });
 
+  // Regroupe par période plutôt que d'afficher 50 lignes d'un coup —
+  // même logique de lisibilité que le calendrier (Aujourd'hui / Cette
+  // semaine / Plus ancien), appliquée ici à un journal d'envois plutôt
+  // qu'à des échéances. Calculé directement ici (pas dans une fonction
+  // à part) pour que le type complet de chaque notification (avec
+  // recipientMembership, sentByUser...) reste intact.
+  const now = new Date();
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const weekStart = new Date(todayStart);
+  weekStart.setDate(weekStart.getDate() - 7);
+  const notificationGroups = [
+    {
+      label: "Aujourd'hui",
+      items: notifications.filter((n: { sentAt: Date }) => n.sentAt >= todayStart),
+    },
+    {
+      label: "Cette semaine",
+      items: notifications.filter(
+        (n: { sentAt: Date }) => n.sentAt < todayStart && n.sentAt >= weekStart
+      ),
+    },
+    {
+      label: "Plus ancien",
+      items: notifications.filter((n: { sentAt: Date }) => n.sentAt < weekStart),
+    },
+  ].filter((group) => group.items.length > 0);
+
   return (
     <div className="max-w-3xl">
       <div className="flex items-center justify-between">
@@ -92,53 +119,62 @@ export default async function NotificationsPage() {
             />
           </div>
         ) : (
-          <Card className="overflow-hidden p-0">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-surface-border bg-surface-subtle text-xs uppercase tracking-wide text-ink-faint">
-                <tr>
-                  <th className="px-5 py-3 font-medium">Destinataire</th>
-                  <th className="px-5 py-3 font-medium">Type</th>
-                  <th className="px-5 py-3 font-medium">Sujet</th>
-                  <th className="px-5 py-3 font-medium">Statut</th>
-                  <th className="px-5 py-3 font-medium">Envoyé</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-surface-border">
-                {notifications.map((notification) => (
-                  <tr key={notification.id}>
-                    <td className="px-5 py-3 text-ink">
-                      {getUserDisplayName(notification.recipientMembership.user)}
-                    </td>
-                    <td className="px-5 py-3 text-ink-soft">
-                      <span className="flex items-center gap-1.5">
-                        <Mail size={13} />
-                        {TYPE_LABELS[notification.type] ?? notification.type}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3 text-ink-soft">{notification.subject}</td>
-                    <td className="px-5 py-3">
-                      {notification.delivered ? (
-                        <Badge tone="teal">Envoyé</Badge>
-                      ) : (
-                        <span className="flex items-center gap-1 text-xs font-medium text-accent-rose">
-                          <TriangleAlert size={13} />
-                          Échec d&apos;envoi
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3 text-ink-faint">
-                      {formatDateTime(notification.sentAt)}
-                      {notification.sentByUser && (
-                        <span className="block text-xs">
-                          par {getUserDisplayName(notification.sentByUser)}
-                        </span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </Card>
+          <div className="flex flex-col gap-6">
+            {notificationGroups.map((group) => (
+              <div key={group.label}>
+                <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-ink-faint">
+                  {group.label}
+                </h2>
+                <Card className="overflow-hidden p-0">
+                  <table className="w-full text-left text-sm">
+                    <thead className="border-b border-surface-border bg-surface-subtle text-xs uppercase tracking-wide text-ink-faint">
+                      <tr>
+                        <th className="px-5 py-3 font-medium">Destinataire</th>
+                        <th className="px-5 py-3 font-medium">Type</th>
+                        <th className="px-5 py-3 font-medium">Sujet</th>
+                        <th className="px-5 py-3 font-medium">Statut</th>
+                        <th className="px-5 py-3 font-medium">Envoyé</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-surface-border">
+                      {group.items.map((notification) => (
+                        <tr key={notification.id}>
+                          <td className="px-5 py-3 text-ink">
+                            {getUserDisplayName(notification.recipientMembership.user)}
+                          </td>
+                          <td className="px-5 py-3 text-ink-soft">
+                            <span className="flex items-center gap-1.5">
+                              <Mail size={13} />
+                              {TYPE_LABELS[notification.type] ?? notification.type}
+                            </span>
+                          </td>
+                          <td className="px-5 py-3 text-ink-soft">{notification.subject}</td>
+                          <td className="px-5 py-3">
+                            {notification.delivered ? (
+                              <Badge tone="teal">Envoyé</Badge>
+                            ) : (
+                              <span className="flex items-center gap-1 text-xs font-medium text-accent-rose">
+                                <TriangleAlert size={13} />
+                                Échec d&apos;envoi
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-5 py-3 text-ink-faint">
+                            {formatDateTime(notification.sentAt)}
+                            {notification.sentByUser && (
+                              <span className="block text-xs">
+                                par {getUserDisplayName(notification.sentByUser)}
+                              </span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </Card>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
