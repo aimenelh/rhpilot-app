@@ -1,8 +1,6 @@
 -- Align payroll foundation columns with the Prisma field names.
--- The payroll foundation migrations created snake_case SQL columns while the
--- current Prisma schema exposes these fields in camelCase without @map.
--- Note: paymentDate was added by a later migration directly with its Prisma
--- column name, so it must not be renamed here.
+-- The payroll migrations created snake_case SQL columns while the current
+-- Prisma schema exposes these fields in camelCase without @map.
 
 ALTER TABLE "payroll_profiles"
   RENAME COLUMN "organization_id" TO "organizationId";
@@ -82,10 +80,6 @@ ALTER TABLE "payroll_calculations"
   RENAME COLUMN "net_paid" TO "netPaid";
 ALTER TABLE "payroll_calculations"
   RENAME COLUMN "calculation_snapshot" TO "calculationSnapshot";
-ALTER TABLE "payroll_calculations"
-  RENAME COLUMN "net_taxable_amount" TO "netTaxableAmount";
-ALTER TABLE "payroll_calculations"
-  RENAME COLUMN "net_social_amount" TO "netSocialAmount";
 ALTER TABLE "payroll_calculations"
   RENAME COLUMN "created_at" TO "createdAt";
 
