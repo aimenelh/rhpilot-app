@@ -1,13 +1,18 @@
+CREATE TYPE "AbsenceType" AS ENUM ('PAID_LEAVE', 'RTT', 'SICK_LEAVE', 'WORK_ACCIDENT', 'UNPAID_LEAVE', 'FAMILY_EVENT', 'OTHER');
+CREATE TYPE "AbsenceStatus" AS ENUM ('TO_VALIDATE', 'TO_PROVIDE_JUSTIFICATION', 'TO_REVIEW_JUSTIFICATION', 'VALIDATED', 'REJECTED');
+CREATE TYPE "JustificationStatus" AS ENUM ('TO_PROVIDE', 'RECEIVED', 'VALIDATED', 'REJECTED');
+CREATE TYPE "PayrollImpactStatus" AS ENUM ('PENDING', 'READY', 'INTEGRATED');
+
 CREATE TABLE "absences" (
   "id" TEXT NOT NULL,
   "organizationId" TEXT NOT NULL,
   "employeeId" TEXT NOT NULL,
-  "type" TEXT NOT NULL,
+  "type" "AbsenceType" NOT NULL,
   "startDate" DATE NOT NULL,
   "endDate" DATE NOT NULL,
-  "status" TEXT NOT NULL DEFAULT 'TO_VALIDATE',
+  "status" "AbsenceStatus" NOT NULL DEFAULT 'TO_VALIDATE',
   "justificationRequired" BOOLEAN NOT NULL DEFAULT false,
-  "payrollImpactStatus" TEXT NOT NULL DEFAULT 'PENDING',
+  "payrollImpactStatus" "PayrollImpactStatus" NOT NULL DEFAULT 'PENDING',
   "notes" TEXT,
   "validatedByUserId" TEXT,
   "validatedAt" TIMESTAMP(3),
@@ -27,7 +32,7 @@ CREATE INDEX "absences_organizationId_status_idx" ON "absences"("organizationId"
 CREATE TABLE "absence_justifications" (
   "id" TEXT NOT NULL,
   "absenceId" TEXT NOT NULL,
-  "status" TEXT NOT NULL DEFAULT 'TO_PROVIDE',
+  "status" "JustificationStatus" NOT NULL DEFAULT 'TO_PROVIDE',
   "storageKey" TEXT,
   "fileName" TEXT,
   "mimeType" TEXT,
