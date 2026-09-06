@@ -2,7 +2,21 @@ import { prisma } from "@/lib/prisma";
 import {
   resolveCollectiveAgreement,
   type CollectiveAgreementResolutionResult,
+  type CollectiveAgreementRuleStatus,
+  type CollectiveAgreementVersionStatus,
 } from "./collective-agreement-resolver";
+
+function normalizeAgreementStatus(value: string): CollectiveAgreementVersionStatus {
+  if (value === "VALIDATED") return "VALIDATED";
+  if (value === "ARCHIVED") return "ARCHIVED";
+  return "DRAFT";
+}
+
+function normalizeRuleStatus(value: string): CollectiveAgreementRuleStatus {
+  if (value === "VALIDATED") return "VALIDATED";
+  if (value === "ARCHIVED") return "ARCHIVED";
+  return "DRAFT";
+}
 
 /**
  * Résolution conventionnelle depuis les données persistées.
@@ -104,7 +118,13 @@ export async function resolveCollectiveAgreementFromPrisma(input: {
     employeeCollectiveAgreementId: profile?.collectiveAgreementId,
     periodDate: input.periodDate,
     ruleCode: input.ruleCode,
-    versions,
-    rules,
+    versions: versions.map((version) => ({
+      ...version,
+      status: normalizeAgreementStatus(version.status),
+    })),
+    rules: rules.map((rule) => ({
+      ...rule,
+      status: normalizeRuleStatus(rule.status),
+    })),
   });
 }
