@@ -92,53 +92,59 @@ export default function SecurityPage() {
       <MarketingHeader />
 
       {/* Hero sécurité */}
-      <section className="relative overflow-hidden bg-ink py-14 sm:py-16">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_68%_48%,rgba(240,72,49,0.18),transparent_36%)]" aria-hidden="true" />
-        <div className="relative mx-auto grid max-w-5xl items-center gap-8 px-6 sm:grid-cols-[1fr_1fr] sm:gap-10">
-          <div className="relative z-10">
+      <section className="relative min-h-[470px] overflow-hidden bg-ink py-8 sm:min-h-[470px] sm:py-6">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_48%,rgba(240,72,49,0.16),transparent_32%),radial-gradient(circle_at_48%_80%,rgba(240,72,49,0.07),transparent_28%)]" aria-hidden="true" />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 opacity-40 [background-image:linear-gradient(115deg,transparent_0%,transparent_48%,rgba(240,72,49,0.10)_48.1%,transparent_48.3%),linear-gradient(25deg,transparent_0%,transparent_70%,rgba(240,72,49,0.08)_70.1%,transparent_70.3%)]"
+        />
+        <div className="relative mx-auto grid min-h-[470px] max-w-6xl items-center gap-2 px-6 sm:grid-cols-[0.98fr_1.02fr] sm:gap-0 sm:px-8">
+          <div className="relative z-20">
             <Reveal variant="left">
-              <span className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-primary">
-                Sécurité
-              </span>
-              <h1 className="mt-4 max-w-xl text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
-                Vos données RH en toute confiance.
-              </h1>
-              <p className="mt-4 max-w-lg text-base leading-relaxed text-white/70 sm:text-lg">
-                RH Pilot agit comme sous-traitant au sens du RGPD, l'entreprise cliente reste responsable du traitement des données de ses salariés. Vous conservez à tout moment le contrôle de vos données.
-              </p>
-              <Link
-                href="/confidentialite"
-                className="mt-7 inline-flex items-center gap-2 rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
-              >
-                Lire la politique de confidentialité <ExternalLink size={14} />
-              </Link>
-              <div className="mt-7 flex flex-wrap gap-2">
-                {RIGHTS.map((right) => (
-                  <span
-                    key={right}
-                    className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/75"
-                  >
-                    {right}
-                  </span>
-                ))}
+              <div className="max-w-xl pb-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-primary">
+                  Sécurité
+                </span>
+                <h1 className="mt-4 max-w-[610px] text-4xl font-semibold leading-[1.04] tracking-[-0.03em] text-white sm:text-5xl lg:text-[52px]">
+                  Vos données RH en toute confiance.
+                </h1>
+                <p className="mt-5 max-w-[520px] text-base leading-relaxed text-white/70 sm:text-lg">
+                  RH Pilot agit comme sous-traitant au sens du RGPD, l'entreprise cliente reste responsable du traitement des données de ses salariés. Vous conservez à tout moment le contrôle de vos données.
+                </p>
+                <Link
+                  href="/confidentialite"
+                  className="mt-7 inline-flex items-center gap-2 rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+                >
+                  Lire la politique de confidentialité <ExternalLink size={14} />
+                </Link>
+                <div className="mt-6 flex max-w-[560px] flex-wrap gap-2">
+                  {RIGHTS.map((right) => (
+                    <span
+                      key={right}
+                      className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/75"
+                    >
+                      {right}
+                    </span>
+                  ))}
+                </div>
               </div>
             </Reveal>
           </div>
 
           <Reveal delay={120} variant="scale">
-            <div className="relative mx-auto h-[390px] w-full max-w-md sm:h-[430px]">
+            <div className="relative -mr-4 h-[430px] w-[calc(100%+1rem)] sm:-mr-10 sm:h-[455px] sm:w-[calc(100%+2.5rem)]">
               <div
                 aria-hidden="true"
-                className="absolute right-[2%] top-[7%] h-[82%] w-[76%] rotate-[5deg] rounded-[3rem] bg-brand-primary"
+                className="absolute right-[8%] top-[13%] h-[71%] w-[67%] rotate-[6deg] rounded-[3.2rem] bg-brand-primary shadow-[0_24px_80px_rgba(240,72,49,0.16)]"
               />
               <div
                 aria-hidden="true"
-                className="absolute left-[4%] bottom-[8%] h-28 w-28 rounded-full bg-brand-primary/30 blur-3xl"
+                className="absolute right-[20%] bottom-[8%] h-28 w-28 rounded-full bg-brand-primary/30 blur-3xl"
               />
               <img
                 src="https://images.pexels.com/photos/11917377/pexels-photo-11917377.jpeg?cs=srgb&dl=pexels-veeru-edits-2043202-11917377.jpg&fm=jpg"
                 alt="Portrait professionnel d'un homme portant des lunettes"
-                className="absolute inset-x-[4%] bottom-0 h-[94%] w-[92%] object-cover object-top mix-blend-screen"
+                className="absolute bottom-0 right-[0%] h-[96%] w-[94%] object-contain object-bottom"
                 loading="eager"
               />
             </div>
