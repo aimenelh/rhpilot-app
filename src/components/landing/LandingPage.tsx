@@ -52,8 +52,8 @@ export function LandingPage() {
               <span className="bg-brand-primary bg-clip-text text-transparent">Rien n&apos;est oublié.</span>
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg text-ink-soft">
-              RH Pilot centralise vos échéances, vos parcours et vos actions RH pour vous
-              aider à savoir quoi faire, quand le faire, et pourquoi.
+              RH Pilot transforme chaque événement RH en plan d&apos;action clair, avec ses
+              échéances et ses responsables.
             </p>
             <div className="mt-8 flex flex-wrap items-center justify-center gap-4">
               <Link href="/sign-up">
