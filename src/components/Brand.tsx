@@ -19,7 +19,7 @@ export function Logomark({ size = 28 }: { size?: number }) {
 
 export function Wordmark() {
   return (
-    <span className="flex items-center gap-1.5">
+    <span className="flex shrink-0 items-center gap-1.5 whitespace-nowrap">
       <span className="text-[15px] font-semibold tracking-tight text-ink">
         RH <span className="bg-brand-primary bg-clip-text text-transparent">Pilot</span>
       </span>
