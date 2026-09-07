@@ -1,4 +1,9 @@
 import { prisma } from "@/lib/prisma";
+import {
+  resolveAbsencePayrollTreatment,
+  type AbsencePayrollImpactResolution,
+  type AbsencePayrollTreatmentRule,
+} from "./absence-payroll-treatment";
 
 export type ValidatedAbsencePayrollImpact = {
   absenceId: string;
@@ -36,15 +41,6 @@ export function getCalendarOverlapDays(startDate: Date, endDate: Date, periodSta
   return Math.floor((endMs - startMs) / 86_400_000) + 1;
 }
 
-/**
- * Retourne les absences RH validées qui couvrent tout ou partie d'une période
- * de paie et qui sont prêtes à être interprétées par le moteur.
- *
- * La durée calculée ici est strictement une durée calendaire de chevauchement.
- * Elle ne représente ni des jours travaillés, ni des jours ouvrés, ni des jours
- * ouvrables et ne produit aucun montant de paie. Ces éléments seront déterminés
- * plus tard par le calendrier salarié et les règles légales/conventionnelles.
- */
 export async function resolveValidatedAbsencesForPayrollPeriod(input: {
   organizationId: string;
   year: number;
@@ -81,4 +77,20 @@ export async function resolveValidatedAbsencesForPayrollPeriod(input: {
     calendarDaysInPeriod: getCalendarOverlapDays(absence.startDate, absence.endDate, periodStart, periodEnd),
     status: "READY",
   }));
+}
+
+export function resolveValidatedAbsencePayrollImpacts(input: {
+  absences: ValidatedAbsencePayrollImpact[];
+  rules: AbsencePayrollTreatmentRule[];
+}): AbsencePayrollImpactResolution[] {
+  return input.absences.map((absence) =>
+    resolveAbsencePayrollTreatment({
+      absence: {
+        absenceId: absence.absenceId,
+        type: absence.type,
+        calendarDaysInPeriod: absence.calendarDaysInPeriod,
+      },
+      rules: input.rules,
+    }),
+  );
 }
