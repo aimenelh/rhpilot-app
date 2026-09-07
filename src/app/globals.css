@@ -121,12 +121,14 @@ h1, h2, h3 {
   }
 }
 
-/* Une seule respiration photo dans la landing : la photo est intégrée à
-   une vraie composition éditoriale, avec un fond chaud issu de la palette
-   RH Pilot. Elle ne vient plus se superposer au contenu. */
+/* Respiration photo de la landing : composition indépendante du contenu,
+   avec un fond léger et une zone réservée à droite pour garantir un écart
+   visuel stable entre la photo et les statistiques. */
 @media (min-width: 1100px) {
   .min-h-screen > section:nth-of-type(5) {
     position: relative;
+    width: 100%;
+    max-width: none;
     overflow: hidden;
     background: linear-gradient(110deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 247, 244, 0.98) 100%);
     border-top: 1px solid rgba(232, 67, 46, 0.08);
@@ -135,18 +137,18 @@ h1, h2, h3 {
 
   .min-h-screen > section:nth-of-type(5) > div {
     position: relative;
-    z-index: 1;
+    z-index: 2;
     max-width: 72rem;
-    padding-right: 21rem;
+    padding-right: 25rem;
   }
 
   .min-h-screen > section:nth-of-type(5)::before {
     content: "";
     position: absolute;
     z-index: 0;
-    right: clamp(2rem, 6vw, 7rem);
+    right: clamp(1.5rem, 4vw, 4rem);
     top: 50%;
-    width: clamp(18rem, 25vw, 23rem);
+    width: clamp(19rem, 24vw, 23rem);
     height: clamp(14rem, 19vw, 18rem);
     transform: translateY(-50%) rotate(-4deg);
     border-radius: 3rem;
@@ -158,10 +160,10 @@ h1, h2, h3 {
     position: absolute;
     z-index: 1;
     pointer-events: none;
-    right: clamp(3rem, 7vw, 8rem);
+    right: clamp(2.5rem, 5vw, 5.5rem);
     top: 50%;
-    width: clamp(16rem, 21vw, 19rem);
-    height: clamp(12rem, 16vw, 15rem);
+    width: clamp(16rem, 20vw, 19rem);
+    height: clamp(12rem, 15vw, 15rem);
     transform: translateY(-50%) rotate(1.5deg);
     border: 8px solid rgba(255, 255, 255, 0.96);
     border-radius: 2rem;
