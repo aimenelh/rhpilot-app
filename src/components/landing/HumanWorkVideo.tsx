@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 
 const VIDEO_SRC = "https://www.pexels.com/download/video/9034878/";
@@ -7,7 +8,12 @@ const POSTER_SRC =
   "https://images.pexels.com/photos/7794041/pexels-photo-7794041.jpeg?auto=compress&cs=tinysrgb&w=1400";
 
 export function HumanWorkVideo() {
+  const pathname = usePathname();
   const [videoError, setVideoError] = useState(false);
+
+  if (pathname !== "/") {
+    return null;
+  }
 
   return (
     <div
