@@ -18,16 +18,11 @@ function roundMoney(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
-/**
- * Valorise un impact d'absence uniquement lorsqu'une règle versionnée fournit
- * explicitement une base et un diviseur. Aucun mode de calcul n'est déduit du
- * type d'absence seul.
- */
 export function calculateAbsenceGrossImpact(input: {
   baseSalaryAmount: number;
   monthlyCalendarDays: number;
   absenceDays: number;
-  rule: AbsencePayrollTreatmentRule & { divisor?: number; rate?: number };
+  rule: AbsencePayrollTreatmentRule;
 }): AbsencePayrollGrossImpact {
   if (!Number.isFinite(input.baseSalaryAmount) || input.baseSalaryAmount < 0) {
     throw new Error("Le salaire de base doit être un montant positif ou nul.");
