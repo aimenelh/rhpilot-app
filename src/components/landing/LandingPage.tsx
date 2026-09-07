@@ -48,9 +48,8 @@ export function LandingPage() {
         <div className="relative mx-auto max-w-4xl px-6 pb-8 pt-24 text-center lg:pt-32">
           <Reveal variant="scale">
             <h1 className="text-5xl font-bold leading-[1.05] tracking-tight text-ink sm:text-6xl lg:text-[4.5rem]">
-              La mémoire ne devrait{" "}
-              <span className="bg-brand-primary bg-clip-text text-transparent">jamais</span>{" "}
-              être le principal outil d&apos;une équipe RH.
+              Embauche, période d&apos;essai, visite médicale.{" "}
+              <span className="bg-brand-primary bg-clip-text text-transparent">Rien n&apos;est oublié.</span>
             </h1>
             <p className="mx-auto mt-6 max-w-xl text-lg text-ink-soft">
               RH Pilot centralise vos échéances, vos parcours et vos actions RH pour vous
