@@ -64,6 +64,7 @@ async function testSocialPayroll() {
       grossAmount: profile.baseSalaryCents / 100,
       legalCategory: socialContext.legalCategory,
       calculationDate,
+      companyCreationDate: socialContext.companyCreationDate,
       contractType: employee.contractType,
       hireDate: employee.hireDate,
       executiveStatus: employee.professionalCategory === "CADRE",
@@ -71,7 +72,6 @@ async function testSocialPayroll() {
       healthPlanEmployerRate: socialContext.healthPlanEmployerRate,
       situation: {
         "établissement . taux ATMP": `${socialContext.atmpRate}%`,
-        "entreprise . date de création": socialContext.companyCreationDate,
         "établissement . commune . nom": `'${socialContext.payrollCity}'`,
         "établissement . commune . département": `'${socialContext.payrollDepartment}'`,
         "salarié . rémunération . avantages en nature": "non",
