@@ -1,6 +1,6 @@
 "use client";
 
-import { useFormState, useFormStatus } from "react-dom";
+import { useEffect, useState, useFormState, useFormStatus } from "react-dom";
 import { addPayrollVariable, deletePayrollVariable, type PayrollVariableFormState } from "./periodActions";
 
 const UNITS = [
@@ -32,6 +32,20 @@ type Employee = {
   lastName: string;
 };
 
+type ContributionDetail = {
+  code: string;
+  label: string;
+  sourceRule: string;
+  side: "EMPLOYEE" | "EMPLOYER";
+  amount: number;
+};
+
+type ContributionResult = {
+  employeeId: string;
+  modelVersion: string | null;
+  contributionDetails: ContributionDetail[];
+};
+
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
@@ -43,6 +57,15 @@ function SubmitButton() {
       {pending ? "Enregistrement…" : "Ajouter"}
     </button>
   );
+}
+
+function formatPayrollEuros(value: number) {
+  return new Intl.NumberFormat("fr-FR", {
+    style: "currency",
+    currency: "EUR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(value);
 }
 
 export default function PayrollVariablesSection({
@@ -58,11 +81,44 @@ export default function PayrollVariablesSection({
 }) {
   const action = addPayrollVariable.bind(null, periodId);
   const [state, formAction] = useFormState<PayrollVariableFormState, FormData>(action, undefined);
+  const [contributions, setContributions] = useState<ContributionResult[]>([]);
+  const [contributionsLoading, setContributionsLoading] = useState(true);
+  const [contributionsError, setContributionsError] = useState<string | null>(null);
   const grouped = employees.map((employee) => ({
     employee,
     variables: variables.filter((variable) => variable.employeeId === employee.id),
   }));
   const canEdit = !readOnly;
+
+  useEffect(() => {
+    let cancelled = false;
+    setContributionsLoading(true);
+    setContributionsError(null);
+
+    fetch(`/api/payroll/periods/${encodeURIComponent(periodId)}/contributions`, {
+      credentials: "same-origin",
+      cache: "no-store",
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Impossible de charger le détail des cotisations.");
+        return (await response.json()) as ContributionResult[];
+      })
+      .then((data) => {
+        if (!cancelled) setContributions(data);
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setContributionsError(error instanceof Error ? error.message : "Impossible de charger le détail des cotisations.");
+      })
+      .finally(() => {
+        if (!cancelled) setContributionsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [periodId]);
+
+  const contributionByEmployee = new Map(contributions.map((item) => [item.employeeId, item]));
 
   return (
     <section className="mt-7 rounded-xl border border-surface-border bg-white">
@@ -154,6 +210,91 @@ export default function PayrollVariablesSection({
         {employees.length === 0 && (
           <p className="px-5 py-8 text-sm text-ink-soft">Aucun salarié actif dans cette organisation.</p>
         )}
+      </div>
+
+      <div className="border-t border-surface-border">
+        <div className="px-5 py-4">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h2 className="font-semibold text-ink">Détail des cotisations sociales</h2>
+              <p className="mt-1 text-xs text-ink-faint">Détail issu du modèle social officiel Publicodes utilisé pour le calcul enregistré.</p>
+            </div>
+            {!contributionsLoading && contributions.some((item) => item.modelVersion) && (
+              <span className="rounded-full bg-accent-teal/10 px-3 py-1.5 text-xs font-semibold text-accent-teal">
+                Modèle Publicodes {contributions.find((item) => item.modelVersion)?.modelVersion}
+              </span>
+            )}
+          </div>
+
+          {contributionsLoading ? (
+            <p className="mt-4 text-sm text-ink-faint">Chargement du détail…</p>
+          ) : contributionsError ? (
+            <p className="mt-4 rounded-lg bg-accent-amber/10 px-3 py-2 text-sm text-accent-amber">{contributionsError}</p>
+          ) : contributions.length === 0 ? (
+            <p className="mt-4 text-sm text-ink-faint">Aucun calcul Publicodes enregistré pour cette période.</p>
+          ) : (
+            <div className="mt-4 space-y-4">
+              {employees.map((employee) => {
+                const result = contributionByEmployee.get(employee.id);
+                const details = result?.contributionDetails ?? [];
+                const employeeDetails = details.filter((detail) => detail.side === "EMPLOYEE");
+                const employerDetails = details.filter((detail) => detail.side === "EMPLOYER");
+                const employeeTotal = employeeDetails.reduce((sum, detail) => sum + detail.amount, 0);
+                const employerTotal = employerDetails.reduce((sum, detail) => sum + detail.amount, 0);
+
+                if (!result) return null;
+
+                return (
+                  <div key={employee.id} className="rounded-lg border border-surface-border">
+                    <div className="flex flex-col gap-1 border-b border-surface-border bg-surface-subtle/30 px-4 py-3 sm:flex-row sm:items-baseline sm:justify-between">
+                      <p className="font-medium text-ink">{employee.firstName} {employee.lastName}</p>
+                      <p className="text-xs text-ink-faint">Source : Publicodes {result.modelVersion ?? ""}</p>
+                    </div>
+                    {details.length === 0 ? (
+                      <p className="px-4 py-4 text-sm text-ink-faint">Aucune ligne de cotisation détaillée n&apos;a été exposée par le modèle pour ce calcul.</p>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="min-w-full text-sm">
+                          <thead>
+                            <tr className="border-b border-surface-border text-left text-xs text-ink-faint">
+                              <th className="px-4 py-2.5 font-medium">Cotisation</th>
+                              <th className="px-4 py-2.5 font-medium">Part</th>
+                              <th className="px-4 py-2.5 text-right font-medium">Montant</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-surface-border">
+                            {details.map((detail) => (
+                              <tr key={detail.code}>
+                                <td className="px-4 py-2.5">
+                                  <p className="font-medium text-ink">{detail.label}</p>
+                                  <p className="mt-0.5 text-xs text-ink-faint">{detail.sourceRule}</p>
+                                </td>
+                                <td className="px-4 py-2.5 text-ink-soft">
+                                  {detail.side === "EMPLOYEE" ? "Salarié" : "Employeur"}
+                                </td>
+                                <td className="px-4 py-2.5 text-right font-semibold text-ink">{formatPayrollEuros(detail.amount)}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot className="border-t border-surface-border bg-surface-subtle/20">
+                            <tr>
+                              <td className="px-4 py-2.5 font-semibold text-ink" colSpan={2}>Total part salarié</td>
+                              <td className="px-4 py-2.5 text-right font-semibold text-ink">{formatPayrollEuros(employeeTotal)}</td>
+                            </tr>
+                            <tr>
+                              <td className="px-4 py-2.5 font-semibold text-ink" colSpan={2}>Total part employeur</td>
+                              <td className="px-4 py-2.5 text-right font-semibold text-ink">{formatPayrollEuros(employerTotal)}</td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </section>
   );
