@@ -27,8 +27,9 @@ export function MarketingHeader() {
 
   return (
     <>
-    <AnnouncementBar />
-    <header className="relative mx-auto max-w-6xl px-6 py-6">
+    <div className="sticky top-0 z-40 border-b border-surface-border bg-white">
+      <AnnouncementBar />
+      <header className="relative mx-auto max-w-6xl px-6 py-6">
       <div className="flex items-center justify-between">
         <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
           <Logomark size={30} />
@@ -102,7 +103,8 @@ export function MarketingHeader() {
           </Link>
         </nav>
       )}
-    </header>
+      </header>
+    </div>
     <PublicCopilotePreview />
     </>
   );
