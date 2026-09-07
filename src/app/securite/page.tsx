@@ -6,7 +6,6 @@ import {
   KeyRound,
   FileClock,
   ShieldX,
-  FileLock,
   ArrowRight,
   ExternalLink,
 } from "lucide-react";
@@ -49,11 +48,6 @@ const PILLARS = [
     icon: ShieldX,
     title: "Aucune donnée vendue",
     text: "Jamais vendues à des tiers, jamais utilisées pour entraîner une IA sans consentement explicite préalable.",
-  },
-  {
-    icon: FileLock,
-    title: "Fichiers privés par nature",
-    text: "Accès aux documents joints uniquement via des liens temporaires et signés.",
   },
 ];
 

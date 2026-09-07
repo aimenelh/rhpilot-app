@@ -124,8 +124,14 @@ export default function QuestionsPage() {
                     suivi et les échéances.
                   </FaqItem>
                   <FaqItem question="RH Pilot remplace-t-il mon logiciel de paie ?">
-                    Non, et il ne le sera jamais. RH Pilot vous aide à préparer les éléments
-                    variables, jamais à les calculer ou les déclarer à votre place.
+                    Un module Paie est en cours de construction, disponible progressivement sur
+                    le palier Pro. Il s&apos;appuie sur des règles de calcul versionnées et
+                    datées, jamais des estimations. Il n&apos;est pas encore complet
+                    aujourd&apos;hui : suivez son avancement sur la{" "}
+                    <Link href="/tarifs" className="font-medium text-brand-primary hover:underline">
+                      page Tarifs
+                    </Link>
+                    .
                   </FaqItem>
                 </div>
               </Card>
@@ -136,9 +142,13 @@ export default function QuestionsPage() {
                 <CategoryLabel color="#D97706">Prix &amp; engagement</CategoryLabel>
                 <div className="mt-3">
                   <FaqItem question="Combien ça coûte ?">
-                    RH Pilot est actuellement gratuit, en bêta. Le modèle tarifaire définitif
-                    n&apos;est pas encore figé, et sera communiqué clairement avant toute mise en
-                    place. Jamais de surprise sur votre carte bancaire.
+                    RH Pilot propose un palier Gratuit (jusqu&apos;à 3 salariés, sans
+                    engagement) et un palier Pro (15€/mois + 3€ par salarié, salariés
+                    illimités). Le détail est sur notre{" "}
+                    <Link href="/tarifs" className="font-medium text-brand-primary hover:underline">
+                      page Tarifs
+                    </Link>
+                    .
                   </FaqItem>
                   <FaqItem question="Y a-t-il un engagement ?">
                     Aucun. Vous pouvez arrêter d&apos;utiliser RH Pilot à tout moment.

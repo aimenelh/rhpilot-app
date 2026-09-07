@@ -77,7 +77,7 @@ export default function ResourcesPage() {
             <Reveal key={article.slug} variant="bounce" delay={index * 120}>
               <Link
                 href={`/ressources/${article.slug}`}
-                className="group flex h-full flex-col rounded-2xl border border-surface-border bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                className="group flex h-full flex-col rounded-2xl border border-surface-border bg-white p-6 shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-elevated"
               >
                 <span className="inline-flex w-fit items-center rounded-full bg-brand-primary/10 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-brand-primary">
                   {article.category}
