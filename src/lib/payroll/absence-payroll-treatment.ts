@@ -21,6 +21,8 @@ export type AbsencePayrollTreatmentRule = {
   effect: AbsencePayrollEffect;
   basis: AbsencePayrollBasis;
   ruleVersionId: string;
+  divisor?: number;
+  rate?: number;
 };
 
 export type AbsencePayrollImpactResolution =
@@ -32,6 +34,8 @@ export type AbsencePayrollImpactResolution =
       ruleVersionId: string;
       effect: AbsencePayrollEffect;
       basis: AbsencePayrollBasis;
+      divisor: number | null;
+      rate: number | null;
     }
   | {
       status: "RULE_REQUIRED";
@@ -40,13 +44,6 @@ export type AbsencePayrollImpactResolution =
       calendarDaysInPeriod: number;
     };
 
-/**
- * Résout uniquement la nature du traitement d'une absence à partir d'une
- * règle versionnée. Aucun montant n'est déduit ici.
- *
- * Une absence sans règle explicite reste bloquante pour la valorisation de la
- * paie : on ne transforme jamais un type d'absence en déduction par défaut.
- */
 export function resolveAbsencePayrollTreatment(input: {
   absence: {
     absenceId: string;
@@ -76,5 +73,7 @@ export function resolveAbsencePayrollTreatment(input: {
     ruleVersionId: rule.ruleVersionId,
     effect: rule.effect,
     basis: rule.basis,
+    divisor: rule.divisor ?? null,
+    rate: rule.rate ?? null,
   };
 }
