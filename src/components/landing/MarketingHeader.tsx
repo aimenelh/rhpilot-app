@@ -106,7 +106,7 @@ export function MarketingHeader() {
       )}
       </header>
     </div>
-    <HumanWorkVideo />
+    {pathname === "/" && <HumanWorkVideo />}
     <PublicCopilotePreview />
     </>
   );
