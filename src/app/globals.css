@@ -101,18 +101,6 @@ h1, h2, h3 {
     letter-spacing: -0.035em;
   }
 
-  .min-h-screen > section:first-of-type > div:first-child h1::before {
-    content: "UN OUTIL RH POUR ALLER PLUS LOIN";
-    display: block;
-    margin-bottom: 1.35rem;
-    font-family: var(--font-inter), sans-serif;
-    font-size: 0.66rem;
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: 0.28em;
-    color: #e8432e;
-  }
-
   .min-h-screen > section:first-of-type > div:first-child p {
     max-width: 34rem;
     margin-left: 0;
@@ -121,7 +109,7 @@ h1, h2, h3 {
     line-height: 1.5;
   }
 
-  .min-h-screen > section:first-of-type > div:first-child > div {
+  .min-h-screen > section:first-of-type > div:first-child > div > div {
     justify-content: flex-start;
   }
 }
