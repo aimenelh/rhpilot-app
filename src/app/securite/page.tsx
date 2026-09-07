@@ -95,18 +95,32 @@ export default function SecurityPage() {
       <MarketingHeader />
 
       {/* Hero */}
-      <section className="mx-auto max-w-2xl px-6 py-20">
-        <Reveal variant="left">
-          <h1 className="max-w-lg text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
-            La confiance ne se décrète pas.
-          </h1>
-        </Reveal>
-        <Reveal delay={150}>
-          <p className="mt-4 max-w-md text-lg text-ink-soft">
-            Vos données RH sont sensibles. Voici, concrètement, comment RH Pilot les traite, 
-            sans jargon, et sans rien promettre que nous ne fassions déjà.
-          </p>
-        </Reveal>
+      <section className="mx-auto max-w-4xl px-6 py-20">
+        <div className="grid items-center gap-8 sm:grid-cols-[1fr_180px]">
+          <div>
+            <Reveal variant="left">
+              <h1 className="max-w-lg text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
+                La confiance ne se décrète pas.
+              </h1>
+            </Reveal>
+            <Reveal delay={150}>
+              <p className="mt-4 max-w-md text-lg text-ink-soft">
+                Vos données RH sont sensibles. Voici, concrètement, comment RH Pilot les traite, 
+                sans jargon, et sans rien promettre que nous ne fassions déjà.
+              </p>
+            </Reveal>
+          </div>
+          <Reveal delay={120} variant="scale">
+            <div className="rounded-2xl border border-surface-border bg-white p-2 shadow-card">
+              <img
+                src="https://images.pexels.com/photos/16306778/pexels-photo-16306778.jpeg?cs=srgb&dl=pexels-oluwakoreimage-16306778.jpg&fm=jpg"
+                alt="Portrait professionnel d'une femme en chemise blanche sur fond sombre"
+                className="h-52 w-full rounded-xl object-cover object-top"
+                loading="eager"
+              />
+            </div>
+          </Reveal>
+        </div>
       </section>
 
       {/* Les 6 piliers */}
