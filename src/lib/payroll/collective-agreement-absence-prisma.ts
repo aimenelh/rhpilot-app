@@ -12,7 +12,11 @@ function isDateInRange(date: Date, validFrom: Date, validUntil: Date | null): bo
   return time >= validFrom.getTime() && (validUntil === null || time <= validUntil.getTime());
 }
 
-function parseTreatment(parameters: unknown, fallbackRuleVersionId: string, absenceType: string): AbsencePayrollTreatmentRule | null {
+export function parseCollectiveAgreementAbsenceTreatment(
+  parameters: unknown,
+  fallbackRuleVersionId: string,
+  absenceType: string,
+): AbsencePayrollTreatmentRule | null {
   if (!isRecord(parameters)) return null;
 
   const effect = parameters.effect === "ADD_TO_GROSS" || parameters.effect === "SUBTRACT_FROM_GROSS" || parameters.effect === "EXCLUDE_FROM_GROSS"
@@ -106,7 +110,11 @@ export async function resolveCollectiveAgreementAbsenceTreatment(input: {
 
   if (!rule) return null;
 
-  return parseTreatment(rule.parameters, input.fallbackRuleVersionId, input.absenceType);
+  return parseCollectiveAgreementAbsenceTreatment(
+    rule.parameters,
+    input.fallbackRuleVersionId,
+    input.absenceType,
+  );
 }
 
 export const ABSENCE_COLLECTIVE_RULE_PREFIX = ABSENCE_RULE_PREFIX;
