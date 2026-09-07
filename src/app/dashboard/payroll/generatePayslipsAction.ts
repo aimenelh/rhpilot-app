@@ -94,7 +94,7 @@ export async function generatePayrollPayslipsAction(
 
   const period = await prisma.payrollPeriod.findFirst({
     where: { id: periodId, organizationId: membership.organizationId },
-    select: { id: true, year: true, month: true, status: true },
+    select: { id: true, year: true, month: true, status: true, paymentDate: true },
   });
   if (!period) return { error: "Période de paie introuvable." };
   if (period.status !== "LOCKED") return { error: "Les bulletins ne peuvent être générés qu'après verrouillage de la période." };
@@ -102,7 +102,18 @@ export async function generatePayrollPayslipsAction(
   const [organization, employees, calculations, profiles, agreements] = await Promise.all([
     prisma.organization.findFirst({
       where: { id: membership.organizationId, deletedAt: null },
-      select: { id: true, name: true, siret: true, conventionCollective: true, collectiveAgreementId: true },
+      select: {
+        id: true,
+        name: true,
+        siret: true,
+        conventionCollective: true,
+        collectiveAgreementId: true,
+        payrollAddress: true,
+        payrollPostalCode: true,
+        payrollCity: true,
+        payrollNafCode: true,
+        payrollUrssafReference: true,
+      },
     }),
     prisma.employee.findMany({
       where: { organizationId: membership.organizationId, deletedAt: null },
@@ -115,7 +126,7 @@ export async function generatePayrollPayslipsAction(
     }),
     prisma.payrollProfile.findMany({
       where: { organizationId: membership.organizationId },
-      select: { employeeId: true, monthlyHours: true, classificationCode: true, classificationLabel: true, collectiveAgreementId: true, baseSalaryCents: true },
+      select: { employeeId: true, monthlyHours: true, classificationCode: true, classificationLabel: true, employeeAddress: true, collectiveAgreementId: true, baseSalaryCents: true },
       orderBy: { effectiveFrom: "desc" },
     }),
     prisma.collectiveAgreement.findMany({
@@ -151,25 +162,29 @@ export async function generatePayrollPayslipsAction(
       const agreementId = asString(snapshot.profile?.collectiveAgreementId) || profile.collectiveAgreementId || organization.collectiveAgreementId || null;
       const agreement = agreementId ? agreementById.get(agreementId) : null;
       const contributionDetails = normalizeContributionDetails(snapshot);
+      const employerAddress = [organization.payrollAddress, [organization.payrollPostalCode, organization.payrollCity].filter(Boolean).join(" ")]
+        .filter(Boolean)
+        .join(", ");
+      const paymentDate = period.paymentDate ? period.paymentDate.toISOString().slice(0, 10) : "";
 
       const pdf = generatePayslipPdf({
         employer: {
           name: organization.name,
-          address: "",
+          address: employerAddress,
           siret: organization.siret ?? "",
-          nafCode: "",
-          urssafReference: "",
+          nafCode: organization.payrollNafCode ?? "",
+          urssafReference: organization.payrollUrssafReference ?? "",
         },
         employee: {
           name: `${employee.firstName} ${employee.lastName}`.trim(),
-          address: "",
+          address: profile.employeeAddress ?? "",
           position: employee.position ?? "",
           classification: profile.classificationLabel || profile.classificationCode || "",
         },
         period: {
           year: period.year,
           month: period.month,
-          paymentDate: "",
+          paymentDate,
           hours: asNumber(snapshot.profile?.monthlyHours ?? profile.monthlyHours),
         },
         salary: {
