@@ -13,6 +13,9 @@ export const PAYROLL_FEATURES: Record<string, PayrollFeature> = {
     intro: "RH Pilot rassemble les données utiles au traitement de la paie et vous accompagne jusqu’au contrôle du résultat. Le calcul est séparé de l’explication : les règles calculent, l’interface vous permet de vérifier.",
     image: "/illustrations/illu-checklist.png",
     imageAlt: "Illustration d’une checklist RH",
+    visualKicker: "Production de la paie",
+    visualTitle: "Une période claire, du premier contrôle à la validation.",
+    visualText: "La paie ne se résume pas à lancer un calcul. RH Pilot met en évidence les informations nécessaires, les éléments qui alimentent la période et les résultats à revoir avant de préparer les bulletins.",
     points: [
       { title: "Un dossier salarié exploitable", text: "Les informations nécessaires au traitement sont regroupées au même endroit, avec les paramètres du salarié et de l’entreprise." },
       { title: "Un calcul contrôlable", text: "Le résultat de paie reste lisible : brut, cotisations, net avant impôt, prélèvement à la source et net payé sont distingués." },
@@ -25,7 +28,7 @@ export const PAYROLL_FEATURES: Record<string, PayrollFeature> = {
       { label: "Contrôler", text: "Les montants sont présentés avec leur source et leur version afin de faciliter la revue." },
       { label: "Valider", text: "Une fois la période revue, elle peut être validée puis utilisée pour la préparation des bulletins." },
     ],
-    detailsTitle: "Fiabilité",
+    detailsTitle: "Fiabilité du traitement",
     details: COMMON_DETAILS,
     note: "RH Pilot ne cherche pas à masquer la complexité de la paie derrière un chiffre unique. Le calcul reste rattaché au moteur social et aux paramètres qui ont servi à produire le résultat.",
   },
@@ -36,6 +39,9 @@ export const PAYROLL_FEATURES: Record<string, PayrollFeature> = {
     image: "/illustrations/illu-notification.png",
     imageAlt: "Illustration de notifications RH",
     imagePosition: "left",
+    visualKicker: "Variables de paie",
+    visualTitle: "Le bon élément, sur le bon salarié, pour la bonne période.",
+    visualText: "Une variable mal rattachée peut se retrouver au mauvais endroit ou être oubliée au moment du calcul. La préparation de la période doit donc rester lisible avant même de parler de montant.",
     points: [
       { title: "Saisir les éléments du mois", text: "Les variables sont rattachées à la période de paie concernée et au salarié concerné." },
       { title: "Repérer ce qui manque", text: "Le cycle de préparation doit permettre de voir les informations encore nécessaires avant de lancer le calcul." },
@@ -58,6 +64,9 @@ export const PAYROLL_FEATURES: Record<string, PayrollFeature> = {
     intro: "Congés, absences et événements associés peuvent modifier les éléments d’une période de paie. RH Pilot relie la gestion de l’absence à son traitement paie lorsqu’une règle applicable est disponible.",
     image: "/illustrations/illu-calendrier.png",
     imageAlt: "Illustration d’un calendrier RH",
+    visualKicker: "Congés & absences",
+    visualTitle: "Une absence ne reste pas isolée du reste du dossier.",
+    visualText: "Lorsqu’un congé ou une absence est validé, l’information peut avoir un effet sur la période de paie. RH Pilot garde le lien entre l’événement, le salarié et le traitement applicable.",
     points: [
       { title: "Une même information, deux usages", text: "L’absence reste visible dans son contexte RH tout en pouvant alimenter la préparation de la paie." },
       { title: "Les règles applicables comptent", text: "Le traitement dépend notamment du type d’absence et des règles collectives ou réglementaires applicables au dossier." },
@@ -81,6 +90,9 @@ export const PAYROLL_FEATURES: Record<string, PayrollFeature> = {
     image: "/illustrations/illu-walk-2.png",
     imageAlt: "Illustration d’une situation de travail entre collaborateurs",
     imagePosition: "left",
+    visualKicker: "Arrêts de travail",
+    visualTitle: "Quand un événement RH devient une donnée de paie, le lien doit rester visible.",
+    visualText: "Dates, informations utiles et traitement appliqué sont réunis dans le même contexte. Cela facilite la vérification avant de valider la période, notamment lorsque la situation sort du cas simple.",
     points: [
       { title: "Le dossier reste centralisé", text: "L’événement, sa période et les informations utiles sont rattachés au salarié concerné." },
       { title: "Le traitement est conditionné aux données", text: "Les éléments nécessaires à un calcul doivent être présents avant d’appliquer une règle de traitement." },
