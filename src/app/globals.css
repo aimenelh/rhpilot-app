@@ -78,30 +78,29 @@ h1, h2, h3 {
 
 @media (prefers-reduced-motion: reduce) {
   .welcome-logo-float,
-  .welcome-card-in,
   .welcome-shape-1,
   .welcome-shape-2,
   .welcome-pulse-dot { animation: none; }
 }
 
-/* Hero vitrine : composition éditoriale inspirée de la référence,
-   avec le message à gauche et la vidéo humaine comme point focal à droite. */
+/* Hero vitrine : ces ajustements sont réservés à la landing qui contient
+   l'ancre #copilote. Les autres pages marketing gardent leur propre mise en page. */
 @media (min-width: 1024px) {
-  .min-h-screen > section:first-of-type > div:first-child {
+  .min-h-screen:has(#copilote) > section:first-of-type > div:first-child {
     max-width: 72rem;
     padding-top: 5.5rem;
     padding-bottom: 4rem;
     text-align: left;
   }
 
-  .min-h-screen > section:first-of-type > div:first-child h1 {
+  .min-h-screen:has(#copilote) > section:first-of-type > div:first-child h1 {
     max-width: 39rem;
     font-size: clamp(3.35rem, 4.25vw, 4.15rem);
     line-height: 0.99;
     letter-spacing: -0.035em;
   }
 
-  .min-h-screen > section:first-of-type > div:first-child p {
+  .min-h-screen:has(#copilote) > section:first-of-type > div:first-child p {
     max-width: 34rem;
     margin-left: 0;
     margin-top: 1.4rem;
@@ -109,7 +108,7 @@ h1, h2, h3 {
     line-height: 1.5;
   }
 
-  .min-h-screen > section:first-of-type > div:first-child > div > div {
+  .min-h-screen:has(#copilote) > section:first-of-type > div:first-child > div > div {
     justify-content: flex-start;
   }
 }
@@ -126,8 +125,7 @@ h1, h2, h3 {
   }
 }
 
-/* Cadre visuel du hero : deux formes roses superposées et un motif de points,
-   sans toucher au contenu de la vidéo elle-même. */
+/* Cadre visuel du hero de la landing */
 .human-work-video-shape {
   position: absolute;
   pointer-events: none;
@@ -176,11 +174,9 @@ h1, h2, h3 {
   }
 }
 
-/* Respiration photo de la landing : la photo occupe une zone dédiée à droite,
-   tandis que les statistiques restent dans une largeur éditoriale indépendante.
-   Aucun élément ne peut donc passer sous la photo. */
+/* Respiration photo : uniquement pour la landing (#copilote). */
 @media (min-width: 1100px) {
-  .min-h-screen > section:nth-of-type(5) {
+  .min-h-screen:has(#copilote) > section:nth-of-type(5) {
     position: relative;
     width: 100%;
     max-width: none;
@@ -190,7 +186,7 @@ h1, h2, h3 {
     border-bottom: 1px solid rgba(232, 67, 46, 0.08);
   }
 
-  .min-h-screen > section:nth-of-type(5) > div {
+  .min-h-screen:has(#copilote) > section:nth-of-type(5) > div {
     position: relative;
     z-index: 2;
     width: calc(100% - 3rem);
@@ -200,7 +196,7 @@ h1, h2, h3 {
     padding-right: 22rem;
   }
 
-  .min-h-screen > section:nth-of-type(5)::before {
+  .min-h-screen:has(#copilote) > section:nth-of-type(5)::before {
     content: "";
     position: absolute;
     z-index: 0;
@@ -213,7 +209,7 @@ h1, h2, h3 {
     background: linear-gradient(135deg, rgba(232, 67, 46, 0.06), rgba(246, 184, 172, 0.28));
   }
 
-  .min-h-screen > section:nth-of-type(5)::after {
+  .min-h-screen:has(#copilote) > section:nth-of-type(5)::after {
     content: "";
     position: absolute;
     z-index: 1;
@@ -234,10 +230,10 @@ h1, h2, h3 {
 }
 
 @media (max-width: 1099px) {
-  .min-h-screen > section:nth-of-type(5)::before,
-  .min-h-screen > section:nth-of-type(5)::after,
-  .min-h-screen > section:nth-of-type(8)::before,
-  .min-h-screen > section:nth-of-type(8)::after {
+  .min-h-screen:has(#copilote) > section:nth-of-type(5)::before,
+  .min-h-screen:has(#copilote) > section:nth-of-type(5)::after,
+  .min-h-screen:has(#copilote) > section:nth-of-type(8)::before,
+  .min-h-screen:has(#copilote) > section:nth-of-type(8)::after {
     display: none;
   }
 }
