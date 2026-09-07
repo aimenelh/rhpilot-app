@@ -60,24 +60,38 @@ export default function ResourcesPage() {
       <AmbientNetwork />
       <MarketingHeader />
 
-      <section className="mx-auto max-w-4xl px-6 py-16">
-        <div className="grid items-center gap-8 sm:grid-cols-[1fr_180px]">
+      <section className="relative overflow-hidden border-b border-surface-border bg-white py-16 sm:py-20">
+        <div className="mx-auto grid max-w-5xl items-center gap-10 px-6 sm:grid-cols-[1fr_0.9fr] sm:gap-12">
           <Reveal variant="left">
-            <h1 className="max-w-xl text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
+            <span className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-primary">
+              Ressources
+            </span>
+            <h1 className="mt-4 max-w-xl text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
               Ce que le droit du travail dit vraiment, maintenant.
             </h1>
             <p className="mt-4 max-w-lg text-lg text-ink-soft">
               Actualité réglementaire, IA et recrutement, délais légaux. Sourcé, sans jargon inutile.
             </p>
           </Reveal>
+
           <Reveal delay={120} variant="scale">
-            <div className="rounded-2xl border border-surface-border bg-white p-2 shadow-card">
-              <img
-                src="https://images.pexels.com/photos/30767574/pexels-photo-30767574.jpeg?cs=srgb&dl=pexels-uiliamnornberg-30767574.jpg&fm=jpg"
-                alt="Portrait professionnel d'un homme sur fond teal"
-                className="h-52 w-full rounded-xl object-cover object-top"
-                loading="eager"
+            <div className="relative mx-auto w-full max-w-md py-4 sm:py-0">
+              <div
+                aria-hidden="true"
+                className="absolute left-[14%] top-[7%] h-[82%] w-[72%] rotate-[-5deg] rounded-[2.5rem] bg-brand-primary"
               />
+              <div
+                aria-hidden="true"
+                className="absolute right-[3%] bottom-[4%] h-20 w-20 rounded-full bg-[#ffb45c]/70 blur-2xl"
+              />
+              <div className="relative mx-auto w-[76%] overflow-hidden rounded-[2rem] border-4 border-white bg-white shadow-elevated">
+                <img
+                  src="https://images.pexels.com/photos/30767574/pexels-photo-30767574.jpeg?cs=srgb&dl=pexels-uiliamnornberg-30767574.jpg&fm=jpg"
+                  alt="Portrait professionnel d'un homme souriant"
+                  className="aspect-[4/5] w-full object-cover object-top"
+                  loading="eager"
+                />
+              </div>
             </div>
           </Reveal>
         </div>
