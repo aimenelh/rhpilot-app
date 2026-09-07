@@ -120,3 +120,56 @@ h1, h2, h3 {
     animation: none;
   }
 }
+
+/* Présence humaine ponctuelle dans la landing : les photos servent de
+   respiration éditoriale et restent secondaires face au produit. */
+@media (min-width: 1100px) {
+  .min-h-screen > section:nth-of-type(5),
+  .min-h-screen > section:nth-of-type(8) {
+    isolation: isolate;
+  }
+
+  .min-h-screen > section:nth-of-type(5)::after,
+  .min-h-screen > section:nth-of-type(8)::after {
+    content: "";
+    position: absolute;
+    z-index: -1;
+    pointer-events: none;
+    border: 8px solid rgba(255, 255, 255, 0.92);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.10);
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+  }
+
+  /* Un temps fort humain au milieu des chiffres, avec une image de travail
+     qui reste en périphérie du contenu. */
+  .min-h-screen > section:nth-of-type(5)::after {
+    right: clamp(1.5rem, 4vw, 4.5rem);
+    top: 50%;
+    width: clamp(13rem, 18vw, 18rem);
+    height: clamp(10rem, 14vw, 14rem);
+    transform: translateY(-50%) rotate(1.5deg);
+    border-radius: 2rem;
+    background-image: url("https://images.pexels.com/photos/7698715/pexels-photo-7698715.jpeg?auto=compress&cs=tinysrgb&w=900");
+  }
+
+  /* Une présence plus éditoriale dans la section de bénéfices : la photo
+     accompagne la liste sans ajouter de carte, de badge ou d'ornement. */
+  .min-h-screen > section:nth-of-type(8)::after {
+    right: clamp(1.5rem, 5vw, 5rem);
+    top: 50%;
+    width: clamp(14rem, 20vw, 20rem);
+    height: clamp(17rem, 28vw, 27rem);
+    transform: translateY(-50%) rotate(-1.5deg);
+    border-radius: 2.25rem;
+    background-image: url("https://images.pexels.com/photos/7707014/pexels-photo-7707014.jpeg?auto=compress&cs=tinysrgb&w=1000");
+  }
+}
+
+@media (max-width: 1099px) {
+  .min-h-screen > section:nth-of-type(5)::after,
+  .min-h-screen > section:nth-of-type(8)::after {
+    display: none;
+  }
+}
