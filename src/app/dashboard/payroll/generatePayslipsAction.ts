@@ -50,10 +50,22 @@ function normalizeSnapshot(value: unknown): Snapshot {
   return isRecord(value) ? (value as Snapshot) : {};
 }
 
-function normalizeContributionDetails(snapshot: Snapshot) {
+type PayslipContributionDetail = {
+  label: string;
+  side: "EMPLOYEE" | "EMPLOYER";
+  amount: number;
+  sourceRule: string;
+};
+
+function normalizeContributionDetails(snapshot: Snapshot): PayslipContributionDetail[] {
   if (!Array.isArray(snapshot.socialEngine?.contributionDetails)) return [];
-  return snapshot.socialEngine.contributionDetails.flatMap((contribution) => {
-    const side = contribution.side === "EMPLOYER" ? "EMPLOYER" : contribution.side === "EMPLOYEE" ? "EMPLOYEE" : null;
+  return snapshot.socialEngine.contributionDetails.flatMap((contribution): PayslipContributionDetail[] => {
+    const side: PayslipContributionDetail["side"] | null =
+      contribution.side === "EMPLOYER"
+        ? "EMPLOYER"
+        : contribution.side === "EMPLOYEE"
+          ? "EMPLOYEE"
+          : null;
     const label = asString(contribution.label).trim();
     const amount = asNumber(contribution.amount);
     if (!side || !label || !Number.isFinite(amount) || amount === 0) return [];
