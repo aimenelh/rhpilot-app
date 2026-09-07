@@ -1,15 +1,11 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState } from "react";
 
 const VIDEO_SRC = "https://www.pexels.com/download/video/9034878/";
-const POSTER_SRC =
-  "https://images.pexels.com/photos/7794041/pexels-photo-7794041.jpeg?auto=compress&cs=tinysrgb&w=1400";
 
 export function HumanWorkVideo() {
   const pathname = usePathname();
-  const [videoError, setVideoError] = useState(false);
 
   if (pathname !== "/") {
     return null;
@@ -26,22 +22,16 @@ export function HumanWorkVideo() {
 
       <div className="human-work-video-frame relative overflow-visible rounded-[1.75rem] border-[6px] border-white bg-white shadow-[0_28px_80px_rgba(15,23,42,0.14)]">
         <div className="relative aspect-[16/9] overflow-hidden rounded-[1.2rem] bg-brand-primary/10">
-          {videoError ? (
-            <img src={POSTER_SRC} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <video
-              className="h-full w-full object-cover"
-              autoPlay
-              muted
-              loop
-              playsInline
-              preload="metadata"
-              poster={POSTER_SRC}
-              onError={() => setVideoError(true)}
-            >
-              <source src={VIDEO_SRC} type="video/mp4" />
-            </video>
-          )}
+          <video
+            className="h-full w-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="metadata"
+          >
+            <source src={VIDEO_SRC} type="video/mp4" />
+          </video>
         </div>
 
         <div className="human-work-video-note absolute -bottom-20 -right-12 w-52 rotate-[-3deg] text-brand-primary">
