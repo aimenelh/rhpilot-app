@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { calculatePayroll } from "./engine";
 import { composeGrossAmount, resolvePayrollVariableTreatment } from "./variable-treatment";
 import { resolvePayrollRuleSetFromPrisma } from "./payroll-rule-set-prisma";
+import { resolveValidatedAbsencesForPayrollPeriod } from "./absence-payroll-impact";
 import type { PayrollVariableInput } from "./domain";
 
 export type PayrollPeriodCalculationResult = {
@@ -58,6 +59,13 @@ function snapshotForEmployee(input: {
     unit: string;
     source: string;
   }>;
+  validatedAbsences: Array<{
+    absenceId: string;
+    type: string;
+    startDate: string;
+    endDate: string;
+    payrollImpactStatus: "READY";
+  }>;
   variableTreatments: Array<{
     code: string;
     ruleVersionId: string;
@@ -107,6 +115,13 @@ function snapshotForEmployee(input: {
       amount: variable.amount,
       unit: variable.unit,
       source: variable.source,
+    })),
+    validatedAbsences: input.validatedAbsences.map((absence) => ({
+      absenceId: absence.absenceId,
+      type: absence.type,
+      startDate: absence.startDate,
+      endDate: absence.endDate,
+      payrollImpactStatus: absence.payrollImpactStatus,
     })),
     variableTreatments: input.variableTreatments.map((treatment) => ({
       code: treatment.code,
@@ -172,14 +187,14 @@ export async function calculatePayrollPeriod(input: {
 
   if (!period) throw new Error("Période de paie introuvable.");
   if (period.status !== "DRAFT") {
-    throw new Error("Seule une période en brouillon peut être calculée ou recalculée.");
+    throw new Error("Seule une période en préparation peut être calculée ou recalculée.");
   }
   if (!input.ruleCode.trim() || !input.ruleScope.trim()) {
     throw new Error("Le code et le périmètre de la règle de paie sont obligatoires.");
   }
 
   const { start, end, calculationDate } = periodBounds(period.year, period.month);
-  const [employees, profiles, variables, rules] = await Promise.all([
+  const [employees, profiles, variables, rules, validatedAbsences] = await Promise.all([
     prisma.employee.findMany({
       where: { organizationId: input.organizationId, deletedAt: null },
       select: { id: true },
@@ -212,6 +227,11 @@ export async function calculatePayrollPeriod(input: {
       orderBy: { createdAt: "asc" },
     }),
     resolvePayrollRuleSetFromPrisma({ code: input.ruleCode, scope: input.ruleScope, periodDate: calculationDate }),
+    resolveValidatedAbsencesForPayrollPeriod({
+      organizationId: input.organizationId,
+      year: period.year,
+      month: period.month,
+    }),
   ]);
 
   if (rules.status === "UNRESOLVED") throw new Error(rules.message);
@@ -226,6 +246,13 @@ export async function calculatePayrollPeriod(input: {
     const current = variablesByEmployee.get(variable.employeeId) ?? [];
     current.push(variable);
     variablesByEmployee.set(variable.employeeId, current);
+  }
+
+  const absencesByEmployee = new Map<string, typeof validatedAbsences>();
+  for (const absence of validatedAbsences) {
+    const current = absencesByEmployee.get(absence.employeeId) ?? [];
+    current.push(absence);
+    absencesByEmployee.set(absence.employeeId, current);
   }
 
   type CalculatedProfile = {
@@ -248,6 +275,7 @@ export async function calculatePayrollPeriod(input: {
     profile: CalculatedProfile;
     variables: PayrollVariableInput[];
     treatments: ReturnType<typeof resolvePayrollVariableTreatment>[];
+    validatedAbsences: typeof validatedAbsences;
   }> = [];
 
   for (const employee of employees) {
@@ -306,6 +334,7 @@ export async function calculatePayrollPeriod(input: {
       },
       variables: employeeVariables,
       treatments,
+      validatedAbsences: absencesByEmployee.get(employee.id) ?? [],
     });
   }
 
@@ -326,6 +355,13 @@ export async function calculatePayrollPeriod(input: {
           coefficient: calculated.profile.coefficient,
         },
         variables: calculated.variables,
+        validatedAbsences: calculated.validatedAbsences.map((absence) => ({
+          absenceId: absence.absenceId,
+          type: absence.type,
+          startDate: absence.startDate.toISOString(),
+          endDate: absence.endDate.toISOString(),
+          payrollImpactStatus: absence.status,
+        })),
         variableTreatments: calculated.treatments,
         ruleSet: rules.ruleSet,
         ruleSource: rules.source,
@@ -384,6 +420,19 @@ export async function calculatePayrollPeriod(input: {
       }
     }
 
+    const absenceIds = calculatedEmployees.flatMap((calculated) => calculated.validatedAbsences.map((absence) => absence.absenceId));
+    if (absenceIds.length > 0) {
+      await tx.absence.updateMany({
+        where: {
+          id: { in: absenceIds },
+          organizationId: input.organizationId,
+          status: "VALIDATED",
+          payrollImpactStatus: "READY",
+        },
+        data: { payrollImpactStatus: "INTEGRATED" },
+      });
+    }
+
     await tx.payrollPeriod.update({
       where: { id: period.id },
       data: { status: "CALCULATED", calculatedAt: new Date(), validatedAt: null, lockedAt: null },
@@ -397,7 +446,12 @@ export async function calculatePayrollPeriod(input: {
         action: "payroll.period.calculated",
         entityType: "PayrollPeriod",
         entityId: period.id,
-        metadata: { ruleCode: input.ruleCode, ruleScope: input.ruleScope, employeeCount: employees.length },
+        metadata: {
+          ruleCode: input.ruleCode,
+          ruleScope: input.ruleScope,
+          employeeCount: employees.length,
+          validatedAbsenceCount: absenceIds.length,
+        },
       },
     });
   });
