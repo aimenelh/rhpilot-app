@@ -1,32 +1,20 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Space_Grotesk, Caveat } from "next/font/google";
+import { DM_Sans, Caveat } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { frFR } from "@clerk/localizations";
 import { Analytics } from "@vercel/analytics/next";
 import { PwaRegister } from "@/components/PwaRegister";
 import "./globals.css";
 
-// display: "swap" évite tout texte invisible pendant le chargement de
-// la police (FOIT) — le texte s'affiche immédiatement dans une police
-// de secours, puis bascule sur Inter dès qu'elle est prête.
-// variable expose --font-inter en CSS, pour que les écrans Clerk
-// (qui ne peuvent pas recevoir de className React) puissent aussi
-// l'utiliser via une simple référence de variable.
-const inter = Inter({
+// Police principale de RH Pilot : DM Sans privilégie la lisibilité,
+// des formes douces et une présence plus humaine qu'une police
+// géométrique de type Space Grotesk. Elle est utilisée dans toute
+// l'application pour garder une identité typographique homogène.
+const dmSans = DM_Sans({
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   display: "swap",
-  variable: "--font-inter",
-});
-
-// Police d'accroche pour les titres (h1/h2/h3) uniquement — le corps
-// de texte reste en Inter. Appliquée globalement via globals.css
-// (règle "h1, h2, h3"), pas besoin de toucher chaque page une par
-// une. Seuls les deux poids réellement utilisés sont chargés.
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
-  weight: ["600", "700"],
-  display: "swap",
-  variable: "--font-heading",
+  variable: "--font-dm-sans",
 });
 
 const caveat = Caveat({
@@ -44,8 +32,6 @@ export const metadata: Metadata = {
   title: "RH Pilot, votre copilote d'organisation RH",
   description:
     "RH Pilot transforme chaque événement RH en plan d'action complet : tâches, échéances, responsables et preuves.",
-  // Bêta ouverte à l'indexation ; les pages privées restent bloquées
-  // séparément (voir src/app/robots.ts).
   robots: {
     index: true,
     follow: true,
@@ -65,9 +51,8 @@ export const metadata: Metadata = {
   },
 };
 
-// Habille les écrans Clerk (connexion, inscription, gestion du
-// compte) avec les jetons de la charte RH Pilot plutôt que de les
-// laisser à l'apparence par défaut.
+// Habille les écrans Clerk avec les mêmes repères typographiques que
+// le reste de RH Pilot pour éviter toute rupture visuelle.
 const clerkAppearance = {
   variables: {
     colorPrimary: "#E8432E",
@@ -77,10 +62,8 @@ const clerkAppearance = {
     colorInputBackground: "#FFFFFF",
     colorInputText: "#14151A",
     borderRadius: "0.625rem",
-    // Inter en priorité, avec le même repli système qu'avant si la
-    // variable n'est pour une raison quelconque pas encore prête.
     fontFamily:
-      "var(--font-inter), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
+      "var(--font-dm-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif",
   },
   elements: {
     card: "shadow-lg border border-surface-border",
@@ -97,8 +80,8 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider localization={frFR as any} appearance={clerkAppearance}>
-      <html lang="fr" className={`${inter.variable} ${spaceGrotesk.variable} ${caveat.variable}`}>
-        <body className={`${inter.className} antialiased`}>
+      <html lang="fr" className={`${dmSans.variable} ${caveat.variable}`}>
+        <body className={`${dmSans.className} antialiased`}>
           {children}
           <Analytics />
           <PwaRegister />
