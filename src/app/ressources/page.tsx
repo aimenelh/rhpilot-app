@@ -61,33 +61,33 @@ export default function ResourcesPage() {
       <MarketingHeader />
 
       <section className="relative overflow-hidden border-b border-surface-border bg-white py-14 sm:py-16">
-        <div className="mx-auto grid max-w-5xl items-center gap-6 px-6 sm:grid-cols-[1fr_1.05fr] sm:gap-8">
+        <div className="mx-auto grid max-w-5xl items-center gap-8 px-6 sm:grid-cols-[1fr_1fr] sm:gap-10">
           <Reveal variant="left">
             <span className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-primary">
               Ressources
             </span>
-            <h1 className="mt-4 max-w-xl text-4xl font-semibold leading-[1.08] tracking-tight text-ink sm:text-5xl">
+            <h1 className="mt-4 max-w-xl text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
               Ce que le droit du travail dit vraiment, maintenant.
             </h1>
-            <p className="mt-5 max-w-lg text-lg leading-relaxed text-ink-soft">
+            <p className="mt-4 max-w-lg text-lg text-ink-soft">
               Actualité réglementaire, IA et recrutement, délais légaux. Sourcé, sans jargon inutile.
             </p>
           </Reveal>
 
           <Reveal delay={120} variant="scale">
-            <div className="relative mx-auto h-[360px] w-full max-w-xl sm:h-[390px]">
+            <div className="relative mx-auto h-[390px] w-full max-w-md sm:h-[430px]">
               <div
                 aria-hidden="true"
-                className="absolute left-[20%] top-[10%] h-[76%] w-[58%] rotate-[-7deg] rounded-[28%_72%_32%_68%/38%_30%_70%_62%] bg-[#ff6048] shadow-[0_24px_70px_rgba(240,72,49,0.18)]"
+                className="absolute left-[14%] top-[8%] h-[78%] w-[74%] rotate-[-5deg] rounded-[3rem] bg-brand-primary"
               />
               <div
                 aria-hidden="true"
-                className="absolute right-[9%] top-[15%] h-24 w-24 rounded-full bg-[#ffb45c]/40 blur-3xl"
+                className="absolute right-[8%] bottom-[10%] h-24 w-24 rounded-full bg-[#ffb45c]/45 blur-3xl"
               />
               <img
-                src="https://images.pexels.com/photos/9558772/pexels-photo-9558772.jpeg?cs=srgb&dl=pexels-mart-production-9558772.jpg&fm=jpg"
-                alt="Portrait professionnel d'une femme souriante en studio"
-                className="absolute bottom-0 left-[22%] z-10 h-[108%] w-[62%] object-contain object-bottom mix-blend-multiply"
+                src="https://images.pexels.com/photos/9017012/pexels-photo-9017012.jpeg?cs=srgb&dl=pexels-kevin-malik-9017012.jpg&fm=jpg"
+                alt="Portrait souriant d'une femme en tenue noire"
+                className="absolute inset-x-[5%] bottom-0 h-[92%] w-[90%] object-cover object-top mix-blend-multiply"
                 loading="eager"
               />
             </div>
