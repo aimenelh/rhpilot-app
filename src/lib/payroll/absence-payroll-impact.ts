@@ -24,9 +24,15 @@ function clampToPeriod(date: Date, start: Date, end: Date): Date {
   return date;
 }
 
-function inclusiveCalendarDays(start: Date, end: Date): number {
-  const startMs = Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate());
-  const endMs = Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate());
+export function getCalendarOverlapDays(startDate: Date, endDate: Date, periodStart: Date, periodEnd: Date): number {
+  if (endDate < startDate || periodEnd < periodStart) return 0;
+
+  const overlapStart = clampToPeriod(startDate, periodStart, periodEnd);
+  const overlapEnd = clampToPeriod(endDate, periodStart, periodEnd);
+  if (overlapEnd < overlapStart) return 0;
+
+  const startMs = Date.UTC(overlapStart.getUTCFullYear(), overlapStart.getUTCMonth(), overlapStart.getUTCDate());
+  const endMs = Date.UTC(overlapEnd.getUTCFullYear(), overlapEnd.getUTCMonth(), overlapEnd.getUTCDate());
   return Math.floor((endMs - startMs) / 86_400_000) + 1;
 }
 
@@ -64,20 +70,15 @@ export async function resolveValidatedAbsencesForPayrollPeriod(input: {
     orderBy: [{ employeeId: "asc" }, { startDate: "asc" }],
   });
 
-  return absences.map((absence) => {
-    const overlapStart = clampToPeriod(absence.startDate, periodStart, periodEnd);
-    const overlapEnd = clampToPeriod(absence.endDate, periodStart, periodEnd);
-
-    return {
-      absenceId: absence.id,
-      employeeId: absence.employeeId,
-      type: absence.type,
-      startDate: absence.startDate,
-      endDate: absence.endDate,
-      periodStart: overlapStart,
-      periodEnd: overlapEnd,
-      calendarDaysInPeriod: inclusiveCalendarDays(overlapStart, overlapEnd),
-      status: "READY",
-    };
-  });
+  return absences.map((absence) => ({
+    absenceId: absence.id,
+    employeeId: absence.employeeId,
+    type: absence.type,
+    startDate: absence.startDate,
+    endDate: absence.endDate,
+    periodStart: clampToPeriod(absence.startDate, periodStart, periodEnd),
+    periodEnd: clampToPeriod(absence.endDate, periodStart, periodEnd),
+    calendarDaysInPeriod: getCalendarOverlapDays(absence.startDate, absence.endDate, periodStart, periodEnd),
+    status: "READY",
+  }));
 }
