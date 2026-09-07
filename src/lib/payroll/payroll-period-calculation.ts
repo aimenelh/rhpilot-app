@@ -356,11 +356,11 @@ export async function calculatePayrollPeriod(input: {
         },
         variables: calculated.variables,
         validatedAbsences: calculated.validatedAbsences.map((absence) => ({
-          absenceId: absence.absenceId,
+          absenceId: absence.id,
           type: absence.type,
           startDate: absence.startDate.toISOString(),
           endDate: absence.endDate.toISOString(),
-          payrollImpactStatus: absence.status,
+          payrollImpactStatus: absence.payrollImpactStatus,
         })),
         variableTreatments: calculated.treatments,
         ruleSet: rules.ruleSet,
@@ -420,19 +420,6 @@ export async function calculatePayrollPeriod(input: {
       }
     }
 
-    const absenceIds = calculatedEmployees.flatMap((calculated) => calculated.validatedAbsences.map((absence) => absence.absenceId));
-    if (absenceIds.length > 0) {
-      await tx.absence.updateMany({
-        where: {
-          id: { in: absenceIds },
-          organizationId: input.organizationId,
-          status: "VALIDATED",
-          payrollImpactStatus: "READY",
-        },
-        data: { payrollImpactStatus: "INTEGRATED" },
-      });
-    }
-
     await tx.payrollPeriod.update({
       where: { id: period.id },
       data: { status: "CALCULATED", calculatedAt: new Date(), validatedAt: null, lockedAt: null },
@@ -450,7 +437,7 @@ export async function calculatePayrollPeriod(input: {
           ruleCode: input.ruleCode,
           ruleScope: input.ruleScope,
           employeeCount: employees.length,
-          validatedAbsenceCount: absenceIds.length,
+          validatedAbsenceCount: validatedAbsences.length,
         },
       },
     });
