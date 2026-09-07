@@ -29,6 +29,7 @@ export async function updateOrganizationSettings(formData: FormData) {
     if (companyCreationDate !== null && Number.isNaN(companyCreationDate.getTime())) throw new Error("La date de création de l'entreprise est invalide.");
     if (companyCreationDate !== null && companyCreationDate > new Date()) throw new Error("La date de création de l'entreprise ne peut pas être dans le futur.");
 
+    const payrollCity = String(formData.get("payrollCity") ?? "").trim();
     const atmpRateRaw = String(formData.get("atmpRate") ?? "").trim().replace(",", ".");
     const atmpRate = atmpRateRaw === "" ? null : Number(atmpRateRaw);
     if (atmpRate !== null && (!Number.isFinite(atmpRate) || atmpRate < 0 || atmpRate > 100)) throw new Error("Le taux AT/MP doit être compris entre 0 et 100 %.");
@@ -45,7 +46,7 @@ export async function updateOrganizationSettings(formData: FormData) {
 
     await prisma.$transaction(async (tx) => {
       await tx.membership.update({ where: { id: membership.id }, data: { functionalRole } });
-      await tx.organization.update({ where: { id: membership.organizationId }, data: { conventionCollective: conventionCollective || null } });
+      await tx.organization.update({ where: { id: membership.organizationId }, data: { conventionCollective: conventionCollective || null, payrollCity: payrollCity || null } });
       await tx.$executeRaw`UPDATE "organizations" SET "legalCategory" = ${legalCategory}, "companyCreationDate" = ${companyCreationDate}, "atmpRate" = ${atmpRate}, "payrollDepartment" = ${payrollDepartment || null}, "healthPlanMonthlyAmount" = ${healthPlanMonthlyAmount}, "healthPlanEmployerRate" = ${healthPlanEmployerRate} WHERE "id" = ${membership.organizationId}`;
     });
   } else {
