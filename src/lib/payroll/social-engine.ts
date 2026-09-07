@@ -16,6 +16,27 @@ const NET_BEFORE_TAX_RULE = "salarié . rémunération . net . à payer avant im
 const EMPLOYEE_CONTRIBUTIONS_RULE = "salarié . cotisations . salarié";
 const EMPLOYER_CONTRIBUTIONS_RULE = "salarié . cotisations . employeur";
 
+const DETAIL_RULES = [
+  { code: "maladie_salarie", label: "Assurance maladie, maternité, invalidité, décès", rule: "salarié . cotisations . maladie . salarié", side: "EMPLOYEE" },
+  { code: "sante_employeur", label: "Complémentaire santé — part employeur", rule: "salarié . cotisations . prévoyances . santé . employeur", side: "EMPLOYER" },
+  { code: "atmp", label: "Accidents du travail et maladies professionnelles", rule: "salarié . cotisations . ATMP", side: "EMPLOYER" },
+  { code: "vieillesse_plafonnee_salarie", label: "Assurance vieillesse plafonnée", rule: "salarié . cotisations . vieillesse . plafonnée . salarié", side: "EMPLOYEE" },
+  { code: "vieillesse_deplafonnee_salarie", label: "Assurance vieillesse déplafonnée", rule: "salarié . cotisations . vieillesse . déplafonnée . salarié", side: "EMPLOYEE" },
+  { code: "vieillesse_plafonnee_employeur", label: "Assurance vieillesse plafonnée", rule: "salarié . cotisations . vieillesse . plafonnée . employeur", side: "EMPLOYER" },
+  { code: "vieillesse_deplafonnee_employeur", label: "Assurance vieillesse déplafonnée", rule: "salarié . cotisations . vieillesse . déplafonnée . employeur", side: "EMPLOYER" },
+  { code: "retraite_complementaire_salarie", label: "Retraite complémentaire — part salarié", rule: "salarié . cotisations . retraite complémentaire-CEG-CET . salarié", side: "EMPLOYEE" },
+  { code: "retraite_complementaire_employeur", label: "Retraite complémentaire — part employeur", rule: "salarié . cotisations . retraite complémentaire-CEG-CET . employeur", side: "EMPLOYER" },
+  { code: "allocations_familiales", label: "Allocations familiales", rule: "salarié . cotisations . allocations familiales", side: "EMPLOYER" },
+  { code: "assurance_chomage", label: "Assurance chômage", rule: "salarié . cotisations . chômage", side: "EMPLOYER" },
+  { code: "apec_salarie", label: "APEC — part salarié", rule: "salarié . cotisations . APEC . salarié", side: "EMPLOYEE" },
+  { code: "apec_employeur", label: "APEC — part employeur", rule: "salarié . cotisations . APEC . employeur", side: "EMPLOYER" },
+  { code: "csg_deductible", label: "CSG déductible", rule: "salarié . cotisations . CSG-CRDS . CSG . déductible", side: "EMPLOYEE" },
+  { code: "csg_non_deductible", label: "CSG/CRDS non déductible", rule: "salarié . cotisations . CSG-CRDS . sur revenus imposables non déductible", side: "EMPLOYEE" },
+  { code: "csg_non_imposable", label: "CSG/CRDS sur revenus non imposables", rule: "salarié . cotisations . CSG-CRDS . sur revenus non imposables", side: "EMPLOYEE" },
+  { code: "invalidite_deces_salarie", label: "Prévoyance incapacité, invalidité, décès — part salarié", rule: "salarié . cotisations . prévoyances . incapacité invalidité décès . salarié", side: "EMPLOYEE" },
+  { code: "invalidite_deces_employeur", label: "Prévoyance incapacité, invalidité, décès — part employeur", rule: "salarié . cotisations . prévoyances . incapacité invalidité décès . employeur", side: "EMPLOYER" },
+] as const;
+
 // Valeurs par défaut déclarées par le modèle social officiel.
 // Elles ne constituent pas des règles métier RH Pilot et peuvent être
 // remplacées par une situation explicite fournie par l'application.
@@ -25,26 +46,20 @@ const MODEL_DEFAULT_SITUATION: SocialPayrollSituation = {
   "salarié . cotisations . ATMP . taux fonctions support": "non",
 };
 
-export const LEGAL_CATEGORIES = [
-  "EI",
-  "SARL",
-  "SAS",
-  "SELARL",
-  "SELAS",
-  "association",
-  "autre",
-] as const;
-
-export const CONTRACT_TYPES = [
-  "CDI",
-  "CDD",
-  "apprentissage",
-  "professionnalisation",
-] as const;
+export const LEGAL_CATEGORIES = ["EI", "SARL", "SAS", "SELARL", "SELAS", "association", "autre"] as const;
+export const CONTRACT_TYPES = ["CDI", "CDD", "apprentissage", "professionnalisation"] as const;
 
 export type LegalCategory = (typeof LEGAL_CATEGORIES)[number];
 export type SocialContractType = (typeof CONTRACT_TYPES)[number];
 export type SocialPayrollSituation = Record<string, string | number | boolean | Date>;
+
+export type SocialContributionDetail = {
+  code: string;
+  label: string;
+  sourceRule: string;
+  side: "EMPLOYEE" | "EMPLOYER";
+  amount: number;
+};
 
 export type SocialPayrollResult = {
   modelVersion: string;
@@ -54,6 +69,7 @@ export type SocialPayrollResult = {
   employerContributions: number;
   netBeforeTax: number;
   employerCost: number;
+  contributionDetails: SocialContributionDetail[];
 };
 
 function assertLegalCategory(value: string): LegalCategory {
@@ -85,6 +101,17 @@ function formatPublicodesDate(value: Date): string {
   return `${day}/${month}/${value.getUTCFullYear()}`;
 }
 
+function evaluateContributionDetails(engine: Engine): SocialContributionDetail[] {
+  return DETAIL_RULES.flatMap((detail) => {
+    const evaluation = engine.evaluate(detail.rule);
+    assertNoMissingVariables(evaluation, detail.rule);
+    if (evaluation.nodeValue === null) return [];
+    const amount = assertNumber(evaluation.nodeValue, detail.rule);
+    if (amount === 0) return [];
+    return [{ code: detail.code, label: detail.label, sourceRule: detail.rule, side: detail.side, amount }];
+  });
+}
+
 /**
  * Point d'entrée unique vers le modèle social officiel publié par Mon-entreprise.
  * RH Pilot fournit explicitement la forme juridique, la date de calcul, la
@@ -103,27 +130,13 @@ export function calculateSocialPayroll(input: {
   healthPlanEmployerRate: number;
   situation?: SocialPayrollSituation;
 }): SocialPayrollResult {
-  if (!Number.isFinite(input.grossAmount) || input.grossAmount < 0) {
-    throw new Error("Le brut doit être un montant positif ou nul.");
-  }
-  if (!(input.calculationDate instanceof Date) || Number.isNaN(input.calculationDate.getTime())) {
-    throw new Error("Le calcul social est bloqué : la date de calcul est absente ou invalide.");
-  }
-  if (!(input.companyCreationDate instanceof Date) || Number.isNaN(input.companyCreationDate.getTime())) {
-    throw new Error("Le calcul social est bloqué : la date de création de l'entreprise est absente ou invalide.");
-  }
-  if (!(input.hireDate instanceof Date) || Number.isNaN(input.hireDate.getTime())) {
-    throw new Error("Le calcul social est bloqué : la date d'embauche est absente ou invalide.");
-  }
-  if (typeof input.executiveStatus !== "boolean") {
-    throw new Error("Le calcul social est bloqué : le statut cadre est absent ou invalide.");
-  }
-  if (!Number.isFinite(input.healthPlanMonthlyAmount) || input.healthPlanMonthlyAmount <= 0) {
-    throw new Error("Le calcul social est bloqué : le montant mensuel de la complémentaire santé est absent ou invalide.");
-  }
-  if (!Number.isFinite(input.healthPlanEmployerRate) || input.healthPlanEmployerRate < 50 || input.healthPlanEmployerRate > 100) {
-    throw new Error("Le calcul social est bloqué : la part employeur de la complémentaire santé doit être comprise entre 50 % et 100 %.");
-  }
+  if (!Number.isFinite(input.grossAmount) || input.grossAmount < 0) throw new Error("Le brut doit être un montant positif ou nul.");
+  if (!(input.calculationDate instanceof Date) || Number.isNaN(input.calculationDate.getTime())) throw new Error("Le calcul social est bloqué : la date de calcul est absente ou invalide.");
+  if (!(input.companyCreationDate instanceof Date) || Number.isNaN(input.companyCreationDate.getTime())) throw new Error("Le calcul social est bloqué : la date de création de l'entreprise est absente ou invalide.");
+  if (!(input.hireDate instanceof Date) || Number.isNaN(input.hireDate.getTime())) throw new Error("Le calcul social est bloqué : la date d'embauche est absente ou invalide.");
+  if (typeof input.executiveStatus !== "boolean") throw new Error("Le calcul social est bloqué : le statut cadre est absent ou invalide.");
+  if (!Number.isFinite(input.healthPlanMonthlyAmount) || input.healthPlanMonthlyAmount <= 0) throw new Error("Le calcul social est bloqué : le montant mensuel de la complémentaire santé est absent ou invalide.");
+  if (!Number.isFinite(input.healthPlanEmployerRate) || input.healthPlanEmployerRate < 50 || input.healthPlanEmployerRate > 100) throw new Error("Le calcul social est bloqué : la part employeur de la complémentaire santé doit être comprise entre 50 % et 100 %.");
 
   const legalCategory = assertLegalCategory(input.legalCategory);
   const contractType = assertContractType(input.contractType);
@@ -152,6 +165,7 @@ export function calculateSocialPayroll(input: {
   const netBeforeTax = assertNumber(netBeforeTaxEvaluation.nodeValue, NET_BEFORE_TAX_RULE);
   const employeeContributions = assertNumber(employeeContributionsEvaluation.nodeValue, EMPLOYEE_CONTRIBUTIONS_RULE);
   const employerContributions = assertNumber(employerContributionsEvaluation.nodeValue, EMPLOYER_CONTRIBUTIONS_RULE);
+  const contributionDetails = evaluateContributionDetails(engine);
 
   return {
     modelVersion: SOCIAL_MODEL_VERSION,
@@ -161,5 +175,6 @@ export function calculateSocialPayroll(input: {
     employerContributions,
     netBeforeTax,
     employerCost: Math.round((input.grossAmount + employerContributions + Number.EPSILON) * 100) / 100,
+    contributionDetails,
   };
 }
