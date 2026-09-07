@@ -1,5 +1,6 @@
 "use server";
 
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership } from "@/lib/auth";
@@ -13,6 +14,7 @@ export async function updateConventionCollective(formData: FormData) {
   const raw = String(formData.get("conventionCollective") ?? "").trim();
   await prisma.organization.update({ where: { id: membership.organizationId }, data: { conventionCollective: raw || null } });
   revalidatePath("/dashboard/configuration"); revalidatePath("/dashboard/configuration/organisation"); revalidatePath("/dashboard/employees"); revalidatePath("/dashboard/events");
+  redirect("/dashboard/configuration/organisation?saved=1");
 }
 
 export async function updateFunctionalRole(formData: FormData) {
@@ -22,6 +24,7 @@ export async function updateFunctionalRole(formData: FormData) {
   const value = raw === "RH" || raw === "DIRIGEANT" ? raw : null;
   await prisma.membership.update({ where: { id: membership.id }, data: { functionalRole: value } });
   revalidatePath("/dashboard/configuration"); revalidatePath("/dashboard/configuration/organisation");
+  redirect("/dashboard/configuration/organisation?saved=1");
 }
 
 export async function updateLegalCategory(formData: FormData) {
@@ -33,6 +36,7 @@ export async function updateLegalCategory(formData: FormData) {
   if (value !== null && !LEGAL_CATEGORIES.includes(value as (typeof LEGAL_CATEGORIES)[number])) throw new Error("Forme juridique invalide.");
   await prisma.$executeRaw`UPDATE "organizations" SET "legalCategory" = ${value} WHERE "id" = ${membership.organizationId}`;
   revalidatePath("/dashboard/configuration"); revalidatePath("/dashboard/configuration/organisation"); revalidatePath("/dashboard/payroll");
+  redirect("/dashboard/configuration/organisation?saved=1");
 }
 
 export async function updateAtmpRate(formData: FormData) {
@@ -44,6 +48,7 @@ export async function updateAtmpRate(formData: FormData) {
   if (value !== null && (!Number.isFinite(value) || value < 0 || value > 100)) throw new Error("Le taux AT/MP doit être compris entre 0 et 100 %." );
   await prisma.$executeRaw`UPDATE "organizations" SET "atmpRate" = ${value} WHERE "id" = ${membership.organizationId}`;
   revalidatePath("/dashboard/configuration"); revalidatePath("/dashboard/configuration/organisation"); revalidatePath("/dashboard/payroll");
+  redirect("/dashboard/configuration/organisation?saved=1");
 }
 
 export async function revertTaskTemplateOverride(overrideId: string) {
