@@ -8,6 +8,7 @@ import { Logomark, Wordmark } from "@/components/Brand";
 import { Button } from "@/components/ui/Button";
 import { PublicCopilotePreview } from "@/components/landing/PublicCopilotePreview";
 import { AnnouncementBar } from "@/components/landing/AnnouncementBar";
+import { HumanWorkVideo } from "@/components/landing/HumanWorkVideo";
 
 const NAV_LINKS = [
   { href: "/services", label: "Nos services" },
@@ -105,6 +106,7 @@ export function MarketingHeader() {
       )}
       </header>
     </div>
+    <HumanWorkVideo />
     <PublicCopilotePreview />
     </>
   );
