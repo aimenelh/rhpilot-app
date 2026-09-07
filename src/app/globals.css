@@ -135,21 +135,27 @@ h1, h2, h3 {
     border-bottom: 1px solid rgba(232, 67, 46, 0.08);
   }
 
+  /* La grille de contenu reprend une largeur éditoriale maîtrisée.
+     La photo dispose de sa propre zone à droite et ne force plus les
+     statistiques à s'étirer sur toute la fenêtre. */
   .min-h-screen > section:nth-of-type(5) > div {
     position: relative;
     z-index: 2;
-    max-width: 72rem;
-    padding-right: 25rem;
+    width: calc(100% - 3rem);
+    max-width: 64rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-right: 0;
   }
 
   .min-h-screen > section:nth-of-type(5)::before {
     content: "";
     position: absolute;
     z-index: 0;
-    right: clamp(1.5rem, 4vw, 4rem);
+    right: clamp(2rem, 5vw, 5rem);
     top: 50%;
-    width: clamp(19rem, 24vw, 23rem);
-    height: clamp(14rem, 19vw, 18rem);
+    width: clamp(18rem, 22vw, 22rem);
+    height: clamp(14rem, 18vw, 17rem);
     transform: translateY(-50%) rotate(-4deg);
     border-radius: 3rem;
     background: linear-gradient(135deg, rgba(232, 67, 46, 0.06), rgba(246, 184, 172, 0.28));
@@ -160,10 +166,10 @@ h1, h2, h3 {
     position: absolute;
     z-index: 1;
     pointer-events: none;
-    right: clamp(2.5rem, 5vw, 5.5rem);
+    right: clamp(3rem, 6vw, 6rem);
     top: 50%;
-    width: clamp(16rem, 20vw, 19rem);
-    height: clamp(12rem, 15vw, 15rem);
+    width: clamp(15rem, 19vw, 18rem);
+    height: clamp(11rem, 14vw, 14rem);
     transform: translateY(-50%) rotate(1.5deg);
     border: 8px solid rgba(255, 255, 255, 0.96);
     border-radius: 2rem;
