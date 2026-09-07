@@ -10,7 +10,8 @@ import { updateConventionCollective, updateFunctionalRole, updateLegalCategory, 
 export const dynamic = "force-dynamic";
 const COMMON_CCN = ["Syntec", "Métallurgie", "Commerce de gros", "Commerce de détail et de gros à prédominance alimentaire", "HCR (Hôtels, cafés, restaurants)", "Bâtiment et travaux publics (BTP)", "Pharmacie d'officine", "Banque", "Assurance", "Transport routier", "Immobilier", "Bureaux d'études techniques", "Cabinets d'avocats", "Cabinets d'experts-comptables", "Coiffure", "Aide à domicile", "Sport", "Animation", "Publicité", "Industrie pharmaceutique", "Automobile (services)", "Bricolage", "Restauration rapide", "Propreté", "Sécurité privée", "Textile", "Notariat", "Optique-lunetterie", "Import-export", "Édition"];
 const LEGAL_CATEGORIES = ["EI", "SARL", "SAS", "SELARL", "SELAS", "association", "autre"] as const;
-export default async function OrganisationConfigPage() {
+type OrganisationConfigPageProps = { searchParams?: { saved?: string } };
+export default async function OrganisationConfigPage({ searchParams }: OrganisationConfigPageProps) {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
   const canEditOrganization = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
@@ -23,6 +24,7 @@ export default async function OrganisationConfigPage() {
       <Link href="/dashboard/configuration" className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-faint hover:text-ink"><ArrowLeft size={14} /> Configuration</Link>
       <h1 className="mt-3 text-2xl font-semibold text-ink">Organisation</h1>
       <p className="mt-1 text-sm text-ink-soft">Votre rôle RH, les paramètres sociaux et la convention collective applicable.</p>
+      {searchParams?.saved === "1" && <div role="status" className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">✓ Modifications enregistrées.</div>}
       <Card className="mt-6">
         <h2 className="text-sm font-semibold text-ink">Votre rôle dans l&apos;organisation</h2>
         <p className="mt-1 text-sm text-ink-soft">Certaines tâches des parcours RH sont conçues pour être assignées automatiquement à &laquo;&nbsp;la personne RH&nbsp;&raquo; de l&apos;organisation. RH Pilot ne devine jamais qui occupe ce rôle.</p>
