@@ -26,18 +26,11 @@ describe("absence payroll treatment", () => {
     });
   });
 
-  it("returns RULE_REQUIRED instead of inventing a default treatment", () => {
+  it("requires an explicit rule instead of inventing a default treatment", () => {
     expect(
       resolveAbsencePayrollTreatment({
         absence: { absenceId: "a2", type: "SICK_LEAVE", calendarDaysInPeriod: 4 },
-        rules: [
-          {
-            absenceType: "PAID_LEAVE",
-            effect: "EXCLUDE_FROM_GROSS",
-            basis: "RULE_DEFINED",
-            ruleVersionId: "rule-1",
-          },
-        ],
+        rules: [],
       }),
     ).toEqual({
       status: "RULE_REQUIRED",
