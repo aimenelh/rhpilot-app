@@ -24,6 +24,14 @@ const PAYROLL_LINKS = [
   { href: "/gestion-paie/variables", label: "Variables de paie" },
   { href: "/gestion-paie/conges-absences", label: "Congés & absences" },
   { href: "/gestion-paie/arrets-travail", label: "Arrêts de travail" },
+  { href: "/gestion-paie/referentiel-conventionnel", label: "Référentiel conventionnel" },
+  { href: "/gestion-paie/complementaire-sante", label: "Complémentaire santé" },
+  { href: "/gestion-paie/cotisations-sociales", label: "Cotisations sociales" },
+  { href: "/gestion-paie/montant-net-social", label: "Montant net social" },
+  { href: "/gestion-paie/bulletin-de-paie", label: "Bulletin de paie" },
+  { href: "/gestion-paie/tracabilite-calcul", label: "Traçabilité du calcul" },
+  { href: "/gestion-paie/profil-paie", label: "Profil de paie" },
+  { href: "/gestion-paie/contexte-employeur", label: "Contexte employeur" },
 ];
 
 export function MarketingHeader() {
@@ -65,18 +73,20 @@ export function MarketingHeader() {
                   <ChevronDown size={15} className={`transition-transform ${payrollOpen ? "rotate-180" : ""}`} />
                 </button>
                 {payrollOpen && (
-                  <div className="absolute left-1/2 top-full z-50 w-72 -translate-x-1/2 pt-3">
-                    <div className="rounded-2xl border border-surface-border bg-white p-2 shadow-xl">
-                      {PAYROLL_LINKS.map((link) => (
-                        <Link
-                          key={link.href}
-                          href={link.href}
-                          onClick={() => setPayrollOpen(false)}
-                          className={`block rounded-xl px-3 py-2.5 text-sm transition-colors ${isActive(link.href) ? "bg-brand-primary/10 font-medium text-brand-primary" : "text-ink-soft hover:bg-surface-subtle hover:text-ink"}`}
-                        >
-                          {link.label}
-                        </Link>
-                      ))}
+                  <div className="absolute left-1/2 top-full z-50 w-[34rem] -translate-x-1/2 pt-3">
+                    <div className="max-h-[75vh] overflow-y-auto rounded-2xl border border-surface-border bg-white p-2 shadow-xl">
+                      <div className="grid grid-cols-2 gap-1">
+                        {PAYROLL_LINKS.map((link) => (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                            onClick={() => setPayrollOpen(false)}
+                            className={`block rounded-xl px-3 py-2.5 text-sm transition-colors ${isActive(link.href) ? "bg-brand-primary/10 font-medium text-brand-primary" : "text-ink-soft hover:bg-surface-subtle hover:text-ink"}`}
+                          >
+                            {link.label}
+                          </Link>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 )}
@@ -106,7 +116,7 @@ export function MarketingHeader() {
           </div>
 
           {open && (
-            <nav className="absolute inset-x-6 top-full z-50 mt-3 flex flex-col gap-1 rounded-2xl border border-surface-border bg-white p-3 shadow-xl md:hidden">
+            <nav className="absolute inset-x-6 top-full z-50 mt-3 flex max-h-[80vh] flex-col gap-1 overflow-y-auto rounded-2xl border border-surface-border bg-white p-3 shadow-xl md:hidden">
               <Link href="/services" onClick={() => setOpen(false)} className={`rounded-lg px-3 py-2.5 text-sm font-medium ${isActive("/services") ? "bg-brand-primary/10 text-brand-primary" : "text-ink-soft hover:bg-surface-subtle"}`}>Nos services</Link>
 
               <div className="rounded-xl bg-surface-subtle/60 px-2 py-2">
