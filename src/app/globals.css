@@ -84,3 +84,51 @@ h1, h2, h3 {
   .welcome-shape-2,
   .welcome-pulse-dot { animation: none; }
 }
+
+/* Hero vitrine : composition éditoriale, avec le message à gauche et la
+   vidéo humaine comme point visuel principal à droite. */
+@media (min-width: 1024px) {
+  .min-h-screen > section:first-of-type > div:first-child {
+    max-width: 72rem;
+    padding-top: 5.5rem;
+    padding-bottom: 4rem;
+    text-align: left;
+  }
+
+  .min-h-screen > section:first-of-type > div:first-child h1 {
+    max-width: 48rem;
+  }
+
+  .min-h-screen > section:first-of-type > div:first-child p {
+    margin-left: 0;
+  }
+
+  .min-h-screen > section:first-of-type > div:first-child > div {
+    justify-content: flex-start;
+  }
+
+  .min-h-screen > section:first-of-type > div:first-child::before {
+    content: "Un outil RH conçu par les RH, pour les RH";
+    display: inline-flex;
+    margin-bottom: 1.25rem;
+    border-radius: 9999px;
+    background: rgba(232, 67, 46, 0.08);
+    padding: 0.55rem 0.9rem;
+    color: theme("colors.brand.primary");
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+  }
+}
+
+@media (max-width: 1023px) {
+  .human-work-video {
+    display: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .human-work-video video {
+    animation: none;
+  }
+}
