@@ -6,6 +6,8 @@ export const SOCIAL_MODEL_VERSION = "11.1.0";
 const GROSS_RULE = "salarié . contrat . salaire brut";
 const LEGAL_CATEGORY_RULE = "entreprise . catégorie juridique";
 const DATE_RULE = "date";
+const HIRE_DATE_RULE = "salarié . contrat . date d'embauche";
+const EXECUTIVE_STATUS_RULE = "salarié . contrat . statut cadre";
 const NET_BEFORE_TAX_RULE = "salarié . rémunération . net . à payer avant impôt";
 const EMPLOYEE_CONTRIBUTIONS_RULE = "salarié . cotisations . salarié";
 const EMPLOYER_CONTRIBUTIONS_RULE = "salarié . cotisations . employeur";
@@ -21,7 +23,7 @@ export const LEGAL_CATEGORIES = [
 ] as const;
 
 export type LegalCategory = (typeof LEGAL_CATEGORIES)[number];
-export type SocialPayrollSituation = Record<string, string | number | boolean>;
+export type SocialPayrollSituation = Record<string, string | number | boolean | Date>;
 
 export type SocialPayrollResult = {
   modelVersion: string;
@@ -65,13 +67,16 @@ function assertNoMissingVariables(
  * Point d'entrée unique vers le modèle social officiel publié par Mon-entreprise.
  *
  * RH Pilot fournit explicitement la situation de l'organisation et du salarié.
- * La forme juridique et la date de calcul sont transmises à Publicodes sans
- * être déduites d'une donnée indirecte ou de la date courante du serveur.
+ * La forme juridique, la date de calcul, la date d'embauche et le statut cadre
+ * sont transmis à Publicodes sans être déduits d'une donnée indirecte ou de la
+ * date courante du serveur.
  */
 export function calculateSocialPayroll(input: {
   grossAmount: number;
   legalCategory: string;
   calculationDate: Date;
+  hireDate: Date;
+  executiveStatus: boolean;
   situation?: SocialPayrollSituation;
 }): SocialPayrollResult {
   if (!Number.isFinite(input.grossAmount) || input.grossAmount < 0) {
@@ -82,12 +87,22 @@ export function calculateSocialPayroll(input: {
     throw new Error("Le calcul social est bloqué : la date de calcul est absente ou invalide.");
   }
 
+  if (!(input.hireDate instanceof Date) || Number.isNaN(input.hireDate.getTime())) {
+    throw new Error("Le calcul social est bloqué : la date d'embauche est absente ou invalide.");
+  }
+
+  if (typeof input.executiveStatus !== "boolean") {
+    throw new Error("Le calcul social est bloqué : le statut cadre est absent ou invalide.");
+  }
+
   const legalCategory = assertLegalCategory(input.legalCategory);
   const engine = new Engine(socialRules);
   engine.setSituation({
     [GROSS_RULE]: `${input.grossAmount} €/mois`,
     [LEGAL_CATEGORY_RULE]: `'${legalCategory}'`,
     [DATE_RULE]: input.calculationDate.toISOString().slice(0, 10),
+    [HIRE_DATE_RULE]: input.hireDate,
+    [EXECUTIVE_STATUS_RULE]: input.executiveStatus ? "'oui'" : "'non'",
     ...(input.situation ?? {}),
   });
 
