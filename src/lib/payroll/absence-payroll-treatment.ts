@@ -21,6 +21,8 @@ export type AbsencePayrollTreatmentRule = {
   effect: AbsencePayrollEffect;
   basis: AbsencePayrollBasis;
   ruleVersionId: string;
+  divisor?: number;
+  rate?: number;
 };
 
 export type AbsencePayrollImpactResolution =
@@ -32,6 +34,8 @@ export type AbsencePayrollImpactResolution =
       ruleVersionId: string;
       effect: AbsencePayrollEffect;
       basis: AbsencePayrollBasis;
+      divisor: number | null;
+      rate: number | null;
     }
   | {
       status: "RULE_REQUIRED";
@@ -67,5 +71,7 @@ export function resolveAbsencePayrollTreatment(input: {
     ruleVersionId: rule.ruleVersionId,
     effect: rule.effect,
     basis: rule.basis,
+    divisor: rule.divisor ?? null,
+    rate: rule.rate ?? null,
   };
 }
