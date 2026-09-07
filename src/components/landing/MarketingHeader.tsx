@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { PublicCopilotePreview } from "@/components/landing/PublicCopilotePreview";
 import { AnnouncementBar } from "@/components/landing/AnnouncementBar";
 import { HumanWorkVideo } from "@/components/landing/HumanWorkVideo";
+import { PayrollHumanPhoto } from "@/components/landing/PayrollHumanPhoto";
 
 const NAV_LINKS = [
   { href: "/services", label: "Nos services" },
@@ -141,6 +142,7 @@ export function MarketingHeader() {
         </header>
       </div>
       {pathname === "/" && <HumanWorkVideo />}
+      {payrollActive && <PayrollHumanPhoto />}
       <PublicCopilotePreview />
     </>
   );
