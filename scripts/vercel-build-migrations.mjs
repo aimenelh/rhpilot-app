@@ -4,6 +4,7 @@ const RECOVERABLE_FAILED_MIGRATIONS = [
   "20260811190209_add_diagnostic_response",
   "20260906130000_paie_foundation",
   "20260906195500_align_payroll_columns_with_prisma",
+  "20260907220000_seed_publicodes_payroll_rule",
 ];
 
 function runCapture(args) {
@@ -28,7 +29,10 @@ if (result.status !== 0) {
     result.output.includes(migration)
   );
 
-  if (!result.output.includes("P3009") || !failedMigration) {
+  const hasRecoverableMigrationError =
+    result.output.includes("P3009") || result.output.includes("P3018");
+
+  if (!hasRecoverableMigrationError || !failedMigration) {
     process.exit(result.status);
   }
 
