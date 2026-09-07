@@ -8,7 +8,6 @@ export type SocialOrganizationContext = {
   healthPlanEmployerRate: number;
   companyCreationDate: Date;
   payrollCity: string;
-  payrollPostalCode: string;
   payrollDepartment: string;
 };
 
@@ -22,10 +21,9 @@ export async function resolveOrganizationLegalCategory(
     healthPlanEmployerRate: unknown;
     companyCreationDate: Date | null;
     payrollCity: string | null;
-    payrollPostalCode: string | null;
     payrollDepartment: string | null;
   }>>`
-    SELECT "legalCategory", "atmpRate", "healthPlanMonthlyAmount", "healthPlanEmployerRate", "companyCreationDate", "payrollCity", "payrollPostalCode", "payrollDepartment"
+    SELECT "legalCategory", "atmpRate", "healthPlanMonthlyAmount", "healthPlanEmployerRate", "companyCreationDate", "payrollCity", "payrollDepartment"
     FROM "organizations"
     WHERE "id" = ${organizationId}
     LIMIT 1
@@ -61,11 +59,6 @@ export async function resolveOrganizationLegalCategory(
     throw new Error("Le calcul social est bloqué : la commune de l'établissement est absente.");
   }
 
-  const payrollPostalCode = row.payrollPostalCode?.trim() ?? "";
-  if (!payrollPostalCode) {
-    throw new Error("Le calcul social est bloqué : le code postal de l'établissement est absent.");
-  }
-
   const payrollDepartment = row.payrollDepartment?.trim() ?? "";
   if (!payrollDepartment) {
     throw new Error("Le calcul social est bloqué : le département de l'établissement est absent.");
@@ -78,7 +71,6 @@ export async function resolveOrganizationLegalCategory(
     healthPlanEmployerRate,
     companyCreationDate: row.companyCreationDate,
     payrollCity,
-    payrollPostalCode,
     payrollDepartment,
   };
 }
