@@ -27,17 +27,13 @@ async function testSocialPayroll() {
     redirect("/dashboard/payroll/social-test?status=error&error=Accès%20réservé%20aux%20administrateurs.");
   }
 
+  let redirectUrl: string | null = null;
   try {
     const now = new Date();
     const period = await prisma.payrollPeriod.findFirst({
-      where: {
-        organizationId: membership.organizationId,
-        year: now.getFullYear(),
-        month: now.getMonth() + 1,
-      },
+      where: { organizationId: membership.organizationId, year: now.getFullYear(), month: now.getMonth() + 1 },
       select: { id: true, year: true, month: true },
     });
-
     if (!period) throw new Error("Aucune période de paie n'est ouverte pour le mois en cours.");
 
     const employee = await prisma.employee.findFirst({
@@ -45,7 +41,6 @@ async function testSocialPayroll() {
       select: { id: true, firstName: true, lastName: true, contractType: true, hireDate: true, professionalCategory: true },
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     });
-
     if (!employee) throw new Error("Aucun salarié actif n'est disponible pour le test.");
     if (!employee.contractType) throw new Error("Le type de contrat est manquant pour le salarié de test.");
     if (!employee.hireDate) throw new Error("La date d'embauche est manquante pour le salarié de test.");
@@ -61,7 +56,6 @@ async function testSocialPayroll() {
       select: { baseSalaryCents: true },
       orderBy: { effectiveFrom: "desc" },
     });
-
     if (!profile || profile.baseSalaryCents === null) throw new Error("Le salaire brut du profil paie est manquant.");
 
     const socialContext = await resolveOrganizationLegalCategory(membership.organizationId);
@@ -75,7 +69,15 @@ async function testSocialPayroll() {
       executiveStatus: employee.professionalCategory === "CADRE",
       healthPlanMonthlyAmount: socialContext.healthPlanMonthlyAmount,
       healthPlanEmployerRate: socialContext.healthPlanEmployerRate,
-      situation: { "établissement . taux ATMP": `${socialContext.atmpRate}%` },
+      situation: {
+        "établissement . taux ATMP": `${socialContext.atmpRate}%`,
+        "entreprise . date de création": socialContext.companyCreationDate,
+        "établissement . commune": socialContext.payrollCity,
+        "établissement . commune . département": socialContext.payrollDepartment,
+        "salarié . rémunération . avantages en nature": "non",
+        "salarié . régimes spécifiques . taux réduits": "non",
+        "situation personnelle . domiciliation fiscale à l'étranger": "non",
+      },
     });
 
     const params = new URLSearchParams({
@@ -87,11 +89,13 @@ async function testSocialPayroll() {
       netBeforeTax: result.netBeforeTax.toFixed(2),
       employerCost: result.employerCost.toFixed(2),
     });
-    redirect(`/dashboard/payroll/social-test?${params.toString()}`);
+    redirectUrl = `/dashboard/payroll/social-test?${params.toString()}`;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Le test du moteur social a échoué.";
-    redirect(`/dashboard/payroll/social-test?status=error&error=${encodeURIComponent(message)}`);
+    redirectUrl = `/dashboard/payroll/social-test?status=error&error=${encodeURIComponent(message)}`;
   }
+
+  redirect(redirectUrl!);
 }
 
 function formatEuro(value?: string) {
@@ -116,15 +120,11 @@ export default async function SocialPayrollTestPage({ searchParams }: { searchPa
         <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink">Moteur social</h1>
         <p className="mt-1 text-sm text-ink-soft">Ce test vérifie le passage des données de l'organisation et du salarié vers le modèle social, sans enregistrer de calcul de paie.</p>
       </div>
-
       <section className="mt-7 rounded-xl border border-surface-border bg-white p-5">
         <h2 className="font-semibold text-ink">Test du salarié de référence</h2>
         <p className="mt-1 text-sm text-ink-soft">Le test utilise le premier salarié actif et son profil paie applicable à la période en cours.</p>
-        <form action={testSocialPayroll} className="mt-5">
-          <button type="submit" className="inline-flex items-center justify-center rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90">Tester le moteur social</button>
-        </form>
+        <form action={testSocialPayroll} className="mt-5"><button type="submit" className="inline-flex items-center justify-center rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white transition hover:opacity-90">Tester le moteur social</button></form>
       </section>
-
       {success ? (
         <section className="mt-5 rounded-xl border border-accent-teal/30 bg-accent-teal/10 p-5">
           <p className="text-xs font-semibold uppercase tracking-wider text-accent-teal">Test réussi</p>
@@ -140,7 +140,6 @@ export default async function SocialPayrollTestPage({ searchParams }: { searchPa
           <p className="mt-4 text-xs text-ink-faint">Ces montants sont un résultat de vérification technique. Ils ne sont pas enregistrés comme calcul de paie.</p>
         </section>
       ) : null}
-
       {error ? (
         <section className="mt-5 rounded-xl border border-accent-amber/30 bg-accent-amber/10 p-5" role="alert">
           <p className="text-xs font-semibold uppercase tracking-wider text-accent-amber">Test bloqué</p>

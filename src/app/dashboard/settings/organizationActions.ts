@@ -9,54 +9,44 @@ import { getCurrentMembership } from "@/lib/auth";
 const LEGAL_CATEGORIES = ["EI", "SARL", "SAS", "SELARL", "SELAS", "association", "autre"] as const;
 
 function setOrganizationSavedCookie() {
-  cookies().set("rhpilot-organization-saved", "1", {
-    path: "/dashboard/configuration/organisation",
-    maxAge: 10,
-    httpOnly: true,
-    sameSite: "lax",
-  });
+  cookies().set("rhpilot-organization-saved", "1", { path: "/dashboard/configuration/organisation", maxAge: 10, httpOnly: true, sameSite: "lax" });
 }
 
 export async function updateOrganizationSettings(formData: FormData) {
   const membership = await getCurrentMembership();
   if (!membership) throw new Error("Non authentifié ou aucune organisation active");
-
   const rawFunctionalRole = String(formData.get("functionalRole") ?? "");
   const functionalRole = rawFunctionalRole === "RH" || rawFunctionalRole === "DIRIGEANT" ? rawFunctionalRole : null;
-
   const canEditOrganization = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
 
   if (canEditOrganization) {
     const legalCategoryRaw = String(formData.get("legalCategory") ?? "").trim();
     const legalCategory = legalCategoryRaw === "" ? null : legalCategoryRaw;
-    if (legalCategory !== null && !LEGAL_CATEGORIES.includes(legalCategory as (typeof LEGAL_CATEGORIES)[number])) {
-      throw new Error("Forme juridique invalide.");
-    }
+    if (legalCategory !== null && !LEGAL_CATEGORIES.includes(legalCategory as (typeof LEGAL_CATEGORIES)[number])) throw new Error("Forme juridique invalide.");
+
+    const companyCreationDateRaw = String(formData.get("companyCreationDate") ?? "").trim();
+    const companyCreationDate = companyCreationDateRaw === "" ? null : new Date(`${companyCreationDateRaw}T00:00:00.000Z`);
+    if (companyCreationDate !== null && Number.isNaN(companyCreationDate.getTime())) throw new Error("La date de création de l'entreprise est invalide.");
+    if (companyCreationDate !== null && companyCreationDate > new Date()) throw new Error("La date de création de l'entreprise ne peut pas être dans le futur.");
 
     const atmpRateRaw = String(formData.get("atmpRate") ?? "").trim().replace(",", ".");
     const atmpRate = atmpRateRaw === "" ? null : Number(atmpRateRaw);
-    if (atmpRate !== null && (!Number.isFinite(atmpRate) || atmpRate < 0 || atmpRate > 100)) {
-      throw new Error("Le taux AT/MP doit être compris entre 0 et 100 %.");
-    }
+    if (atmpRate !== null && (!Number.isFinite(atmpRate) || atmpRate < 0 || atmpRate > 100)) throw new Error("Le taux AT/MP doit être compris entre 0 et 100 %.");
 
     const healthPlanMonthlyAmountRaw = String(formData.get("healthPlanMonthlyAmount") ?? "").trim().replace(",", ".");
     const healthPlanEmployerRateRaw = String(formData.get("healthPlanEmployerRate") ?? "").trim().replace(",", ".");
     const healthPlanMonthlyAmount = healthPlanMonthlyAmountRaw === "" ? null : Number(healthPlanMonthlyAmountRaw);
     const healthPlanEmployerRate = healthPlanEmployerRateRaw === "" ? null : Number(healthPlanEmployerRateRaw);
+    if (healthPlanMonthlyAmount !== null && (!Number.isFinite(healthPlanMonthlyAmount) || healthPlanMonthlyAmount <= 0 || healthPlanMonthlyAmount > 10000)) throw new Error("Le montant mensuel de la complémentaire santé doit être supérieur à 0 €.");
+    if (healthPlanEmployerRate !== null && (!Number.isFinite(healthPlanEmployerRate) || healthPlanEmployerRate < 50 || healthPlanEmployerRate > 100)) throw new Error("La part employeur de la complémentaire santé doit être comprise entre 50 % et 100 %.");
 
-    if (healthPlanMonthlyAmount !== null && (!Number.isFinite(healthPlanMonthlyAmount) || healthPlanMonthlyAmount <= 0 || healthPlanMonthlyAmount > 10000)) {
-      throw new Error("Le montant mensuel de la complémentaire santé doit être supérieur à 0 €.");
-    }
-    if (healthPlanEmployerRate !== null && (!Number.isFinite(healthPlanEmployerRate) || healthPlanEmployerRate < 50 || healthPlanEmployerRate > 100)) {
-      throw new Error("La part employeur de la complémentaire santé doit être comprise entre 50 % et 100 %.");
-    }
-
+    const payrollDepartment = String(formData.get("payrollDepartment") ?? "").trim();
     const conventionCollective = String(formData.get("conventionCollective") ?? "").trim();
 
     await prisma.$transaction(async (tx) => {
       await tx.membership.update({ where: { id: membership.id }, data: { functionalRole } });
       await tx.organization.update({ where: { id: membership.organizationId }, data: { conventionCollective: conventionCollective || null } });
-      await tx.$executeRaw`UPDATE "organizations" SET "legalCategory" = ${legalCategory}, "atmpRate" = ${atmpRate}, "healthPlanMonthlyAmount" = ${healthPlanMonthlyAmount}, "healthPlanEmployerRate" = ${healthPlanEmployerRate} WHERE "id" = ${membership.organizationId}`;
+      await tx.$executeRaw`UPDATE "organizations" SET "legalCategory" = ${legalCategory}, "companyCreationDate" = ${companyCreationDate}, "atmpRate" = ${atmpRate}, "payrollDepartment" = ${payrollDepartment || null}, "healthPlanMonthlyAmount" = ${healthPlanMonthlyAmount}, "healthPlanEmployerRate" = ${healthPlanEmployerRate} WHERE "id" = ${membership.organizationId}`;
     });
   } else {
     await prisma.membership.update({ where: { id: membership.id }, data: { functionalRole } });
@@ -112,7 +102,7 @@ export async function updateAtmpRate(formData: FormData) {
   if (membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN") throw new Error("Seuls les propriétaires et administrateurs peuvent modifier ce réglage.");
   const raw = String(formData.get("atmpRate") ?? "").trim().replace(",", ".");
   const value = raw === "" ? null : Number(raw);
-  if (value !== null && (!Number.isFinite(value) || value < 0 || value > 100)) throw new Error("Le taux AT/MP doit être compris entre 0 et 100 %." );
+  if (value !== null && (!Number.isFinite(value) || value < 0 || value > 100)) throw new Error("Le taux AT/MP doit être compris entre 0 et 100 %.");
   await prisma.$executeRaw`UPDATE "organizations" SET "atmpRate" = ${value} WHERE "id" = ${membership.organizationId}`;
   revalidatePath("/dashboard/configuration"); revalidatePath("/dashboard/configuration/organisation"); revalidatePath("/dashboard/payroll");
   setOrganizationSavedCookie();
