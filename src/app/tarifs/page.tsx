@@ -91,6 +91,12 @@ export default function TarifsPage() {
                 </div>
                 <div className="flex items-start gap-2.5">
                   <Dot color="bg-brand-primary" />
+                  <span>
+                    Paie — nouveau module, déployé progressivement
+                  </span>
+                </div>
+                <div className="flex items-start gap-2.5">
+                  <Dot color="bg-brand-primary" />
                   <span>Copilote IA inclus, gratuit pendant toute la bêta</span>
                 </div>
                 <div className="flex items-start gap-2.5">
@@ -140,7 +146,8 @@ export default function TarifsPage() {
         <Reveal>
           <p className="text-sm text-ink-faint">
             RH Pilot est en bêta. Le Copilote IA reste gratuit pour tout le monde tant que la bêta
-            dure, quel que soit le palier choisi.
+            dure, quel que soit le palier choisi. Le module Paie est en cours de construction et
+            se déploie progressivement, fonctionnalité par fonctionnalité.
           </p>
         </Reveal>
       </section>

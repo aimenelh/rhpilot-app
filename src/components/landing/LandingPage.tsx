@@ -442,6 +442,26 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* Teaser Paie, honnête sur son statut -- ne prétend jamais que
+          le module est terminé ou conforme, juste qu'il existe et se
+          construit. Séparé de la section "trois choses" ci-dessus,
+          qui reste volontairement à trois éléments quotidiens ; la
+          paie est un processus mensuel, pas de la même famille. */}
+      <section className="mx-auto max-w-3xl px-6 pb-16 text-center">
+        <Reveal>
+          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">
+            Bientôt
+          </p>
+          <h2 className="mt-3 text-2xl font-semibold text-ink">
+            La paie, intégrée à RH Pilot
+          </h2>
+          <p className="mx-auto mt-3 max-w-xl text-sm text-ink-soft">
+            Un module de paie pensé pour s&apos;appuyer sur les mêmes données que le reste de RH
+            Pilot, en cours de construction et déployé progressivement sur le palier Pro.
+          </p>
+        </Reveal>
+      </section>
+
       <section className="relative overflow-visible bg-ink py-16">
         {/* Personnage posé sur le bord supérieur de la section, jambes
             dans le vide, comme celui du hero sur le tableau de bord.
