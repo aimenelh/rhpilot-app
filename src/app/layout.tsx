@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Space_Grotesk } from "next/font/google";
+import { Inter, Space_Grotesk, Caveat } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { frFR } from "@clerk/localizations";
 import { Analytics } from "@vercel/analytics/next";
@@ -27,6 +27,13 @@ const spaceGrotesk = Space_Grotesk({
   weight: ["600", "700"],
   display: "swap",
   variable: "--font-heading",
+});
+
+const caveat = Caveat({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  display: "swap",
+  variable: "--font-handwriting",
 });
 
 export const viewport: Viewport = {
@@ -90,7 +97,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider localization={frFR as any} appearance={clerkAppearance}>
-      <html lang="fr" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+      <html lang="fr" className={`${inter.variable} ${spaceGrotesk.variable} ${caveat.variable}`}>
         <body className={`${inter.className} antialiased`}>
           {children}
           <Analytics />
