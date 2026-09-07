@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { X } from "lucide-react";
 
-// Un message différent par jour, pas par visite -- évite l'effet
-// "loterie" à chaque rechargement. Simple modulo sur le jour de
-// l'année, pas besoin de logique côté serveur pour ça.
+// Un message différent à chaque arrivée sur une page marketing, pas
+// un seul message figé toute la journée -- sinon la rotation ne se
+// voit jamais en pratique pour un même visiteur qui navigue le site.
 const ANNOUNCEMENTS = [
   {
     text: "Le module Paie arrive sur RH Pilot, disponible sur le palier Pro.",
@@ -37,13 +37,11 @@ export function AnnouncementBar() {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
-    const dayOfYear = Math.floor(Date.now() / 86400000);
-    const todayIndex = dayOfYear % ANNOUNCEMENTS.length;
-    setIndex(todayIndex);
+    const randomIndex = Math.floor(Math.random() * ANNOUNCEMENTS.length);
+    setIndex(randomIndex);
 
     try {
-      const stored = sessionStorage.getItem(STORAGE_KEY);
-      setDismissed(stored === String(todayIndex));
+      setDismissed(sessionStorage.getItem(STORAGE_KEY) === "1");
     } catch {
       setDismissed(false);
     }
@@ -56,7 +54,7 @@ export function AnnouncementBar() {
   function handleDismiss() {
     setDismissed(true);
     try {
-      sessionStorage.setItem(STORAGE_KEY, String(index));
+      sessionStorage.setItem(STORAGE_KEY, "1");
     } catch {
       // Stockage indisponible : on masque quand même pour cette page,
       // rien de grave si ça réapparaît à la prochaine navigation.
