@@ -93,9 +93,7 @@ export default function SecurityPage() {
 
       {/* Hero sécurité */}
       <section className="relative overflow-hidden bg-ink py-16 sm:py-20">
-        <div className="absolute inset-0 opacity-25" aria-hidden="true">
-          <AmbientNetwork />
-        </div>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_45%,rgba(240,72,49,0.16),transparent_34%)]" aria-hidden="true" />
         <div className="relative mx-auto grid max-w-5xl items-center gap-10 px-6 sm:grid-cols-[1fr_0.95fr] sm:gap-12">
           <div className="relative z-10">
             <Reveal variant="left">
