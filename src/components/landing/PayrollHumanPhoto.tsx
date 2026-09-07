@@ -1,37 +1,102 @@
 "use client";
 
-import { ExternalLink } from "lucide-react";
 import { usePathname } from "next/navigation";
 
 const PHOTOS = [
   {
-    matches: ["/production", "/bulletin-de-paie", "/montant-net-social", "/complementaire-sante"],
-    src: "https://images.unsplash.com/photo-1590650153855-d9e808231d41?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=60&w=3000",
+    matches: ["/production"],
+    src: "https://images.unsplash.com/photo-1590650153855-d9e808231d41?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=2400",
     alt: "Professionnelle en tenue corail travaillant dans un bureau avec un ordinateur portable",
-    label: "Le travail RH, en vrai",
-    detail: "Une présence humaine au milieu des outils : RH Pilot accompagne les personnes qui préparent et contrôlent la paie.",
-    credit: "LinkedIn Sales Solutions",
-    href: "https://unsplash.com/photos/woman-in-orange-long-sleeve-shirt-sitting-beside-table-with-macbook-pro-QgYvORVDdd8?utm_source=rh_pilot&utm_medium=referral",
+    label: "Produire la paie, au quotidien",
+    detail: "Une production de paie fiable reste un travail humain : contrôler, arbitrer, puis valider chaque période.",
     position: "center",
   },
   {
-    matches: ["/variables", "/profil-paie", "/tracabilite-calcul", "/contexte-employeur"],
-    src: "https://images.unsplash.com/photo-1758518730327-98070967caab?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=60&w=3000",
-    alt: "Professionnels réunis autour d'un document dans un bureau moderne",
-    label: "Des équipes, pas des abstractions",
-    detail: "Les données de paie sont toujours liées à des situations, des échanges et des décisions humaines.",
-    credit: "Vitaly Gariev",
-    href: "https://unsplash.com/photos/woman-in-suit-shows-document-to-man-2AOIg7Qvu8w?utm_source=rh_pilot&utm_medium=referral",
+    matches: ["/variables"],
+    src: "https://images.unsplash.com/photo-1573878586940-330328d3cbeb?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=2400",
+    alt: "Professionnelle travaillant sur un ordinateur dans un bureau lumineux",
+    label: "Les variables font la différence",
+    detail: "Primes, absences, avantages ou changements : chaque variable modifie la paie et mérite son propre contrôle.",
     position: "center",
   },
   {
-    matches: ["/conges-absences", "/referentiel-conventionnel", "/arrets-travail", "/cotisations-sociales"],
-    src: "https://images.unsplash.com/photo-1590650153855-d9e808231d41?auto=format&fit=crop&fm=jpg&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&ixlib=rb-4.1.0&q=60&w=3000",
-    alt: "Professionnelle en tenue corail travaillant dans un bureau avec un ordinateur portable",
-    label: "Le contexte autour du calcul",
-    detail: "Convention, période, entreprise, salarié : la paie prend son sens quand on regarde l'ensemble du contexte.",
-    credit: "LinkedIn Sales Solutions",
-    href: "https://unsplash.com/photos/woman-in-orange-long-sleeve-shirt-sitting-beside-table-with-macbook-pro-QgYvORVDdd8?utm_source=rh_pilot&utm_medium=referral",
+    matches: ["/conges-absences"],
+    src: "https://images.unsplash.com/photo-1530971013997-e06bb52a2372?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=2400",
+    alt: "Deux personnes travaillant autour d'une table avec des documents et un ordinateur",
+    label: "Le contexte salarié",
+    detail: "Une absence n'est jamais une simple ligne : son origine, sa période et son traitement doivent être compris avant le calcul.",
+    position: "center",
+  },
+  {
+    matches: ["/arrets-travail"],
+    src: "https://images.unsplash.com/photo-1758520144417-e1c432042dec?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=2400",
+    alt: "Professionnelle assise dans un bureau avec un document entre les mains",
+    label: "Une situation à traiter avec précision",
+    detail: "Les arrêts de travail demandent une lecture attentive du dossier, de la période et du traitement applicable.",
+    position: "center",
+  },
+  {
+    matches: ["/referentiel-conventionnel"],
+    src: "https://images.unsplash.com/photo-1521791055366-0d553872125f?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=2400",
+    alt: "Main tenant un stylo au-dessus d'un document professionnel",
+    label: "Le cadre avant le calcul",
+    detail: "Convention collective, statut et règles applicables donnent le cadre dans lequel chaque bulletin doit être construit.",
+    position: "center",
+  },
+  {
+    matches: ["/complementaire-sante"],
+    src: "https://images.unsplash.com/photo-1551836022-d5d88e9218df?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=2400",
+    alt: "Équipe réunie autour d'une table en réunion",
+    label: "La protection sociale, côté humain",
+    detail: "La complémentaire santé traduit une règle collective en éléments concrets qui apparaissent sur la paie du salarié.",
+    position: "center",
+  },
+  {
+    matches: ["/cotisations-sociales"],
+    src: "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=2400",
+    alt: "Professionnels échangeant autour d'une table dans un bureau",
+    label: "Comprendre ce qui finance quoi",
+    detail: "Les cotisations sociales prennent leur sens quand on relie les montants calculés aux protections qu'elles financent.",
+    position: "center",
+  },
+  {
+    matches: ["/montant-net-social"],
+    src: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=2400",
+    alt: "Équipe en réunion dans un environnement de travail moderne",
+    label: "Un montant lisible pour le salarié",
+    detail: "Le montant net social est avant tout une information à expliquer clairement, sans perdre le lien avec le bulletin.",
+    position: "center",
+  },
+  {
+    matches: ["/bulletin-de-paie"],
+    src: "https://images.unsplash.com/photo-1758873271949-742d6648b6b0?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=2400",
+    alt: "Professionnelle travaillant sur un ordinateur dans un espace de travail partagé",
+    label: "Le bulletin, résultat du travail",
+    detail: "Un bulletin de paie rassemble une multitude de données qui doivent rester cohérentes, vérifiables et compréhensibles.",
+    position: "center",
+  },
+  {
+    matches: ["/tracabilite-calcul"],
+    src: "https://images.unsplash.com/photo-1530971013997-e06bb52a2372?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=2400",
+    alt: "Personne prenant des notes avec un ordinateur portable pendant une réunion",
+    label: "Pouvoir expliquer le résultat",
+    detail: "La traçabilité permet de revenir sur les données, les règles et les étapes qui ont conduit au montant final.",
+    position: "center",
+  },
+  {
+    matches: ["/profil-paie"],
+    src: "https://images.unsplash.com/photo-1758876021772-2684360dfc97?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=2400",
+    alt: "Professionnelle travaillant sur un ordinateur dans un bureau avec des notes de travail",
+    label: "Un profil qui ressemble à la réalité",
+    detail: "Chaque salarié a un contexte propre : contrat, statut, protection sociale, ancienneté et paramètres de paie.",
+    position: "center",
+  },
+  {
+    matches: ["/contexte-employeur"],
+    src: "https://images.unsplash.com/photo-1770048532712-4fde5ef7eb90?auto=format&fit=crop&fm=jpg&ixlib=rb-4.1.0&q=80&w=2400",
+    alt: "Professionnel travaillant seul dans une salle de réunion vitrée",
+    label: "Le contexte employeur compte",
+    detail: "Effectif, établissement, date de création et paramètres collectifs influencent directement la paie produite.",
     position: "center",
   },
 ];
@@ -72,19 +137,6 @@ export function PayrollHumanPhoto() {
               </div>
             </div>
           </div>
-
-          <figcaption className="mt-3 flex flex-col gap-1.5 text-xs text-ink-faint sm:flex-row sm:items-center sm:justify-between">
-            <span>Photo par {photo.credit} sur Unsplash</span>
-            <a
-              href={photo.href}
-              target="_blank"
-              rel="noreferrer"
-              className="inline-flex items-center gap-1.5 font-medium text-ink-soft transition-colors hover:text-brand-primary"
-            >
-              Voir la photo sur Unsplash
-              <ExternalLink size={13} aria-hidden="true" />
-            </a>
-          </figcaption>
         </figure>
       </div>
     </section>
