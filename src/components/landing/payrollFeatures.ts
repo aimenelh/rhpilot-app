@@ -1,0 +1,100 @@
+import type { PayrollFeature } from "@/components/landing/PayrollFeaturePage";
+
+const COMMON_DETAILS = [
+  "Calcul social fondé sur le modèle Publicodes utilisé par le projet Mon-entreprise.",
+  "Règles et modèle conservés avec le calcul pour garder une trace de la version utilisée.",
+  "Aucun taux social n’est inventé lorsqu’une donnée réglementaire manque.",
+];
+
+export const PAYROLL_FEATURES: Record<string, PayrollFeature> = {
+  production: {
+    eyebrow: "Gestion de la paie · Production",
+    title: "Préparez, contrôlez et validez chaque période de paie.",
+    intro: "RH Pilot rassemble les données utiles au traitement de la paie et vous accompagne jusqu’au contrôle du résultat. Le calcul est séparé de l’explication : les règles calculent, l’interface vous permet de vérifier.",
+    image: "/illustrations/illu-checklist.png",
+    imageAlt: "Illustration d’une checklist RH",
+    points: [
+      { title: "Un dossier salarié exploitable", text: "Les informations nécessaires au traitement sont regroupées au même endroit, avec les paramètres du salarié et de l’entreprise." },
+      { title: "Un calcul contrôlable", text: "Le résultat de paie reste lisible : brut, cotisations, net avant impôt, prélèvement à la source et net payé sont distingués." },
+      { title: "Une validation avant édition", text: "La période passe par des étapes de calcul, de revue puis de validation avant de préparer les bulletins." },
+    ],
+    workflowTitle: "Du dossier salarié au résultat de paie",
+    workflow: [
+      { label: "Préparer", text: "RH Pilot vérifie les informations indispensables au calcul et fait remonter les éléments manquants." },
+      { label: "Calculer", text: "Le moteur applique les règles sociales disponibles pour produire le résultat de la période." },
+      { label: "Contrôler", text: "Les montants sont présentés avec leur source et leur version afin de faciliter la revue." },
+      { label: "Valider", text: "Une fois la période revue, elle peut être validée puis utilisée pour la préparation des bulletins." },
+    ],
+    detailsTitle: "Fiabilité",
+    details: COMMON_DETAILS,
+    note: "RH Pilot ne cherche pas à masquer la complexité de la paie derrière un chiffre unique. Le calcul reste rattaché au moteur social et aux paramètres qui ont servi à produire le résultat.",
+  },
+  variables: {
+    eyebrow: "Gestion de la paie · Variables",
+    title: "Les éléments du mois réunis au même endroit.",
+    intro: "Primes, heures, absences ou autres éléments variables doivent être saisis au bon moment et rattachés au bon salarié. RH Pilot prépare ces données pour qu’elles puissent être contrôlées avant le calcul.",
+    image: "/illustrations/illu-notification.png",
+    imageAlt: "Illustration de notifications RH",
+    imagePosition: "left",
+    points: [
+      { title: "Saisir les éléments du mois", text: "Les variables sont rattachées à la période de paie concernée et au salarié concerné." },
+      { title: "Repérer ce qui manque", text: "Le cycle de préparation doit permettre de voir les informations encore nécessaires avant de lancer le calcul." },
+      { title: "Contrôler avant le calcul", text: "Les éléments saisis sont visibles dans le contexte de la période pour faciliter la vérification." },
+    ],
+    workflowTitle: "Une variable suit le même chemin que la période",
+    workflow: [
+      { label: "Collecter", text: "Les données du mois sont saisies à partir des informations connues dans l’entreprise." },
+      { label: "Rattacher", text: "Chaque élément est associé à un salarié et à une période déterminée." },
+      { label: "Vérifier", text: "La revue permet de repérer une donnée incohérente ou manquante avant le calcul." },
+      { label: "Prendre en compte", text: "Une fois validées, les variables alimentent le traitement de la période de paie." },
+    ],
+    detailsTitle: "Traçabilité",
+    details: COMMON_DETAILS,
+    note: "Une paie fiable commence par des données correctement préparées. RH Pilot privilégie donc une chaîne de saisie et de contrôle claire plutôt qu’une automatisation invisible.",
+  },
+  absences: {
+    eyebrow: "Gestion de la paie · Congés & absences",
+    title: "Les absences validées sont prises en compte dans la paie.",
+    intro: "Congés, absences et événements associés peuvent modifier les éléments d’une période de paie. RH Pilot relie la gestion de l’absence à son traitement paie lorsqu’une règle applicable est disponible.",
+    image: "/illustrations/illu-calendrier.png",
+    imageAlt: "Illustration d’un calendrier RH",
+    points: [
+      { title: "Une même information, deux usages", text: "L’absence reste visible dans son contexte RH tout en pouvant alimenter la préparation de la paie." },
+      { title: "Les règles applicables comptent", text: "Le traitement dépend notamment du type d’absence et des règles collectives ou réglementaires applicables au dossier." },
+      { title: "Pas de formule inventée", text: "Lorsqu’un traitement n’est pas suffisamment défini ou pris en charge, RH Pilot bloque plutôt que d’estimer." },
+    ],
+    workflowTitle: "De l’absence enregistrée à son impact paie",
+    workflow: [
+      { label: "Enregistrer", text: "L’événement est rattaché au salarié et à la période concernée." },
+      { label: "Qualifier", text: "Le type d’absence et les informations disponibles servent à rechercher le traitement applicable." },
+      { label: "Calculer", text: "Lorsqu’une règle valide est disponible, son impact est intégré au résultat de la période." },
+      { label: "Contrôler", text: "Le traitement reste visible dans le contexte de paie pour faciliter la revue humaine." },
+    ],
+    detailsTitle: "Cadre de calcul",
+    details: COMMON_DETAILS,
+    note: "Les règles d’absence peuvent dépendre de la situation du salarié et de son environnement collectif. RH Pilot préfère signaler une donnée insuffisante plutôt que générer un montant présenté comme certain.",
+  },
+  arrets: {
+    eyebrow: "Gestion de la paie · Arrêts de travail",
+    title: "Du signalement à la prise en compte dans le traitement de la paie.",
+    intro: "Un arrêt de travail demande de relier un événement RH à la période de paie, aux justificatifs disponibles et aux règles applicables. RH Pilot structure ce passage pour éviter les traitements isolés.",
+    image: "/illustrations/illu-walk-2.png",
+    imageAlt: "Illustration d’une situation de travail entre collaborateurs",
+    imagePosition: "left",
+    points: [
+      { title: "Le dossier reste centralisé", text: "L’événement, sa période et les informations utiles sont rattachés au salarié concerné." },
+      { title: "Le traitement est conditionné aux données", text: "Les éléments nécessaires à un calcul doivent être présents avant d’appliquer une règle de traitement." },
+      { title: "Le contrôle garde sa place", text: "Les impacts visibles dans la période peuvent être vérifiés avant la validation de la paie." },
+    ],
+    workflowTitle: "Un arrêt ne devient pas une ligne isolée",
+    workflow: [
+      { label: "Signaler", text: "L’arrêt est enregistré dans le dossier du salarié avec les dates connues." },
+      { label: "Compléter", text: "Les informations et justificatifs utiles au traitement sont réunis avant le calcul." },
+      { label: "Traiter", text: "Le moteur applique le traitement disponible pour la situation concernée." },
+      { label: "Revoir", text: "L’impact sur la période est présenté pour permettre une vérification avant validation." },
+    ],
+    detailsTitle: "Prudence sur les situations particulières",
+    details: COMMON_DETAILS,
+    note: "Les arrêts de travail peuvent entraîner des traitements différents selon la situation du salarié et les règles applicables. RH Pilot ne transforme pas une situation incomplète en résultat approximatif.",
+  },
+};
