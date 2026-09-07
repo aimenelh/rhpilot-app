@@ -9,6 +9,8 @@ const DATE_RULE = "date";
 const CONTRACT_RULE = "salarié . contrat";
 const HIRE_DATE_RULE = "salarié . contrat . date d'embauche";
 const EXECUTIVE_STATUS_RULE = "salarié . contrat . statut cadre";
+const HEALTH_PLAN_RULE = "salarié . cotisations . prévoyances . santé . prévoyance complémentaire santé (mutuelle)";
+const HEALTH_EMPLOYER_RATE_RULE = "salarié . cotisations . prévoyances . santé . taux employeur";
 const NET_BEFORE_TAX_RULE = "salarié . rémunération . net . à payer avant impôt";
 const EMPLOYEE_CONTRIBUTIONS_RULE = "salarié . cotisations . salarié";
 const EMPLOYER_CONTRIBUTIONS_RULE = "salarié . cotisations . employeur";
@@ -69,9 +71,9 @@ function assertNoMissingVariables(evaluation: ReturnType<Engine["evaluate"]>, la
 
 /**
  * Point d'entrée unique vers le modèle social officiel publié par Mon-entreprise.
- * RH Pilot fournit explicitement la forme juridique, la date de calcul et le
- * contexte contractuel déjà présent dans le dossier salarié. Aucun défaut
- * métier n'est injecté par RH Pilot.
+ * RH Pilot fournit explicitement la forme juridique, la date de calcul, le
+ * contexte contractuel et la complémentaire santé déjà présents dans le dossier.
+ * Aucun défaut métier n'est injecté par RH Pilot.
  */
 export function calculateSocialPayroll(input: {
   grossAmount: number;
@@ -80,6 +82,8 @@ export function calculateSocialPayroll(input: {
   contractType: string;
   hireDate: Date;
   executiveStatus: boolean;
+  healthPlanMonthlyAmount: number;
+  healthPlanEmployerRate: number;
   situation?: SocialPayrollSituation;
 }): SocialPayrollResult {
   if (!Number.isFinite(input.grossAmount) || input.grossAmount < 0) {
@@ -94,6 +98,12 @@ export function calculateSocialPayroll(input: {
   if (typeof input.executiveStatus !== "boolean") {
     throw new Error("Le calcul social est bloqué : le statut cadre est absent ou invalide.");
   }
+  if (!Number.isFinite(input.healthPlanMonthlyAmount) || input.healthPlanMonthlyAmount <= 0) {
+    throw new Error("Le calcul social est bloqué : le montant mensuel de la complémentaire santé est absent ou invalide.");
+  }
+  if (!Number.isFinite(input.healthPlanEmployerRate) || input.healthPlanEmployerRate < 50 || input.healthPlanEmployerRate > 100) {
+    throw new Error("Le calcul social est bloqué : la part employeur de la complémentaire santé doit être comprise entre 50 % et 100 %.");
+  }
 
   const legalCategory = assertLegalCategory(input.legalCategory);
   const contractType = assertContractType(input.contractType);
@@ -105,6 +115,8 @@ export function calculateSocialPayroll(input: {
     [CONTRACT_RULE]: `'${contractType}'`,
     [HIRE_DATE_RULE]: input.hireDate.toISOString().slice(0, 10),
     [EXECUTIVE_STATUS_RULE]: input.executiveStatus ? "oui" : "non",
+    [HEALTH_PLAN_RULE]: `${input.healthPlanMonthlyAmount} €/mois`,
+    [HEALTH_EMPLOYER_RATE_RULE]: `${input.healthPlanEmployerRate}%`,
     ...(input.situation ?? {}),
   });
 

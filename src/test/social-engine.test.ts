@@ -8,6 +8,8 @@ const validContext = {
   contractType: "CDI",
   hireDate: new Date("2024-06-01T12:00:00Z"),
   executiveStatus: false,
+  healthPlanMonthlyAmount: 40,
+  healthPlanEmployerRate: 50,
 };
 
 describe("calculateSocialPayroll — contexte juridique et contractuel", () => {
@@ -56,6 +58,24 @@ describe("calculateSocialPayroll — contexte juridique et contractuel", () => {
     ).toThrow("le statut cadre est absent ou invalide");
   });
 
+  it("bloque si le contexte de complémentaire santé est absent", () => {
+    expect(() =>
+      calculateSocialPayroll({
+        ...validContext,
+        healthPlanMonthlyAmount: undefined as unknown as number,
+      }),
+    ).toThrow("le montant mensuel de la complémentaire santé est absent ou invalide");
+  });
+
+  it("bloque si la part employeur de la complémentaire santé est invalide", () => {
+    expect(() =>
+      calculateSocialPayroll({
+        ...validContext,
+        healthPlanEmployerRate: 49,
+      }),
+    ).toThrow("la part employeur de la complémentaire santé doit être comprise entre 50 % et 100 %");
+  });
+
   it("atteint l'évaluation du modèle social avec le contexte salarié explicite", () => {
     let error: unknown;
     try {
@@ -71,5 +91,7 @@ describe("calculateSocialPayroll — contexte juridique et contractuel", () => {
     expect(message).not.toContain("le type de contrat est absent ou invalide");
     expect(message).not.toContain("la date d'embauche est absente ou invalide");
     expect(message).not.toContain("le statut cadre est absent ou invalide");
+    expect(message).not.toContain("le montant mensuel de la complémentaire santé est absent ou invalide");
+    expect(message).not.toContain("la part employeur de la complémentaire santé doit être comprise entre 50 % et 100 %");
   });
 });
