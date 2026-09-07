@@ -5,6 +5,7 @@ export const SOCIAL_MODEL_VERSION = "11.1.0";
 
 const GROSS_RULE = "salarié . contrat . salaire brut";
 const LEGAL_CATEGORY_RULE = "entreprise . catégorie juridique";
+const DATE_RULE = "date";
 const NET_BEFORE_TAX_RULE = "salarié . rémunération . net . à payer avant impôt";
 const EMPLOYEE_CONTRIBUTIONS_RULE = "salarié . cotisations . salarié";
 const EMPLOYER_CONTRIBUTIONS_RULE = "salarié . cotisations . employeur";
@@ -64,16 +65,21 @@ function assertNoMissingVariables(
  * Point d'entrée unique vers le modèle social officiel publié par Mon-entreprise.
  *
  * RH Pilot fournit explicitement la situation de l'organisation et du salarié.
- * La forme juridique est transmise à Publicodes sans être déduite du nom,
- * du SIRET ou d'une autre donnée indirecte.
+ * La forme juridique et la date de calcul sont transmises à Publicodes sans
+ * être déduites d'une donnée indirecte ou de la date courante du serveur.
  */
 export function calculateSocialPayroll(input: {
   grossAmount: number;
   legalCategory: string;
+  calculationDate: Date;
   situation?: SocialPayrollSituation;
 }): SocialPayrollResult {
   if (!Number.isFinite(input.grossAmount) || input.grossAmount < 0) {
     throw new Error("Le brut doit être un montant positif ou nul.");
+  }
+
+  if (!(input.calculationDate instanceof Date) || Number.isNaN(input.calculationDate.getTime())) {
+    throw new Error("Le calcul social est bloqué : la date de calcul est absente ou invalide.");
   }
 
   const legalCategory = assertLegalCategory(input.legalCategory);
@@ -81,6 +87,7 @@ export function calculateSocialPayroll(input: {
   engine.setSituation({
     [GROSS_RULE]: `${input.grossAmount} €/mois`,
     [LEGAL_CATEGORY_RULE]: `'${legalCategory}'`,
+    [DATE_RULE]: input.calculationDate.toISOString().slice(0, 10),
     ...(input.situation ?? {}),
   });
 

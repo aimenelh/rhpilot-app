@@ -77,17 +77,7 @@ function snapshotForEmployee(input: {
     ruleVersionId: string;
     grossDelta: number;
   }>;
-  absenceGrossImpacts: Array<{
-    absenceId: string;
-    absenceType: string;
-    ruleVersionId: string;
-    basis: string;
-    effect: string;
-    absenceDays: number;
-    grossDelta: number;
-    derivedVariableCode: string;
-    derivedVariableLabel: string;
-  }>;
+  absenceGrossImpacts: Array<{ absenceId: string; absenceType: string; ruleVersionId: string; basis: string; effect: string; absenceDays: number; grossDelta: number; derivedVariableCode: string; derivedVariableLabel: string }>;
   ruleSet: {
     version: string;
     rules: Array<{
@@ -258,7 +248,7 @@ export async function calculatePayrollPeriod(input: {
     ];
     const grossAmount = composeGrossAmount({ baseSalaryAmount, variableTreatments: grossTreatments });
 
-    calculateSocialPayroll({ grossAmount, legalCategory });
+    calculateSocialPayroll({ grossAmount, legalCategory, calculationDate });
 
     const result = calculatePayroll({ grossAmount, variables: [...employeeVariables, ...absenceVariableInputs], ruleSet: rules.ruleSet, withholdingTaxRate: rules.withholdingTaxRate });
 
@@ -293,9 +283,9 @@ export async function calculatePayrollPeriod(input: {
         update: { ruleSetVersion: calculated.result.ruleSetVersion, grossAmount: calculated.result.grossAmount, employeeContributions: calculated.result.employeeContributions, employerContributions: calculated.result.employerContributions, netBeforeTax: calculated.result.netBeforeTax, withholdingTax: calculated.result.withholdingTax, netPaid: calculated.result.netPaid, calculationSnapshot: snapshot },
       });
 
-      await tx.payrollContribution.deleteMany({ where: { calculationId: calculation.id } });
+      await prisma.payrollContribution.deleteMany({ where: { calculationId: calculation.id } });
       if (calculated.result.contributions.length > 0) {
-        await tx.payrollContribution.createMany({ data: calculated.result.contributions.map((contribution) => ({ id: crypto.randomUUID(), calculationId: calculation.id, code: contribution.code, label: contribution.label, side: contribution.side, baseAmount: contribution.baseAmount, rate: contribution.rate, amount: contribution.amount, ruleVersionId: contribution.ruleVersionId })) });
+        await prisma.payrollContribution.createMany({ data: calculated.result.contributions.map((contribution) => ({ id: crypto.randomUUID(), calculationId: calculation.id, code: contribution.code, label: contribution.label, side: contribution.side, baseAmount: contribution.baseAmount, rate: contribution.rate, amount: contribution.amount, ruleVersionId: contribution.ruleVersionId })) });
       }
     }
 
