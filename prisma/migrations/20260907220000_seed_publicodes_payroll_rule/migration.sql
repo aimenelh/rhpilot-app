@@ -12,10 +12,10 @@ INSERT INTO "payroll_rule_versions" (
   "code",
   "version",
   "scope",
-  "valid_from",
-  "valid_until",
-  "source_name",
-  "source_url",
+  "validFrom",
+  "validUntil",
+  "sourceName",
+  "sourceUrl",
   "parameters",
   "status"
 )
