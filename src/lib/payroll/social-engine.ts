@@ -67,16 +67,15 @@ function assertNoMissingVariables(
  * Point d'entrée unique vers le modèle social officiel publié par Mon-entreprise.
  *
  * RH Pilot fournit explicitement la situation de l'organisation et du salarié.
- * La forme juridique, la date de calcul, la date d'embauche et le statut cadre
- * sont transmis à Publicodes sans être déduits d'une donnée indirecte ou de la
- * date courante du serveur.
+ * Les champs salarié optionnels seront rendus obligatoires au moment où le
+ * calculateur les aura effectivement reliés au dossier salarié.
  */
 export function calculateSocialPayroll(input: {
   grossAmount: number;
   legalCategory: string;
   calculationDate: Date;
-  hireDate: Date;
-  executiveStatus: boolean;
+  hireDate?: Date;
+  executiveStatus?: boolean;
   situation?: SocialPayrollSituation;
 }): SocialPayrollResult {
   if (!Number.isFinite(input.grossAmount) || input.grossAmount < 0) {
@@ -87,12 +86,12 @@ export function calculateSocialPayroll(input: {
     throw new Error("Le calcul social est bloqué : la date de calcul est absente ou invalide.");
   }
 
-  if (!(input.hireDate instanceof Date) || Number.isNaN(input.hireDate.getTime())) {
-    throw new Error("Le calcul social est bloqué : la date d'embauche est absente ou invalide.");
+  if (input.hireDate !== undefined && (!(input.hireDate instanceof Date) || Number.isNaN(input.hireDate.getTime()))) {
+    throw new Error("Le calcul social est bloqué : la date d'embauche est invalide.");
   }
 
-  if (typeof input.executiveStatus !== "boolean") {
-    throw new Error("Le calcul social est bloqué : le statut cadre est absent ou invalide.");
+  if (input.executiveStatus !== undefined && typeof input.executiveStatus !== "boolean") {
+    throw new Error("Le calcul social est bloqué : le statut cadre est invalide.");
   }
 
   const legalCategory = assertLegalCategory(input.legalCategory);
@@ -101,8 +100,10 @@ export function calculateSocialPayroll(input: {
     [GROSS_RULE]: `${input.grossAmount} €/mois`,
     [LEGAL_CATEGORY_RULE]: `'${legalCategory}'`,
     [DATE_RULE]: input.calculationDate.toISOString().slice(0, 10),
-    [HIRE_DATE_RULE]: input.hireDate,
-    [EXECUTIVE_STATUS_RULE]: input.executiveStatus ? "'oui'" : "'non'",
+    ...(input.hireDate !== undefined ? { [HIRE_DATE_RULE]: input.hireDate } : {}),
+    ...(input.executiveStatus !== undefined
+      ? { [EXECUTIVE_STATUS_RULE]: input.executiveStatus ? "'oui'" : "'non'" }
+      : {}),
     ...(input.situation ?? {}),
   });
 
