@@ -69,6 +69,12 @@ function assertNoMissingVariables(evaluation: ReturnType<Engine["evaluate"]>, la
   throw new Error(`Le calcul social est bloqué : des données nécessaires manquent pour ${label} : ${missingVariables.join(", ")}.`);
 }
 
+function formatPublicodesDate(value: Date): string {
+  const day = String(value.getUTCDate()).padStart(2, "0");
+  const month = String(value.getUTCMonth() + 1).padStart(2, "0");
+  return `${day}/${month}/${value.getUTCFullYear()}`;
+}
+
 /**
  * Point d'entrée unique vers le modèle social officiel publié par Mon-entreprise.
  * RH Pilot fournit explicitement la forme juridique, la date de calcul, le
@@ -111,9 +117,9 @@ export function calculateSocialPayroll(input: {
   engine.setSituation({
     [GROSS_RULE]: `${input.grossAmount} €/mois`,
     [LEGAL_CATEGORY_RULE]: `'${legalCategory}'`,
-    [DATE_RULE]: input.calculationDate.toISOString().slice(0, 10),
+    [DATE_RULE]: formatPublicodesDate(input.calculationDate),
     [CONTRACT_RULE]: `'${contractType}'`,
-    [HIRE_DATE_RULE]: input.hireDate.toISOString().slice(0, 10),
+    [HIRE_DATE_RULE]: formatPublicodesDate(input.hireDate),
     [EXECUTIVE_STATUS_RULE]: input.executiveStatus ? "oui" : "non",
     [HEALTH_PLAN_RULE]: `${input.healthPlanMonthlyAmount} €/mois`,
     [HEALTH_EMPLOYER_RATE_RULE]: `${input.healthPlanEmployerRate}%`,
