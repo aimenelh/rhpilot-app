@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, useFormState, useFormStatus } from "react-dom";
+import { useEffect, useState } from "react";
+import { useFormState, useFormStatus } from "react-dom";
 import { addPayrollVariable, deletePayrollVariable, type PayrollVariableFormState } from "./periodActions";
 
 const UNITS = [
