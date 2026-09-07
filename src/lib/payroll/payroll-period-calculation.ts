@@ -5,6 +5,7 @@ import { composeGrossAmount, resolvePayrollVariableTreatment } from "./variable-
 import { resolvePayrollRuleSetFromPrisma } from "./payroll-rule-set-prisma";
 import { resolveValidatedAbsencePayrollImpacts, resolveValidatedAbsencesForPayrollPeriod } from "./absence-payroll-impact";
 import { calculateAbsenceGrossImpact } from "./absence-payroll-gross-impact";
+import { resolveCollectiveAgreementAbsenceTreatment } from "./collective-agreement-absence-prisma";
 import { resolveOrganizationLegalCategory } from "./social-organization-context";
 import { calculateSocialPayroll } from "./social-engine";
 import type { PayrollVariableInput } from "./domain";
@@ -91,7 +92,25 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     const employeeVariables = (variablesByEmployee.get(employee.id) ?? []).map(toVariableInput);
     const treatments = employeeVariables.map((variable) => { const treatmentRule = rules.variableTreatments.find((rule) => rule.code === variable.code); if (!treatmentRule) throw new Error(`Aucune règle de traitement validée n'est disponible pour la variable ${variable.code}.`); return resolvePayrollVariableTreatment({ code: variable.code, amount: variable.amount, unit: variable.unit, rule: { code: treatmentRule.code, ruleVersionId: rules.ruleVersionId, grossEffect: treatmentRule.grossEffect, supportedUnits: treatmentRule.supportedUnits } }); });
     const employeeAbsences = absencesByEmployee.get(employee.id) ?? [];
-    const absenceResolutions = resolveValidatedAbsencePayrollImpacts({ absences: employeeAbsences, rules: rules.absenceTreatments });
+    const globalAbsenceResolutions = resolveValidatedAbsencePayrollImpacts({ absences: employeeAbsences, rules: rules.absenceTreatments });
+    const collectiveAbsenceTreatments = await Promise.all(employeeAbsences.map((absence) => resolveCollectiveAgreementAbsenceTreatment({ organizationId: input.organizationId, employeeId: employee.id, periodDate: calculationDate, absenceType: absence.type, fallbackRuleVersionId: rules.ruleVersionId })));
+    const absenceResolutions = employeeAbsences.map((absence, index) => {
+      const collectiveTreatment = collectiveAbsenceTreatments[index];
+      if (collectiveTreatment) {
+        return {
+          status: "RESOLVED" as const,
+          absenceId: absence.absenceId,
+          absenceType: absence.type,
+          calendarDaysInPeriod: absence.calendarDaysInPeriod,
+          ruleVersionId: collectiveTreatment.ruleVersionId,
+          effect: collectiveTreatment.effect,
+          basis: collectiveTreatment.basis,
+          divisor: collectiveTreatment.divisor ?? null,
+          rate: collectiveTreatment.rate ?? null,
+        };
+      }
+      return globalAbsenceResolutions[index];
+    });
     const absenceGrossImpacts = absenceResolutions.map((resolution) => { if (resolution.status === "RULE_REQUIRED") throw new Error(`Aucune règle de traitement validée n'est disponible pour l'absence ${resolution.absenceType}.`); const impact = calculateAbsenceGrossImpact({ baseSalaryAmount, monthlyCalendarDays, absenceDays: resolution.calendarDaysInPeriod, rule: { absenceType: resolution.absenceType, effect: resolution.effect, basis: resolution.basis, ruleVersionId: resolution.ruleVersionId, ...(resolution.divisor !== null ? { divisor: resolution.divisor } : {}), ...(resolution.rate !== null ? { rate: resolution.rate } : {}) } }); if (impact.status !== "RESOLVED") throw new Error(`La base de calcul de l'absence ${resolution.absenceType} n'est pas encore prise en charge.`); return { absenceId: resolution.absenceId, absenceType: resolution.absenceType, ruleVersionId: impact.ruleVersionId, basis: impact.basis, effect: impact.effect, absenceDays: resolution.calendarDaysInPeriod, grossDelta: impact.grossDelta, derivedVariableCode: impact.derivedVariableCode, derivedVariableLabel: impact.derivedVariableLabel }; });
     const absenceVariableInputs = absenceGrossImpacts.map((impact) => toVariableInput({ code: impact.derivedVariableCode, label: impact.derivedVariableLabel, amount: impact.grossDelta, unit: "EUR", source: "SYSTEM" }));
     const grossTreatments = [...treatments, ...absenceGrossImpacts.map((impact) => ({ code: impact.derivedVariableCode, ruleVersionId: impact.ruleVersionId, grossDelta: impact.grossDelta }))];
