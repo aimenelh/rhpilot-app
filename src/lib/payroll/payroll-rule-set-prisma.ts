@@ -68,14 +68,7 @@ function parseParameters(parameters: unknown, ruleVersionId: string): {
       return null;
     }
 
-    rules.push({
-      code,
-      label,
-      side,
-      rate,
-      base,
-      ruleVersionId: candidateRuleVersionId,
-    });
+    rules.push({ code, label, side, rate, base, ruleVersionId: candidateRuleVersionId });
   }
 
   const withholdingTaxRate = value.withholdingTaxRate ?? 0;
@@ -92,7 +85,6 @@ function parseParameters(parameters: unknown, ruleVersionId: string): {
   if (Array.isArray(value.variableTreatments)) {
     for (const candidate of value.variableTreatments) {
       if (!isRecord(candidate)) return null;
-
       const code = typeof candidate.code === "string" ? candidate.code.trim() : "";
       const grossEffect =
         candidate.grossEffect === "ADD_TO_GROSS" ||
@@ -103,7 +95,6 @@ function parseParameters(parameters: unknown, ruleVersionId: string): {
       const supportedUnits = Array.isArray(candidate.supportedUnits)
         ? candidate.supportedUnits.filter((unit): unit is "EUR" => unit === "EUR")
         : [];
-
       if (!code || !grossEffect || supportedUnits.length === 0) return null;
       variableTreatments.push({ code, grossEffect, supportedUnits });
     }
@@ -133,30 +124,27 @@ function parseParameters(parameters: unknown, ruleVersionId: string): {
         typeof candidate.ruleVersionId === "string" && candidate.ruleVersionId.trim()
           ? candidate.ruleVersionId.trim()
           : ruleVersionId;
+      const divisor = candidate.divisor === undefined ? undefined : typeof candidate.divisor === "number" ? candidate.divisor : null;
+      const rate = candidate.rate === undefined ? undefined : typeof candidate.rate === "number" ? candidate.rate : null;
 
-      if (!absenceType || !effect || !basis) return null;
+      if (!absenceType || !effect || !basis || divisor === null || rate === null) return null;
+      if (divisor !== undefined && (!Number.isFinite(divisor) || divisor <= 0)) return null;
+      if (rate !== undefined && (!Number.isFinite(rate) || rate < 0 || rate > 1)) return null;
+
       absenceTreatments.push({
         absenceType,
         effect,
         basis,
         ruleVersionId: candidateRuleVersionId,
+        ...(divisor !== undefined ? { divisor } : {}),
+        ...(rate !== undefined ? { rate } : {}),
       });
     }
   }
 
-  return {
-    ruleSet: { version: ruleVersionId, rules },
-    withholdingTaxRate,
-    variableTreatments,
-    absenceTreatments,
-  };
+  return { ruleSet: { version: ruleVersionId, rules }, withholdingTaxRate, variableTreatments, absenceTreatments };
 }
 
-/**
- * Sélectionne exclusivement une version de règles de paie VALIDATED et
- * applicable à la date demandée. Les paramètres persistés sont validés
- * avant d'être transmis au moteur déterministe.
- */
 export async function resolvePayrollRuleSetFromPrisma(input: {
   code: string;
   scope: string;
