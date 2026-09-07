@@ -3,7 +3,11 @@ import { prisma } from "@/lib/prisma";
 import { calculatePayroll } from "./engine";
 import { composeGrossAmount, resolvePayrollVariableTreatment } from "./variable-treatment";
 import { resolvePayrollRuleSetFromPrisma } from "./payroll-rule-set-prisma";
-import { resolveValidatedAbsencesForPayrollPeriod } from "./absence-payroll-impact";
+import {
+  resolveValidatedAbsencePayrollImpacts,
+  resolveValidatedAbsencesForPayrollPeriod,
+} from "./absence-payroll-impact";
+import { calculateAbsenceGrossImpact } from "./absence-payroll-gross-impact";
 import type { PayrollVariableInput } from "./domain";
 
 export type PayrollPeriodCalculationResult = {
@@ -71,6 +75,17 @@ function snapshotForEmployee(input: {
     ruleVersionId: string;
     grossDelta: number;
   }>;
+  absenceGrossImpacts: Array<{
+    absenceId: string;
+    absenceType: string;
+    ruleVersionId: string;
+    basis: string;
+    effect: string;
+    absenceDays: number;
+    grossDelta: number;
+    derivedVariableCode: string;
+    derivedVariableLabel: string;
+  }>;
   ruleSet: {
     version: string;
     rules: Array<{
@@ -127,6 +142,17 @@ function snapshotForEmployee(input: {
       code: treatment.code,
       ruleVersionId: treatment.ruleVersionId,
       grossDelta: treatment.grossDelta,
+    })),
+    absenceGrossImpacts: input.absenceGrossImpacts.map((impact) => ({
+      absenceId: impact.absenceId,
+      absenceType: impact.absenceType,
+      ruleVersionId: impact.ruleVersionId,
+      basis: impact.basis,
+      effect: impact.effect,
+      absenceDays: impact.absenceDays,
+      grossDelta: impact.grossDelta,
+      derivedVariableCode: impact.derivedVariableCode,
+      derivedVariableLabel: impact.derivedVariableLabel,
     })),
     ruleSet: {
       version: input.ruleSet.version,
@@ -194,6 +220,7 @@ export async function calculatePayrollPeriod(input: {
   }
 
   const { start, end, calculationDate } = periodBounds(period.year, period.month);
+  const monthlyCalendarDays = new Date(Date.UTC(period.year, period.month, 0)).getUTCDate();
   const [employees, profiles, variables, rules, validatedAbsences] = await Promise.all([
     prisma.employee.findMany({
       where: { organizationId: input.organizationId, deletedAt: null },
@@ -276,6 +303,17 @@ export async function calculatePayrollPeriod(input: {
     variables: PayrollVariableInput[];
     treatments: ReturnType<typeof resolvePayrollVariableTreatment>[];
     validatedAbsences: typeof validatedAbsences;
+    absenceGrossImpacts: Array<{
+      absenceId: string;
+      absenceType: string;
+      ruleVersionId: string;
+      basis: string;
+      effect: string;
+      absenceDays: number;
+      grossDelta: number;
+      derivedVariableCode: string;
+      derivedVariableLabel: string;
+    }>;
   }> = [];
 
   for (const employee of employees) {
@@ -304,14 +342,75 @@ export async function calculatePayrollPeriod(input: {
       });
     });
 
+    const employeeAbsences = absencesByEmployee.get(employee.id) ?? [];
+    const absenceResolutions = resolveValidatedAbsencePayrollImpacts({
+      absences: employeeAbsences,
+      rules: rules.absenceTreatments,
+    });
+
+    const absenceGrossImpacts = absenceResolutions.map((resolution) => {
+      if (resolution.status === "RULE_REQUIRED") {
+        throw new Error(`Aucune règle de traitement validée n'est disponible pour l'absence ${resolution.absenceType}.`);
+      }
+
+      const impact = calculateAbsenceGrossImpact({
+        baseSalaryAmount: profile.baseSalaryCents / 100,
+        monthlyCalendarDays,
+        absenceDays: resolution.calendarDaysInPeriod,
+        rule: {
+          absenceType: resolution.absenceType,
+          effect: resolution.effect,
+          basis: resolution.basis,
+          ruleVersionId: resolution.ruleVersionId,
+          ...(resolution.divisor !== null ? { divisor: resolution.divisor } : {}),
+          ...(resolution.rate !== null ? { rate: resolution.rate } : {}),
+        },
+      });
+
+      if (impact.status !== "RESOLVED") {
+        throw new Error(`La base de calcul de l'absence ${resolution.absenceType} n'est pas encore prise en charge.`);
+      }
+
+      return {
+        absenceId: resolution.absenceId,
+        absenceType: resolution.absenceType,
+        ruleVersionId: impact.ruleVersionId,
+        basis: impact.basis,
+        effect: impact.effect,
+        absenceDays: resolution.calendarDaysInPeriod,
+        grossDelta: impact.grossDelta,
+        derivedVariableCode: impact.derivedVariableCode,
+        derivedVariableLabel: impact.derivedVariableLabel,
+      };
+    });
+
+    const absenceVariableInputs = absenceGrossImpacts.map((impact) =>
+      toVariableInput({
+        code: impact.derivedVariableCode,
+        label: impact.derivedVariableLabel,
+        amount: impact.grossDelta,
+        unit: "EUR",
+        source: "SYSTEM",
+      }),
+    );
+
+    const grossTreatments = [
+      ...treatments,
+      ...absenceGrossImpacts.map((impact) => ({
+        code: impact.derivedVariableCode,
+        ruleVersionId: impact.ruleVersionId,
+        grossDelta: impact.grossDelta,
+      })),
+    ];
+
     const grossAmount = composeGrossAmount({
       baseSalaryAmount: profile.baseSalaryCents / 100,
-      variableTreatments: treatments,
+      variableTreatments: grossTreatments,
     });
 
     const result = calculatePayroll({
       grossAmount,
-      variables: employeeVariables,
+      variables: [...employeeVariables, ...absenceVariableInputs],
       ruleSet: rules.ruleSet,
       withholdingTaxRate: rules.withholdingTaxRate,
     });
@@ -332,9 +431,10 @@ export async function calculatePayrollPeriod(input: {
         level: profile.level,
         coefficient: profile.coefficient,
       },
-      variables: employeeVariables,
+      variables: [...employeeVariables, ...absenceVariableInputs],
       treatments,
-      validatedAbsences: absencesByEmployee.get(employee.id) ?? [],
+      validatedAbsences: employeeAbsences,
+      absenceGrossImpacts,
     });
   }
 
@@ -363,6 +463,7 @@ export async function calculatePayrollPeriod(input: {
           payrollImpactStatus: absence.status,
         })),
         variableTreatments: calculated.treatments,
+        absenceGrossImpacts: calculated.absenceGrossImpacts,
         ruleSet: rules.ruleSet,
         ruleSource: rules.source,
         result: calculated.result,
