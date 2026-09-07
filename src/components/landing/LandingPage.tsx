@@ -69,8 +69,6 @@ export function LandingPage() {
           </Reveal>
         </div>
 
-        {/* La vraie capture, montrée en confiance et en grand, avec le
-            Copilote qui déborde du coin plutôt que sagement encadré. */}
         <Reveal variant="up" delay={150}>
           <div className="relative mx-auto mt-8 max-w-5xl px-6 pb-20">
             <div className="overflow-hidden rounded-xl border border-surface-border shadow-2xl">
@@ -105,6 +103,26 @@ export function LandingPage() {
             />
           </div>
         </Reveal>
+
+        <Reveal variant="up" delay={250}>
+          <div className="mx-auto flex max-w-5xl justify-center px-6 pb-10 lg:justify-end">
+            <div
+              aria-hidden
+              className="hero-human-visual relative h-56 w-44 overflow-hidden rounded-2xl border border-surface-border bg-white shadow-xl sm:h-64 sm:w-52"
+              style={{
+                backgroundImage:
+                  "linear-gradient(180deg, rgba(255,255,255,0.03), rgba(15,23,42,0.12)), url(https://images.pexels.com/photos/12662856/pexels-photo-12662856.jpeg?cs=srgb&dl=pexels-shvetsa-12662856.jpg&fm=jpg)",
+                backgroundPosition: "center",
+                backgroundSize: "cover",
+              }}
+            >
+              <div className="absolute inset-x-3 bottom-3 rounded-xl border border-white/40 bg-white/85 px-3 py-2 text-left backdrop-blur-sm">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-brand-primary">RH Pilot</p>
+                <p className="mt-0.5 text-xs font-medium text-ink">Le quotidien RH, en pratique.</p>
+              </div>
+            </div>
+          </div>
+        </Reveal>
       </section>
 
       {/* Démo interactive : capture réelles + faux curseur animé */}
@@ -136,7 +154,6 @@ export function LandingPage() {
           </Reveal>
           <Reveal delay={100}>
             <div className="mt-10 grid grid-cols-1 gap-10 md:grid-cols-3">
-              {/* Parcours collaborateur */}
               <div>
                 <Image src="/illustrations/illu-salut.png" alt="" width={342} height={620} className="h-20 w-auto" />
                 <h3 className="mt-3 text-lg font-semibold text-ink">Suivez chaque étape, de l&apos;arrivée au départ.</h3>
@@ -175,7 +192,6 @@ export function LandingPage() {
                 </Card>
               </div>
 
-              {/* Automatisations */}
               <div>
                 <h3 className="text-lg font-semibold text-ink">Un événement RH, un parcours complet.</h3>
                 <p className="mt-2 text-sm text-ink-soft">
@@ -202,7 +218,6 @@ export function LandingPage() {
                 </div>
               </div>
 
-              {/* Assistant RH */}
               <div>
                 <h3 className="text-lg font-semibold text-ink">Posez vos questions. Obtenez des réponses.</h3>
                 <p className="mt-2 text-sm text-ink-soft">
@@ -244,9 +259,6 @@ export function LandingPage() {
       <section className="relative mx-auto max-w-5xl px-6 py-16">
         <Reveal>
           <div className="grid grid-cols-1 gap-10 sm:grid-cols-5 sm:items-start sm:gap-10">
-            {/* La statistique la plus directement liée à RH Pilot,
-                mise en avant plutôt que noyée dans trois colonnes
-                identiques. */}
             <div className="sm:col-span-2 sm:border-r sm:border-surface-border sm:pr-8">
               <div className="flex items-start justify-between gap-4">
                 <p className="text-6xl font-bold tracking-tight text-ink">272 300</p>
@@ -305,7 +317,6 @@ export function LandingPage() {
           </Reveal>
 
           <div className="mt-14 flex flex-col gap-16">
-            {/* Calendrier */}
             <Reveal>
               <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-5 lg:gap-12">
                 <div className="lg:col-span-2">
@@ -318,187 +329,13 @@ export function LandingPage() {
                     recouper plusieurs vues pour savoir où vous en êtes.
                   </p>
                 </div>
-                <div className="group lg:col-span-3">
-                  <div className="overflow-hidden rounded-xl border border-surface-border bg-white shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl">
-                    <div className="flex items-center gap-1.5 border-b border-surface-border bg-surface-subtle px-3 py-2">
-                      <span className="h-2.5 w-2.5 rounded-full bg-accent-rose/50" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-accent-amber/50" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-accent-teal/50" />
-                    </div>
-                    <Image
-                      src="/marketing/calendar.png"
-                      alt="Calendrier RH Pilot"
-                      width={1882}
-                      height={1036}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-              </div>
-            </Reveal>
-
-            {/* Notifications */}
-            <Reveal delay={100}>
-              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-5 lg:gap-12">
-                <div className="group order-2 lg:order-1 lg:col-span-3">
-                  <div className="overflow-hidden rounded-xl border border-surface-border bg-white shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl">
-                    <div className="flex items-center gap-1.5 border-b border-surface-border bg-surface-subtle px-3 py-2">
-                      <span className="h-2.5 w-2.5 rounded-full bg-accent-rose/50" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-accent-amber/50" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-accent-teal/50" />
-                    </div>
-                    <Image
-                      src="/marketing/notifications.png"
-                      alt="Notifications RH Pilot"
-                      width={1882}
-                      height={1027}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
-                <div className="order-1 lg:order-2 lg:col-span-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-primary">Notifications</p>
-                  <h3 className="mt-2 text-xl font-semibold text-ink">
-                    Qui a été relancé, et quand.
-                  </h3>
-                  <p className="mt-3 text-sm text-ink-soft">
-                    Un historique complet des rappels envoyés, plus jamais besoin de se demander
-                    si quelqu&apos;un a déjà été prévenu.
-                  </p>
-                </div>
-              </div>
-            </Reveal>
-
-            {/* Assistant */}
-            <Reveal delay={200}>
-              <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-5 lg:gap-12">
-                <div className="lg:col-span-2">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-brand-primary">Assistant</p>
-                  <h3 className="mt-2 text-xl font-semibold text-ink">
-                    Une réponse à chaque question, sur chaque écran.
-                  </h3>
-                  <p className="mt-3 text-sm text-ink-soft">
-                    L&apos;assistant vous suit partout dans l&apos;application, avec des
-                    suggestions adaptées à l&apos;écran où vous êtes.
-                  </p>
-                </div>
-                <div className="group flex justify-center lg:col-span-3">
-                  <div className="w-full max-w-sm overflow-hidden rounded-xl border border-surface-border bg-white shadow-lg transition-all duration-300 group-hover:-translate-y-1 group-hover:shadow-2xl">
-                    <Image
-                      src="/marketing/assistant.png"
-                      alt="Assistant RH Pilot"
-                      width={842}
-                      height={675}
-                      className="w-full"
-                    />
-                  </div>
-                </div>
               </div>
             </Reveal>
           </div>
         </div>
       </section>
 
-      <section className="relative py-16">
-        <div className="mx-auto max-w-2xl px-6">
-          <Reveal>
-            <div className="text-center">
-              <h2 className="text-2xl font-semibold text-ink">Ils en parlent</h2>
-              <p className="mt-3 text-sm text-ink-soft">
-                Avant même la première version de RH Pilot, nous avons interrogé des
-                professionnels RH sur les tâches qui leur demandaient le plus de vigilance.
-                Voici ce qu&apos;ils nous ont répondu.
-              </p>
-            </div>
-          </Reveal>
-          <Reveal delay={150}>
-            <div className="mt-8">
-              <TestimonialsCarousel />
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-4xl px-6 py-16">
-        <Reveal variant="left">
-          <h2 className="mt-3 text-2xl font-semibold text-ink">
-            Comment RH Pilot se comporte au quotidien
-          </h2>
-        </Reveal>
-
-        <div className="mt-12 border-t border-surface-border">
-          {BENEFITS.map((benefit, index) => (
-            <Reveal key={benefit.title} variant="left" delay={index * 90}>
-              <div className="border-b border-surface-border py-8 sm:flex sm:items-baseline sm:gap-10">
-                <h3 className="flex items-center gap-2.5 text-lg font-semibold text-ink sm:w-72 sm:shrink-0">
-                  <span aria-hidden className={`h-1.5 w-1.5 shrink-0 rounded-full ${benefit.dot}`} />
-                  {benefit.title}
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-ink-soft sm:mt-0">{benefit.description}</p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      {/* Teaser Paie, honnête sur son statut -- ne prétend jamais que
-          le module est terminé ou conforme, juste qu'il existe et se
-          construit. Séparé de la section "trois choses" ci-dessus,
-          qui reste volontairement à trois éléments quotidiens ; la
-          paie est un processus mensuel, pas de la même famille. */}
-      <section className="mx-auto max-w-3xl px-6 pb-16 text-center">
-        <Reveal>
-          <h2 className="text-2xl font-semibold text-ink">
-            La paie, construite comme le reste de RH Pilot
-          </h2>
-          <p className="mx-auto mt-3 max-w-xl text-sm text-ink-soft">
-            Un moteur qui calcule à partir de règles versionnées et datées, jamais d&apos;estimation.
-            En construction, disponible progressivement sur le palier Pro.
-          </p>
-        </Reveal>
-      </section>
-
-      <section className="relative overflow-visible bg-ink py-16">
-        {/* Personnage posé sur le bord supérieur de la section, jambes
-            dans le vide, comme celui du hero sur le tableau de bord.
-            Position calculée à partir de la maquette fournie : 81 %
-            de l'illustration au-dessus du bord, 19 % retombant dessus,
-            centré avec un léger décalage à droite (+3,6 % de la
-            largeur de la section). */}
-        <style>{`
-          @media (prefers-reduced-motion: no-preference) {
-            @keyframes ctaCopiloteSway {
-              0%, 100% { transform: translateX(-50%) rotate(0deg); }
-              50% { transform: translateX(-50%) rotate(1.2deg); }
-            }
-            .cta-copilote-sway {
-              animation: ctaCopiloteSway 4.5s ease-in-out infinite;
-              transform-origin: 50% 100%;
-            }
-          }
-        `}</style>
-        <Image
-          src="/illustrations/illu-cta-final.png"
-          alt=""
-          width={1319}
-          height={979}
-          className="cta-copilote-sway pointer-events-none absolute left-[58%] top-[-4.7rem] z-10 h-28 w-auto -translate-x-1/2 sm:top-[-7.2rem] sm:h-[170px]"
-        />
-        <Reveal>
-          <div className="relative mx-auto max-w-2xl px-6 text-center">
-            <h2 className="text-2xl font-semibold text-white">
-              Rien n&apos;est encore oublié. Gardons ça comme ça.
-            </h2>
-            <p className="mt-3 text-sm text-white/70">
-              Ajoutez votre premier salarié et commencez à suivre vos échéances RH.
-            </p>
-            <Link href="/sign-up" className="mt-6 inline-block">
-              <Button className="px-6 py-3 text-base">Essayer gratuitement</Button>
-            </Link>
-          </div>
-        </Reveal>
-      </section>
-
+      <TestimonialsCarousel />
       <MarketingFooter />
     </div>
   );
