@@ -1,9 +1,8 @@
 export type PayslipPdfContribution = {
   label: string;
   side: "EMPLOYEE" | "EMPLOYER";
-  baseAmount: number;
-  rate: number;
   amount: number;
+  sourceRule?: string;
 };
 
 export type PayslipPdfInput = {
@@ -153,7 +152,6 @@ function buildContent(input: PayslipPdfInput): string {
   for (const contribution of input.contributions) {
     if (contribution.side !== "EMPLOYEE") continue;
     addText(lines, 40, y, contribution.label);
-    addText(lines, 300, y, `${(contribution.rate * 100).toFixed(4)} %`);
     addText(lines, 450, y, `-${money(contribution.amount)}`);
     y -= 13;
   }
@@ -181,7 +179,6 @@ function buildContent(input: PayslipPdfInput): string {
   for (const contribution of input.contributions) {
     if (contribution.side !== "EMPLOYER") continue;
     addText(lines, 40, y, contribution.label);
-    addText(lines, 300, y, `${(contribution.rate * 100).toFixed(4)} %`);
     addText(lines, 450, y, money(contribution.amount));
     y -= 13;
   }
