@@ -57,8 +57,8 @@ function SourceStrip({ feature }: { feature: PayrollFeature }) {
         <div className="flex flex-col gap-10 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#E8432E]">Références de paie</p>
-            <h2 className="mt-3 text-3xl font-semibold leading-tight sm:text-4xl">Des sources nommées, pas une formule vague.</h2>
-            <p className="mt-4 max-w-xl text-sm leading-6 text-white/70">Le calcul social de RH Pilot est rattaché au modèle Publicodes de Mon-entreprise. Les autres références sont présentées comme des sources réglementaires et administratives utilisées pour cadrer le traitement.</p>
+            <h2 className="mt-3 text-3xl font-semibold leading-tight sm:text-4xl">Références utilisées pour le traitement</h2>
+            <p className="mt-4 max-w-xl text-sm leading-6 text-white/70">Le calcul social de RH Pilot repose sur le modèle Publicodes de Mon-entreprise. Les autres références correspondent aux sources officielles utilisées pour le cadre juridique, réglementaire et administratif du traitement.</p>
           </div>
           <ShieldCheck size={28} className="shrink-0 text-white/80" />
         </div>
@@ -123,7 +123,7 @@ export function PayrollFeaturePage({ feature }: { feature: PayrollFeature }) {
               <Reveal variant="right">
                 <p className="max-w-2xl text-lg leading-8 text-ink-soft">{feature.visualText}</p>
                 <div className="mt-10 border-t border-surface-border pt-8">
-                  <p className="text-sm font-semibold text-ink">Ce que RH Pilot garde avec le calcul</p>
+                  <p className="text-sm font-semibold text-ink">Éléments conservés avec le calcul</p>
                   <div className="mt-6 grid gap-5 sm:grid-cols-2">
                     {feature.details.map((detail) => <div key={detail} className="flex gap-3 text-sm leading-6 text-ink-soft"><Check size={17} className="mt-0.5 shrink-0 text-brand-primary" />{detail}</div>)}
                   </div>
@@ -204,7 +204,7 @@ export function PayrollFeaturePage({ feature }: { feature: PayrollFeature }) {
               <div className="grid gap-12 lg:grid-cols-[1fr_1.3fr]">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">{feature.workflowTitle}</p>
-                  <p className="mt-5 max-w-md text-base leading-7 text-ink-soft">Une variable de paie est utile seulement si l’on sait d’où elle vient, à qui elle appartient et à quelle période elle s’applique.</p>
+                  <p className="mt-5 max-w-md text-base leading-7 text-ink-soft">Les variables sont rattachées à un salarié et à une période avant leur prise en compte dans le calcul de la paie.</p>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                   {feature.workflow.map((step, index) => (
@@ -222,7 +222,7 @@ export function PayrollFeaturePage({ feature }: { feature: PayrollFeature }) {
           <section className="mx-auto max-w-6xl px-6 py-20 sm:py-24">
             <Reveal>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">{feature.detailsTitle}</p>
-              <h2 className="mt-4 max-w-3xl text-3xl font-semibold leading-tight text-ink sm:text-4xl">La donnée d’abord. Le calcul ensuite.</h2>
+              <h2 className="mt-4 max-w-3xl text-3xl font-semibold leading-tight text-ink sm:text-4xl">Données et calcul</h2>
               <div className="mt-10 max-w-3xl space-y-5 border-l-2 border-brand-primary/20 pl-6">
                 {feature.details.map((detail) => <p key={detail} className="text-sm leading-7 text-ink-soft">{detail}</p>)}
               </div>
@@ -266,7 +266,7 @@ export function PayrollFeaturePage({ feature }: { feature: PayrollFeature }) {
           <div className="mx-auto max-w-6xl px-6 py-20 sm:py-24">
             <div className="grid gap-14 lg:grid-cols-[0.55fr_1.45fr]">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">À regarder ensemble</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">{feature.visualKicker}</p>
                 <h2 className="mt-4 text-3xl font-semibold leading-tight text-ink">{feature.visualTitle}</h2>
               </div>
               <div>
@@ -283,7 +283,7 @@ export function PayrollFeaturePage({ feature }: { feature: PayrollFeature }) {
           <div className="grid gap-14 lg:grid-cols-[1fr_1.15fr]">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">{feature.workflowTitle}</p>
-              <h2 className="mt-4 text-3xl font-semibold text-ink">Un traitement qui reste lisible.</h2>
+              <h2 className="mt-4 text-3xl font-semibold text-ink">Traitement de l’événement</h2>
               <p className="mt-5 max-w-md text-base leading-7 text-ink-soft">{feature.note}</p>
             </div>
             <div className="border-t border-surface-border">
@@ -296,7 +296,7 @@ export function PayrollFeaturePage({ feature }: { feature: PayrollFeature }) {
           <div className="mx-auto max-w-6xl px-6 py-20 sm:py-24">
             <div className="max-w-3xl">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">{feature.detailsTitle}</p>
-              <h2 className="mt-4 text-3xl font-semibold text-ink sm:text-4xl">Les règles et les sources doivent rester visibles.</h2>
+              <h2 className="mt-4 text-3xl font-semibold text-ink sm:text-4xl">Références utilisées pour le traitement</h2>
             </div>
             <div className="mt-10"><SourceList feature={feature} /></div>
           </div>
