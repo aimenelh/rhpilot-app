@@ -60,34 +60,37 @@ export default function ResourcesPage() {
       <AmbientNetwork />
       <MarketingHeader />
 
-      <section className="relative overflow-hidden border-b border-surface-border bg-white py-14 sm:py-16">
-        <div className="mx-auto grid max-w-5xl items-center gap-8 px-6 sm:grid-cols-[1fr_1fr] sm:gap-10">
+      <section className="relative min-h-[470px] overflow-hidden border-b border-surface-border bg-white/90 backdrop-blur-[1px]">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_50%,rgba(240,72,49,0.10),transparent_30%)]" aria-hidden="true" />
+        <div className="relative mx-auto grid min-h-[470px] max-w-6xl items-center gap-4 px-6 py-8 sm:grid-cols-[0.98fr_1.02fr] sm:gap-0 sm:px-8">
           <Reveal variant="left">
-            <span className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-primary">
-              Ressources
-            </span>
-            <h1 className="mt-4 max-w-xl text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
-              Ce que le droit du travail dit vraiment, maintenant.
-            </h1>
-            <p className="mt-4 max-w-lg text-lg text-ink-soft">
-              Actualité réglementaire, IA et recrutement, délais légaux. Sourcé, sans jargon inutile.
-            </p>
+            <div className="relative z-10 max-w-xl pb-2">
+              <span className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-primary">
+                Ressources
+              </span>
+              <h1 className="mt-4 max-w-[610px] text-4xl font-semibold leading-[1.04] tracking-[-0.03em] text-ink sm:text-5xl lg:text-[52px]">
+                Ce que le droit du travail dit vraiment, maintenant.
+              </h1>
+              <p className="mt-5 max-w-[520px] text-base leading-relaxed text-ink-soft sm:text-lg">
+                Actualité réglementaire, IA et recrutement, délais légaux. Sourcé, sans jargon inutile.
+              </p>
+            </div>
           </Reveal>
 
           <Reveal delay={120} variant="scale">
-            <div className="relative mx-auto h-[390px] w-full max-w-md sm:h-[430px]">
+            <div className="relative -mr-4 h-[430px] w-[calc(100%+1rem)] sm:-mr-10 sm:h-[455px] sm:w-[calc(100%+2.5rem)]">
               <div
                 aria-hidden="true"
-                className="absolute left-[14%] top-[8%] h-[78%] w-[74%] rotate-[-5deg] rounded-[3rem] bg-brand-primary"
+                className="absolute right-[6%] top-[14%] h-[70%] w-[68%] rotate-[-7deg] rounded-[3.2rem] bg-brand-primary shadow-[0_24px_70px_rgba(240,72,49,0.12)]"
               />
               <div
                 aria-hidden="true"
-                className="absolute right-[8%] bottom-[10%] h-24 w-24 rounded-full bg-[#ffb45c]/45 blur-3xl"
+                className="absolute right-[17%] bottom-[7%] h-28 w-28 rounded-full bg-brand-primary/20 blur-3xl"
               />
               <img
-                src="https://images.pexels.com/photos/9017012/pexels-photo-9017012.jpeg?cs=srgb&dl=pexels-kevin-malik-9017012.jpg&fm=jpg"
-                alt="Portrait souriant d'une femme en tenue noire"
-                className="absolute inset-x-[5%] bottom-0 h-[92%] w-[90%] object-cover object-top mix-blend-multiply"
+                src="https://images.pexels.com/photos/36826291/pexels-photo-36826291.jpeg?auto=compress&cs=tinysrgb&w=1200"
+                alt="Portrait d'une femme souriante en pull noir"
+                className="absolute bottom-0 right-[1%] h-[94%] w-[92%] object-contain object-bottom mix-blend-multiply [filter:brightness(1.12)_contrast(1.04)]"
                 loading="eager"
               />
             </div>
