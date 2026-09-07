@@ -54,7 +54,7 @@ export function calculateAbsenceGrossImpact(input: {
 
   const divisor = input.rule.divisor;
   const rate = input.rule.rate ?? 1;
-  if (!Number.isFinite(divisor) || divisor <= 0 || !Number.isFinite(rate) || rate < 0 || rate > 1) {
+  if (typeof divisor !== "number" || !Number.isFinite(divisor) || divisor <= 0 || !Number.isFinite(rate) || rate < 0 || rate > 1) {
     throw new Error(`La règle ${input.rule.absenceType} possède une base de valorisation invalide.`);
   }
 
