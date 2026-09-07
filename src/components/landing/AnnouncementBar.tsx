@@ -19,8 +19,8 @@ const ANNOUNCEMENTS = [
     cta: "Voir comment",
   },
   {
-    text: "Délai de prévenance en fin de période d'essai : ce qu'il faut savoir.",
-    href: "/ressources/delai-prevenance-periode-essai",
+    text: "IA et recrutement : ce que la CNIL contrôle vraiment en 2026.",
+    href: "/ressources/ia-recrutement-cnil-2026",
     cta: "Lire l'article",
   },
   {

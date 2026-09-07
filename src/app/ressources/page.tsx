@@ -8,10 +8,34 @@ import { Reveal } from "@/components/landing/Reveal";
 export const metadata = {
   title: "Ressources, RH Pilot",
   description:
-    "Guides pratiques sur les obligations RH : délais légaux, échéances à ne pas manquer, et ce que le Code du travail dit vraiment.",
+    "Actualité réglementaire RH, IA et recrutement, délais légaux sourcés : ce qu'une équipe RH doit vraiment savoir, sans jargon inutile.",
 };
 
 const ARTICLES = [
+  {
+    slug: "ia-recrutement-cnil-2026",
+    category: "IA et RH",
+    title: "IA et recrutement : ce que la CNIL va réellement contrôler en 2026",
+    excerpt:
+      "Le recrutement est une priorité de contrôle CNIL en 2026, au moment où l'IA Act classe le tri de CV comme un système à haut risque.",
+    readTime: "5 min",
+  },
+  {
+    slug: "reforme-arrets-travail-2026",
+    category: "Actualité réglementaire",
+    title: "Arrêts de travail : ce qui change réellement au 1er septembre 2026",
+    excerpt:
+      "Un décret plafonne pour la première fois la durée des arrêts de travail prescrits. Ce que ça change pour une équipe RH.",
+    readTime: "5 min",
+  },
+  {
+    slug: "rupture-conventionnelle-chomage-2026",
+    category: "Actualité réglementaire",
+    title: "Rupture conventionnelle : l'indemnisation chômage baisse depuis le 1er septembre 2026",
+    excerpt:
+      "La durée maximale d'indemnisation après une rupture conventionnelle diminue. Ce que ça change dans une négociation.",
+    readTime: "4 min",
+  },
   {
     slug: "delai-prevenance-periode-essai",
     category: "Obligations RH",
@@ -39,10 +63,10 @@ export default function ResourcesPage() {
       <section className="mx-auto max-w-3xl px-6 py-16">
         <Reveal variant="left">
           <h1 className="max-w-xl text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
-            Ce que le Code du travail dit vraiment.
+            Ce que le droit du travail dit vraiment, maintenant.
           </h1>
           <p className="mt-4 max-w-lg text-lg text-ink-soft">
-            Des délais légaux expliqués simplement, sourcés, sans jargon inutile.
+            Actualité réglementaire, IA et recrutement, délais légaux. Sourcé, sans jargon inutile.
           </p>
         </Reveal>
       </section>

@@ -12,8 +12,9 @@ const PRODUCT_LINKS = [
 
 const RESOURCES_LINKS = [
   { href: "/ressources", label: "Tous les articles" },
+  { href: "/ressources/ia-recrutement-cnil-2026", label: "IA et recrutement (CNIL 2026)" },
+  { href: "/ressources/reforme-arrets-travail-2026", label: "Réforme des arrêts de travail" },
   { href: "/ressources/delai-prevenance-periode-essai", label: "Délai de prévenance" },
-  { href: "/ressources/visite-medicale-embauche-delai", label: "Visite médicale d'embauche" },
 ];
 
 const LEGAL_LINKS = [
