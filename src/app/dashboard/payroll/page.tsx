@@ -4,6 +4,13 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentMemberships } from "@/lib/auth";
 
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+const PAYROLL_STATUS_LABELS: Record<string, string> = {
+  DRAFT: "En préparation",
+  CALCULATED: "Calculée",
+  REVIEW: "En contrôle",
+  VALIDATED: "Validée",
+  LOCKED: "Clôturée",
+};
 
 async function createPayrollPeriod(formData: FormData) {
   "use server";
@@ -99,11 +106,11 @@ export default async function PayrollPage() {
       <div className="mt-7 grid gap-4 sm:grid-cols-3">
         <div className="rounded-xl border border-surface-border bg-white p-5"><p className="text-xs text-ink-faint">Salariés actifs</p><p className="mt-2 text-2xl font-semibold text-ink">{employees.length}</p></div>
         <div className="rounded-xl border border-surface-border bg-white p-5"><p className="text-xs text-ink-faint">Profils paie configurés</p><p className="mt-2 text-2xl font-semibold text-ink">{configuredCount}/{employees.length}</p></div>
-        <div className="rounded-xl border border-surface-border bg-white p-5"><p className="text-xs text-ink-faint">Période en cours</p><p className="mt-2 text-2xl font-semibold text-ink">{currentPeriod ? currentPeriod.status : "À ouvrir"}</p></div>
+        <div className="rounded-xl border border-surface-border bg-white p-5"><p className="text-xs text-ink-faint">Période en cours</p><p className="mt-2 text-2xl font-semibold text-ink">{currentPeriod ? (PAYROLL_STATUS_LABELS[currentPeriod.status] ?? currentPeriod.status) : "À ouvrir"}</p></div>
       </div>
 
       <section className="mt-7 rounded-xl border border-surface-border bg-white">
-        <div className="border-b border-surface-border px-5 py-4"><h2 className="font-semibold text-ink">Profils de paie</h2><p className="mt-1 text-xs text-ink-faint">Le salaire est historisé par date d'effet. Une modification ne réécrit pas les périodes déjà verrouillées.</p></div>
+        <div className="border-b border-surface-border px-5 py-4"><h2 className="font-semibold text-ink">Profils de paie</h2><p className="mt-1 text-xs text-ink-faint">Le salaire est historisé par date d'effet. Une modification ne réécrit pas les périodes déjà clôturées.</p></div>
         <div className="divide-y divide-surface-border">
           {employees.length === 0 && <p className="px-5 py-8 text-sm text-ink-soft">Ajoutez d'abord vos salariés pour commencer la configuration paie.</p>}
           {employees.map((employee) => {
@@ -126,13 +133,13 @@ export default async function PayrollPage() {
       </section>
 
       <section className="mt-7 rounded-xl border border-surface-border bg-white">
-        <div className="border-b border-surface-border px-5 py-4"><h2 className="font-semibold text-ink">Périodes de paie</h2><p className="mt-1 text-xs text-ink-faint">Cycle prévu : brouillon → calculée → contrôle → validée → verrouillée.</p></div>
+        <div className="border-b border-surface-border px-5 py-4"><h2 className="font-semibold text-ink">Périodes de paie</h2><p className="mt-1 text-xs text-ink-faint">Cycle prévu : en préparation → calculée → contrôle → validée → clôturée.</p></div>
         <div className="divide-y divide-surface-border">
-          {periods.length === 0 && <p className="px-5 py-8 text-sm text-ink-soft">Aucune période ouverte pour le moment.</p>}
+          {periods.length === 0 && <p className="px-5 py-8 text-sm text-ink-soft">Aucune période de paie ouverte pour le moment.</p>}
           {periods.map((period) => (
             <Link key={period.id} href={`/dashboard/payroll/${period.id}`} className="flex items-center justify-between px-5 py-4 transition-colors hover:bg-surface-subtle/50">
               <div><p className="font-medium text-ink">{MONTHS[period.month - 1]} {period.year}</p><p className="mt-0.5 text-xs text-ink-faint">Ouvrir le détail de la période</p></div>
-              <span className="rounded-full bg-surface-subtle px-3 py-1 text-xs font-semibold text-ink-soft">{period.status}</span>
+              <span className="rounded-full bg-surface-subtle px-3 py-1 text-xs font-semibold text-ink-soft">{PAYROLL_STATUS_LABELS[period.status] ?? period.status}</span>
             </Link>
           ))}
         </div>
