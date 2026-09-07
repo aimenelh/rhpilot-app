@@ -16,6 +16,15 @@ const NET_BEFORE_TAX_RULE = "salarié . rémunération . net . à payer avant im
 const EMPLOYEE_CONTRIBUTIONS_RULE = "salarié . cotisations . salarié";
 const EMPLOYER_CONTRIBUTIONS_RULE = "salarié . cotisations . employeur";
 
+// Valeurs par défaut déclarées par le modèle social officiel.
+// Elles ne constituent pas des règles métier RH Pilot et peuvent être
+// remplacées par une situation explicite fournie par l'application.
+const MODEL_DEFAULT_SITUATION: SocialPayrollSituation = {
+  "salarié . cotisations . exonérations . JEI": "non",
+  "entreprise . salariés . effectif . seuil": "'moins de 5'",
+  "salarié . cotisations . ATMP . taux fonctions support": "non",
+};
+
 export const LEGAL_CATEGORIES = [
   "EI",
   "SARL",
@@ -120,6 +129,7 @@ export function calculateSocialPayroll(input: {
   const contractType = assertContractType(input.contractType);
   const engine = new Engine(socialRules);
   engine.setSituation({
+    ...MODEL_DEFAULT_SITUATION,
     [GROSS_RULE]: `${input.grossAmount} €/mois`,
     [LEGAL_CATEGORY_RULE]: `'${legalCategory}'`,
     [DATE_RULE]: formatPublicodesDate(input.calculationDate),
