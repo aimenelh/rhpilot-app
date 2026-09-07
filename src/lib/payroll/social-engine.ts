@@ -26,6 +26,18 @@ function assertNumber(value: unknown, label: string): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
+function assertNoMissingVariables(
+  evaluation: ReturnType<Engine["evaluate"]>,
+  label: string,
+): void {
+  const missingVariables = Object.keys(evaluation.missingVariables ?? {});
+  if (missingVariables.length === 0) return;
+
+  throw new Error(
+    `Le calcul social est bloqué : des données nécessaires manquent pour ${label} : ${missingVariables.join(", ")}.`,
+  );
+}
+
 /**
  * Point d'entrée unique vers le modèle social officiel publié par Mon-entreprise.
  *
@@ -47,16 +59,22 @@ export function calculateSocialPayroll(input: {
     ...(input.situation ?? {}),
   });
 
-  const netBeforeTax = assertNumber(
-    engine.evaluate(NET_BEFORE_TAX_RULE).nodeValue,
-    NET_BEFORE_TAX_RULE,
-  );
+  const netBeforeTaxEvaluation = engine.evaluate(NET_BEFORE_TAX_RULE);
+  assertNoMissingVariables(netBeforeTaxEvaluation, NET_BEFORE_TAX_RULE);
+
+  const employeeContributionsEvaluation = engine.evaluate(EMPLOYEE_CONTRIBUTIONS_RULE);
+  assertNoMissingVariables(employeeContributionsEvaluation, EMPLOYEE_CONTRIBUTIONS_RULE);
+
+  const employerContributionsEvaluation = engine.evaluate(EMPLOYER_CONTRIBUTIONS_RULE);
+  assertNoMissingVariables(employerContributionsEvaluation, EMPLOYER_CONTRIBUTIONS_RULE);
+
+  const netBeforeTax = assertNumber(netBeforeTaxEvaluation.nodeValue, NET_BEFORE_TAX_RULE);
   const employeeContributions = assertNumber(
-    engine.evaluate(EMPLOYEE_CONTRIBUTIONS_RULE).nodeValue,
+    employeeContributionsEvaluation.nodeValue,
     EMPLOYEE_CONTRIBUTIONS_RULE,
   );
   const employerContributions = assertNumber(
-    engine.evaluate(EMPLOYER_CONTRIBUTIONS_RULE).nodeValue,
+    employerContributionsEvaluation.nodeValue,
     EMPLOYER_CONTRIBUTIONS_RULE,
   );
 
