@@ -60,6 +60,9 @@ const VENDORS = [
 
 const RIGHTS = ["Accès", "Rectification", "Effacement", "Limitation", "Portabilité", "Opposition"];
 
+// Drapeau européen reconstruit fidèlement (fond bleu, 12 étoiles en
+// cercle) — le fichier fourni portait un filigrane visible, inutilisable
+// tel quel sur un vrai site.
 function EUFlag({ size = 22 }: { size?: number }) {
   const stars = Array.from({ length: 12 }, (_, i) => {
     const angle = (i / 12) * 2 * Math.PI - Math.PI / 2;
@@ -91,68 +94,22 @@ export default function SecurityPage() {
       <AmbientNetwork />
       <MarketingHeader />
 
-      {/* Hero sécurité */}
-      <section className="relative min-h-[470px] overflow-hidden bg-ink py-8 sm:min-h-[470px] sm:py-6">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_70%_48%,rgba(240,72,49,0.16),transparent_32%),radial-gradient(circle_at_48%_80%,rgba(240,72,49,0.07),transparent_28%)]" aria-hidden="true" />
-        <div
-          aria-hidden="true"
-          className="absolute inset-0 opacity-40 [background-image:linear-gradient(115deg,transparent_0%,transparent_48%,rgba(240,72,49,0.10)_48.1%,transparent_48.3%),linear-gradient(25deg,transparent_0%,transparent_70%,rgba(240,72,49,0.08)_70.1%,transparent_70.3%)]"
-        />
-        <div className="relative mx-auto grid min-h-[470px] max-w-6xl items-center gap-2 px-6 sm:grid-cols-[0.98fr_1.02fr] sm:gap-0 sm:px-8">
-          <div className="relative z-20">
-            <Reveal variant="left">
-              <div className="max-w-xl pb-2">
-                <span className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-primary">
-                  Sécurité
-                </span>
-                <h1 className="mt-4 max-w-[610px] text-4xl font-semibold leading-[1.04] tracking-[-0.03em] text-white sm:text-5xl lg:text-[52px]">
-                  Vos données RH en toute confiance.
-                </h1>
-                <p className="mt-5 max-w-[520px] text-base leading-relaxed text-white/70 sm:text-lg">
-                  RH Pilot agit comme sous-traitant au sens du RGPD, l'entreprise cliente reste responsable du traitement des données de ses salariés. Vous conservez à tout moment le contrôle de vos données.
-                </p>
-                <Link
-                  href="/confidentialite"
-                  className="mt-7 inline-flex items-center gap-2 rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
-                >
-                  Lire la politique de confidentialité <ExternalLink size={14} />
-                </Link>
-                <div className="mt-6 flex max-w-[560px] flex-wrap gap-2">
-                  {RIGHTS.map((right) => (
-                    <span
-                      key={right}
-                      className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/75"
-                    >
-                      {right}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </Reveal>
-          </div>
-
-          <Reveal delay={120} variant="scale">
-            <div className="relative -mr-4 h-[430px] w-[calc(100%+1rem)] sm:-mr-10 sm:h-[455px] sm:w-[calc(100%+2.5rem)]">
-              <div
-                aria-hidden="true"
-                className="absolute right-[8%] top-[13%] h-[71%] w-[67%] rotate-[6deg] rounded-[3.2rem] bg-brand-primary shadow-[0_24px_80px_rgba(240,72,49,0.16)]"
-              />
-              <div
-                aria-hidden="true"
-                className="absolute right-[20%] bottom-[8%] h-28 w-28 rounded-full bg-brand-primary/30 blur-3xl"
-              />
-              <img
-                src="https://images.pexels.com/photos/11917377/pexels-photo-11917377.jpeg?cs=srgb&dl=pexels-veeru-edits-2043202-11917377.jpg&fm=jpg"
-                alt="Portrait professionnel d'un homme portant des lunettes"
-                className="absolute bottom-0 right-[0%] h-[96%] w-[94%] object-contain object-bottom"
-                loading="eager"
-              />
-            </div>
-          </Reveal>
-        </div>
+      {/* Hero */}
+      <section className="mx-auto max-w-2xl px-6 py-20">
+        <Reveal variant="left">
+          <h1 className="max-w-lg text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
+            La confiance ne se décrète pas.
+          </h1>
+        </Reveal>
+        <Reveal delay={150}>
+          <p className="mt-4 max-w-md text-lg text-ink-soft">
+            Vos données RH sont sensibles. Voici, concrètement, comment RH Pilot les traite, 
+            sans jargon, et sans rien promettre que nous ne fassions déjà.
+          </p>
+        </Reveal>
       </section>
 
-      {/* Les 5 piliers */}
+      {/* Les 6 piliers */}
       <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
         <div className="mx-auto max-w-2xl px-6">
           <Reveal>
