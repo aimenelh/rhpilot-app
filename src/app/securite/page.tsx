@@ -91,21 +91,28 @@ export default function SecurityPage() {
       <AmbientNetwork />
       <MarketingHeader />
 
-      {/* Hero sécurité */}
-      <section className="relative overflow-hidden bg-ink py-16 sm:py-20">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_45%,rgba(240,72,49,0.16),transparent_34%)]" aria-hidden="true" />
-        <div className="relative mx-auto grid max-w-5xl items-center gap-10 px-6 sm:grid-cols-[1fr_0.95fr] sm:gap-12">
+      <section className="relative overflow-hidden bg-ink py-14 sm:py-16">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_72%_45%,rgba(240,72,49,0.18),transparent_36%)]" aria-hidden="true" />
+        <div className="absolute inset-0 opacity-20" aria-hidden="true">
+          <svg viewBox="0 0 1600 620" preserveAspectRatio="xMidYMid slice" className="h-full w-full">
+            <path d="M0 470 L260 280 L520 390 L820 130 L1080 310 L1380 120 L1600 250" fill="none" stroke="rgba(255,255,255,0.12)" strokeWidth="1" />
+            <path d="M140 80 L390 210 L670 70 L920 220 L1180 90 L1480 300" fill="none" stroke="rgba(240,72,49,0.35)" strokeWidth="1" />
+            <circle cx="820" cy="130" r="3" fill="rgba(240,72,49,0.7)" />
+            <circle cx="1180" cy="90" r="3" fill="rgba(240,72,49,0.7)" />
+          </svg>
+        </div>
+
+        <div className="relative mx-auto grid max-w-5xl items-center gap-4 px-6 sm:grid-cols-[1fr_1.05fr] sm:gap-8">
           <div className="relative z-10">
             <Reveal variant="left">
               <span className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-primary">
                 Sécurité
               </span>
-              <h1 className="mt-4 max-w-xl text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
+              <h1 className="mt-4 max-w-xl text-4xl font-semibold leading-[1.08] tracking-tight text-white sm:text-5xl">
                 La confiance ne se décrète pas.
               </h1>
-              <p className="mt-4 max-w-lg text-lg leading-relaxed text-white/70">
-                Vos données RH sont sensibles. Voici, concrètement, comment RH Pilot les traite,
-                sans jargon, et sans rien promettre que nous ne fassions déjà.
+              <p className="mt-5 max-w-lg text-lg leading-relaxed text-white/70">
+                Vos données RH sont sensibles. Voici comment RH Pilot les protège, concrètement.
               </p>
               <Link
                 href="/confidentialite"
@@ -113,7 +120,7 @@ export default function SecurityPage() {
               >
                 Lire la politique de confidentialité complète <ExternalLink size={14} />
               </Link>
-              <div className="mt-7 flex flex-wrap gap-2">
+              <div className="mt-7 flex max-w-xl flex-wrap gap-2">
                 {RIGHTS.map((right) => (
                   <span
                     key={right}
@@ -127,29 +134,26 @@ export default function SecurityPage() {
           </div>
 
           <Reveal delay={120} variant="scale">
-            <div className="relative mx-auto w-full max-w-md py-4 sm:py-0">
+            <div className="relative mx-auto h-[380px] w-full max-w-xl sm:h-[410px]">
               <div
                 aria-hidden="true"
-                className="absolute right-[4%] top-[5%] h-[84%] w-[78%] rotate-[5deg] rounded-[2.5rem] bg-brand-primary"
+                className="absolute right-[12%] top-[9%] h-[76%] w-[58%] rotate-[7deg] rounded-[72%_28%_62%_38%/28%_48%_52%_72%] bg-[#ff6048] shadow-[0_24px_80px_rgba(240,72,49,0.22)]"
               />
               <div
                 aria-hidden="true"
-                className="absolute left-[2%] bottom-[3%] h-24 w-24 rounded-full bg-[#ffb45c]/50 blur-3xl"
+                className="absolute left-[12%] bottom-[8%] h-28 w-28 rounded-full bg-[#ffb45c]/35 blur-3xl"
               />
-              <div className="relative mx-auto w-[78%] overflow-hidden rounded-[2rem] border-4 border-white/90 bg-white shadow-elevated">
-                <img
-                  src="https://images.pexels.com/photos/16306778/pexels-photo-16306778.jpeg?cs=srgb&dl=pexels-oluwakoreimage-16306778.jpg&fm=jpg"
-                  alt="Portrait professionnel d'une femme en chemise blanche sur fond sombre"
-                  className="aspect-[4/5] w-full object-cover object-top"
-                  loading="eager"
-                />
-              </div>
+              <img
+                src="https://images.pexels.com/photos/16306778/pexels-photo-16306778.jpeg?cs=srgb&dl=pexels-oluwakoreimage-16306778.jpg&fm=jpg"
+                alt="Portrait professionnel d'une femme en chemise blanche"
+                className="absolute bottom-[-2%] right-[8%] z-10 h-[104%] w-[67%] object-contain object-bottom"
+                loading="eager"
+              />
             </div>
           </Reveal>
         </div>
       </section>
 
-      {/* Les 5 piliers */}
       <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
         <div className="mx-auto max-w-2xl px-6">
           <Reveal>
@@ -174,7 +178,6 @@ export default function SecurityPage() {
         </div>
       </section>
 
-      {/* Sous-traitants réels */}
       <section className="mx-auto max-w-3xl px-6 py-16">
         <Reveal variant="left">
           <SectionMark label="Notre infrastructure" />
@@ -204,7 +207,6 @@ export default function SecurityPage() {
         </div>
       </section>
 
-      {/* RGPD */}
       <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
         <Reveal variant="left">
           <div className="mx-auto max-w-2xl px-6">
@@ -235,7 +237,6 @@ export default function SecurityPage() {
         </Reveal>
       </section>
 
-      {/* Honnêteté produit, lien direct avec la sécurité */}
       <section className="bg-ink py-16">
         <Reveal variant="scale">
           <p className="mx-auto max-w-lg px-6 text-center text-lg font-medium leading-relaxed text-white">
@@ -245,7 +246,6 @@ export default function SecurityPage() {
         </Reveal>
       </section>
 
-      {/* CTA */}
       <section className="py-16">
         <Reveal variant="bounce">
           <div className="mx-auto max-w-2xl px-6 text-center">
