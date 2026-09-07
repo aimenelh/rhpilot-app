@@ -41,15 +41,15 @@ export function MarketingHeader() {
     <>
       <div className="sticky top-0 z-40 border-b border-surface-border bg-white">
         <AnnouncementBar />
-        <header className="relative mx-auto max-w-6xl px-6 py-6">
-          <div className="flex items-center justify-between">
-            <Link href="/" className="flex items-center gap-2" onClick={() => setOpen(false)}>
+        <header className="relative mx-auto max-w-7xl px-6 py-5">
+          <div className="flex items-center justify-between gap-6">
+            <Link href="/" className="flex shrink-0 items-center gap-2" onClick={() => setOpen(false)}>
               <Logomark size={30} />
               <Wordmark />
             </Link>
 
-            <nav className="hidden items-center gap-5 md:flex">
-              <Link href="/services" className={`text-sm font-medium transition-colors ${isActive("/services") ? "text-brand-primary" : "text-ink-soft hover:text-ink"}`}>
+            <nav className="hidden items-center gap-4 md:flex">
+              <Link href="/services" className={`whitespace-nowrap text-sm font-medium transition-colors ${isActive("/services") ? "text-brand-primary" : "text-ink-soft hover:text-ink"}`}>
                 Nos services
               </Link>
 
@@ -59,7 +59,7 @@ export function MarketingHeader() {
                   aria-expanded={payrollOpen}
                   aria-haspopup="menu"
                   onClick={() => setPayrollOpen((value) => !value)}
-                  className={`inline-flex items-center gap-1 text-sm font-medium transition-colors ${payrollActive ? "text-brand-primary" : "text-ink-soft hover:text-ink"}`}
+                  className={`inline-flex whitespace-nowrap items-center gap-1 text-sm font-medium transition-colors ${payrollActive ? "text-brand-primary" : "text-ink-soft hover:text-ink"}`}
                 >
                   Gestion de la paie
                   <ChevronDown size={15} className={`transition-transform ${payrollOpen ? "rotate-180" : ""}`} />
@@ -83,21 +83,21 @@ export function MarketingHeader() {
               </div>
 
               {NAV_LINKS.slice(1).map((link) => (
-                <Link key={link.href} href={link.href} className={`text-sm font-medium transition-colors ${isActive(link.href) ? "text-brand-primary" : "text-ink-soft hover:text-ink"}`}>
+                <Link key={link.href} href={link.href} className={`whitespace-nowrap text-sm font-medium transition-colors ${isActive(link.href) ? "text-brand-primary" : "text-ink-soft hover:text-ink"}`}>
                   {link.label}
                 </Link>
               ))}
               <span aria-hidden className="h-4 w-px bg-surface-border" />
-              <Link href="/sign-in" className={`text-sm font-medium transition-colors ${isActive("/sign-in") ? "text-brand-primary" : "text-ink-soft hover:text-ink"}`}>
+              <Link href="/sign-in" className={`whitespace-nowrap text-sm font-medium transition-colors ${isActive("/sign-in") ? "text-brand-primary" : "text-ink-soft hover:text-ink"}`}>
                 Se connecter
               </Link>
-              <Link href="/sign-up"><Button>Essayer gratuitement</Button></Link>
+              <Link href="/sign-up" className="shrink-0"><Button>Essayer gratuitement</Button></Link>
             </nav>
 
             <button
               type="button"
               onClick={() => setOpen((o) => !o)}
-              className="flex h-9 w-9 items-center justify-center rounded-lg border border-surface-border text-ink-soft md:hidden"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-surface-border text-ink-soft md:hidden"
               aria-label={open ? "Fermer le menu" : "Ouvrir le menu"}
               aria-expanded={open}
             >
