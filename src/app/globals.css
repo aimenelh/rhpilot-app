@@ -10,18 +10,17 @@ body {
   @apply bg-surface-subtle text-ink;
 }
 
-/* Focus visible clair et cohérent partout, y compris au clavier —
-   ne jamais le supprimer pour des raisons esthétiques. */
 :focus-visible {
   outline: 2px solid theme("colors.brand.primary");
   outline-offset: 2px;
 }
 
-/* Police d'accroche pour tous les titres — appliquée une seule fois
-   ici plutôt que sur chaque page individuellement. Le corps de texte
-   (p, span, li...) reste en Inter, non affecté par cette règle. */
 h1, h2, h3 {
   font-family: var(--font-heading), var(--font-inter), sans-serif;
+}
+
+.font-handwriting {
+  font-family: var(--font-handwriting), cursive;
 }
 
 @keyframes page-fade-in {
@@ -85,8 +84,8 @@ h1, h2, h3 {
   .welcome-pulse-dot { animation: none; }
 }
 
-/* Hero vitrine : le contenu reste lisible à gauche et le visuel humain
-   occupe l'espace libre à droite sans recouvrir le message. */
+/* Hero vitrine : composition éditoriale inspirée de la référence,
+   avec le message à gauche et la vidéo humaine comme point focal à droite. */
 @media (min-width: 1024px) {
   .min-h-screen > section:first-of-type > div:first-child {
     max-width: 72rem;
@@ -96,12 +95,30 @@ h1, h2, h3 {
   }
 
   .min-h-screen > section:first-of-type > div:first-child h1 {
-    max-width: 42rem;
+    max-width: 39rem;
+    font-size: clamp(3.35rem, 4.25vw, 4.15rem);
+    line-height: 0.99;
+    letter-spacing: -0.035em;
+  }
+
+  .min-h-screen > section:first-of-type > div:first-child h1::before {
+    content: "UN OUTIL RH POUR ALLER PLUS LOIN";
+    display: block;
+    margin-bottom: 1.35rem;
+    font-family: var(--font-inter), sans-serif;
+    font-size: 0.66rem;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: 0.28em;
+    color: #e8432e;
   }
 
   .min-h-screen > section:first-of-type > div:first-child p {
-    max-width: 40rem;
+    max-width: 34rem;
     margin-left: 0;
+    margin-top: 1.4rem;
+    font-size: 1.05rem;
+    line-height: 1.5;
   }
 
   .min-h-screen > section:first-of-type > div:first-child > div {
@@ -121,6 +138,56 @@ h1, h2, h3 {
   }
 }
 
+/* Cadre visuel du hero : deux formes roses superposées et un motif de points,
+   sans toucher au contenu de la vidéo elle-même. */
+.human-work-video-shape {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 3rem;
+}
+
+.human-work-video-shape-back {
+  z-index: -2;
+  inset: -2rem 4rem -2.25rem -2.25rem;
+  background: linear-gradient(135deg, rgba(232, 67, 46, 0.09), rgba(246, 184, 172, 0.30));
+  transform: rotate(-4deg);
+}
+
+.human-work-video-shape-mid {
+  z-index: -1;
+  inset: 1.5rem -1.25rem -1.5rem 1.75rem;
+  background: linear-gradient(135deg, rgba(246, 184, 172, 0.22), rgba(232, 67, 46, 0.05));
+  transform: rotate(2deg);
+}
+
+.human-work-video-dots {
+  position: absolute;
+  z-index: -1;
+  top: -0.75rem;
+  right: -2rem;
+  width: 8.5rem;
+  height: 6rem;
+  background-image: radial-gradient(circle, rgba(232, 67, 46, 0.45) 1.5px, transparent 1.7px);
+  background-size: 0.8rem 0.8rem;
+  opacity: 0.7;
+}
+
+.human-work-video-frame {
+  transform: rotate(-1deg);
+}
+
+.human-work-video-note {
+  filter: drop-shadow(0 4px 8px rgba(232, 67, 46, 0.08));
+}
+
+@media (max-width: 1099px) {
+  .human-work-video-shape,
+  .human-work-video-dots,
+  .human-work-video-note {
+    display: none;
+  }
+}
+
 /* Respiration photo de la landing : la photo occupe une zone dédiée à droite,
    tandis que les statistiques restent dans une largeur éditoriale indépendante.
    Aucun élément ne peut donc passer sous la photo. */
@@ -135,8 +202,6 @@ h1, h2, h3 {
     border-bottom: 1px solid rgba(232, 67, 46, 0.08);
   }
 
-  /* Le contenu garde une largeur confortable et réserve explicitement
-     la colonne de droite au visuel. */
   .min-h-screen > section:nth-of-type(5) > div {
     position: relative;
     z-index: 2;
