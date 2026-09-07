@@ -322,6 +322,7 @@ export async function calculatePayrollPeriod(input: {
     if (profile.baseSalaryCents === null) {
       throw new Error(`Le salaire brut mensuel est manquant pour le salarié ${employee.id}.`);
     }
+    const baseSalaryAmount = profile.baseSalaryCents / 100;
 
     const employeeVariables = (variablesByEmployee.get(employee.id) ?? []).map(toVariableInput);
     const treatments = employeeVariables.map((variable) => {
@@ -354,7 +355,7 @@ export async function calculatePayrollPeriod(input: {
       }
 
       const impact = calculateAbsenceGrossImpact({
-        baseSalaryAmount: profile.baseSalaryCents / 100,
+        baseSalaryAmount,
         monthlyCalendarDays,
         absenceDays: resolution.calendarDaysInPeriod,
         rule: {
@@ -404,7 +405,7 @@ export async function calculatePayrollPeriod(input: {
     ];
 
     const grossAmount = composeGrossAmount({
-      baseSalaryAmount: profile.baseSalaryCents / 100,
+      baseSalaryAmount,
       variableTreatments: grossTreatments,
     });
 
