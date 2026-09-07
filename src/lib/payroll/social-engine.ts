@@ -4,20 +4,42 @@ import socialRules from "modele-social";
 export const SOCIAL_MODEL_VERSION = "11.1.0";
 
 const GROSS_RULE = "salarié . contrat . salaire brut";
+const LEGAL_CATEGORY_RULE = "entreprise . catégorie juridique";
 const NET_BEFORE_TAX_RULE = "salarié . rémunération . net . à payer avant impôt";
 const EMPLOYEE_CONTRIBUTIONS_RULE = "salarié . cotisations . salarié";
 const EMPLOYER_CONTRIBUTIONS_RULE = "salarié . cotisations . employeur";
 
+export const LEGAL_CATEGORIES = [
+  "EI",
+  "SARL",
+  "SAS",
+  "SELARL",
+  "SELAS",
+  "association",
+  "autre",
+] as const;
+
+export type LegalCategory = (typeof LEGAL_CATEGORIES)[number];
 export type SocialPayrollSituation = Record<string, string | number | boolean>;
 
 export type SocialPayrollResult = {
   modelVersion: string;
   grossAmount: number;
+  legalCategory: LegalCategory;
   employeeContributions: number;
   employerContributions: number;
   netBeforeTax: number;
   employerCost: number;
 };
+
+function assertLegalCategory(value: string): LegalCategory {
+  if ((LEGAL_CATEGORIES as readonly string[]).includes(value)) {
+    return value as LegalCategory;
+  }
+  throw new Error(
+    "Le calcul social est bloqué : la forme juridique de l'organisation est absente ou invalide.",
+  );
+}
 
 function assertNumber(value: unknown, label: string): number {
   if (typeof value !== "number" || !Number.isFinite(value)) {
@@ -41,21 +63,24 @@ function assertNoMissingVariables(
 /**
  * Point d'entrée unique vers le modèle social officiel publié par Mon-entreprise.
  *
- * Le moteur Publicodes porte les règles sociales et leurs évolutions. RH Pilot
- * lui fournit uniquement la situation du salarié et conserve la version du
- * modèle utilisée pour assurer la traçabilité du calcul.
+ * RH Pilot fournit explicitement la situation de l'organisation et du salarié.
+ * La forme juridique est transmise à Publicodes sans être déduite du nom,
+ * du SIRET ou d'une autre donnée indirecte.
  */
 export function calculateSocialPayroll(input: {
   grossAmount: number;
+  legalCategory: string;
   situation?: SocialPayrollSituation;
 }): SocialPayrollResult {
   if (!Number.isFinite(input.grossAmount) || input.grossAmount < 0) {
     throw new Error("Le brut doit être un montant positif ou nul.");
   }
 
+  const legalCategory = assertLegalCategory(input.legalCategory);
   const engine = new Engine(socialRules);
   engine.setSituation({
     [GROSS_RULE]: `${input.grossAmount} €/mois`,
+    [LEGAL_CATEGORY_RULE]: `'${legalCategory}'`,
     ...(input.situation ?? {}),
   });
 
@@ -81,6 +106,7 @@ export function calculateSocialPayroll(input: {
   return {
     modelVersion: SOCIAL_MODEL_VERSION,
     grossAmount: Math.round((input.grossAmount + Number.EPSILON) * 100) / 100,
+    legalCategory,
     employeeContributions,
     employerContributions,
     netBeforeTax,
