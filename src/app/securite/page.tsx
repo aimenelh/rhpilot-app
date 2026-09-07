@@ -60,9 +60,6 @@ const VENDORS = [
 
 const RIGHTS = ["Accès", "Rectification", "Effacement", "Limitation", "Portabilité", "Opposition"];
 
-// Drapeau européen reconstruit fidèlement (fond bleu, 12 étoiles en
-// cercle) — le fichier fourni portait un filigrane visible, inutilisable
-// tel quel sur un vrai site.
 function EUFlag({ size = 22 }: { size?: number }) {
   const stars = Array.from({ length: 12 }, (_, i) => {
     const angle = (i / 12) * 2 * Math.PI - Math.PI / 2;
@@ -94,36 +91,67 @@ export default function SecurityPage() {
       <AmbientNetwork />
       <MarketingHeader />
 
-      {/* Hero */}
-      <section className="mx-auto max-w-4xl px-6 py-20">
-        <div className="grid items-center gap-8 sm:grid-cols-[1fr_180px]">
-          <div>
+      {/* Hero sécurité */}
+      <section className="relative overflow-hidden bg-ink py-16 sm:py-20">
+        <div className="absolute inset-0 opacity-25" aria-hidden="true">
+          <AmbientNetwork />
+        </div>
+        <div className="relative mx-auto grid max-w-5xl items-center gap-10 px-6 sm:grid-cols-[1fr_0.95fr] sm:gap-12">
+          <div className="relative z-10">
             <Reveal variant="left">
-              <h1 className="max-w-lg text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
+              <span className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-primary">
+                Sécurité
+              </span>
+              <h1 className="mt-4 max-w-xl text-4xl font-semibold leading-tight tracking-tight text-white sm:text-5xl">
                 La confiance ne se décrète pas.
               </h1>
-            </Reveal>
-            <Reveal delay={150}>
-              <p className="mt-4 max-w-md text-lg text-ink-soft">
-                Vos données RH sont sensibles. Voici, concrètement, comment RH Pilot les traite, 
+              <p className="mt-4 max-w-lg text-lg leading-relaxed text-white/70">
+                Vos données RH sont sensibles. Voici, concrètement, comment RH Pilot les traite,
                 sans jargon, et sans rien promettre que nous ne fassions déjà.
               </p>
+              <Link
+                href="/confidentialite"
+                className="mt-7 inline-flex items-center gap-2 rounded-xl bg-brand-primary px-5 py-3 text-sm font-semibold text-white transition-transform hover:-translate-y-0.5"
+              >
+                Lire la politique de confidentialité complète <ExternalLink size={14} />
+              </Link>
+              <div className="mt-7 flex flex-wrap gap-2">
+                {RIGHTS.map((right) => (
+                  <span
+                    key={right}
+                    className="rounded-full border border-white/15 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/75"
+                  >
+                    {right}
+                  </span>
+                ))}
+              </div>
             </Reveal>
           </div>
+
           <Reveal delay={120} variant="scale">
-            <div className="rounded-2xl border border-surface-border bg-white p-2 shadow-card">
-              <img
-                src="https://images.pexels.com/photos/16306778/pexels-photo-16306778.jpeg?cs=srgb&dl=pexels-oluwakoreimage-16306778.jpg&fm=jpg"
-                alt="Portrait professionnel d'une femme en chemise blanche sur fond sombre"
-                className="h-52 w-full rounded-xl object-cover object-top"
-                loading="eager"
+            <div className="relative mx-auto w-full max-w-md py-4 sm:py-0">
+              <div
+                aria-hidden="true"
+                className="absolute right-[4%] top-[5%] h-[84%] w-[78%] rotate-[5deg] rounded-[2.5rem] bg-brand-primary"
               />
+              <div
+                aria-hidden="true"
+                className="absolute left-[2%] bottom-[3%] h-24 w-24 rounded-full bg-[#ffb45c]/50 blur-3xl"
+              />
+              <div className="relative mx-auto w-[78%] overflow-hidden rounded-[2rem] border-4 border-white/90 bg-white shadow-elevated">
+                <img
+                  src="https://images.pexels.com/photos/16306778/pexels-photo-16306778.jpeg?cs=srgb&dl=pexels-oluwakoreimage-16306778.jpg&fm=jpg"
+                  alt="Portrait professionnel d'une femme en chemise blanche sur fond sombre"
+                  className="aspect-[4/5] w-full object-cover object-top"
+                  loading="eager"
+                />
+              </div>
             </div>
           </Reveal>
         </div>
       </section>
 
-      {/* Les 6 piliers */}
+      {/* Les 5 piliers */}
       <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
         <div className="mx-auto max-w-2xl px-6">
           <Reveal>
