@@ -13,6 +13,7 @@ const EXECUTIVE_STATUS_RULE = "salarié . contrat . statut cadre";
 const HEALTH_PLAN_RULE = "salarié . cotisations . prévoyances . santé . montant";
 const HEALTH_EMPLOYER_RATE_RULE = "salarié . cotisations . prévoyances . santé . taux employeur";
 const NET_BEFORE_TAX_RULE = "salarié . rémunération . net . à payer avant impôt";
+const NET_SOCIAL_RULE = "salarié . rémunération . montant net social";
 const EMPLOYEE_CONTRIBUTIONS_RULE = "salarié . cotisations . salarié";
 const EMPLOYER_CONTRIBUTIONS_RULE = "salarié . cotisations . employeur";
 
@@ -37,9 +38,6 @@ const DETAIL_RULES = [
   { code: "invalidite_deces_employeur", label: "Prévoyance incapacité, invalidité, décès — part employeur", rule: "salarié . cotisations . prévoyances . incapacité invalidité décès . employeur", side: "EMPLOYER" },
 ] as const;
 
-// Valeurs par défaut déclarées par le modèle social officiel.
-// Elles ne constituent pas des règles métier RH Pilot et peuvent être
-// remplacées par une situation explicite fournie par l'application.
 const MODEL_DEFAULT_SITUATION: SocialPayrollSituation = {
   "salarié . cotisations . exonérations . JEI": "non",
   "entreprise . salariés . effectif . seuil": "'moins de 5'",
@@ -68,6 +66,7 @@ export type SocialPayrollResult = {
   employeeContributions: number;
   employerContributions: number;
   netBeforeTax: number;
+  netSocialAmount: number;
   employerCost: number;
   contributionDetails: SocialContributionDetail[];
 };
@@ -112,12 +111,6 @@ function evaluateContributionDetails(engine: Engine): SocialContributionDetail[]
   });
 }
 
-/**
- * Point d'entrée unique vers le modèle social officiel publié par Mon-entreprise.
- * RH Pilot fournit explicitement la forme juridique, la date de calcul, la
- * date de création, le contexte contractuel et la complémentaire santé déjà
- * présents dans le dossier. Aucun défaut métier n'est injecté par RH Pilot.
- */
 export function calculateSocialPayroll(input: {
   grossAmount: number;
   legalCategory: string;
@@ -157,12 +150,15 @@ export function calculateSocialPayroll(input: {
 
   const netBeforeTaxEvaluation = engine.evaluate(NET_BEFORE_TAX_RULE);
   assertNoMissingVariables(netBeforeTaxEvaluation, NET_BEFORE_TAX_RULE);
+  const netSocialEvaluation = engine.evaluate(NET_SOCIAL_RULE);
+  assertNoMissingVariables(netSocialEvaluation, NET_SOCIAL_RULE);
   const employeeContributionsEvaluation = engine.evaluate(EMPLOYEE_CONTRIBUTIONS_RULE);
   assertNoMissingVariables(employeeContributionsEvaluation, EMPLOYEE_CONTRIBUTIONS_RULE);
   const employerContributionsEvaluation = engine.evaluate(EMPLOYER_CONTRIBUTIONS_RULE);
   assertNoMissingVariables(employerContributionsEvaluation, EMPLOYER_CONTRIBUTIONS_RULE);
 
   const netBeforeTax = assertNumber(netBeforeTaxEvaluation.nodeValue, NET_BEFORE_TAX_RULE);
+  const netSocialAmount = assertNumber(netSocialEvaluation.nodeValue, NET_SOCIAL_RULE);
   const employeeContributions = assertNumber(employeeContributionsEvaluation.nodeValue, EMPLOYEE_CONTRIBUTIONS_RULE);
   const employerContributions = assertNumber(employerContributionsEvaluation.nodeValue, EMPLOYER_CONTRIBUTIONS_RULE);
   const contributionDetails = evaluateContributionDetails(engine);
@@ -174,6 +170,7 @@ export function calculateSocialPayroll(input: {
     employeeContributions,
     employerContributions,
     netBeforeTax,
+    netSocialAmount,
     employerCost: Math.round((input.grossAmount + employerContributions + Number.EPSILON) * 100) / 100,
     contributionDetails,
   };
