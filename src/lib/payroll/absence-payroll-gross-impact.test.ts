@@ -17,11 +17,7 @@ describe("absence payroll gross impact", () => {
           rate: 1,
         },
       }),
-    ).toMatchObject({
-      status: "RESOLVED",
-      grossDelta: -300,
-      ruleVersionId: "rule-2026-01",
-    });
+    ).toMatchObject({ status: "RESOLVED", grossDelta: -300, ruleVersionId: "rule-2026-01" });
   });
 
   it("does not invent a conversion for working days", () => {
