@@ -127,7 +127,7 @@ export function LandingPage() {
       </section>
 
       {/* Fonctionnalités : ce que RH Pilot fait réellement aujourd'hui */}
-      <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
+      <section id="copilote" className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
         <div className="mx-auto max-w-6xl px-6">
           <Reveal>
             <h2 className="max-w-lg text-2xl font-semibold text-ink">

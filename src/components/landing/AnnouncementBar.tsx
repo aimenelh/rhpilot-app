@@ -14,9 +14,9 @@ const ANNOUNCEMENTS = [
     cta: "En savoir plus",
   },
   {
-    text: "Le Copilote RH Pilot répond à vos questions RH en langage courant.",
-    href: "/questions",
-    cta: "Voir des exemples",
+    text: "Le Copilote RH Pilot répond à vos questions à partir des données de votre organisation.",
+    href: "/#copilote",
+    cta: "Voir comment",
   },
   {
     text: "Délai de prévenance en fin de période d'essai : ce qu'il faut savoir.",
