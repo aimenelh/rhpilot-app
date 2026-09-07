@@ -25,74 +25,46 @@ h1, h2, h3 {
 }
 
 @keyframes page-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.page-fade-in {
-  animation: page-fade-in 0.2s ease-out;
-}
+.page-fade-in { animation: page-fade-in 0.2s ease-out; }
 
 @media (prefers-reduced-motion: reduce) {
-  .page-fade-in {
-    animation: none;
-  }
+  .page-fade-in { animation: none; }
 }
 
 @keyframes tour-fade-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.tour-fade-in {
-  animation: tour-fade-in 0.18s ease-out;
-}
+.tour-fade-in { animation: tour-fade-in 0.18s ease-out; }
 
 @keyframes tour-pulse-once {
-  0% {
-    box-shadow: 0 0 0 0 rgba(232, 67, 46, 0.4);
-  }
-  100% {
-    box-shadow: 0 0 0 10px rgba(232, 67, 46, 0);
-  }
+  0% { box-shadow: 0 0 0 0 rgba(232, 67, 46, 0.4); }
+  100% { box-shadow: 0 0 0 10px rgba(232, 67, 46, 0); }
 }
 
-.tour-pulse-once {
-  animation: tour-pulse-once 0.6s ease-out;
-}
+.tour-pulse-once { animation: tour-pulse-once 0.6s ease-out; }
 
 @media (prefers-reduced-motion: reduce) {
   .tour-fade-in,
-  .tour-pulse-once {
-    animation: none;
-  }
+  .tour-pulse-once { animation: none; }
 }
 
 @keyframes welcome-logo-float {
   0%, 100% { transform: translateY(0px); }
   50% { transform: translateY(-6px); }
 }
-.welcome-logo-float {
-  animation: welcome-logo-float 4s ease-in-out infinite;
-}
+.welcome-logo-float { animation: welcome-logo-float 4s ease-in-out infinite; }
 
 @keyframes welcome-card-in {
   from { opacity: 0; transform: translateY(10px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.welcome-card-in {
-  animation: welcome-card-in 0.5s ease-out;
-}
+.welcome-card-in { animation: welcome-card-in 0.5s ease-out; }
 
 @keyframes welcome-shape-drift-1 {
   0%, 100% { transform: translate(0px, 0px); }
@@ -102,36 +74,25 @@ h1, h2, h3 {
   0%, 100% { transform: translate(0px, 0px); }
   50% { transform: translate(-12px, 10px); }
 }
-.welcome-shape-1 {
-  animation: welcome-shape-drift-1 9s ease-in-out infinite;
-}
-.welcome-shape-2 {
-  animation: welcome-shape-drift-2 11s ease-in-out infinite;
-}
+.welcome-shape-1 { animation: welcome-shape-drift-1 9s ease-in-out infinite; }
+.welcome-shape-2 { animation: welcome-shape-drift-2 11s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
   .welcome-logo-float,
   .welcome-card-in,
   .welcome-shape-1,
   .welcome-shape-2,
-  .welcome-pulse-dot {
-    animation: none;
-  }
+  .welcome-pulse-dot { animation: none; }
 }
 
-/* Hero landing : une présence humaine discrète pour contrebalancer
-   l'univers très produit de RH Pilot. Le visuel reste décoratif et
-   disparaît sur les petits écrans pour préserver la lecture du hero. */
+/* Présence humaine discrète dans le hero. Le contenu du hero reste
+   strictement inchangé ; seul le visuel apporte une touche vivante. */
 @keyframes hero-human-drift {
-  0%, 100% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  50% {
-    transform: translate3d(-4px, 6px, 0) scale(1.025);
-  }
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(-4px, 6px, 0) scale(1.025); }
 }
 
-main > section:first-of-type::after {
+.min-h-screen > section:first-of-type::after {
   content: "";
   position: absolute;
   z-index: 0;
@@ -151,19 +112,17 @@ main > section:first-of-type::after {
   pointer-events: none;
 }
 
-main > section:first-of-type > * {
+.min-h-screen > section:first-of-type > * {
   position: relative;
   z-index: 1;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  main > section:first-of-type::after {
-    animation: none;
-  }
+  .min-h-screen > section:first-of-type::after { animation: none; }
 }
 
 @media (max-width: 1279px) {
-  main > section:first-of-type::after {
+  .min-h-screen > section:first-of-type::after {
     opacity: 0.72;
     width: 10.5rem;
     top: 8.5rem;
@@ -172,7 +131,5 @@ main > section:first-of-type > * {
 }
 
 @media (max-width: 1023px) {
-  main > section:first-of-type::after {
-    display: none;
-  }
+  .min-h-screen > section:first-of-type::after { display: none; }
 }
