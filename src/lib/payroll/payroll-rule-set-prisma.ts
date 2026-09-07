@@ -1,10 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import type { PayrollContributionRule, PayrollRuleSet } from "./domain";
+import type { AbsencePayrollTreatmentRule } from "./absence-payroll-treatment";
 
 type PersistedPayrollRuleSetParameters = {
   withholdingTaxRate?: unknown;
   rules?: unknown;
   variableTreatments?: unknown;
+  absenceTreatments?: unknown;
 };
 
 type PersistedVariableTreatment = {
@@ -20,6 +22,7 @@ export type PayrollRuleSetResolution =
       ruleSet: PayrollRuleSet;
       withholdingTaxRate: number;
       variableTreatments: PersistedVariableTreatment[];
+      absenceTreatments: AbsencePayrollTreatmentRule[];
       source: {
         sourceName: string;
         sourceUrl: string | null;
@@ -41,6 +44,7 @@ function parseParameters(parameters: unknown, ruleVersionId: string): {
   ruleSet: PayrollRuleSet;
   withholdingTaxRate: number;
   variableTreatments: PersistedVariableTreatment[];
+  absenceTreatments: AbsencePayrollTreatmentRule[];
 } | null {
   if (!isRecord(parameters)) return null;
   const value = parameters as PersistedPayrollRuleSetParameters;
@@ -64,15 +68,7 @@ function parseParameters(parameters: unknown, ruleVersionId: string): {
       return null;
     }
 
-    const contributionRule: PayrollContributionRule = {
-      code,
-      label,
-      side,
-      rate,
-      base,
-      ruleVersionId: candidateRuleVersionId,
-    };
-    rules.push(contributionRule);
+    rules.push({ code, label, side, rate, base, ruleVersionId: candidateRuleVersionId });
   }
 
   const withholdingTaxRate = value.withholdingTaxRate ?? 0;
@@ -106,10 +102,41 @@ function parseParameters(parameters: unknown, ruleVersionId: string): {
     }
   }
 
+  const absenceTreatments: AbsencePayrollTreatmentRule[] = [];
+  if (Array.isArray(value.absenceTreatments)) {
+    for (const candidate of value.absenceTreatments) {
+      if (!isRecord(candidate)) return null;
+
+      const absenceType = typeof candidate.absenceType === "string" ? candidate.absenceType.trim() : "";
+      const effect =
+        candidate.effect === "ADD_TO_GROSS" ||
+        candidate.effect === "SUBTRACT_FROM_GROSS" ||
+        candidate.effect === "EXCLUDE_FROM_GROSS"
+          ? candidate.effect
+          : null;
+      const basis =
+        candidate.basis === "NONE" ||
+        candidate.basis === "CALENDAR_DAYS" ||
+        candidate.basis === "WORKING_DAYS" ||
+        candidate.basis === "WORKED_HOURS" ||
+        candidate.basis === "RULE_DEFINED"
+          ? candidate.basis
+          : null;
+      const candidateRuleVersionId =
+        typeof candidate.ruleVersionId === "string" && candidate.ruleVersionId.trim()
+          ? candidate.ruleVersionId.trim()
+          : ruleVersionId;
+
+      if (!absenceType || !effect || !basis) return null;
+      absenceTreatments.push({ absenceType, effect, basis, ruleVersionId: candidateRuleVersionId });
+    }
+  }
+
   return {
     ruleSet: { version: ruleVersionId, rules },
     withholdingTaxRate,
     variableTreatments,
+    absenceTreatments,
   };
 }
 
@@ -157,6 +184,7 @@ export async function resolvePayrollRuleSetFromPrisma(input: {
     ruleSet: parsed.ruleSet,
     withholdingTaxRate: parsed.withholdingTaxRate,
     variableTreatments: parsed.variableTreatments,
+    absenceTreatments: parsed.absenceTreatments,
     source: {
       sourceName: ruleVersion.sourceName,
       sourceUrl: ruleVersion.sourceUrl,
