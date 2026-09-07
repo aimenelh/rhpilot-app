@@ -65,6 +65,22 @@ export async function updateAtmpRate(formData: FormData) {
   redirect("/dashboard/configuration/organisation");
 }
 
+export async function updateHealthPlan(formData: FormData) {
+  const membership = await getCurrentMembership();
+  if (!membership) throw new Error("Non authentifié ou aucune organisation active");
+  if (membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN") throw new Error("Seuls les propriétaires et administrateurs peuvent modifier ce réglage.");
+  const monthlyAmountRaw = String(formData.get("healthPlanMonthlyAmount") ?? "").trim().replace(",", ".");
+  const employerRateRaw = String(formData.get("healthPlanEmployerRate") ?? "").trim().replace(",", ".");
+  const monthlyAmount = monthlyAmountRaw === "" ? null : Number(monthlyAmountRaw);
+  const employerRate = employerRateRaw === "" ? null : Number(employerRateRaw);
+  if (monthlyAmount !== null && (!Number.isFinite(monthlyAmount) || monthlyAmount <= 0 || monthlyAmount > 10000)) throw new Error("Le montant mensuel de la complémentaire santé doit être supérieur à 0 €.");
+  if (employerRate !== null && (!Number.isFinite(employerRate) || employerRate < 50 || employerRate > 100)) throw new Error("La part employeur de la complémentaire santé doit être comprise entre 50 % et 100 %.");
+  await prisma.$executeRaw`UPDATE "organizations" SET "healthPlanMonthlyAmount" = ${monthlyAmount}, "healthPlanEmployerRate" = ${employerRate} WHERE "id" = ${membership.organizationId}`;
+  revalidatePath("/dashboard/configuration"); revalidatePath("/dashboard/configuration/organisation"); revalidatePath("/dashboard/payroll");
+  setOrganizationSavedCookie();
+  redirect("/dashboard/configuration/organisation");
+}
+
 export async function revertTaskTemplateOverride(overrideId: string) {
   const membership = await getCurrentMembership();
   if (!membership) throw new Error("Non authentifié ou aucune organisation active");
