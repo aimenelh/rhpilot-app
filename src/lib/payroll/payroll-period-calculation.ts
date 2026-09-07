@@ -159,7 +159,7 @@ export async function calculatePayrollPeriod(input: {
   const { start, end, calculationDate } = periodBounds(period.year, period.month);
   const monthlyCalendarDays = new Date(Date.UTC(period.year, period.month, 0)).getUTCDate();
   const [employees, profiles, variables, rules, validatedAbsences, legalCategory] = await Promise.all([
-    prisma.employee.findMany({ where: { organizationId: input.organizationId, deletedAt: null }, select: { id: true }, orderBy: { id: "asc" } }),
+    prisma.employee.findMany({ where: { organizationId: input.organizationId, deletedAt: null }, select: { id: true, hireDate: true, contractType: true, professionalCategory: true }, orderBy: { id: "asc" } }),
     prisma.payrollProfile.findMany({
       where: { organizationId: input.organizationId, effectiveFrom: { lte: end }, OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: start } }] },
       select: { id: true, employeeId: true, baseSalaryCents: true, monthlyHours: true, effectiveFrom: true, effectiveUntil: true, collectiveAgreementId: true, classificationCode: true, classificationLabel: true, level: true, coefficient: true },
@@ -218,7 +218,10 @@ export async function calculatePayrollPeriod(input: {
     const profile = profileByEmployee.get(employee.id);
     if (!profile) throw new Error(`Aucun profil paie applicable pour le salarié ${employee.id}.`);
     if (profile.baseSalaryCents === null) throw new Error(`Le salaire brut mensuel est manquant pour le salarié ${employee.id}.`);
+    if (!employee.contractType) throw new Error(`Le type de contrat est manquant pour le salarié ${employee.id}.`);
+    if (!employee.professionalCategory) throw new Error(`La catégorie professionnelle est manquante pour le salarié ${employee.id}.`);
     const baseSalaryAmount = profile.baseSalaryCents / 100;
+    const executiveStatus = employee.professionalCategory === "CADRE";
 
     const employeeVariables = (variablesByEmployee.get(employee.id) ?? []).map(toVariableInput);
     const treatments = employeeVariables.map((variable) => {
@@ -248,7 +251,14 @@ export async function calculatePayrollPeriod(input: {
     ];
     const grossAmount = composeGrossAmount({ baseSalaryAmount, variableTreatments: grossTreatments });
 
-    calculateSocialPayroll({ grossAmount, legalCategory, calculationDate });
+    calculateSocialPayroll({
+      grossAmount,
+      legalCategory,
+      calculationDate,
+      contractType: employee.contractType,
+      hireDate: employee.hireDate,
+      executiveStatus,
+    });
 
     const result = calculatePayroll({ grossAmount, variables: [...employeeVariables, ...absenceVariableInputs], ruleSet: rules.ruleSet, withholdingTaxRate: rules.withholdingTaxRate });
 
