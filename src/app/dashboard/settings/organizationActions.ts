@@ -17,6 +17,60 @@ function setOrganizationSavedCookie() {
   });
 }
 
+export async function updateOrganizationSettings(formData: FormData) {
+  const membership = await getCurrentMembership();
+  if (!membership) throw new Error("Non authentifié ou aucune organisation active");
+
+  const rawFunctionalRole = String(formData.get("functionalRole") ?? "");
+  const functionalRole = rawFunctionalRole === "RH" || rawFunctionalRole === "DIRIGEANT" ? rawFunctionalRole : null;
+
+  const canEditOrganization = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
+
+  if (canEditOrganization) {
+    const legalCategoryRaw = String(formData.get("legalCategory") ?? "").trim();
+    const legalCategory = legalCategoryRaw === "" ? null : legalCategoryRaw;
+    if (legalCategory !== null && !LEGAL_CATEGORIES.includes(legalCategory as (typeof LEGAL_CATEGORIES)[number])) {
+      throw new Error("Forme juridique invalide.");
+    }
+
+    const atmpRateRaw = String(formData.get("atmpRate") ?? "").trim().replace(",", ".");
+    const atmpRate = atmpRateRaw === "" ? null : Number(atmpRateRaw);
+    if (atmpRate !== null && (!Number.isFinite(atmpRate) || atmpRate < 0 || atmpRate > 100)) {
+      throw new Error("Le taux AT/MP doit être compris entre 0 et 100 %.");
+    }
+
+    const healthPlanMonthlyAmountRaw = String(formData.get("healthPlanMonthlyAmount") ?? "").trim().replace(",", ".");
+    const healthPlanEmployerRateRaw = String(formData.get("healthPlanEmployerRate") ?? "").trim().replace(",", ".");
+    const healthPlanMonthlyAmount = healthPlanMonthlyAmountRaw === "" ? null : Number(healthPlanMonthlyAmountRaw);
+    const healthPlanEmployerRate = healthPlanEmployerRateRaw === "" ? null : Number(healthPlanEmployerRateRaw);
+
+    if (healthPlanMonthlyAmount !== null && (!Number.isFinite(healthPlanMonthlyAmount) || healthPlanMonthlyAmount <= 0 || healthPlanMonthlyAmount > 10000)) {
+      throw new Error("Le montant mensuel de la complémentaire santé doit être supérieur à 0 €.");
+    }
+    if (healthPlanEmployerRate !== null && (!Number.isFinite(healthPlanEmployerRate) || healthPlanEmployerRate < 50 || healthPlanEmployerRate > 100)) {
+      throw new Error("La part employeur de la complémentaire santé doit être comprise entre 50 % et 100 %.");
+    }
+
+    const conventionCollective = String(formData.get("conventionCollective") ?? "").trim();
+
+    await prisma.$transaction(async (tx) => {
+      await tx.membership.update({ where: { id: membership.id }, data: { functionalRole } });
+      await tx.organization.update({ where: { id: membership.organizationId }, data: { conventionCollective: conventionCollective || null } });
+      await tx.$executeRaw`UPDATE "organizations" SET "legalCategory" = ${legalCategory}, "atmpRate" = ${atmpRate}, "healthPlanMonthlyAmount" = ${healthPlanMonthlyAmount}, "healthPlanEmployerRate" = ${healthPlanEmployerRate} WHERE "id" = ${membership.organizationId}`;
+    });
+  } else {
+    await prisma.membership.update({ where: { id: membership.id }, data: { functionalRole } });
+  }
+
+  revalidatePath("/dashboard/configuration");
+  revalidatePath("/dashboard/configuration/organisation");
+  revalidatePath("/dashboard/employees");
+  revalidatePath("/dashboard/events");
+  revalidatePath("/dashboard/payroll");
+  setOrganizationSavedCookie();
+  redirect("/dashboard/configuration/organisation");
+}
+
 export async function updateConventionCollective(formData: FormData) {
   const membership = await getCurrentMembership();
   if (!membership) throw new Error("Non authentifié ou aucune organisation active");
