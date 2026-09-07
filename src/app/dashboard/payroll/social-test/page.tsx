@@ -72,10 +72,8 @@ async function testSocialPayroll() {
       situation: {
         "établissement . taux ATMP": `${socialContext.atmpRate}%`,
         "entreprise . date de création": socialContext.companyCreationDate,
-        "établissement . commune": {
-          nom: socialContext.payrollCity,
-          département: socialContext.payrollDepartment,
-        },
+        "établissement . commune . nom": socialContext.payrollCity,
+        "établissement . commune . département": socialContext.payrollDepartment,
         "salarié . rémunération . avantages en nature": "non",
         "salarié . régimes spécifiques . taux réduits": "non",
         "situation personnelle . domiciliation fiscale à l'étranger": "non",
