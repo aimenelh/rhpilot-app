@@ -356,11 +356,11 @@ export async function calculatePayrollPeriod(input: {
         },
         variables: calculated.variables,
         validatedAbsences: calculated.validatedAbsences.map((absence) => ({
-          absenceId: absence.id,
+          absenceId: absence.absenceId,
           type: absence.type,
           startDate: absence.startDate.toISOString(),
           endDate: absence.endDate.toISOString(),
-          payrollImpactStatus: absence.payrollImpactStatus,
+          payrollImpactStatus: absence.status,
         })),
         variableTreatments: calculated.treatments,
         ruleSet: rules.ruleSet,
