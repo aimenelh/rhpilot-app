@@ -9,7 +9,7 @@ import { Reveal } from "@/components/landing/Reveal";
 import { FaqItem } from "@/components/landing/FaqItem";
 
 export const metadata = {
-  title: "Vos questions, avant de vous lancer — RH Pilot",
+  title: "Vos questions, avant de vous lancer, RH Pilot",
   description:
     "Excel, SIRH, prix, adoption par l'équipe, sécurité des données : toutes les questions qu'on nous pose vraiment, avec des réponses honnêtes.",
 };

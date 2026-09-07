@@ -236,7 +236,7 @@ export function DiagnosticQuiz() {
               <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
                 <Mail size={14} /> Recevoir ce diagnostic par email
               </p>
-              <p className="mt-1 text-xs text-ink-faint">Optionnel — pour le retrouver plus tard.</p>
+              <p className="mt-1 text-xs text-ink-faint">Optionnel, pour le retrouver plus tard.</p>
               <div className="mt-3 flex gap-2">
                 <input
                   type="email"

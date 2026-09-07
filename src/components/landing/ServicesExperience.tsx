@@ -27,11 +27,11 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
 const FIND_ITEMS = [
-  { id: "lea", icon: Stethoscope, label: "Visite médicale — Léa", paper: "#fde68a", top: "26%", left: "34%", rotate: -6 },
-  { id: "karim", icon: Users, label: "Entretien annuel — Karim", paper: "#bfdbfe", top: "13%", left: "58%", rotate: 4 },
-  { id: "ines", icon: FileText, label: "Contrat CDD — Inès", paper: "#bbf7d0", top: "60%", left: "54%", rotate: -4 },
-  { id: "yanis", icon: FileWarning, label: "Document manquant — Yanis", paper: "#fed7aa", top: "82%", left: "30%", rotate: 5 },
-  { id: "julie", icon: Bell, label: "Rappel équipe — Julie", paper: "#fbcfe8", top: "45%", left: "14%", rotate: 3 },
+  { id: "lea", icon: Stethoscope, label: "Visite médicale : Léa", paper: "#fde68a", top: "26%", left: "34%", rotate: -6 },
+  { id: "karim", icon: Users, label: "Entretien annuel : Karim", paper: "#bfdbfe", top: "13%", left: "58%", rotate: 4 },
+  { id: "ines", icon: FileText, label: "Contrat CDD : Inès", paper: "#bbf7d0", top: "60%", left: "54%", rotate: -4 },
+  { id: "yanis", icon: FileWarning, label: "Document manquant : Yanis", paper: "#fed7aa", top: "82%", left: "30%", rotate: 5 },
+  { id: "julie", icon: Bell, label: "Rappel équipe : Julie", paper: "#fbcfe8", top: "45%", left: "14%", rotate: 3 },
 ];
 
 const DUST = [
@@ -379,7 +379,7 @@ export function ServicesExperience() {
                     <div className="relative h-20 w-20">
                       <div className="absolute inset-0" style={{ transform: "rotate(-4deg)" }}>
                         <div style={{ boxShadow: revealed ? "0 0 0 3px rgba(244,63,94,0.45)" : "none", borderRadius: 2 }}>
-                          <PostIt icon={Hourglass} label="Période d'essai — Mathis" paper="#e9d5ff" />
+                          <PostIt icon={Hourglass} label="Période d'essai : Mathis" paper="#e9d5ff" />
                         </div>
                       </div>
                       <div
@@ -434,7 +434,7 @@ export function ServicesExperience() {
                   <TriangleAlert size={16} className="text-accent-rose" />
                   <p className="text-sm font-semibold text-ink">À anticiper</p>
                 </div>
-                <p className="mt-2 text-base font-medium text-ink">Période d&apos;essai — Mathis</p>
+                <p className="mt-2 text-base font-medium text-ink">Période d&apos;essai : Mathis</p>
                 <p className="text-sm text-ink-faint">Échéance dans 5 jours</p>
               </Card>
               <Button className="press-fx mt-8 px-6 py-3 text-base" onClick={() => setStep(3)}>

@@ -203,7 +203,7 @@ export function AppShell({
       <div className="flex min-w-0 flex-1 flex-col">
         {demoExpiresAt && demoCountdownLabel && (
           <div className="border-b border-accent-amber/30 bg-accent-amber/10 px-4 py-2 text-center text-xs font-medium text-ink md:px-8">
-            Données de démonstration actives — purge automatique dans {demoCountdownLabel}
+            Données de démonstration actives · purge automatique dans {demoCountdownLabel}
           </div>
         )}
 

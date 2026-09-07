@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { ArticleLayout, H2, P, List } from "@/components/landing/ArticleLayout";
 
 export const metadata = {
-  title: "Délai de prévenance en fin de période d'essai — RH Pilot",
+  title: "Délai de prévenance en fin de période d'essai, RH Pilot",
   description:
     "Ce que dit précisément le Code du travail sur le délai de prévenance en fin de période d'essai, et le piège que presque personne ne voit venir.",
 };

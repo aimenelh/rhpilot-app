@@ -46,7 +46,7 @@ export default async function AboutConfigPage() {
           </div>
           <div className="flex items-center justify-between">
             <dt className="text-ink-soft">Version</dt>
-            <dd className="font-medium text-ink">RH Pilot — Bêta</dd>
+            <dd className="font-medium text-ink">RH Pilot · Bêta</dd>
           </div>
         </dl>
       </Card>

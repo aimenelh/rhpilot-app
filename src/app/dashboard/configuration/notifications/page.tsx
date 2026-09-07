@@ -36,7 +36,7 @@ export default async function NotificationsConfigPage() {
         <Card className="mt-6">
           <h2 className="text-sm font-semibold text-ink">Relances automatiques</h2>
           <p className="mt-1 text-sm text-ink-soft">
-            Sans règle définie, aucune relance automatique n&apos;est envoyée — seuls les
+            Sans règle définie, aucune relance automatique n&apos;est envoyée. Seuls les
             résumés programmés depuis Notifications continuent de fonctionner normalement.
             Ajoutez une règle pour prévenir la personne assignée (et/ou son manager) un
             certain nombre de jours avant chaque échéance.

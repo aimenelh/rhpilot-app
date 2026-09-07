@@ -17,7 +17,7 @@ export default async function BulkTriggerPage() {
     <div className="max-w-2xl">
       <h1 className="text-2xl font-semibold text-ink">Déclencher un événement en masse</h1>
       <p className="mt-1 text-sm text-ink-soft">
-        Utile pour rattraper des salariés déjà présents dans votre organisation — par exemple
+        Utile pour rattraper des salariés déjà présents dans votre organisation : par exemple
         programmer un même type d&apos;échéance pour plusieurs personnes en une fois, plutôt que
         fiche par fiche.
       </p>

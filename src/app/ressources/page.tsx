@@ -6,7 +6,7 @@ import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
 import { Reveal } from "@/components/landing/Reveal";
 
 export const metadata = {
-  title: "Ressources — RH Pilot",
+  title: "Ressources, RH Pilot",
   description:
     "Guides pratiques sur les obligations RH : délais légaux, échéances à ne pas manquer, et ce que le Code du travail dit vraiment.",
 };

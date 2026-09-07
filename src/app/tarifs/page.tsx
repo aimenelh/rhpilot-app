@@ -91,9 +91,7 @@ export default function TarifsPage() {
                 </div>
                 <div className="flex items-start gap-2.5">
                   <Dot color="bg-brand-primary" />
-                  <span>
-                    Paie — nouveau module, déployé progressivement
-                  </span>
+                  <span>Bulletins de paie calculés à partir de règles versionnées, jamais estimées</span>
                 </div>
                 <div className="flex items-start gap-2.5">
                   <Dot color="bg-brand-primary" />
@@ -146,8 +144,8 @@ export default function TarifsPage() {
         <Reveal>
           <p className="text-sm text-ink-faint">
             RH Pilot est en bêta. Le Copilote IA reste gratuit pour tout le monde tant que la bêta
-            dure, quel que soit le palier choisi. Le module Paie est en cours de construction et
-            se déploie progressivement, fonctionnalité par fonctionnalité.
+            dure, quel que soit le palier choisi. Le module Paie calcule à partir de règles
+            versionnées et continue de se construire vers une conformité complète.
           </p>
         </Reveal>
       </section>

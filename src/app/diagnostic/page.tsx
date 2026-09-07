@@ -5,7 +5,7 @@ import { Reveal } from "@/components/landing/Reveal";
 import { DiagnosticQuiz } from "@/components/landing/DiagnosticQuiz";
 
 export const metadata = {
-  title: "Diagnostic RH — RH Pilot",
+  title: "Diagnostic RH, RH Pilot",
   description:
     "Testez en 2 minutes la santé RH de votre entreprise : périodes d'essai, visites médicales, entretiens professionnels, charge administrative.",
 };

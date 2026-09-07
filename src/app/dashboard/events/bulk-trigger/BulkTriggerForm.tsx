@@ -32,12 +32,12 @@ export function BulkTriggerForm({
         <h2 className="text-sm font-semibold text-ink">Format attendu</h2>
         <p className="mt-1 text-sm text-ink-soft">
           Une ligne par salarié : <code className="rounded bg-surface-subtle px-1 py-0.5 text-xs">Prénom,Nom,AAAA-MM-JJ</code>{" "}
-          — le prénom et le nom doivent correspondre exactement à une fiche déjà existante.
+          : le prénom et le nom doivent correspondre exactement à une fiche déjà existante.
         </p>
         <pre className="mt-3 overflow-x-auto rounded-lg bg-ink px-4 py-3 text-xs text-white">{EXAMPLE}</pre>
         <p className="mt-2 text-xs text-ink-faint">
           Si plusieurs salariés de votre organisation portent exactement le même prénom et nom,
-          la ligne correspondante est ignorée et signalée comme ambiguë — jamais un choix fait au
+          la ligne correspondante est ignorée et signalée comme ambiguë. Jamais un choix fait au
           hasard entre deux personnes. 500 lignes maximum par envoi.
         </p>
       </Card>

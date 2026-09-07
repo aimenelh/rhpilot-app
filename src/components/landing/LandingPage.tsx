@@ -449,15 +449,12 @@ export function LandingPage() {
           paie est un processus mensuel, pas de la même famille. */}
       <section className="mx-auto max-w-3xl px-6 pb-16 text-center">
         <Reveal>
-          <p className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">
-            Bientôt
-          </p>
-          <h2 className="mt-3 text-2xl font-semibold text-ink">
-            La paie, intégrée à RH Pilot
+          <h2 className="text-2xl font-semibold text-ink">
+            La paie, construite comme le reste de RH Pilot
           </h2>
           <p className="mx-auto mt-3 max-w-xl text-sm text-ink-soft">
-            Un module de paie pensé pour s&apos;appuyer sur les mêmes données que le reste de RH
-            Pilot, en cours de construction et déployé progressivement sur le palier Pro.
+            Un moteur qui calcule à partir de règles versionnées et datées, jamais d&apos;estimation.
+            En construction, disponible progressivement sur le palier Pro.
           </p>
         </Reveal>
       </section>

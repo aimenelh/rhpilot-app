@@ -18,7 +18,7 @@ import { Reveal } from "@/components/landing/Reveal";
 import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
 
 export const metadata = {
-  title: "Sécurité — RH Pilot",
+  title: "Sécurité, RH Pilot",
   description:
     "Comment RH Pilot protège vos données RH : isolation entre organisations, hébergement en Europe, authentification déléguée, traçabilité complète.",
 };

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/Button";
 import { ArticleLayout, H2, P } from "@/components/landing/ArticleLayout";
 
 export const metadata = {
-  title: "Visite médicale d'embauche : ce qu'il faut savoir — RH Pilot",
+  title: "Visite médicale d'embauche : ce qu'il faut savoir, RH Pilot",
   description:
     "La visite médicale d'embauche a été remplacée par la VIP en 2017. Ses délais réels, ses exceptions, et pourquoi elle passe souvent à la trappe.",
 };
