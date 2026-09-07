@@ -19,6 +19,16 @@ type Snapshot = {
   };
   variables?: Array<{ label?: unknown; amount?: unknown }>;
   ruleSource?: { sourceName?: unknown };
+  socialEngine?: {
+    modelVersion?: unknown;
+    contributionDetails?: Array<{
+      code?: unknown;
+      label?: unknown;
+      sourceRule?: unknown;
+      side?: unknown;
+      amount?: unknown;
+    }>;
+  };
   result?: { netSocialAmount?: unknown };
 };
 
@@ -38,6 +48,22 @@ function asNumber(value: unknown): number {
 
 function normalizeSnapshot(value: unknown): Snapshot {
   return isRecord(value) ? (value as Snapshot) : {};
+}
+
+function normalizeContributionDetails(snapshot: Snapshot) {
+  if (!Array.isArray(snapshot.socialEngine?.contributionDetails)) return [];
+  return snapshot.socialEngine.contributionDetails.flatMap((contribution) => {
+    const side = contribution.side === "EMPLOYER" ? "EMPLOYER" : contribution.side === "EMPLOYEE" ? "EMPLOYEE" : null;
+    const label = asString(contribution.label).trim();
+    const amount = asNumber(contribution.amount);
+    if (!side || !label || !Number.isFinite(amount) || amount === 0) return [];
+    return [{
+      label,
+      side,
+      amount,
+      sourceRule: asString(contribution.sourceRule),
+    }];
+  });
 }
 
 export async function generatePayrollPayslipsAction(
@@ -112,11 +138,7 @@ export async function generatePayrollPayslipsAction(
       const snapshot = normalizeSnapshot(calculation.calculationSnapshot);
       const agreementId = asString(snapshot.profile?.collectiveAgreementId) || profile.collectiveAgreementId || organization.collectiveAgreementId || null;
       const agreement = agreementId ? agreementById.get(agreementId) : null;
-      const contributionRows = await prisma.payrollContribution.findMany({
-        where: { calculationId: calculation.id },
-        select: { label: true, side: true, baseAmount: true, rate: true, amount: true },
-        orderBy: { id: "asc" },
-      });
+      const contributionDetails = normalizeContributionDetails(snapshot);
 
       const pdf = generatePayslipPdf({
         employer: {
@@ -152,13 +174,7 @@ export async function generatePayrollPayslipsAction(
           netSocial: asNumber(snapshot.result?.netSocialAmount),
           totalEmployerCost: Number(calculation.grossAmount) + Number(calculation.employerContributions),
         },
-        contributions: contributionRows.map((contribution) => ({
-          label: contribution.label,
-          side: contribution.side === "EMPLOYER" ? "EMPLOYER" : "EMPLOYEE",
-          baseAmount: Number(contribution.baseAmount),
-          rate: Number(contribution.rate),
-          amount: Number(contribution.amount),
-        })),
+        contributions: contributionDetails,
         collectiveAgreement: agreement ? `${agreement.name} (IDCC ${agreement.idcc})` : "",
         source: asString(snapshot.ruleSource?.sourceName),
       });
