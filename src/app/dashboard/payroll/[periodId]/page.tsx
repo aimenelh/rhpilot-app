@@ -213,7 +213,8 @@ export default async function PayrollPeriodPage({
     .map((employee) => calculationByEmployee.get(employee.id))
     .filter((calculation): calculation is (typeof calculations)[number] => Boolean(calculation));
 
-  const hasValidatedRule = validatedRules.length > 0;
+  const calculationRule = validatedRules.find((rule) => rule.code !== "FR.SMIC.MONTHLY_GROSS") ?? null;
+  const hasValidatedRule = calculationRule !== null;
   const calculationDisabled =
     membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN"
       ? true
@@ -307,8 +308,8 @@ export default async function PayrollPeriodPage({
           <PayrollCalculateButton
             periodId={period.id}
             disabled={calculationDisabled}
-            ruleCode={validatedRules[0].code}
-            ruleScope={validatedRules[0].scope}
+            ruleCode={calculationRule!.code}
+            ruleScope={calculationRule!.scope}
           />
         ) : (
           <p className="mt-4 rounded-lg bg-accent-amber/10 px-3 py-2 text-sm text-accent-amber">
