@@ -1,4 +1,9 @@
 import { prisma } from "@/lib/prisma";
+import {
+  resolveAbsencePayrollTreatment,
+  type AbsencePayrollImpactResolution,
+  type AbsencePayrollTreatmentRule,
+} from "./absence-payroll-treatment";
 
 export type ValidatedAbsencePayrollImpact = {
   absenceId: string;
@@ -42,8 +47,7 @@ export function getCalendarOverlapDays(startDate: Date, endDate: Date, periodSta
  *
  * La durée calculée ici est strictement une durée calendaire de chevauchement.
  * Elle ne représente ni des jours travaillés, ni des jours ouvrés, ni des jours
- * ouvrables et ne produit aucun montant de paie. Ces éléments seront déterminés
- * plus tard par le calendrier salarié et les règles légales/conventionnelles.
+ * ouvrables et ne produit aucun montant de paie.
  */
 export async function resolveValidatedAbsencesForPayrollPeriod(input: {
   organizationId: string;
@@ -81,4 +85,25 @@ export async function resolveValidatedAbsencesForPayrollPeriod(input: {
     calendarDaysInPeriod: getCalendarOverlapDays(absence.startDate, absence.endDate, periodStart, periodEnd),
     status: "READY",
   }));
+}
+
+/**
+ * Interprète les absences à partir d'un jeu de règles déjà versionné et validé.
+ * Cette fonction détermine seulement le traitement et sa base de calcul ; elle
+ * ne valorise jamais une absence en euros.
+ */
+export function resolveValidatedAbsencePayrollImpacts(input: {
+  absences: ValidatedAbsencePayrollImpact[];
+  rules: AbsencePayrollTreatmentRule[];
+}): AbsencePayrollImpactResolution[] {
+  return input.absences.map((absence) =>
+    resolveAbsencePayrollTreatment({
+      absence: {
+        absenceId: absence.absenceId,
+        type: absence.type,
+        calendarDaysInPeriod: absence.calendarDaysInPeriod,
+      },
+      rules: input.rules,
+    }),
+  );
 }
