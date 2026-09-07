@@ -1,0 +1,1 @@
+Le traitement des absences est maintenant décrit par une règle versionnée, sans déduction automatique par type d’absence.
