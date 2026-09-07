@@ -6,6 +6,7 @@ export const SOCIAL_MODEL_VERSION = "11.1.0";
 const GROSS_RULE = "salarié . contrat . salaire brut";
 const LEGAL_CATEGORY_RULE = "entreprise . catégorie juridique";
 const DATE_RULE = "date";
+const CREATION_DATE_RULE = "entreprise . date de création";
 const CONTRACT_RULE = "salarié . contrat";
 const HIRE_DATE_RULE = "salarié . contrat . date d'embauche";
 const EXECUTIVE_STATUS_RULE = "salarié . contrat . statut cadre";
@@ -77,14 +78,15 @@ function formatPublicodesDate(value: Date): string {
 
 /**
  * Point d'entrée unique vers le modèle social officiel publié par Mon-entreprise.
- * RH Pilot fournit explicitement la forme juridique, la date de calcul, le
- * contexte contractuel et la complémentaire santé déjà présents dans le dossier.
- * Aucun défaut métier n'est injecté par RH Pilot.
+ * RH Pilot fournit explicitement la forme juridique, la date de calcul, la
+ * date de création, le contexte contractuel et la complémentaire santé déjà
+ * présents dans le dossier. Aucun défaut métier n'est injecté par RH Pilot.
  */
 export function calculateSocialPayroll(input: {
   grossAmount: number;
   legalCategory: string;
   calculationDate: Date;
+  companyCreationDate: Date;
   contractType: string;
   hireDate: Date;
   executiveStatus: boolean;
@@ -97,6 +99,9 @@ export function calculateSocialPayroll(input: {
   }
   if (!(input.calculationDate instanceof Date) || Number.isNaN(input.calculationDate.getTime())) {
     throw new Error("Le calcul social est bloqué : la date de calcul est absente ou invalide.");
+  }
+  if (!(input.companyCreationDate instanceof Date) || Number.isNaN(input.companyCreationDate.getTime())) {
+    throw new Error("Le calcul social est bloqué : la date de création de l'entreprise est absente ou invalide.");
   }
   if (!(input.hireDate instanceof Date) || Number.isNaN(input.hireDate.getTime())) {
     throw new Error("Le calcul social est bloqué : la date d'embauche est absente ou invalide.");
@@ -118,6 +123,7 @@ export function calculateSocialPayroll(input: {
     [GROSS_RULE]: `${input.grossAmount} €/mois`,
     [LEGAL_CATEGORY_RULE]: `'${legalCategory}'`,
     [DATE_RULE]: formatPublicodesDate(input.calculationDate),
+    [CREATION_DATE_RULE]: formatPublicodesDate(input.companyCreationDate),
     [CONTRACT_RULE]: `'${contractType}'`,
     [HIRE_DATE_RULE]: formatPublicodesDate(input.hireDate),
     [EXECUTIVE_STATUS_RULE]: input.executiveStatus ? "oui" : "non",
