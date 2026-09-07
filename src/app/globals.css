@@ -121,9 +121,9 @@ h1, h2, h3 {
   }
 }
 
-/* Respiration photo de la landing : composition indépendante du contenu,
-   avec un fond léger et une zone réservée à droite pour garantir un écart
-   visuel stable entre la photo et les statistiques. */
+/* Respiration photo de la landing : la photo occupe une zone dédiée à droite,
+   tandis que les statistiques restent dans une largeur éditoriale indépendante.
+   Aucun élément ne peut donc passer sous la photo. */
 @media (min-width: 1100px) {
   .min-h-screen > section:nth-of-type(5) {
     position: relative;
@@ -135,17 +135,16 @@ h1, h2, h3 {
     border-bottom: 1px solid rgba(232, 67, 46, 0.08);
   }
 
-  /* La grille de contenu reprend une largeur éditoriale maîtrisée.
-     La photo dispose de sa propre zone à droite et ne force plus les
-     statistiques à s'étirer sur toute la fenêtre. */
+  /* Le contenu garde une largeur confortable et réserve explicitement
+     la colonne de droite au visuel. */
   .min-h-screen > section:nth-of-type(5) > div {
     position: relative;
     z-index: 2;
     width: calc(100% - 3rem);
-    max-width: 64rem;
+    max-width: 72rem;
     margin-left: auto;
     margin-right: auto;
-    padding-right: 0;
+    padding-right: 22rem;
   }
 
   .min-h-screen > section:nth-of-type(5)::before {
