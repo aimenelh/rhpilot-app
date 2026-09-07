@@ -60,15 +60,27 @@ export default function ResourcesPage() {
       <AmbientNetwork />
       <MarketingHeader />
 
-      <section className="mx-auto max-w-3xl px-6 py-16">
-        <Reveal variant="left">
-          <h1 className="max-w-xl text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
-            Ce que le droit du travail dit vraiment, maintenant.
-          </h1>
-          <p className="mt-4 max-w-lg text-lg text-ink-soft">
-            Actualité réglementaire, IA et recrutement, délais légaux. Sourcé, sans jargon inutile.
-          </p>
-        </Reveal>
+      <section className="mx-auto max-w-4xl px-6 py-16">
+        <div className="grid items-center gap-8 sm:grid-cols-[1fr_180px]">
+          <Reveal variant="left">
+            <h1 className="max-w-xl text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
+              Ce que le droit du travail dit vraiment, maintenant.
+            </h1>
+            <p className="mt-4 max-w-lg text-lg text-ink-soft">
+              Actualité réglementaire, IA et recrutement, délais légaux. Sourcé, sans jargon inutile.
+            </p>
+          </Reveal>
+          <Reveal delay={120} variant="scale">
+            <div className="rounded-2xl border border-surface-border bg-white p-2 shadow-card">
+              <img
+                src="https://images.pexels.com/photos/30767574/pexels-photo-30767574.jpeg?cs=srgb&dl=pexels-uiliamnornberg-30767574.jpg&fm=jpg"
+                alt="Portrait professionnel d'un homme sur fond teal"
+                className="h-52 w-full rounded-xl object-cover object-top"
+                loading="eager"
+              />
+            </div>
+          </Reveal>
+        </div>
       </section>
 
       <section className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
