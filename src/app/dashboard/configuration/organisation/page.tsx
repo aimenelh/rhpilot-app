@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { ArrowLeft } from "lucide-react";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -19,12 +20,13 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
   const socialRows = await prisma.$queryRaw<Array<{ legalCategory: string | null; atmpRate: unknown }>>`SELECT "legalCategory", "atmpRate" FROM "organizations" WHERE "id" = ${membership.organizationId} LIMIT 1`;
   const legalCategory = socialRows[0]?.legalCategory ?? "";
   const atmpRate = socialRows[0]?.atmpRate === null || socialRows[0]?.atmpRate === undefined ? "" : String(socialRows[0].atmpRate);
+  const saved = cookies().get("rhpilot-organization-saved")?.value === "1" || searchParams?.saved === "1";
   return (
     <div className="max-w-3xl">
       <Link href="/dashboard/configuration" className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-faint hover:text-ink"><ArrowLeft size={14} /> Configuration</Link>
       <h1 className="mt-3 text-2xl font-semibold text-ink">Organisation</h1>
       <p className="mt-1 text-sm text-ink-soft">Votre rôle RH, les paramètres sociaux et la convention collective applicable.</p>
-      {searchParams?.saved === "1" && <div role="status" className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">✓ Modifications enregistrées.</div>}
+      {saved && <div role="status" className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">✓ Modifications enregistrées.</div>}
       <Card className="mt-6">
         <h2 className="text-sm font-semibold text-ink">Votre rôle dans l&apos;organisation</h2>
         <p className="mt-1 text-sm text-ink-soft">Certaines tâches des parcours RH sont conçues pour être assignées automatiquement à &laquo;&nbsp;la personne RH&nbsp;&raquo; de l&apos;organisation. RH Pilot ne devine jamais qui occupe ce rôle.</p>
