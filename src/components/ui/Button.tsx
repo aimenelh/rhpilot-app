@@ -1,4 +1,4 @@
-import { ButtonHTMLAttributes, forwardRef } from "react";
+import { ButtonHTMLAttributes, ReactElement, cloneElement, forwardRef, isValidElement } from "react";
 
 type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
 
@@ -14,16 +14,27 @@ const VARIANT_CLASSES: Record<ButtonVariant, string> = {
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
+  asChild?: boolean;
 }
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ variant = "primary", className = "", ...props }, ref) => {
+  ({ variant = "primary", className = "", asChild = false, children, ...props }, ref) => {
+    const classes = `inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:active:scale-100 ${VARIANT_CLASSES[variant]} ${className}`;
+
+    if (asChild) {
+      if (!isValidElement(children)) {
+        throw new Error("Button asChild attend un élément React unique comme enfant.");
+      }
+
+      return cloneElement(children as ReactElement<{ className?: string }>, {
+        className: `${classes} ${children.props.className ?? ""}`,
+      });
+    }
+
     return (
-      <button
-        ref={ref}
-        className={`inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-medium transition-all duration-150 active:scale-[0.97] disabled:cursor-not-allowed disabled:active:scale-100 ${VARIANT_CLASSES[variant]} ${className}`}
-        {...props}
-      />
+      <button ref={ref} className={classes} {...props}>
+        {children}
+      </button>
     );
   }
 );
