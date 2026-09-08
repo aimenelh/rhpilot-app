@@ -5,5 +5,5 @@ import { PayrollCapabilityEditorial, type PayrollEditorialCapability } from "./P
 export type PayrollCapability = PayrollEditorialCapability;
 
 export function PayrollCapabilityPage({ feature }: { feature: PayrollCapability }) {
-  return <PayrollCapabilityEditorial feature={feature} />;
+  return <PayrollCapabilityEditorial capability={feature} />;
 }
