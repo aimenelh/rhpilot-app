@@ -1,4 +1,4 @@
-CREATE TABLE "payroll_ledger_entries" (
+CREATE TABLE IF NOT EXISTS "payroll_ledger_entries" (
     "id" TEXT NOT NULL,
     "organizationId" TEXT NOT NULL,
     "payrollPeriodId" TEXT NOT NULL,
@@ -23,8 +23,21 @@ CREATE TABLE "payroll_ledger_entries" (
     CONSTRAINT "payroll_ledger_entries_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "payroll_ledger_entries_calculationId_idx" ON "payroll_ledger_entries"("calculationId");
-CREATE INDEX "payroll_ledger_entries_employee_period_idx" ON "payroll_ledger_entries"("organizationId", "payrollPeriodId", "employeeId");
-CREATE INDEX "payroll_ledger_entries_code_idx" ON "payroll_ledger_entries"("code");
+CREATE INDEX IF NOT EXISTS "payroll_ledger_entries_calculationId_idx" ON "payroll_ledger_entries"("calculationId");
+CREATE INDEX IF NOT EXISTS "payroll_ledger_entries_employee_period_idx" ON "payroll_ledger_entries"("organizationId", "payrollPeriodId", "employeeId");
+CREATE INDEX IF NOT EXISTS "payroll_ledger_entries_code_idx" ON "payroll_ledger_entries"("code");
 
-ALTER TABLE "payroll_ledger_entries" ADD CONSTRAINT "payroll_ledger_entries_calculationId_fkey" FOREIGN KEY ("calculationId") REFERENCES "payroll_calculations"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'payroll_ledger_entries_calculationId_fkey'
+      AND conrelid = 'payroll_ledger_entries'::regclass
+  ) THEN
+    ALTER TABLE "payroll_ledger_entries"
+      ADD CONSTRAINT "payroll_ledger_entries_calculationId_fkey"
+      FOREIGN KEY ("calculationId") REFERENCES "payroll_calculations"("id")
+      ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+END $$;
