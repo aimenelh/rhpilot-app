@@ -5,6 +5,8 @@ import {
 } from "./payroll-ledger";
 import type { SocialPayrollResult } from "./social-engine";
 
+export { persistPayrollLedger } from "./payroll-ledger";
+
 export type PayrollLedgerVariable = {
   code: string;
   label: string;
