@@ -7,6 +7,7 @@ import { calculateAbsenceGrossImpact } from "./absence-payroll-gross-impact";
 import { resolveCollectiveAgreementAbsenceTreatment } from "./collective-agreement-absence-prisma";
 import { resolveOrganizationLegalCategory } from "./social-organization-context";
 import { calculateSocialPayroll } from "./social-engine";
+import { buildPayrollLedger, persistPayrollLedger } from "./payroll-ledger-builder";
 import type { PayrollVariableInput } from "./domain";
 
 export type PayrollPeriodCalculationResult = { status: "CALCULATED"; periodId: string; employeeCount: number; ruleVersionId: string };
@@ -103,7 +104,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     const globalAbsenceResolutions = resolveValidatedAbsencePayrollImpacts({ absences: employeeAbsences, rules: rules.absenceTreatments });
     const collectiveAbsenceTreatments = await Promise.all(employeeAbsences.map((absence) => resolveCollectiveAgreementAbsenceTreatment({ organizationId: input.organizationId, employeeId: employee.id, periodDate: calculationDate, absenceType: absence.type, fallbackRuleVersionId: rules.ruleVersionId })));
     const absenceResolutions = employeeAbsences.map((absence, index) => { const collectiveTreatment = collectiveAbsenceTreatments[index]; if (collectiveTreatment) return { status: "RESOLVED" as const, absenceId: absence.absenceId, absenceType: absence.type, calendarDaysInPeriod: absence.calendarDaysInPeriod, ruleVersionId: collectiveTreatment.ruleVersionId, effect: collectiveTreatment.effect, basis: collectiveTreatment.basis, divisor: collectiveTreatment.divisor ?? null, rate: collectiveTreatment.rate ?? null }; return globalAbsenceResolutions[index]; });
-    const absenceGrossImpacts = absenceResolutions.map((resolution) => { if (resolution.status === "RULE_REQUIRED") throw new Error(`Aucune règle de traitement validée n'est disponible pour l'absence ${resolution.absenceType}.`); const impact = calculateAbsenceGrossImpact({ baseSalaryAmount, monthlyCalendarDays, absenceDays: resolution.calendarDaysInPeriod, rule: { absenceType: resolution.absenceType, effect: resolution.effect, basis: resolution.basis, ruleVersionId: resolution.ruleVersionId, ...(resolution.divisor !== null ? { divisor: resolution.divisor } : {}), ...(resolution.rate !== null ? { rate: resolution.rate } : {}) } }); if (impact.status !== "RESOLVED") throw new Error(`La base de calcul de l'absence ${resolution.absenceType} n'est pas encore prise en charge.`); return { absenceId: resolution.absenceId, absenceType: resolution.absenceType, ruleVersionId: impact.ruleVersionId, basis: impact.basis, effect: impact.effect, absenceDays: resolution.calendarDaysInPeriod, grossDelta: impact.grossDelta, derivedVariableCode: impact.derivedVariableCode, derivedVariableLabel: impact.derivedVariableLabel }; });
+    const absenceGrossImpacts = absenceResolutions.map((resolution) => { if (resolution.status === "RULE_REQUIRED") throw new Error(`Aucune règle de traitement validée n'est disponible pour l'absence ${resolution.absenceType}.`); const impact = calculateAbsenceGrossImpact({ baseSalaryAmount, monthlyCalendarDays, absenceDays: resolution.calendarDaysInPeriod, rule: { absenceType: resolution.absenceType, effect: resolution.effect, basis: resolution.basis, ruleVersionId: resolution.ruleVersionId, ...(resolution.divisor !== null ? { divisor: resolution.divisor } : {}), ...(resolution.rate !== null ? { rate: resolution.rate } : {}) }); if (impact.status !== "RESOLVED") throw new Error(`La base de calcul de l'absence ${resolution.absenceType} n'est pas encore prise en charge.`); return { absenceId: resolution.absenceId, absenceType: resolution.absenceType, ruleVersionId: impact.ruleVersionId, basis: impact.basis, effect: impact.effect, absenceDays: resolution.calendarDaysInPeriod, grossDelta: impact.grossDelta, derivedVariableCode: impact.derivedVariableCode, derivedVariableLabel: impact.derivedVariableLabel }; });
     const absenceVariableInputs = absenceGrossImpacts.map((impact) => toVariableInput({ code: impact.derivedVariableCode, label: impact.derivedVariableLabel, amount: impact.grossDelta, unit: "EUR", source: "SYSTEM" }));
     const grossTreatments = [...treatments, ...absenceGrossImpacts.map((impact) => ({ code: impact.derivedVariableCode, ruleVersionId: impact.ruleVersionId, grossDelta: impact.grossDelta, kind: "ADD_TO_GROSS" as const }))];
     const grossAmount = composeGrossAmount({ baseSalaryAmount, variableTreatments: grossTreatments });
@@ -118,11 +119,38 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
       const withholdingTaxStatus = withholdingTaxRate === 0 ? "RATE_NOT_PROVIDED" as const : "RATE_PROVIDED" as const;
       const snapshot = snapshotForEmployee({ period: { id: period.id, year: period.year, month: period.month }, profile: { id: calculated.profile.id, baseSalaryCents: calculated.profile.baseSalaryCents, monthlyHours: calculated.profile.monthlyHours === null ? null : String(calculated.profile.monthlyHours), effectiveFrom: calculated.profile.effectiveFrom.toISOString(), effectiveUntil: calculated.profile.effectiveUntil?.toISOString() ?? null, collectiveAgreementId: calculated.profile.collectiveAgreementId, classificationCode: calculated.profile.classificationCode, classificationLabel: calculated.profile.classificationLabel, level: calculated.profile.level, coefficient: calculated.profile.coefficient }, variables: calculated.variables, validatedAbsences: calculated.validatedAbsences.map((absence) => ({ absenceId: absence.absenceId, type: absence.type, startDate: absence.startDate.toISOString(), endDate: absence.endDate.toISOString(), payrollImpactStatus: absence.status })), variableTreatments: calculated.treatments, absenceGrossImpacts: calculated.absenceGrossImpacts, ruleSet: rules.ruleSet, ruleSource: rules.source, withholdingTaxStatus, withholdingTaxRate, withholdingTax: calculated.withholdingTax, socialResult: calculated.socialResult });
       await tx.payrollCalculation.upsert({ where: { organizationId_payrollPeriodId_employeeId: { organizationId: input.organizationId, payrollPeriodId: period.id, employeeId: calculated.employeeId } }, create: { id: crypto.randomUUID(), organizationId: input.organizationId, payrollPeriodId: period.id, employeeId: calculated.employeeId, ruleSetVersion: rules.ruleVersionId, grossAmount: calculated.socialResult.grossAmount, employeeContributions: calculated.socialResult.employeeContributions, employerContributions: calculated.socialResult.employerContributions, netBeforeTax: calculated.socialResult.netBeforeTax, withholdingTax: calculated.withholdingTax, netPaid: calculated.socialResult.netBeforeTax - calculated.withholdingTax, netSocialAmount: calculated.socialResult.netSocialAmount, calculationSnapshot: snapshot }, update: { ruleSetVersion: rules.ruleVersionId, grossAmount: calculated.socialResult.grossAmount, employeeContributions: calculated.socialResult.employeeContributions, employerContributions: calculated.socialResult.employerContributions, netBeforeTax: calculated.socialResult.netBeforeTax, withholdingTax: calculated.withholdingTax, netPaid: calculated.socialResult.netBeforeTax - calculated.withholdingTax, netSocialAmount: calculated.socialResult.netSocialAmount, calculationSnapshot: snapshot } });
-      await tx.payrollContribution.deleteMany({ where: { calculationId: (await tx.payrollCalculation.findUniqueOrThrow({ where: { organizationId_payrollPeriodId_employeeId: { organizationId: input.organizationId, payrollPeriodId: period.id, employeeId: calculated.employeeId } }, select: { id: true } })).id } });
       const calculation = await tx.payrollCalculation.findUniqueOrThrow({ where: { organizationId_payrollPeriodId_employeeId: { organizationId: input.organizationId, payrollPeriodId: period.id, employeeId: calculated.employeeId } }, select: { id: true } });
+      await tx.payrollContribution.deleteMany({ where: { calculationId: calculation.id } });
       for (const contribution of calculated.socialResult.contributionDetails) {
         await tx.payrollContribution.create({ data: { id: crypto.randomUUID(), calculationId: calculation.id, code: contribution.code, label: contribution.label, side: contribution.side, baseAmount: calculated.socialResult.grossAmount, rate: 0, amount: contribution.amount, ruleVersionId: rules.ruleVersionId } });
       }
+
+      const ledgerEntries = buildPayrollLedger({
+        baseSalaryAmount: calculated.profile.baseSalaryCents / 100,
+        ruleVersionId: rules.ruleVersionId,
+        sourceName: rules.source.sourceName,
+        sourceUrl: rules.source.sourceUrl,
+        variables: calculated.treatments.map((treatment, index) => ({
+          code: calculated.variables[index]?.code ?? treatment.code,
+          label: calculated.variables[index]?.label ?? treatment.code,
+          amount: Math.abs(treatment.grossDelta),
+          grossDelta: treatment.grossDelta,
+          kind: treatment.kind,
+          ruleVersionId: treatment.ruleVersionId,
+        })),
+        absences: calculated.absenceGrossImpacts.map((impact) => ({
+          absenceId: impact.absenceId,
+          absenceType: impact.absenceType,
+          label: impact.derivedVariableLabel,
+          grossDelta: impact.grossDelta,
+          kind: impact.effect === "DEDUCT_FROM_GROSS" ? "DEDUCT_FROM_GROSS" : "ADD_TO_GROSS",
+          ruleVersionId: impact.ruleVersionId,
+        })),
+        socialResult: calculated.socialResult,
+        withholdingTax: calculated.withholdingTax,
+        withholdingTaxRateProvided: withholdingTaxRate !== 0,
+      });
+      await persistPayrollLedger(tx, calculation.id, ledgerEntries);
     }
     await tx.payrollPeriod.update({ where: { id: period.id }, data: { status: "CALCULATED", calculatedAt: new Date() } });
   });
