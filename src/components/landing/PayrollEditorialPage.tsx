@@ -1,9 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Check, ExternalLink, FileText, ShieldCheck } from "lucide-react";
+import { ArrowRight, Check, ExternalLink } from "lucide-react";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
-import { Button } from "@/components/ui/Button";
+import { Reveal } from "@/components/landing/Reveal";
 
 export type PayrollSource = {
   name: string;
@@ -122,12 +122,15 @@ function getVisualKey(eyebrow: string, variant?: string) {
 }
 
 function AccentTitle({ title, phrase }: { title: string; phrase: string }) {
-  if (!phrase || !title.includes(phrase)) return <>{title}</>;
-  const [before, after] = title.split(phrase);
+  if (!phrase || !title.toLowerCase().includes(phrase.toLowerCase())) return <>{title}</>;
+  const index = title.toLowerCase().indexOf(phrase.toLowerCase());
+  const before = title.slice(0, index);
+  const exact = title.slice(index, index + phrase.length);
+  const after = title.slice(index + phrase.length);
   return (
     <>
       {before}
-      <span className="text-brand-primary">{phrase}</span>
+      <span className="text-brand-primary">{exact}</span>
       {after}
     </>
   );
@@ -153,7 +156,14 @@ function SourcesStrip({ sources }: { sources?: PayrollSource[] }) {
   );
 }
 
-function HumanEditorialScene({ keyName, image, alt, kicker, title, text }: {
+function HumanEditorialScene({
+  keyName,
+  image,
+  alt,
+  kicker,
+  title,
+  text,
+}: {
   keyName: string;
   image: string;
   alt: string;
@@ -164,25 +174,45 @@ function HumanEditorialScene({ keyName, image, alt, kicker, title, text }: {
   const mascot = MASCOT_BY_KEY[keyName] ?? MASCOT_BY_KEY.production;
 
   return (
-    <div className="relative min-h-[430px] overflow-hidden rounded-2xl border border-surface-border bg-surface-subtle">
-      <div className="absolute inset-0 bg-[#F7F8FA]" aria-hidden="true" />
-      <div className="absolute left-[7%] top-[8%] h-[70%] w-[82%] -rotate-2 rounded-[2.25rem] bg-[#FCE7E3]" aria-hidden="true" />
-      <div className="absolute inset-y-[9%] left-[7%] w-[82%] overflow-hidden rounded-[2rem] border border-white bg-white shadow-card">
+    <div className="relative min-h-[500px] overflow-hidden rounded-2xl border border-surface-border bg-surface-subtle sm:min-h-[540px]">
+      <div className="absolute left-[6%] top-[8%] h-[74%] w-[86%] rounded-[42%_58%_48%_52%] bg-[#FCE7E3]" aria-hidden="true" />
+
+      <div className="absolute bottom-0 left-[5%] h-[73%] w-[60%] overflow-hidden rounded-t-[2rem] border-4 border-white bg-white shadow-card sm:left-[6%] sm:w-[58%]">
         <img src={image} alt={alt} className="h-full w-full object-cover" loading="eager" />
       </div>
-      <div className="absolute right-[5%] top-[8%] w-[54%] rounded-xl border border-surface-border bg-white p-4 shadow-card sm:p-5">
+
+      <div className="absolute right-[5%] top-[7%] z-20 w-[48%] rounded-xl border border-surface-border bg-white p-4 shadow-card sm:right-[6%] sm:p-5">
         <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-primary">{kicker}</p>
-        <p className="mt-2 text-base font-semibold leading-6 tracking-tight text-ink">{title}</p>
+        <h2 className="mt-2 font-[var(--font-dm-sans)] text-base font-semibold leading-6 tracking-[-0.02em] text-ink sm:text-lg">
+          {title}
+        </h2>
         <p className="mt-2 text-xs leading-5 text-ink-soft">{text}</p>
       </div>
-      <div className="absolute bottom-[5%] right-[5%] h-44 w-44 sm:h-52 sm:w-52">
-        <Image src={mascot} alt="Mascotte RH Pilot" fill className="object-contain" sizes="208px" />
+
+      <div className="absolute bottom-[2%] right-[4%] z-30 h-48 w-48 sm:bottom-[3%] sm:right-[5%] sm:h-56 sm:w-56">
+        <Image
+          src={mascot}
+          alt="Mascotte RH Pilot"
+          fill
+          className="object-contain"
+          sizes="224px"
+        />
       </div>
-      <div className="absolute bottom-[9%] left-[8%] flex h-10 w-10 items-center justify-center rounded-lg border border-brand-primary/20 bg-white text-brand-primary shadow-card" aria-hidden="true">
-        <FileText className="h-5 w-5" />
-      </div>
-      <div className="absolute left-[4%] top-[11%] h-2 w-2 rounded-full bg-brand-primary" aria-hidden="true" />
+
+      <div className="absolute bottom-[4%] left-[5%] z-20 h-3 w-16 rounded-full bg-brand-primary/80" aria-hidden="true" />
+      <div className="absolute right-[4%] top-[44%] h-2.5 w-2.5 rounded-full bg-brand-primary" aria-hidden="true" />
     </div>
+  );
+}
+
+function PrimaryButton({ children }: { children: React.ReactNode }) {
+  return (
+    <Link
+      href="/contact"
+      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-primary-dark active:scale-[0.97]"
+    >
+      {children}
+    </Link>
   );
 }
 
@@ -193,33 +223,28 @@ function PayrollHero({ feature }: { feature: PayrollEditorialFeature }) {
 
   return (
     <section className="border-b border-surface-border bg-white">
-      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-12 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-14 lg:px-10 lg:py-20">
+      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-14 lg:px-10 lg:py-20">
         <div className="max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">{feature.eyebrow}</p>
-          <h1 className="mt-4 font-[var(--font-dm-sans)] text-4xl font-semibold leading-[1.04] tracking-[-0.04em] text-ink sm:text-5xl lg:text-[3.8rem]">
+          <h1 className="mt-4 font-[var(--font-dm-sans)] text-4xl font-semibold leading-[0.99] tracking-[-0.045em] text-ink sm:text-5xl lg:text-[3.85rem]">
             <AccentTitle title={feature.title} phrase={accent} />
           </h1>
           <p className="mt-6 max-w-xl text-base leading-7 text-ink-soft sm:text-lg sm:leading-8">{feature.intro}</p>
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <Button asChild>
-              <Link href="/contact">
-                Découvrir RH Pilot
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
-            </Button>
-            <div className="inline-flex items-center gap-2 rounded-lg border border-surface-border bg-surface-subtle px-3.5 py-2.5 text-sm text-ink-soft">
-              <ShieldCheck className="h-4 w-4 text-brand-primary" aria-hidden="true" />
-              Règles et données traçables
-            </div>
+            <PrimaryButton>
+              Découvrir RH Pilot
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </PrimaryButton>
           </div>
           <div className="mt-8 flex flex-wrap gap-2">
-            {feature.sources.slice(0, 3).map((source) => (
+            {feature.sources.slice(0, 4).map((source) => (
               <span key={source.name} className="rounded-lg border border-surface-border bg-white px-3 py-2 text-xs font-semibold text-ink">
                 {source.name}
               </span>
             ))}
           </div>
         </div>
+
         <HumanEditorialScene
           keyName={keyName}
           image={image}
@@ -235,24 +260,20 @@ function PayrollHero({ feature }: { feature: PayrollEditorialFeature }) {
 
 function PointsSection({ feature }: { feature: PayrollEditorialFeature }) {
   return (
-    <section className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
+    <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10 lg:py-20">
       <div className="max-w-2xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">{feature.workflowTitle}</p>
-        <h2 className="mt-2 font-[var(--font-dm-sans)] text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">Les points à contrôler</h2>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">À prendre en compte</p>
+        <h2 className="mt-3 font-[var(--font-dm-sans)] text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">
+          {feature.workflowTitle}
+        </h2>
       </div>
-      <div className="mt-8 grid gap-4 md:grid-cols-3">
+      <div className="mt-9 grid gap-4 md:grid-cols-3">
         {feature.points.map((point) => (
-          <div key={point.title} className="rounded-xl border border-surface-border bg-white p-5 shadow-card">
-            <div className="flex items-start gap-3">
-              <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-primary/10 text-brand-primary">
-                <Check className="h-4 w-4" aria-hidden="true" />
-              </div>
-              <div>
-                <h3 className="font-[var(--font-dm-sans)] text-base font-semibold text-ink">{point.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-ink-soft">{point.text}</p>
-              </div>
-            </div>
-          </div>
+          <Reveal key={point.title} className="rounded-xl border border-surface-border bg-white p-6 shadow-card">
+            <div className="h-1 w-10 rounded-full bg-brand-primary" aria-hidden="true" />
+            <h3 className="mt-5 font-[var(--font-dm-sans)] text-lg font-semibold tracking-[-0.02em] text-ink">{point.title}</h3>
+            <p className="mt-3 text-sm leading-6 text-ink-soft">{point.text}</p>
+          </Reveal>
         ))}
       </div>
     </section>
@@ -262,16 +283,16 @@ function PointsSection({ feature }: { feature: PayrollEditorialFeature }) {
 function WorkflowSection({ feature }: { feature: PayrollEditorialFeature }) {
   return (
     <section className="border-y border-surface-border bg-surface-subtle">
-      <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
+      <div className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10 lg:py-20">
         <div className="max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Séquence</p>
-          <h2 className="mt-2 font-[var(--font-dm-sans)] text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">{feature.workflowTitle}</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Le traitement</p>
+          <h2 className="mt-3 font-[var(--font-dm-sans)] text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">Du contexte au résultat</h2>
         </div>
-        <div className="mt-8 grid gap-px overflow-hidden rounded-xl border border-surface-border bg-surface-border md:grid-cols-4">
-          {feature.workflow.map((step, index) => (
-            <div key={step.label} className="bg-white p-5">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-primary">Étape {index + 1}</p>
-              <h3 className="mt-3 font-[var(--font-dm-sans)] text-base font-semibold text-ink">{step.label}</h3>
+        <div className="mt-9 grid gap-4 lg:grid-cols-4">
+          {feature.workflow.map((step) => (
+            <div key={step.label} className="rounded-xl border border-surface-border bg-white p-5">
+              <div className="h-1 w-8 rounded-full bg-brand-primary" aria-hidden="true" />
+              <h3 className="mt-4 font-[var(--font-dm-sans)] text-base font-semibold text-ink">{step.label}</h3>
               <p className="mt-2 text-sm leading-6 text-ink-soft">{step.text}</p>
             </div>
           ))}
@@ -283,23 +304,23 @@ function WorkflowSection({ feature }: { feature: PayrollEditorialFeature }) {
 
 function DetailsBlock({ feature }: { feature: PayrollEditorialFeature }) {
   return (
-    <section className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
-      <div className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr]">
+    <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10 lg:py-20">
+      <div className="grid gap-10 lg:grid-cols-[0.75fr_1.25fr]">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Références</p>
-          <h2 className="mt-2 font-[var(--font-dm-sans)] text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">{feature.detailsTitle}</h2>
+          <h2 className="mt-3 font-[var(--font-dm-sans)] text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">{feature.detailsTitle}</h2>
           <p className="mt-4 text-sm leading-6 text-ink-soft">{feature.note}</p>
         </div>
         <div>
-          <div className="space-y-2">
+          <div className="divide-y divide-surface-border rounded-xl border border-surface-border bg-white">
             {feature.details.map((detail) => (
-              <div key={detail} className="flex gap-3 rounded-xl border border-surface-border bg-white p-4">
-                <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-primary" aria-hidden="true" />
+              <div key={detail} className="flex gap-3 p-4">
+                <Check className="mt-1 h-4 w-4 shrink-0 text-brand-primary" aria-hidden="true" />
                 <p className="text-sm leading-6 text-ink-soft">{richText(detail)}</p>
               </div>
             ))}
           </div>
-          <div className="mt-6">
+          <div className="mt-5">
             <SourcesStrip sources={feature.sources} />
           </div>
         </div>
@@ -315,16 +336,18 @@ function CapabilityHero({ capability }: { capability: PayrollEditorialCapability
 
   return (
     <section className="border-b border-surface-border bg-white">
-      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-12 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-14 lg:px-10 lg:py-20">
+      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-14 lg:px-10 lg:py-20">
         <div className="max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">{capability.eyebrow}</p>
-          <h1 className="mt-4 font-[var(--font-dm-sans)] text-4xl font-semibold leading-[1.04] tracking-[-0.04em] text-ink sm:text-5xl lg:text-[3.8rem]">
+          <h1 className="mt-4 font-[var(--font-dm-sans)] text-4xl font-semibold leading-[0.99] tracking-[-0.045em] text-ink sm:text-5xl lg:text-[3.85rem]">
             <AccentTitle title={capability.title} phrase={accent} />
           </h1>
           <p className="mt-6 max-w-xl text-base leading-7 text-ink-soft sm:text-lg sm:leading-8">{capability.intro}</p>
-          <div className="mt-8 inline-flex items-center gap-2 rounded-lg border border-surface-border bg-surface-subtle px-3.5 py-2.5 text-sm text-ink-soft">
-            <ShieldCheck className="h-4 w-4 text-brand-primary" aria-hidden="true" />
-            Références et règles visibles
+          <div className="mt-8">
+            <PrimaryButton>
+              Découvrir RH Pilot
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </PrimaryButton>
           </div>
         </div>
         <HumanEditorialScene
@@ -333,7 +356,7 @@ function CapabilityHero({ capability }: { capability: PayrollEditorialCapability
           alt={`Situation professionnelle liée à ${capability.eyebrow}`}
           kicker={capability.eyebrow}
           title={capability.summary}
-          text="Les informations utiles restent rattachées au contexte du calcul."
+          text="Les informations utiles restent liées au contexte du calcul."
         />
       </div>
     </section>
@@ -342,18 +365,18 @@ function CapabilityHero({ capability }: { capability: PayrollEditorialCapability
 
 function CapabilityMoments({ capability }: { capability: PayrollEditorialCapability }) {
   return (
-    <section className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
+    <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10 lg:py-20">
       <div className="max-w-2xl">
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Ce que RH Pilot conserve</p>
-        <h2 className="mt-2 font-[var(--font-dm-sans)] text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">Une lecture concrète du sujet</h2>
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Points clés</p>
+        <h2 className="mt-3 font-[var(--font-dm-sans)] text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">{capability.summary}</h2>
       </div>
-      <div className="mt-8 grid gap-4 lg:grid-cols-3">
+      <div className="mt-9 grid gap-4 lg:grid-cols-3">
         {capability.moments.map((moment) => (
-          <div key={moment.heading} className="rounded-xl border border-surface-border bg-white p-5 shadow-card">
+          <Reveal key={moment.heading} className="rounded-xl border border-surface-border bg-white p-6 shadow-card">
             <div className="h-1 w-10 rounded-full bg-brand-primary" aria-hidden="true" />
-            <h3 className="mt-4 font-[var(--font-dm-sans)] text-base font-semibold text-ink">{moment.heading}</h3>
+            <h3 className="mt-5 font-[var(--font-dm-sans)] text-lg font-semibold tracking-[-0.02em] text-ink">{moment.heading}</h3>
             <p className="mt-3 text-sm leading-6 text-ink-soft">{richText(moment.body)}</p>
-          </div>
+          </Reveal>
         ))}
       </div>
     </section>
@@ -363,19 +386,17 @@ function CapabilityMoments({ capability }: { capability: PayrollEditorialCapabil
 function CapabilitySources({ capability }: { capability: PayrollEditorialCapability }) {
   return (
     <section className="border-t border-surface-border bg-surface-subtle">
-      <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
+      <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-18">
         <div className="flex flex-col gap-6 rounded-xl border border-surface-border bg-white p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Références</p>
-            <p className="mt-2 text-base font-semibold text-ink">Les règles restent rattachées à des sources identifiables.</p>
-            <p className="mt-1 text-sm leading-6 text-ink-soft">Les sources utilisées pour le traitement sont accessibles depuis cette page.</p>
+            <p className="mt-2 text-base font-semibold text-ink">Les règles utilisées restent identifiables.</p>
+            <p className="mt-1 text-sm leading-6 text-ink-soft">Les sources officielles sont accessibles depuis cette page.</p>
           </div>
-          <Button asChild>
-            <Link href="/contact">
-              Échanger avec l’équipe
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </Button>
+          <PrimaryButton>
+            Échanger avec l’équipe
+            <ArrowRight className="h-4 w-4" aria-hidden="true" />
+          </PrimaryButton>
         </div>
         <div className="mt-5">
           <SourcesStrip sources={capability.sources} />
