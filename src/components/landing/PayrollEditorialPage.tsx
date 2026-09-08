@@ -140,9 +140,16 @@ function SourcesStrip({ sources }: { sources?: PayrollSource[] }) {
 function IllustrationPanel({ keyName }: { keyName: string }) {
   const src = ILLUSTRATIONS[keyName] ?? ILLUSTRATIONS.production;
   return (
-    <div className="relative overflow-hidden rounded-xl bg-surface-subtle">
-      <div className="relative aspect-[3/2] w-full">
-        <Image src={src} alt="Illustration RH Pilot" fill priority className="object-contain" sizes="(min-width: 1024px) 52vw, 100vw" />
+    <div className="relative overflow-hidden rounded-2xl bg-surface-subtle shadow-card">
+      <div className="relative aspect-[16/10] w-full">
+        <Image
+          src={src}
+          alt="Illustration RH Pilot"
+          fill
+          priority
+          className="object-cover object-center"
+          sizes="(min-width: 1280px) 56vw, (min-width: 1024px) 54vw, 100vw"
+        />
       </div>
     </div>
   );
@@ -190,7 +197,7 @@ function FeatureHero({ feature }: { feature: PayrollEditorialFeature }) {
   const keyName = getVisualKey(feature.eyebrow);
   return (
     <section className="border-b border-surface-border bg-white">
-      <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 py-14 sm:px-8 lg:grid-cols-[0.88fr_1.12fr] lg:gap-14 lg:px-10 lg:py-20">
+      <div className="mx-auto grid max-w-7xl items-center gap-8 px-6 py-12 sm:px-8 lg:grid-cols-[0.78fr_1.22fr] lg:gap-10 lg:px-10 lg:py-16">
         <HeroCopy eyebrow={feature.eyebrow} title={feature.title} intro={feature.intro} sources={feature.sources} keyName={keyName} />
         <IllustrationPanel keyName={keyName} />
       </div>
@@ -202,7 +209,7 @@ function CapabilityHero({ capability }: { capability: PayrollEditorialCapability
   const keyName = getVisualKey(capability.eyebrow, capability.variant);
   return (
     <section className="border-b border-surface-border bg-white">
-      <div className="mx-auto grid max-w-7xl items-center gap-10 px-6 py-14 sm:px-8 lg:grid-cols-[0.88fr_1.12fr] lg:gap-14 lg:px-10 lg:py-20">
+      <div className="mx-auto grid max-w-7xl items-center gap-8 px-6 py-12 sm:px-8 lg:grid-cols-[0.78fr_1.22fr] lg:gap-10 lg:px-10 lg:py-16">
         <HeroCopy eyebrow={capability.eyebrow} title={capability.title} intro={capability.intro} sources={capability.sources} keyName={keyName} />
         <IllustrationPanel keyName={keyName} />
       </div>
