@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { resolveAbsencePayrollTreatment } from "./absence-payroll-treatment";
 
 describe("absence payroll treatment", () => {
-  it("resolves a treatment from an explicit versioned rule", () => {
+  it("resolves paid leave without reducing monthly gross", () => {
     expect(
       resolveAbsencePayrollTreatment({
         absence: { absenceId: "a1", type: "PAID_LEAVE", calendarDaysInPeriod: 2 },
@@ -10,7 +10,7 @@ describe("absence payroll treatment", () => {
           {
             absenceType: "PAID_LEAVE",
             effect: "EXCLUDE_FROM_GROSS",
-            basis: "RULE_DEFINED",
+            basis: "NONE",
             ruleVersionId: "rule-1",
           },
         ],
@@ -22,11 +22,13 @@ describe("absence payroll treatment", () => {
       calendarDaysInPeriod: 2,
       ruleVersionId: "rule-1",
       effect: "EXCLUDE_FROM_GROSS",
-      basis: "RULE_DEFINED",
+      basis: "NONE",
+      divisor: null,
+      rate: null,
     });
   });
 
-  it("requires an explicit rule instead of inventing a default treatment", () => {
+  it("does not invent a treatment for sick leave", () => {
     expect(
       resolveAbsencePayrollTreatment({
         absence: { absenceId: "a2", type: "SICK_LEAVE", calendarDaysInPeriod: 4 },
