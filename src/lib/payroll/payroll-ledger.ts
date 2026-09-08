@@ -8,6 +8,8 @@
  * du salaire versé.
  */
 
+import type { Prisma } from "@prisma/client";
+
 export type PayrollLedgerKind =
   | "ADD_TO_GROSS"
   | "DEDUCT_FROM_GROSS"
@@ -33,6 +35,8 @@ export type PayrollLedgerEntry = {
   ruleVersionId?: string;
   sourceName?: string;
   sourceUrl?: string | null;
+  sourceReference?: string | null;
+  metadata?: Prisma.InputJsonValue;
 };
 
 export type PayrollLedgerTotals = {
@@ -181,4 +185,40 @@ export function resolvedNonGrossLedgerEntry(input: {
     sourceName: input.sourceName,
     sourceUrl: input.sourceUrl,
   });
+}
+
+/**
+ * Persiste les lignes dans la transaction de calcul via SQL brut afin de ne
+ * pas dépendre d'un client Prisma régénéré avant le prochain déploiement.
+ */
+export async function persistPayrollLedger(
+  tx: Prisma.TransactionClient,
+  calculationId: string,
+  entries: readonly PayrollLedgerEntry[],
+): Promise<void> {
+  const prepared = entries.map(createPayrollLedgerEntry);
+
+  await tx.$executeRaw`
+    DELETE FROM "payroll_ledger_entries"
+    WHERE "calculation_id" = ${calculationId}
+  `;
+
+  for (const [index, entry] of prepared.entries()) {
+    await tx.$executeRaw`
+      INSERT INTO "payroll_ledger_entries" (
+        "id", "calculation_id", "line_order", "code", "label", "category",
+        "kind", "amount", "gross_delta", "taxable_delta", "social_delta",
+        "net_delta", "cash_delta", "rule_version_id", "source_name",
+        "source_url", "source_reference", "metadata"
+      ) VALUES (
+        ${crypto.randomUUID()}, ${calculationId}, ${index + 1}, ${entry.code},
+        ${entry.label}, ${entry.category}, ${entry.kind}, ${entry.amount},
+        ${entry.grossDelta}, ${entry.taxableDelta}, ${entry.socialDelta},
+        ${entry.netDelta}, ${entry.cashImpact}, ${entry.ruleVersionId ?? null},
+        ${entry.sourceName ?? null}, ${entry.sourceUrl ?? null},
+        ${entry.sourceReference ?? null},
+        ${entry.metadata ? JSON.stringify(entry.metadata) : null}::jsonb
+      )
+    `;
+  }
 }
