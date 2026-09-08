@@ -10,7 +10,6 @@ import { TestimonialsCarousel } from "@/components/landing/TestimonialsCarousel"
 import { AmbientGlow } from "@/components/landing/AmbientGlow";
 import { JourneyFlow } from "@/components/landing/JourneyFlow";
 import { InteractiveDemo } from "@/components/landing/InteractiveDemo";
-import { HumanWorkVideo } from "@/components/landing/HumanWorkVideo";
 
 const BENEFITS = [
   {
@@ -87,7 +86,7 @@ export function LandingPage() {
                 alt=""
                 width={802}
                 height={1274}
-                className="pointer-events-none absolute -top-2 right-[13%] z-40 h-36 w-auto sm:-top-3 sm:right-[15%] sm:h-44 lg:h-48"
+                className="pointer-events-none absolute -top-16 right-[13%] z-40 h-36 w-auto sm:-top-20 sm:right-[15%] sm:h-44 lg:h-48"
               />
             </div>
           </div>
@@ -173,24 +172,17 @@ export function LandingPage() {
 
       <section className="border-y border-surface-border bg-surface-subtle py-16">
         <div className="mx-auto max-w-6xl px-6">
-          <Reveal>
-            <div className="grid gap-6 md:grid-cols-3">
-              <Card><p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Calendrier</p><p className="mt-3 text-lg font-semibold text-ink">Toutes vos échéances au même endroit.</p><p className="mt-2 text-sm text-ink-soft">Visualisez les événements à venir, les tâches en retard et les responsables associés.</p></Card>
-              <Card><p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Notifications</p><p className="mt-3 text-lg font-semibold text-ink">Les rappels partent au bon moment.</p><p className="mt-2 text-sm text-ink-soft">Réduisez les relances manuelles et gardez une trace de chaque action.</p></Card>
-              <Card><p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Assistant</p><p className="mt-3 text-lg font-semibold text-ink">Un copilote pour décider plus vite.</p><p className="mt-2 text-sm text-ink-soft">Posez vos questions et obtenez des réponses à partir de vos données RH.</p></Card>
-            </div>
-          </Reveal>
+          <Reveal><div className="grid gap-6 md:grid-cols-3">
+            <Card><p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Calendrier</p><p className="mt-3 text-lg font-semibold text-ink">Toutes vos échéances au même endroit.</p><p className="mt-2 text-sm text-ink-soft">Visualisez les événements à venir, les tâches en retard et les responsables associés.</p></Card>
+            <Card><p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Notifications</p><p className="mt-3 text-lg font-semibold text-ink">Les rappels partent au bon moment.</p><p className="mt-2 text-sm text-ink-soft">Réduisez les relances manuelles et gardez une trace de chaque action.</p></Card>
+            <Card><p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Assistant</p><p className="mt-3 text-lg font-semibold text-ink">Un copilote pour décider plus vite.</p><p className="mt-2 text-sm text-ink-soft">Posez vos questions et obtenez des réponses à partir de vos données RH.</p></Card>
+          </div></Reveal>
         </div>
       </section>
 
       <section className="py-16">
         <div className="mx-auto max-w-6xl px-6">
-          <Reveal>
-            <div className="text-center">
-              <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Ils en parlent</span>
-              <h2 className="mt-3 text-2xl font-semibold text-ink sm:text-3xl">Ce que les équipes RH pensent de leur quotidien avec RH Pilot.</h2>
-            </div>
-          </Reveal>
+          <Reveal><div className="text-center"><span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Ils en parlent</span><h2 className="mt-3 text-2xl font-semibold text-ink sm:text-3xl">Ce que les équipes RH pensent de leur quotidien avec RH Pilot.</h2></div></Reveal>
           <Reveal delay={100} className="mt-10"><TestimonialsCarousel /></Reveal>
         </div>
       </section>
@@ -198,15 +190,9 @@ export function LandingPage() {
       <section className="border-t border-surface-border bg-white py-16">
         <div className="mx-auto max-w-6xl px-6">
           <Reveal><h2 className="max-w-2xl text-2xl font-semibold text-ink sm:text-3xl">Un cadre clair pour les équipes RH.</h2></Reveal>
-          <div className="mt-10 grid gap-6 md:grid-cols-4">
-            {BENEFITS.map((benefit) => (
-              <Card key={benefit.title} compact>
-                <span className={`inline-block h-2.5 w-2.5 rounded-full ${benefit.dot}`} />
-                <h3 className="mt-4 text-base font-semibold text-ink">{benefit.title}</h3>
-                <p className="mt-2 text-sm leading-relaxed text-ink-soft">{benefit.description}</p>
-              </Card>
-            ))}
-          </div>
+          <div className="mt-10 grid gap-6 md:grid-cols-4">{BENEFITS.map((benefit) => (
+            <Card key={benefit.title} compact><span className={`inline-block h-2.5 w-2.5 rounded-full ${benefit.dot}`} /><h3 className="mt-4 text-base font-semibold text-ink">{benefit.title}</h3><p className="mt-2 text-sm leading-relaxed text-ink-soft">{benefit.description}</p></Card>
+          ))}</div>
         </div>
       </section>
 
