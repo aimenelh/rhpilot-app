@@ -1,3 +1,5 @@
+export type PayrollMoment = { heading: string; body: string };
+
 export type PayrollCapability = {
   key: string;
   eyebrow: string;
@@ -5,7 +7,7 @@ export type PayrollCapability = {
   intro: string;
   summary: string;
   variant: "agreement" | "health" | "contributions" | "netSocial" | "payslip" | "traceability" | "profile" | "employer";
-  points: { label: string; text: string }[];
+  moments: PayrollMoment[];
   sources?: { name: string; detail: string; href: string }[];
 };
 
@@ -25,11 +27,10 @@ export const PAYROLL_CAPABILITIES: Record<string, PayrollCapability> = {
     intro: "RH Pilot associe une convention collective au profil du salarié ou à l’organisation et conserve des versions datées du référentiel.",
     summary: "Pour les traitements conventionnels actuellement pris en charge, la version validée applicable à la période est recherchée avant utilisation.",
     variant: "agreement",
-    points: [
-      { label: "Convention", text: "La convention du profil salarié est prioritaire lorsqu’elle est renseignée." },
-      { label: "Version", text: "Une version validée est sélectionnée selon sa période de validité." },
-      { label: "Règle", text: "Les règles conventionnelles disposent elles aussi d’une période de validité et d’un statut de validation." },
-      { label: "Application", text: "Les traitements conventionnels couverts, notamment pour les absences, utilisent cette sélection." },
+    moments: [
+      { heading: "La convention du profil d’abord", body: "Quand un salarié a une convention collective renseignée sur son profil, **c’est elle qui est retenue en priorité** pour le traitement de paie, avant toute convention par défaut de l’organisation." },
+      { heading: "Une version, pas juste un nom", body: "Une convention n’est pas figée dans le temps : RH Pilot conserve **plusieurs versions datées** du référentiel et sélectionne celle dont la période de validité correspond à la période de paie traitée. Les règles conventionnelles suivent la même logique, avec leur propre période de validité et leur propre statut de validation." },
+      { heading: "Ce que ça change concrètement", body: "Cette sélection intervient notamment dans **le traitement des absences couvertes par la convention**, où la règle appliquée dépend directement de la version retenue." },
     ],
     sources: SOURCES,
   },
@@ -40,11 +41,10 @@ export const PAYROLL_CAPABILITIES: Record<string, PayrollCapability> = {
     intro: "RH Pilot enregistre le montant mensuel de la complémentaire santé et la part prise en charge par l’employeur, puis transmet ces paramètres au calcul social.",
     summary: "Le montant de santé et le taux employeur sont contrôlés avant le calcul : la part employeur doit être comprise entre 50 % et 100 %.",
     variant: "health",
-    points: [
-      { label: "Montant mensuel", text: "Le montant de la complémentaire santé est renseigné dans le contexte de paie." },
-      { label: "Part employeur", text: "Le taux de prise en charge employeur est contrôlé avant calcul." },
-      { label: "Calcul social", text: "Ces informations sont fournies au modèle Publicodes avec les autres données du salarié." },
-      { label: "Cotisation", text: "La part employeur fait partie des éléments détaillés dans les cotisations calculées." },
+    moments: [
+      { heading: "Deux montants à renseigner", body: "Le contexte de paie retient **le montant mensuel de la complémentaire santé** et **la part prise en charge par l’employeur**, exprimée en pourcentage." },
+      { heading: "Un contrôle avant calcul", body: "Ce taux employeur est vérifié avant tout calcul : il doit être compris **entre 50 % et 100 %**, conformément aux règles applicables." },
+      { heading: "Dans le résultat final", body: "Ces deux montants sont transmis au modèle Publicodes avec les autres données du salarié, et la part employeur réapparaît ensuite **dans le détail des cotisations calculées**." },
     ],
     sources: SOURCES,
   },
@@ -55,11 +55,10 @@ export const PAYROLL_CAPABILITIES: Record<string, PayrollCapability> = {
     intro: "Le moteur social de RH Pilot produit les montants salarié et employeur et expose le détail des principales cotisations utilisées pour le calcul.",
     summary: "Le détail conserve pour chaque ligne son intitulé, sa source Publicodes, son côté salarié ou employeur et son montant.",
     variant: "contributions",
-    points: [
-      { label: "Salarié", text: "Les cotisations à la charge du salarié alimentent le calcul du net avant impôt." },
-      { label: "Employeur", text: "Les cotisations employeur sont prises en compte dans le coût employeur." },
-      { label: "Détail", text: "Maladie, vieillesse, retraite complémentaire, chômage, CSG/CRDS, prévoyance et autres postes sont exposés lorsqu’ils sont présents." },
-      { label: "Source", text: "Chaque ligne de détail conserve la règle Publicodes qui a produit le montant." },
+    moments: [
+      { heading: "Deux montants distincts", body: "Le moteur social calcule séparément **les cotisations à la charge du salarié**, qui réduisent le net avant impôt, et **les cotisations employeur**, qui s’ajoutent au coût du poste." },
+      { heading: "Le détail, poste par poste", body: "Chaque ligne calculée est exposée avec son intitulé : maladie, vieillesse, retraite complémentaire, chômage, CSG/CRDS, prévoyance et les autres postes présents sur la période." },
+      { heading: "Une source pour chaque ligne", body: "Chaque ligne de détail conserve **la règle Publicodes** qui a produit le montant, ce qui permet de remonter jusqu’à la règle réellement appliquée." },
     ],
     sources: SOURCES,
   },
@@ -70,11 +69,10 @@ export const PAYROLL_CAPABILITIES: Record<string, PayrollCapability> = {
     intro: "RH Pilot utilise la règle Publicodes dédiée au montant net social et conserve cette valeur dans le résultat de paie.",
     summary: "Le montant net social est distinct du net avant impôt et du prélèvement à la source dans le résultat enregistré.",
     variant: "netSocial",
-    points: [
-      { label: "Brut", text: "Le salaire brut et les éléments variables constituent le point de départ du calcul." },
-      { label: "Cotisations", text: "Les cotisations issues du modèle social interviennent dans les différents montants de rémunération." },
-      { label: "Net avant impôt", text: "RH Pilot conserve le montant net avant l’application du prélèvement à la source." },
-      { label: "Net social", text: "Le montant net social est évalué à partir de la règle Publicodes correspondante." },
+    moments: [
+      { heading: "Le point de départ", body: "Le calcul part **du salaire brut et des éléments variables** de la période, avant application des cotisations." },
+      { heading: "Les cotisations font le lien", body: "Les cotisations issues du modèle social interviennent ensuite dans les différents montants de rémunération de la période." },
+      { heading: "Deux résultats distincts", body: "RH Pilot conserve **le net avant impôt**, avant application du prélèvement à la source, et **le montant net social**, évalué séparément à partir de la règle Publicodes dédiée." },
     ],
     sources: SOURCES,
   },
@@ -85,11 +83,10 @@ export const PAYROLL_CAPABILITIES: Record<string, PayrollCapability> = {
     intro: "RH Pilot vérifie les prérequis avant de produire un bulletin : période verrouillée, salariés actifs, calculs complets, snapshots et identification employeur et salarié.",
     summary: "Une information obligatoire manque ? La génération est bloquée plutôt que de produire un document incomplet.",
     variant: "payslip",
-    points: [
-      { label: "Période", text: "Le calcul doit être terminé et la période verrouillée." },
-      { label: "Calcul", text: "Chaque salarié actif doit disposer d’un calcul enregistré et d’un snapshot." },
-      { label: "Employeur", text: "Le SIRET doit être renseigné pour le bulletin." },
-      { label: "Salarié", text: "Un intitulé ou une classification et la convention applicable sont contrôlés." },
+    moments: [
+      { heading: "Une période verrouillée d’abord", body: "Le bulletin ne peut être généré que si **le calcul de la période est terminé et la période verrouillée**." },
+      { heading: "Un calcul par salarié", body: "Chaque salarié actif doit disposer **d’un calcul enregistré et d’un snapshot** associé à la période." },
+      { heading: "Les identifiants obligatoires", body: "**Le SIRET de l’employeur** doit être renseigné, tout comme l’intitulé ou la classification du salarié et la convention applicable." },
     ],
     sources: SOURCES,
   },
@@ -100,11 +97,10 @@ export const PAYROLL_CAPABILITIES: Record<string, PayrollCapability> = {
     intro: "Chaque calcul enregistre le modèle social utilisé, les règles sélectionnées, les variables, les absences, les paramètres du salarié et la source du référentiel.",
     summary: "Le snapshot permet de retrouver les données et versions associées à une période sans reconstruire le calcul à partir d’informations modifiées après coup.",
     variant: "traceability",
-    points: [
-      { label: "Modèle", text: "La version du modèle Publicodes est conservée dans le résultat." },
-      { label: "Règles", text: "La version de la règle de paie et sa source sont enregistrées." },
-      { label: "Données", text: "Profil, variables, absences et impacts utilisés sont présents dans le snapshot." },
-      { label: "Résultat", text: "Les totaux sociaux et le montant net social sont conservés avec le calcul." },
+    moments: [
+      { heading: "Ce qui est conservé", body: "Chaque calcul enregistre **la version du modèle Publicodes** utilisée, ainsi que la version de la règle de paie appliquée et sa source." },
+      { heading: "Le contexte complet", body: "Le profil du salarié, les variables de la période, les absences et leurs impacts, ainsi que les paramètres utilisés sont conservés dans le snapshot du calcul." },
+      { heading: "Le résultat, pas seulement le calcul", body: "**Les totaux sociaux et le montant net social** font eux aussi partie de ce qui est conservé avec le calcul." },
     ],
     sources: SOURCES,
   },
@@ -115,11 +111,10 @@ export const PAYROLL_CAPABILITIES: Record<string, PayrollCapability> = {
     intro: "Le profil paie regroupe le salaire de base, la durée mensuelle de référence et les informations qui permettent de contextualiser la période.",
     summary: "Contrat, catégorie professionnelle, statut cadre, convention collective et éléments de classification sont conservés autour du profil de paie.",
     variant: "profile",
-    points: [
-      { label: "Salaire", text: "Le salaire brut mensuel de référence est utilisé pour constituer le brut de la période." },
-      { label: "Temps", text: "La durée mensuelle de référence fait partie des données de préparation de la paie." },
-      { label: "Contrat", text: "Le type de contrat et la date d’embauche alimentent le contexte social." },
-      { label: "Classification", text: "Catégorie professionnelle, niveau, coefficient et classification peuvent être conservés au profil." },
+    moments: [
+      { heading: "La base du calcul", body: "Le profil de paie retient **le salaire brut mensuel de référence**, qui constitue le point de départ du brut de chaque période." },
+      { heading: "Le contexte du contrat", body: "**La durée mensuelle de référence**, le type de contrat et la date d’embauche font partie des données prises en compte lors de la préparation de la paie." },
+      { heading: "Le détail conventionnel", body: "Catégorie professionnelle, niveau, coefficient et éléments de classification peuvent également être conservés au profil, lorsqu’ils sont applicables." },
     ],
     sources: SOURCES,
   },
@@ -130,11 +125,10 @@ export const PAYROLL_CAPABILITIES: Record<string, PayrollCapability> = {
     intro: "La catégorie juridique, la date de création, le lieu de paie et le taux AT/MP font partie des paramètres transmis au calcul social.",
     summary: "Ces données sont contrôlées et intégrées au contexte du moteur social, au même titre que les informations du salarié.",
     variant: "employer",
-    points: [
-      { label: "Catégorie juridique", text: "La catégorie juridique de l’organisation est obligatoire pour le calcul social." },
-      { label: "AT/MP", text: "Le taux accidents du travail et maladies professionnelles est transmis au modèle social." },
-      { label: "Localisation", text: "La commune et le département de paie sont associés au contexte de l’établissement." },
-      { label: "Entreprise", text: "La date de création de l’entreprise est également fournie au calcul." },
+    moments: [
+      { heading: "Le cadre juridique", body: "**La catégorie juridique de l’organisation** est une donnée obligatoire pour le calcul social." },
+      { heading: "Un taux propre à l’activité", body: "**Le taux accidents du travail et maladies professionnelles**, spécifique à l’établissement, est transmis au modèle social." },
+      { heading: "Localisation et ancienneté", body: "La commune et le département de paie sont associés au contexte de l’établissement, tout comme **la date de création de l’entreprise**, également fournie au calcul." },
     ],
     sources: SOURCES,
   },
