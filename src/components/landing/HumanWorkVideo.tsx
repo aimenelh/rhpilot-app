@@ -28,26 +28,33 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
             <source src={VIDEO_SRC} type="video/mp4" />
           </video>
 
-          {showEndCard && (
-            <div className="human-work-video-endcard pointer-events-auto absolute inset-0 z-20 flex items-center justify-center bg-white/88 backdrop-blur-[2px]">
-              <div className="flex -translate-y-1 flex-col items-center text-center opacity-0 animate-[human-work-video-endcard-in_700ms_ease-out_forwards]">
-                <Link
-                  href="/"
-                  aria-label="RH Pilot"
-                  className="flex items-center gap-3 transition-transform duration-300 hover:scale-[1.03]"
-                >
-                  <Logomark size={46} />
-                  <Wordmark />
-                </Link>
-                <Link
-                  href="/pourquoi"
-                  className="mt-6 text-base font-semibold text-ink transition-colors hover:text-brand-primary"
-                >
-                  En savoir plus →
-                </Link>
-              </div>
+          <div
+            aria-hidden={!showEndCard}
+            className={`absolute inset-0 z-20 flex items-center justify-center bg-white/88 backdrop-blur-[2px] transition-opacity duration-700 ease-out ${
+              showEndCard ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
+            }`}
+          >
+            <div
+              className={`flex -translate-y-1 flex-col items-center text-center transition-all duration-700 ease-out ${
+                showEndCard ? "translate-y-0 scale-100 opacity-100" : "translate-y-3 scale-[0.98] opacity-0"
+              }`}
+            >
+              <Link
+                href="/"
+                aria-label="RH Pilot"
+                className="flex items-center gap-3 transition-transform duration-300 hover:scale-[1.03]"
+              >
+                <Logomark size={46} />
+                <Wordmark />
+              </Link>
+              <Link
+                href="/pourquoi"
+                className="mt-6 text-base font-semibold text-ink transition-colors hover:text-brand-primary"
+              >
+                En savoir plus →
+              </Link>
             </div>
-          )}
+          </div>
         </div>
 
         <div className="human-work-video-note absolute -bottom-20 -right-12 w-52 rotate-[-3deg] text-brand-primary">
