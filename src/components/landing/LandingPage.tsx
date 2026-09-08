@@ -45,24 +45,27 @@ export function LandingPage() {
       <AmbientGlow />
       <MarketingHeader />
 
-      {/* Séquence d'ouverture : vidéo plein écran, message central, puis produit. */}
-      <section className="relative min-h-[calc(100vh-88px)] overflow-hidden border-b border-surface-border bg-white lg:min-h-[calc(100vh-88px)]">
+      {/* Ouverture éditoriale : on arrive sur la vidéo, puis le message, puis le produit. */}
+      <section className="relative min-h-[calc(100vh-88px)] overflow-hidden border-b border-surface-border bg-black">
         <HumanWorkVideo className="inset-0 h-full w-full [&_.human-work-video-frame]:h-full [&_.human-work-video-frame]:w-full [&_.human-work-video-frame]:rotate-0 [&_.human-work-video-frame]:rounded-none [&_.human-work-video-frame]:border-0 [&_.human-work-video-frame]:shadow-none [&_.human-work-video-frame>div:first-child]:h-full [&_.human-work-video-frame>div:first-child]:w-full [&_.human-work-video-frame>div:first-child]:rounded-none [&_.human-work-video-frame>div:first-child]:aspect-auto [&_.human-work-video-frame>div:first-child>video]:object-cover [&_.human-work-video-note]:hidden [&_.human-work-video-shape]:hidden [&_.human-work-video-dots]:hidden" />
       </section>
 
-      <section className="relative flex min-h-[68vh] items-center justify-center overflow-hidden border-b border-surface-border bg-white px-6 py-24 sm:min-h-[72vh]">
+      <section className="relative flex min-h-[78vh] items-center justify-center overflow-hidden border-b border-surface-border bg-white px-6 py-24 sm:min-h-[82vh]">
         <Reveal>
-          <div className="mx-auto max-w-4xl text-center">
-            <h1 className="sr-only">
-              Embauche, période d&apos;essai, visite médicale. Rien n&apos;est oublié.
-            </h1>
-            <p className="font-handwriting text-4xl leading-tight text-brand-primary sm:text-6xl lg:text-7xl">
-              Des équipes RH
+          <div className="mx-auto max-w-5xl text-center">
+            <h1 className="text-5xl font-bold leading-[1.02] tracking-[-0.035em] text-ink sm:text-6xl lg:text-7xl">
+              Embauche, période d&apos;essai, visite médicale.
               <br />
-              plus sereines
-            </p>
+              <span className="text-brand-primary">Rien n&apos;est oublié.</span>
+            </h1>
             <p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-ink-soft sm:text-xl">
               RH Pilot transforme chaque événement RH en plan d&apos;action clair, avec ses échéances et ses responsables.
+            </p>
+            <Link href="/pourquoi" className="mt-8 inline-flex">
+              <Button className="px-6 py-3 text-base">En savoir plus →</Button>
+            </Link>
+            <p className="mt-6 text-xs font-medium text-ink-faint">
+              Hébergé en Europe · Sécurisé · Pensé pour le RGPD
             </p>
           </div>
         </Reveal>
