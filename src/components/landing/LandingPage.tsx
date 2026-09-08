@@ -87,7 +87,7 @@ export function LandingPage() {
                 alt=""
                 width={802}
                 height={1274}
-                className="pointer-events-none absolute -top-10 right-[13%] z-40 h-36 w-auto sm:-top-12 sm:right-[15%] sm:h-44 lg:h-48"
+                className="pointer-events-none absolute -top-2 right-[13%] z-40 h-36 w-auto sm:-top-3 sm:right-[15%] sm:h-44 lg:h-48"
               />
             </div>
           </div>
