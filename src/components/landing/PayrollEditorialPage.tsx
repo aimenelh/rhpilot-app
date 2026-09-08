@@ -70,6 +70,19 @@ const ACCENT_PHRASES: Record<string, string> = {
   traceability: "traçabilité de vos calculs",
 };
 
+function richText(text: string) {
+  const parts = text.split(/\*\*(.+?)\*\*/g);
+  return parts.map((part, index) =>
+    index % 2 === 1 ? (
+      <strong key={`${part}-${index}`} className="font-semibold text-brand-primary">
+        {part}
+      </strong>
+    ) : (
+      <span key={`${part}-${index}`}>{part}</span>
+    ),
+  );
+}
+
 function getVisualKey(eyebrow: string, variant?: string) {
   const value = `${variant ?? ""} ${eyebrow}`
     .toLowerCase()
@@ -159,7 +172,7 @@ function HeroCopy({ eyebrow, title, intro, sources, keyName }: {
       <h1 className="mt-4 text-4xl font-semibold leading-[1.02] tracking-[-0.045em] text-ink sm:text-5xl lg:text-[3.75rem]">
         <AccentTitle title={title} phrase={ACCENT_PHRASES[keyName] ?? ""} />
       </h1>
-      <p className="mt-6 max-w-xl text-base leading-7 text-ink-soft sm:text-lg sm:leading-8">{intro}</p>
+      <p className="mt-6 max-w-xl text-base leading-7 text-ink-soft sm:text-lg sm:leading-8">{richText(intro)}</p>
       <div className="mt-8">
         <PrimaryButton>
           Découvrir RH Pilot
@@ -210,7 +223,7 @@ function FeatureContent({ feature }: { feature: PayrollEditorialFeature }) {
             <Reveal key={point.title} className="rounded-xl border border-surface-border bg-white p-6 shadow-card">
               <Check className="h-5 w-5 text-brand-primary" aria-hidden="true" />
               <h3 className="mt-4 text-base font-semibold text-ink">{point.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-ink-soft">{point.text}</p>
+              <p className="mt-2 text-sm leading-6 text-ink-soft">{richText(point.text)}</p>
             </Reveal>
           ))}
         </div>
@@ -223,7 +236,7 @@ function FeatureContent({ feature }: { feature: PayrollEditorialFeature }) {
               <div key={step.label} className="rounded-xl border border-surface-border bg-white p-5">
                 <div className="h-1 w-8 bg-brand-primary" aria-hidden="true" />
                 <h3 className="mt-4 text-base font-semibold text-ink">{step.label}</h3>
-                <p className="mt-2 text-sm leading-6 text-ink-soft">{step.text}</p>
+                <p className="mt-2 text-sm leading-6 text-ink-soft">{richText(step.text)}</p>
               </div>
             ))}
           </div>
@@ -234,13 +247,13 @@ function FeatureContent({ feature }: { feature: PayrollEditorialFeature }) {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Références</p>
             <h2 className="mt-3 text-2xl font-semibold text-ink sm:text-3xl">{feature.detailsTitle}</h2>
-            <p className="mt-4 text-sm leading-6 text-ink-soft">{feature.note}</p>
+            <p className="mt-4 text-sm leading-6 text-ink-soft">{richText(feature.note)}</p>
           </div>
           <div className="space-y-2">
             {feature.details.map((detail) => (
               <div key={detail} className="flex gap-3 rounded-xl border border-surface-border bg-white p-4">
                 <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-primary" aria-hidden="true" />
-                <p className="text-sm leading-6 text-ink-soft">{detail}</p>
+                <p className="text-sm leading-6 text-ink-soft">{richText(detail)}</p>
               </div>
             ))}
             <div className="pt-4">
@@ -259,14 +272,14 @@ function CapabilityContent({ capability }: { capability: PayrollEditorialCapabil
       <section className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
         <div className="max-w-2xl">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Le fonctionnement</p>
-          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">{capability.summary}</h2>
+          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">{richText(capability.summary)}</h2>
         </div>
         <div className="mt-8 grid gap-4 lg:grid-cols-3">
           {capability.moments.map((moment) => (
             <div key={moment.heading} className="rounded-xl border border-surface-border bg-white p-6 shadow-card">
               <div className="h-1 w-10 bg-brand-primary" aria-hidden="true" />
               <h3 className="mt-4 text-base font-semibold text-ink">{moment.heading}</h3>
-              <p className="mt-3 text-sm leading-6 text-ink-soft">{moment.body}</p>
+              <p className="mt-3 text-sm leading-6 text-ink-soft">{richText(moment.body)}</p>
             </div>
           ))}
         </div>
