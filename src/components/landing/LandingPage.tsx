@@ -45,42 +45,43 @@ export function LandingPage() {
       <AmbientGlow />
       <MarketingHeader />
 
-      {/* Hero : message, vidéo puis produit, sans superposition entre les éléments. */}
-      <section className="relative overflow-hidden border-b border-surface-border">
-        <div className="mx-auto max-w-6xl px-6 pb-16 pt-20 sm:pt-24 lg:pb-20 lg:pt-24">
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,0.92fr)_minmax(30rem,1.08fr)] lg:items-start lg:gap-16">
-            <Reveal variant="left">
-              <div className="max-w-2xl">
-                <p className="mb-5 text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
-                  Le quotidien RH, sans les oublis
-                </p>
-                <h1 className="text-5xl font-bold leading-[1.02] tracking-[-0.035em] text-ink sm:text-6xl lg:text-[4.4rem]">
-                  Embauche, période d&apos;essai, visite médicale.
-                  <br />
-                  <span className="text-brand-primary">Rien n&apos;est oublié.</span>
-                </h1>
-                <p className="mt-6 max-w-xl text-lg leading-relaxed text-ink-soft sm:text-xl">
-                  RH Pilot transforme chaque événement RH en plan d&apos;action clair, avec ses
-                  échéances et ses responsables.
-                </p>
-                <Link href="/pourquoi" className="mt-8 inline-flex">
-                  <Button className="px-6 py-3 text-base">En savoir plus →</Button>
-                </Link>
-                <p className="mt-6 text-xs font-medium text-ink-faint">
-                  Hébergé en Europe · Sécurisé · Pensé pour le RGPD
-                </p>
-              </div>
-            </Reveal>
+      {/* Hero narratif : la vidéo ouvre la page, puis le message et le produit arrivent au scroll. */}
+      <section className="relative min-h-[calc(100vh-88px)] overflow-hidden border-b border-surface-border bg-white lg:min-h-[calc(100vh-88px)]">
+        <HumanWorkVideo className="inset-0 h-full w-full [&_.human-work-video-frame]:h-full [&_.human-work-video-frame]:w-full [&_.human-work-video-frame]:rotate-0 [&_.human-work-video-frame]:rounded-none [&_.human-work-video-frame]:border-0 [&_.human-work-video-frame]:shadow-none [&_.human-work-video-frame>div:first-child]:h-full [&_.human-work-video-frame>div:first-child]:w-full [&_.human-work-video-frame>div:first-child]:rounded-none [&_.human-work-video-frame>div:first-child]:aspect-auto [&_.human-work-video-frame>div:first-child>video]:object-cover [&_.human-work-video-note]:hidden [&_.human-work-video-shape]:hidden [&_.human-work-video-dots]:hidden" />
+      </section>
 
-            <Reveal variant="right" delay={100}>
-              <div className="relative hidden min-h-[25rem] w-full lg:block">
-                <HumanWorkVideo className="right-0 top-6 w-[min(100%,31rem)]" />
-              </div>
-            </Reveal>
+      <section className="relative flex min-h-[68vh] items-center justify-center overflow-hidden border-b border-surface-border bg-white px-6 py-24 sm:min-h-[72vh]">
+        <Reveal>
+          <div className="mx-auto max-w-4xl text-center">
+            <p className="font-handwriting text-4xl leading-tight text-brand-primary sm:text-6xl lg:text-7xl">
+              Des équipes RH
+              <br />
+              plus sereines
+            </p>
+            <div className="mx-auto mt-8 h-px w-20 bg-brand-primary/30" aria-hidden />
+            <p className="mx-auto mt-7 max-w-2xl text-lg leading-relaxed text-ink-soft sm:text-xl">
+              RH Pilot transforme chaque événement RH en plan d&apos;action clair, avec ses échéances et ses responsables.
+            </p>
           </div>
+        </Reveal>
+      </section>
 
-          <Reveal variant="up" delay={180}>
-            <div className="relative mx-auto mt-16 max-w-5xl pt-8 sm:mt-20 sm:pt-10">
+      <section className="relative overflow-hidden bg-white border-b border-surface-border px-6 pb-24 pt-20 sm:pb-28 sm:pt-24">
+        <Reveal variant="up">
+          <div className="mx-auto max-w-6xl">
+            <div className="text-center">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Le produit au quotidien</p>
+              <h1 className="mx-auto mt-4 max-w-4xl text-4xl font-bold leading-[1.02] tracking-[-0.035em] text-ink sm:text-5xl lg:text-6xl">
+                Embauche, période d&apos;essai, visite médicale.
+                <br />
+                <span className="text-brand-primary">Rien n&apos;est oublié.</span>
+              </h1>
+              <Link href="/pourquoi" className="mt-8 inline-flex">
+                <Button className="px-6 py-3 text-base">En savoir plus →</Button>
+              </Link>
+            </div>
+
+            <div className="relative mx-auto mt-14 max-w-5xl">
               <div className="overflow-hidden rounded-[1.25rem] border border-surface-border bg-white shadow-[0_30px_90px_rgba(15,23,42,0.12)]">
                 <Image
                   src="/marketing/dashboard.png"
@@ -99,8 +100,8 @@ export function LandingPage() {
                 className="pointer-events-none absolute -top-10 right-[13%] z-40 h-36 w-auto sm:-top-12 sm:right-[15%] sm:h-44 lg:h-48"
               />
             </div>
-          </Reveal>
-        </div>
+          </div>
+        </Reveal>
       </section>
 
       <section className="relative py-16">
