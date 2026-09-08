@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Logomark, Wordmark } from "@/components/Brand";
 
 const VIDEO_SRC = "https://www.pexels.com/download/video/9034878/";
+const END_MESSAGE = "Moins de relances. Plus de temps pour l’humain.";
 
 export function HumanWorkVideo({ className = "" }: { className?: string }) {
   const [showEndCard, setShowEndCard] = useState(false);
@@ -35,21 +36,43 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
             }`}
           >
             <div
-              className={`flex -translate-y-1 flex-col items-center text-center transition-all duration-700 ease-out ${
-                showEndCard ? "translate-y-0 scale-100 opacity-100" : "translate-y-3 scale-[0.98] opacity-0"
+              className={`flex flex-col items-center text-center transition-opacity duration-300 ease-out ${
+                showEndCard ? "opacity-100" : "opacity-0"
               }`}
             >
+              <p
+                className="font-handwriting text-[1.65rem] leading-tight text-brand-primary sm:text-[2rem]"
+                aria-label={END_MESSAGE}
+              >
+                {Array.from(END_MESSAGE).map((character, index) => (
+                  <span
+                    key={`${character}-${index}`}
+                    className={`inline-block opacity-0 ${showEndCard ? "animate-[human-work-video-letter_55ms_ease-out_forwards]" : ""}`}
+                    style={{ animationDelay: `${index * 42}ms` }}
+                    aria-hidden="true"
+                  >
+                    {character === " " ? "\u00A0" : character}
+                  </span>
+                ))}
+              </p>
+
               <Link
                 href="/"
                 aria-label="RH Pilot"
-                className="flex items-center gap-3 transition-transform duration-300 hover:scale-[1.03]"
+                className={`mt-8 flex items-center gap-3 transition-all duration-700 ease-out hover:scale-[1.03] ${
+                  showEndCard ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
+                }`}
+                style={{ transitionDelay: `${END_MESSAGE.length * 42 + 220}ms` }}
               >
                 <Logomark size={46} />
                 <Wordmark />
               </Link>
               <Link
                 href="/pourquoi"
-                className="mt-6 text-base font-semibold text-ink transition-colors hover:text-brand-primary"
+                className={`mt-5 text-base font-semibold text-ink transition-all duration-700 ease-out hover:text-brand-primary ${
+                  showEndCard ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
+                }`}
+                style={{ transitionDelay: `${END_MESSAGE.length * 42 + 360}ms` }}
               >
                 En savoir plus →
               </Link>
