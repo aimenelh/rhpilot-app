@@ -41,13 +41,13 @@ export type PayrollEditorialCapability = {
 };
 
 const MASCOT_BY_KEY: Record<string, string> = {
-  production: "/illustrations/mascot/missing-document.png",
+  production: "/illustrations/mascot/search.png",
   variables: "/illustrations/mascot/search.png",
   absences: "/illustrations/mascot/reminder.png",
   arrets: "/illustrations/mascot/urgent.png",
   agreement: "/illustrations/mascot/search.png",
   health: "/illustrations/mascot/medical.png",
-  contributions: "/illustrations/mascot/calcul.png",
+  contributions: "/illustrations/mascot/dashboard.png",
   netSocial: "/illustrations/mascot/calm.png",
   payslip: "/illustrations/mascot/missing-document.png",
   traceability: "/illustrations/mascot/search.png",
@@ -108,12 +108,12 @@ function getVisualKey(eyebrow: string, variant?: string) {
 
   if (normalized.includes("production")) return "production";
   if (normalized.includes("variables")) return "variables";
-  if (normalized.includes("conges")) return "absences";
+  if (normalized.includes("conges") || normalized.includes("absences")) return "absences";
   if (normalized.includes("arrets")) return "arrets";
   if (normalized.includes("agreement") || normalized.includes("referentiel")) return "agreement";
   if (normalized.includes("health") || normalized.includes("complementaire")) return "health";
   if (normalized.includes("contributions") || normalized.includes("cotisations")) return "contributions";
-  if (normalized.includes("netsocial") || normalized.includes("net-social")) return "netSocial";
+  if (normalized.includes("netsocial") || normalized.includes("net-social") || normalized.includes("montant-net-social")) return "netSocial";
   if (normalized.includes("payslip") || normalized.includes("bulletin")) return "payslip";
   if (normalized.includes("traceability") || normalized.includes("tracabilite")) return "traceability";
   if (normalized.includes("profile") || normalized.includes("profil")) return "profile";
@@ -165,7 +165,7 @@ function HumanEditorialScene({ keyName, image, alt, kicker, title, text }: {
 
   return (
     <div className="relative min-h-[430px] overflow-hidden rounded-2xl border border-surface-border bg-surface-subtle">
-      <div className="absolute inset-0 bg-[#f7f8fa]" aria-hidden="true" />
+      <div className="absolute inset-0 bg-[#F7F8FA]" aria-hidden="true" />
       <div className="absolute left-[7%] top-[8%] h-[70%] w-[82%] -rotate-2 rounded-[2.25rem] bg-[#FCE7E3]" aria-hidden="true" />
       <div className="absolute inset-y-[9%] left-[7%] w-[82%] overflow-hidden rounded-[2rem] border border-white bg-white shadow-card">
         <img src={image} alt={alt} className="h-full w-full object-cover" loading="eager" />
@@ -182,8 +182,6 @@ function HumanEditorialScene({ keyName, image, alt, kicker, title, text }: {
         <FileText className="h-5 w-5" />
       </div>
       <div className="absolute left-[4%] top-[11%] h-2 w-2 rounded-full bg-brand-primary" aria-hidden="true" />
-      <div className="absolute bottom-[12%] left-[15%] h-px w-24 bg-brand-primary/60" aria-hidden="true" />
-      <div className="absolute bottom-[12%] left-[15%] h-6 w-28 -translate-y-3 border-t border-dashed border-brand-primary/60" aria-hidden="true" />
     </div>
   );
 }
@@ -313,7 +311,6 @@ function DetailsBlock({ feature }: { feature: PayrollEditorialFeature }) {
 function CapabilityHero({ capability }: { capability: PayrollEditorialCapability }) {
   const keyName = getVisualKey(capability.eyebrow, capability.variant);
   const image = PHOTO_BY_KEY[keyName] ?? PHOTO_BY_KEY.production;
-  const mascot = MASCOT_BY_KEY[keyName] ?? MASCOT_BY_KEY.production;
   const accent = ACCENT_PHRASES[keyName] ?? "";
 
   return (
@@ -333,7 +330,7 @@ function CapabilityHero({ capability }: { capability: PayrollEditorialCapability
         <HumanEditorialScene
           keyName={keyName}
           image={image}
-          alt={`Illustration liée à ${capability.eyebrow}`}
+          alt={`Situation professionnelle liée à ${capability.eyebrow}`}
           kicker={capability.eyebrow}
           title={capability.summary}
           text="Les informations utiles restent rattachées au contexte du calcul."
