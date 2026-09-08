@@ -1,6 +1,6 @@
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
-import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
+import { AmbientGlow } from "@/components/landing/AmbientGlow";
 import { Reveal } from "@/components/landing/Reveal";
 import { DiagnosticQuiz } from "@/components/landing/DiagnosticQuiz";
 
@@ -13,7 +13,7 @@ export const metadata = {
 export default function DiagnosticPage() {
   return (
     <div className="min-h-screen">
-      <AmbientNetwork />
+      <AmbientGlow />
       <MarketingHeader />
 
       <section className="mx-auto max-w-2xl px-6 pb-6 pt-16">

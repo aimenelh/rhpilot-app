@@ -29,7 +29,7 @@ import { GlobalSearch } from "./GlobalSearch";
 import { RhNewsToast } from "./RhNewsToast";
 import type { RhNewsItem } from "@/lib/rhNews";
 import { IosInstallHint } from "./IosInstallHint";
-import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
+import { AmbientGlow } from "@/components/landing/AmbientGlow";
 
 type NavItem = {
   href: string;
@@ -171,7 +171,7 @@ export function AppShell({
 
   return (
     <div className="flex min-h-screen">
-      <AmbientNetwork />
+      <AmbientGlow animated={false} />
       <aside className="hidden w-64 shrink-0 flex-col border-r border-surface-border bg-white px-4 py-5 md:flex">
         {navContent}
       </aside>

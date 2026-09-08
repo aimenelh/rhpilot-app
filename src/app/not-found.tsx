@@ -3,12 +3,12 @@ import { ArrowRight, Compass } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
-import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
+import { AmbientGlow } from "@/components/landing/AmbientGlow";
 
 export default function NotFound() {
   return (
     <div className="flex min-h-screen flex-col">
-      <AmbientNetwork />
+      <AmbientGlow />
       <MarketingHeader />
 
       <section className="flex flex-1 flex-col items-center justify-center px-6 py-16 text-center">

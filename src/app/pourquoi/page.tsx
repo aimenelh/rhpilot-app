@@ -4,7 +4,7 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
-import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
+import { AmbientGlow } from "@/components/landing/AmbientGlow";
 import { Reveal } from "@/components/landing/Reveal";
 
 const CONVERSATION = [
@@ -41,7 +41,7 @@ function SectionMark({ label }: { label: string }) {
 export default function WhyPage() {
   return (
     <div className="min-h-screen">
-      <AmbientNetwork />
+      <AmbientGlow />
       <MarketingHeader />
 
       {/* Le manifeste — aligné à gauche, pas centré */}

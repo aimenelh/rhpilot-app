@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Clock, ArrowRight } from "lucide-react";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
-import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
+import { AmbientGlow } from "@/components/landing/AmbientGlow";
 import { Reveal } from "@/components/landing/Reveal";
 
 export const metadata = {
@@ -57,7 +57,7 @@ const ARTICLES = [
 export default function ResourcesPage() {
   return (
     <div className="min-h-screen">
-      <AmbientNetwork />
+      <AmbientGlow />
       <MarketingHeader />
 
       <section className="mx-auto max-w-3xl px-6 py-16">

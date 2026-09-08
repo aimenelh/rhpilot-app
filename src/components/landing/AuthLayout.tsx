@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { CircleCheck } from "lucide-react";
 import { Logomark } from "@/components/Brand";
-import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
+import { AmbientGlow } from "@/components/landing/AmbientGlow";
 
 export function AuthLayout({
   title,
@@ -20,7 +20,7 @@ export function AuthLayout({
 }) {
   return (
     <div className="relative min-h-screen overflow-hidden">
-      <AmbientNetwork />
+      <AmbientGlow />
 
       <style>{`
         @keyframes authIn {

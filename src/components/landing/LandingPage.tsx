@@ -7,7 +7,7 @@ import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import { Reveal } from "@/components/landing/Reveal";
 import { TestimonialsCarousel } from "@/components/landing/TestimonialsCarousel";
-import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
+import { AmbientGlow } from "@/components/landing/AmbientGlow";
 import { JourneyFlow } from "@/components/landing/JourneyFlow";
 import { InteractiveDemo } from "@/components/landing/InteractiveDemo";
 
@@ -41,7 +41,7 @@ const BENEFITS = [
 export function LandingPage() {
   return (
     <div className="min-h-screen">
-      <AmbientNetwork />
+      <AmbientGlow />
       <MarketingHeader />
 
       <section className="relative overflow-hidden">

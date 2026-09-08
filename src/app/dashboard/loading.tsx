@@ -1,12 +1,12 @@
 "use client";
 
-import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
+import { AmbientGlow } from "@/components/landing/AmbientGlow";
 import { Mascot } from "@/components/Mascot";
 
 export default function DashboardLoading() {
   return (
     <div className="relative flex min-h-screen items-center justify-center">
-      <AmbientNetwork />
+      <AmbientGlow />
       <style>{`
         @keyframes mascotBreathe {
           0%, 100% { transform: scale(1); }

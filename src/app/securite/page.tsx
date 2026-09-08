@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/Card";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import { Reveal } from "@/components/landing/Reveal";
-import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
+import { AmbientGlow } from "@/components/landing/AmbientGlow";
 
 export const metadata = {
   title: "Sécurité, RH Pilot",
@@ -91,7 +91,7 @@ function SectionMark({ label }: { label: string }) {
 export default function SecurityPage() {
   return (
     <div className="min-h-screen">
-      <AmbientNetwork />
+      <AmbientGlow />
       <MarketingHeader />
 
       {/* Hero */}

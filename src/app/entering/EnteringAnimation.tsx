@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
+import { AmbientGlow } from "@/components/landing/AmbientGlow";
 import { ConnexionLoop } from "@/components/ConnexionLoop";
 
 // Durée volontairement fixe, indépendante de la vitesse réelle de
@@ -28,7 +28,7 @@ export function EnteringAnimation() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-white">
-      <AmbientNetwork />
+      <AmbientGlow />
       <div className="relative flex flex-col items-center gap-5">
         <ConnexionLoop className="h-48 w-64" />
         <p className="text-sm font-medium text-ink-soft">Connexion en cours...</p>

@@ -3,7 +3,7 @@
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/Button";
 import { FieldHint } from "@/components/ui/Field";
-import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
+import { AmbientGlow } from "@/components/landing/AmbientGlow";
 import { CoffeeSpillLoop } from "@/components/CoffeeSpillLoop";
 
 function SubmitButton() {
@@ -26,7 +26,7 @@ function GenerationOverlay() {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
-      <AmbientNetwork />
+      <AmbientGlow />
       <div className="relative flex flex-col items-center gap-5">
         <CoffeeSpillLoop className="h-48 w-64" />
         <p className="text-sm font-medium text-ink-soft">Préparation de vos données...</p>

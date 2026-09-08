@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
+import { AmbientGlow } from "@/components/landing/AmbientGlow";
 import { SignupSearchSequence } from "@/components/SignupSearchSequence";
 
 // Durée totale de la séquence (4 poses, 3 transitions de 900ms) + une
@@ -27,7 +27,7 @@ export function CreatingAccountAnimation() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-white">
-      <AmbientNetwork />
+      <AmbientGlow />
       <div className="relative flex flex-col items-center gap-5">
         <SignupSearchSequence className="h-48 w-64" />
         <p className="text-sm font-medium text-ink-soft">

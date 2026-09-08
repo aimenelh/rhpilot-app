@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
-import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
+import { AmbientGlow } from "@/components/landing/AmbientGlow";
 import { Reveal } from "@/components/landing/Reveal";
 import { Card } from "@/components/ui/Card";
 
@@ -72,7 +72,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function ConfidentialitePage() {
   return (
     <div className="min-h-screen">
-      <AmbientNetwork />
+      <AmbientGlow />
       <MarketingHeader />
 
       <section className="mx-auto max-w-2xl px-6 py-16">
