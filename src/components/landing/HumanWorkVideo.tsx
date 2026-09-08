@@ -1,21 +1,10 @@
 "use client";
 
-import { usePathname } from "next/navigation";
-
 const VIDEO_SRC = "https://www.pexels.com/download/video/9034878/";
 
-export function HumanWorkVideo() {
-  const pathname = usePathname();
-
-  if (pathname !== "/") {
-    return null;
-  }
-
+export function HumanWorkVideo({ className = "" }: { className?: string }) {
   return (
-    <div
-      aria-hidden="true"
-      className="human-work-video pointer-events-none absolute right-[clamp(1rem,5vw,5rem)] top-[clamp(10rem,13vw,13rem)] z-20 hidden w-[clamp(29rem,39vw,41rem)] lg:block"
-    >
+    <div aria-hidden="true" className={`human-work-video pointer-events-none absolute z-30 ${className}`}>
       <div className="human-work-video-shape human-work-video-shape-back" />
       <div className="human-work-video-shape human-work-video-shape-mid" />
       <div className="human-work-video-dots" />
