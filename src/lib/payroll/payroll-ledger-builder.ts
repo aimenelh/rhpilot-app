@@ -12,7 +12,7 @@ export type PayrollLedgerVariable = {
   label: string;
   amount: number;
   grossDelta: number;
-  kind: "ADD_TO_GROSS" | "DEDUCT_FROM_GROSS";
+  kind: PayrollLedgerEntry["kind"];
   ruleVersionId: string;
 };
 
