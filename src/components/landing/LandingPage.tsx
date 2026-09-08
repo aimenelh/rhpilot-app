@@ -10,6 +10,7 @@ import { TestimonialsCarousel } from "@/components/landing/TestimonialsCarousel"
 import { AmbientGlow } from "@/components/landing/AmbientGlow";
 import { JourneyFlow } from "@/components/landing/JourneyFlow";
 import { InteractiveDemo } from "@/components/landing/InteractiveDemo";
+import { HumanWorkVideo } from "@/components/landing/HumanWorkVideo";
 
 const BENEFITS = [
   {
@@ -45,6 +46,8 @@ export function LandingPage() {
       <MarketingHeader />
 
       <section className="relative overflow-hidden">
+        <HumanWorkVideo />
+
         <div className="relative mx-auto max-w-4xl px-6 pb-8 pt-24 text-center lg:pt-32">
           <Reveal variant="scale">
             <h1 className="text-5xl font-bold leading-[1.05] tracking-tight text-ink sm:text-6xl lg:text-[4.5rem]">
@@ -443,9 +446,7 @@ export function LandingPage() {
 
       {/* Teaser Paie, honnête sur son statut -- ne prétend jamais que
           le module est terminé ou conforme, juste qu'il existe et se
-          construit. Séparé de la section "trois choses" ci-dessus,
-          qui reste volontairement à trois éléments quotidiens ; la
-          paie est un processus mensuel, pas de la même famille. */}
+          construit. En construction, disponible progressivement sur le palier Pro. */}
       <section className="mx-auto max-w-3xl px-6 pb-16 text-center">
         <Reveal>
           <h2 className="text-2xl font-semibold text-ink">
@@ -462,7 +463,7 @@ export function LandingPage() {
         {/* Personnage posé sur le bord supérieur de la section, jambes
             dans le vide, comme celui du hero sur le tableau de bord.
             Position calculée à partir de la maquette fournie : 81 %
-            de l'illustration au-dessus du bord, 19 % retombant dessus,
+            de l&apos;illustration au-dessus du bord, 19 % retombant dessus,
             centré avec un léger décalage à droite (+3,6 % de la
             largeur de la section). */}
         <style>{`
