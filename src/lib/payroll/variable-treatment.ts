@@ -1,3 +1,5 @@
+import { getPayrollElementDefinition, type PayrollElementKind } from "./payroll-element-catalog";
+
 export type PayrollVariableGrossEffect = "ADD_TO_GROSS" | "SUBTRACT_FROM_GROSS" | "EXCLUDE_FROM_GROSS";
 
 export type PayrollVariableTreatmentRule = {
@@ -5,12 +7,14 @@ export type PayrollVariableTreatmentRule = {
   ruleVersionId: string;
   grossEffect: PayrollVariableGrossEffect;
   supportedUnits: Array<"EUR">;
+  kind?: PayrollElementKind;
 };
 
 export type PayrollVariableTreatmentResult = {
   code: string;
   ruleVersionId: string;
   grossDelta: number;
+  kind: PayrollElementKind;
 };
 
 function roundMoney(value: number): number {
@@ -21,9 +25,11 @@ function roundMoney(value: number): number {
  * Détermine l'impact d'une variable sur le brut uniquement à partir
  * d'une règle explicitement versionnée.
  *
- * Aucune variable n'est interprétée par son libellé ou son code seul.
- * Les conversions heures/jours/pourcentage restent volontairement
- * indisponibles tant qu'une base de calcul versionnée ne les définit pas.
+ * Le catalogue métier distingue désormais les éléments de brut, retenues,
+ * remboursements et éléments non monétaires. Tant que le ledger final de
+ * bulletin n'existe pas, seuls les éléments réellement applicables au brut
+ * peuvent traverser cette fonction ; les autres doivent être bloqués au lieu
+ * d'être implicitement transformés en salaire.
  */
 export function resolvePayrollVariableTreatment(input: {
   code: string;
@@ -39,6 +45,10 @@ export function resolvePayrollVariableTreatment(input: {
     throw new Error(`La valeur de la variable ${input.code} est invalide.`);
   }
 
+  if (input.amount < 0) {
+    throw new Error(`La valeur de la variable ${input.code} ne peut pas être négative.`);
+  }
+
   if (!input.rule.ruleVersionId.trim()) {
     throw new Error(`La variable ${input.code} ne possède pas de version de règle.`);
   }
@@ -47,21 +57,35 @@ export function resolvePayrollVariableTreatment(input: {
     throw new Error(`La règle fournie ne correspond pas à la variable ${input.code}.`);
   }
 
+  const definition = getPayrollElementDefinition(input.code);
+  const kind = input.rule.kind ?? definition?.allowedKinds[0] ?? "ADD_TO_GROSS";
+
+  if (definition && !definition.allowedKinds.includes(kind)) {
+    throw new Error(`Le type de traitement ${kind} n'est pas autorisé pour l'élément ${input.code}.`);
+  }
+
+  if (kind !== "ADD_TO_GROSS" && kind !== "DEDUCT_FROM_GROSS") {
+    throw new Error(`L'élément ${input.code} (${kind}) ne peut pas encore être intégré au brut : son traitement de bulletin doit être modélisé séparément.`);
+  }
+
   if (!input.rule.supportedUnits.includes(input.unit as "EUR")) {
     throw new Error(`L'unité ${input.unit} n'est pas prise en charge par la règle ${input.code}.`);
   }
 
   const grossDelta =
-    input.rule.grossEffect === "ADD_TO_GROSS"
+    kind === "ADD_TO_GROSS"
       ? input.amount
       : input.rule.grossEffect === "SUBTRACT_FROM_GROSS"
         ? -input.amount
-        : 0;
+        : input.rule.grossEffect === "ADD_TO_GROSS"
+          ? input.amount
+          : 0;
 
   return {
     code: input.code,
     ruleVersionId: input.rule.ruleVersionId,
     grossDelta: roundMoney(grossDelta),
+    kind,
   };
 }
 
