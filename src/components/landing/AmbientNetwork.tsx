@@ -50,7 +50,7 @@ const PULSE_CONNECTIONS: [number, number][] = [
   [1, 3], [8, 11], [9, 12], [15, 17], [12, 16], [6, 22], [23, 24],
 ];
 
-export function AmbientNetwork() {
+export function AmbientNetwork({ className = "" }: { className?: string }) {
   const parallaxRef = useRef<HTMLDivElement>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
 
@@ -75,7 +75,7 @@ export function AmbientNetwork() {
   }, []);
 
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-white">
+    <div aria-hidden className={`pointer-events-none fixed inset-0 -z-10 overflow-hidden bg-white ${className}`}>
       <style>{`
         @keyframes ambientDrift {
           0%, 100% { transform: translate(0%, 0%) scale(1); }
