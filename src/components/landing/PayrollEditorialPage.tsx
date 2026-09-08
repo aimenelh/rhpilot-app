@@ -1,10 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Check, ExternalLink, ShieldCheck } from "lucide-react";
+import { ArrowRight, Check, ExternalLink, FileText, ShieldCheck } from "lucide-react";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
-import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
-import { Reveal } from "@/components/landing/Reveal";
 import { Button } from "@/components/ui/Button";
 
 export type PayrollSource = {
@@ -43,17 +41,17 @@ export type PayrollEditorialCapability = {
 };
 
 const MASCOT_BY_KEY: Record<string, string> = {
-  production: "/illustrations/mascot/dashboard.png",
+  production: "/illustrations/mascot/missing-document.png",
   variables: "/illustrations/mascot/search.png",
   absences: "/illustrations/mascot/reminder.png",
-  arrets: "/illustrations/mascot/medical.png",
+  arrets: "/illustrations/mascot/urgent.png",
   agreement: "/illustrations/mascot/search.png",
   health: "/illustrations/mascot/medical.png",
-  contributions: "/illustrations/mascot/dashboard.png",
+  contributions: "/illustrations/mascot/calcul.png",
   netSocial: "/illustrations/mascot/calm.png",
-  payslip: "/illustrations/mascot/completed-journey.png",
+  payslip: "/illustrations/mascot/missing-document.png",
   traceability: "/illustrations/mascot/search.png",
-  profile: "/illustrations/mascot/copilot.png",
+  profile: "/illustrations/mascot/dashboard.png",
   employer: "/illustrations/mascot/create-journey.png",
 };
 
@@ -72,11 +70,28 @@ const PHOTO_BY_KEY: Record<string, string> = {
   employer: "https://images.unsplash.com/photo-1770048532712-4fde5ef7eb90?auto=format&fit=crop&fm=jpg&q=82&w=1600",
 };
 
+const ACCENT_PHRASES: Record<string, string> = {
+  production: "ce qui doit être contrôlé",
+  variables: "la bonne période",
+  absences: "la période concernée",
+  arrets: "en paie",
+  agreement: "dossier de paie",
+  health: "contexte de paie",
+  contributions: "séparément",
+  netSocial: "montant net social",
+  payslip: "période verrouillée",
+  traceability: "produit",
+  profile: "structurent le calcul",
+  employer: "contexte de l’entreprise",
+};
+
 function richText(text: string) {
   const parts = text.split(/\*\*(.+?)\*\*/g);
   return parts.map((part, index) =>
     index % 2 === 1 ? (
-      <strong key={`${part}-${index}`} className="font-semibold text-ink">{part}</strong>
+      <strong key={`${part}-${index}`} className="font-semibold text-brand-primary">
+        {part}
+      </strong>
     ) : (
       <span key={`${part}-${index}`}>{part}</span>
     ),
@@ -95,33 +110,31 @@ function getVisualKey(eyebrow: string, variant?: string) {
   if (normalized.includes("variables")) return "variables";
   if (normalized.includes("conges")) return "absences";
   if (normalized.includes("arrets")) return "arrets";
-  if (normalized.includes("agreement")) return "agreement";
-  if (normalized.includes("health")) return "health";
-  if (normalized.includes("contributions")) return "contributions";
+  if (normalized.includes("agreement") || normalized.includes("referentiel")) return "agreement";
+  if (normalized.includes("health") || normalized.includes("complementaire")) return "health";
+  if (normalized.includes("contributions") || normalized.includes("cotisations")) return "contributions";
   if (normalized.includes("netsocial") || normalized.includes("net-social")) return "netSocial";
-  if (normalized.includes("payslip")) return "payslip";
-  if (normalized.includes("traceability")) return "traceability";
-  if (normalized.includes("profile")) return "profile";
-  if (normalized.includes("employer")) return "employer";
+  if (normalized.includes("payslip") || normalized.includes("bulletin")) return "payslip";
+  if (normalized.includes("traceability") || normalized.includes("tracabilite")) return "traceability";
+  if (normalized.includes("profile") || normalized.includes("profil")) return "profile";
+  if (normalized.includes("employer") || normalized.includes("employeur")) return "employer";
   return "production";
 }
 
-function TrustMark({ name }: { name: string }) {
-  const short = name
-    .replace(" / Mon-entreprise", "")
-    .replace("impots.gouv.fr — ", "")
-    .replace(".fr", "");
-
+function AccentTitle({ title, phrase }: { title: string; phrase: string }) {
+  if (!phrase || !title.includes(phrase)) return <>{title}</>;
+  const [before, after] = title.split(phrase);
   return (
-    <span className="inline-flex min-h-10 items-center justify-center rounded-lg border border-surface-border bg-white px-3 text-xs font-semibold tracking-tight text-ink shadow-card">
-      {short}
-    </span>
+    <>
+      {before}
+      <span className="text-brand-primary">{phrase}</span>
+      {after}
+    </>
   );
 }
 
 function SourcesStrip({ sources }: { sources?: PayrollSource[] }) {
   if (!sources?.length) return null;
-
   return (
     <div className="flex flex-wrap gap-2">
       {sources.map((source) => (
@@ -130,7 +143,7 @@ function SourcesStrip({ sources }: { sources?: PayrollSource[] }) {
           href={source.href}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-full border border-surface-border bg-white px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-brand-primary hover:text-ink"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-surface-border bg-white px-3 py-2 text-xs font-medium text-ink-soft transition-colors hover:border-brand-primary/40 hover:text-ink"
         >
           {source.name}
           <ExternalLink className="h-3 w-3" aria-hidden="true" />
@@ -140,59 +153,83 @@ function SourcesStrip({ sources }: { sources?: PayrollSource[] }) {
   );
 }
 
-function VisualScene({ keyName, title, text }: { keyName: string; title: string; text: string }) {
-  const photo = PHOTO_BY_KEY[keyName] ?? PHOTO_BY_KEY.production;
+function HumanEditorialScene({ keyName, image, alt, kicker, title, text }: {
+  keyName: string;
+  image: string;
+  alt: string;
+  kicker: string;
+  title: string;
+  text: string;
+}) {
   const mascot = MASCOT_BY_KEY[keyName] ?? MASCOT_BY_KEY.production;
 
   return (
-    <div className="relative overflow-hidden rounded-[28px] border border-surface-border bg-surface-subtle shadow-elevated">
-      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${photo})` }} aria-hidden="true" />
-      <div className="absolute inset-0 bg-white/72" aria-hidden="true" />
-      <div className="relative min-h-[470px] p-6 sm:p-8">
-        <div className="max-w-sm rounded-2xl border border-white/90 bg-white/95 p-5 shadow-card backdrop-blur-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">RH Pilot</p>
-          <h3 className="mt-2 text-xl font-semibold tracking-tight text-ink">{title}</h3>
-          <p className="mt-2 text-sm leading-6 text-ink-soft">{text}</p>
-        </div>
-        <div className="absolute bottom-4 right-4 h-36 w-36 sm:h-44 sm:w-44">
-          <Image src={mascot} alt="Mascotte RH Pilot" fill className="object-contain drop-shadow-[0_18px_28px_rgba(20,21,26,0.14)]" sizes="176px" />
-        </div>
-        <div className="absolute bottom-6 left-6 h-20 w-20 rounded-full border border-white/70 bg-white/75" aria-hidden="true" />
-        <AmbientNetwork className="absolute bottom-0 right-0 h-44 w-56 opacity-25" />
+    <div className="relative min-h-[430px] overflow-hidden rounded-2xl border border-surface-border bg-surface-subtle">
+      <div className="absolute inset-0 bg-[#f7f8fa]" aria-hidden="true" />
+      <div className="absolute left-[7%] top-[8%] h-[70%] w-[82%] -rotate-2 rounded-[2.25rem] bg-[#FCE7E3]" aria-hidden="true" />
+      <div className="absolute inset-y-[9%] left-[7%] w-[82%] overflow-hidden rounded-[2rem] border border-white bg-white shadow-card">
+        <img src={image} alt={alt} className="h-full w-full object-cover" loading="eager" />
       </div>
+      <div className="absolute right-[5%] top-[8%] w-[54%] rounded-xl border border-surface-border bg-white p-4 shadow-card sm:p-5">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-primary">{kicker}</p>
+        <p className="mt-2 text-base font-semibold leading-6 tracking-tight text-ink">{title}</p>
+        <p className="mt-2 text-xs leading-5 text-ink-soft">{text}</p>
+      </div>
+      <div className="absolute bottom-[5%] right-[5%] h-44 w-44 sm:h-52 sm:w-52">
+        <Image src={mascot} alt="Mascotte RH Pilot" fill className="object-contain" sizes="208px" />
+      </div>
+      <div className="absolute bottom-[9%] left-[8%] flex h-10 w-10 items-center justify-center rounded-lg border border-brand-primary/20 bg-white text-brand-primary shadow-card" aria-hidden="true">
+        <FileText className="h-5 w-5" />
+      </div>
+      <div className="absolute left-[4%] top-[11%] h-2 w-2 rounded-full bg-brand-primary" aria-hidden="true" />
+      <div className="absolute bottom-[12%] left-[15%] h-px w-24 bg-brand-primary/60" aria-hidden="true" />
+      <div className="absolute bottom-[12%] left-[15%] h-6 w-28 -translate-y-3 border-t border-dashed border-brand-primary/60" aria-hidden="true" />
     </div>
   );
 }
 
 function PayrollHero({ feature }: { feature: PayrollEditorialFeature }) {
   const keyName = getVisualKey(feature.eyebrow);
+  const image = feature.image ?? PHOTO_BY_KEY[keyName] ?? PHOTO_BY_KEY.production;
+  const accent = ACCENT_PHRASES[keyName] ?? "";
 
   return (
-    <section className="relative overflow-hidden border-b border-surface-border bg-white">
-      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 sm:px-8 sm:py-18 lg:grid-cols-[1fr_0.95fr] lg:items-center lg:gap-14 lg:px-10 lg:py-24">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary">{feature.eyebrow}</p>
-          <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-ink sm:text-5xl lg:text-6xl">{feature.title}</h1>
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-ink-soft">{feature.intro}</p>
-          <div className="mt-8 flex flex-wrap gap-3">
+    <section className="border-b border-surface-border bg-white">
+      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-12 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-14 lg:px-10 lg:py-20">
+        <div className="max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">{feature.eyebrow}</p>
+          <h1 className="mt-4 font-[var(--font-dm-sans)] text-4xl font-semibold leading-[1.04] tracking-[-0.04em] text-ink sm:text-5xl lg:text-[3.8rem]">
+            <AccentTitle title={feature.title} phrase={accent} />
+          </h1>
+          <p className="mt-6 max-w-xl text-base leading-7 text-ink-soft sm:text-lg sm:leading-8">{feature.intro}</p>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
             <Button asChild>
               <Link href="/contact">
                 Découvrir RH Pilot
                 <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
             </Button>
-            <span className="inline-flex items-center gap-2 rounded-lg border border-surface-border bg-surface-subtle px-3 text-sm font-medium text-ink-soft">
+            <div className="inline-flex items-center gap-2 rounded-lg border border-surface-border bg-surface-subtle px-3.5 py-2.5 text-sm text-ink-soft">
               <ShieldCheck className="h-4 w-4 text-brand-primary" aria-hidden="true" />
-              Données et règles traçables
-            </span>
+              Règles et données traçables
+            </div>
           </div>
-          <div className="mt-9 flex flex-wrap gap-2">
-            {feature.sources.slice(0, 4).map((source) => (
-              <TrustMark key={source.name} name={source.name} />
+          <div className="mt-8 flex flex-wrap gap-2">
+            {feature.sources.slice(0, 3).map((source) => (
+              <span key={source.name} className="rounded-lg border border-surface-border bg-white px-3 py-2 text-xs font-semibold text-ink">
+                {source.name}
+              </span>
             ))}
           </div>
         </div>
-        <VisualScene keyName={keyName} title={feature.visualTitle} text={feature.visualText} />
+        <HumanEditorialScene
+          keyName={keyName}
+          image={image}
+          alt={feature.imageAlt ?? "Situation professionnelle liée à la paie"}
+          kicker={feature.visualKicker}
+          title={feature.visualTitle}
+          text={feature.visualText}
+        />
       </div>
     </section>
   );
@@ -200,20 +237,24 @@ function PayrollHero({ feature }: { feature: PayrollEditorialFeature }) {
 
 function PointsSection({ feature }: { feature: PayrollEditorialFeature }) {
   return (
-    <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10 lg:py-24">
-      <div className="max-w-3xl">
-        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-primary">Ce qu’il faut maîtriser</p>
-        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">Une paie lisible avant d’être automatisée.</h2>
+    <section className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
+      <div className="max-w-2xl">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">{feature.workflowTitle}</p>
+        <h2 className="mt-2 font-[var(--font-dm-sans)] text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">Les points à contrôler</h2>
       </div>
-      <div className="mt-10 grid gap-5 md:grid-cols-3">
+      <div className="mt-8 grid gap-4 md:grid-cols-3">
         {feature.points.map((point) => (
-          <Reveal key={point.title} className="rounded-2xl border border-surface-border bg-white p-6 shadow-card">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-primary/10 text-brand-primary">
-              <Check className="h-5 w-5" aria-hidden="true" />
+          <div key={point.title} className="rounded-xl border border-surface-border bg-white p-5 shadow-card">
+            <div className="flex items-start gap-3">
+              <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-primary/10 text-brand-primary">
+                <Check className="h-4 w-4" aria-hidden="true" />
+              </div>
+              <div>
+                <h3 className="font-[var(--font-dm-sans)] text-base font-semibold text-ink">{point.title}</h3>
+                <p className="mt-2 text-sm leading-6 text-ink-soft">{point.text}</p>
+              </div>
             </div>
-            <h3 className="mt-5 text-xl font-semibold tracking-tight text-ink">{point.title}</h3>
-            <p className="mt-3 text-sm leading-6 text-ink-soft">{point.text}</p>
-          </Reveal>
+          </div>
         ))}
       </div>
     </section>
@@ -223,16 +264,16 @@ function PointsSection({ feature }: { feature: PayrollEditorialFeature }) {
 function WorkflowSection({ feature }: { feature: PayrollEditorialFeature }) {
   return (
     <section className="border-y border-surface-border bg-surface-subtle">
-      <div className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10 lg:py-24">
-        <div className="max-w-3xl">
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-primary">Processus</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">{feature.workflowTitle}</h2>
+      <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
+        <div className="max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Séquence</p>
+          <h2 className="mt-2 font-[var(--font-dm-sans)] text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">{feature.workflowTitle}</h2>
         </div>
-        <div className="mt-10 grid gap-4 lg:grid-cols-4">
+        <div className="mt-8 grid gap-px overflow-hidden rounded-xl border border-surface-border bg-surface-border md:grid-cols-4">
           {feature.workflow.map((step, index) => (
-            <div key={step.label} className="rounded-2xl border border-surface-border bg-white p-6">
-              <p className="text-sm font-semibold text-brand-primary">{String(index + 1).padStart(2, "0")}</p>
-              <h3 className="mt-4 text-lg font-semibold text-ink">{step.label}</h3>
+            <div key={step.label} className="bg-white p-5">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-primary">Étape {index + 1}</p>
+              <h3 className="mt-3 font-[var(--font-dm-sans)] text-base font-semibold text-ink">{step.label}</h3>
               <p className="mt-2 text-sm leading-6 text-ink-soft">{step.text}</p>
             </div>
           ))}
@@ -244,21 +285,23 @@ function WorkflowSection({ feature }: { feature: PayrollEditorialFeature }) {
 
 function DetailsBlock({ feature }: { feature: PayrollEditorialFeature }) {
   return (
-    <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10 lg:py-24">
-      <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+    <section className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
+      <div className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr]">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-primary">Références</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">{feature.detailsTitle}</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Références</p>
+          <h2 className="mt-2 font-[var(--font-dm-sans)] text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">{feature.detailsTitle}</h2>
           <p className="mt-4 text-sm leading-6 text-ink-soft">{feature.note}</p>
         </div>
-        <div className="space-y-3">
-          {feature.details.map((detail) => (
-            <div key={detail} className="flex gap-3 rounded-xl border border-surface-border bg-white p-4">
-              <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-primary" aria-hidden="true" />
-              <p className="text-sm leading-6 text-ink-soft">{richText(detail)}</p>
-            </div>
-          ))}
-          <div className="pt-2">
+        <div>
+          <div className="space-y-2">
+            {feature.details.map((detail) => (
+              <div key={detail} className="flex gap-3 rounded-xl border border-surface-border bg-white p-4">
+                <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-primary" aria-hidden="true" />
+                <p className="text-sm leading-6 text-ink-soft">{richText(detail)}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-6">
             <SourcesStrip sources={feature.sources} />
           </div>
         </div>
@@ -267,43 +310,78 @@ function DetailsBlock({ feature }: { feature: PayrollEditorialFeature }) {
   );
 }
 
-function CapabilityMoments({ capability }: { capability: PayrollEditorialCapability }) {
+function CapabilityHero({ capability }: { capability: PayrollEditorialCapability }) {
   const keyName = getVisualKey(capability.eyebrow, capability.variant);
-  const photo = PHOTO_BY_KEY[keyName] ?? PHOTO_BY_KEY.production;
+  const image = PHOTO_BY_KEY[keyName] ?? PHOTO_BY_KEY.production;
   const mascot = MASCOT_BY_KEY[keyName] ?? MASCOT_BY_KEY.production;
+  const accent = ACCENT_PHRASES[keyName] ?? "";
 
   return (
-    <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10 lg:py-24">
-      <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
-        <div className="lg:sticky lg:top-24">
-          <div className="relative overflow-hidden rounded-[28px] border border-surface-border bg-surface-subtle shadow-elevated">
-            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${photo})` }} aria-hidden="true" />
-            <div className="absolute inset-0 bg-white/78" aria-hidden="true" />
-            <div className="relative min-h-[420px] p-6 sm:p-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">RH Pilot</p>
-              <h2 className="mt-3 max-w-sm text-3xl font-semibold tracking-tight text-ink">{capability.summary}</h2>
-              <div className="absolute bottom-4 right-4 h-40 w-40 sm:h-48 sm:w-48">
-                <Image src={mascot} alt="Mascotte RH Pilot" fill className="object-contain drop-shadow-[0_18px_28px_rgba(20,21,26,0.14)]" sizes="192px" />
-              </div>
-              <AmbientNetwork className="absolute bottom-0 left-0 h-40 w-52 opacity-20" />
-            </div>
-          </div>
-          <div className="mt-5">
-            <SourcesStrip sources={capability.sources} />
+    <section className="border-b border-surface-border bg-white">
+      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-12 sm:px-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-14 lg:px-10 lg:py-20">
+        <div className="max-w-2xl">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">{capability.eyebrow}</p>
+          <h1 className="mt-4 font-[var(--font-dm-sans)] text-4xl font-semibold leading-[1.04] tracking-[-0.04em] text-ink sm:text-5xl lg:text-[3.8rem]">
+            <AccentTitle title={capability.title} phrase={accent} />
+          </h1>
+          <p className="mt-6 max-w-xl text-base leading-7 text-ink-soft sm:text-lg sm:leading-8">{capability.intro}</p>
+          <div className="mt-8 inline-flex items-center gap-2 rounded-lg border border-surface-border bg-surface-subtle px-3.5 py-2.5 text-sm text-ink-soft">
+            <ShieldCheck className="h-4 w-4 text-brand-primary" aria-hidden="true" />
+            Références et règles visibles
           </div>
         </div>
-        <div className="space-y-5">
-          {capability.moments.map((moment) => (
-            <Reveal key={moment.heading} className="rounded-2xl border border-surface-border bg-white p-6 shadow-card sm:p-7">
-              <div className="flex items-start gap-4">
-                <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-brand-primary" />
-                <div>
-                  <h3 className="text-xl font-semibold tracking-tight text-ink">{moment.heading}</h3>
-                  <p className="mt-3 text-[15px] leading-7 text-ink-soft">{richText(moment.body)}</p>
-                </div>
-              </div>
-            </Reveal>
-          ))}
+        <HumanEditorialScene
+          keyName={keyName}
+          image={image}
+          alt={`Illustration liée à ${capability.eyebrow}`}
+          kicker={capability.eyebrow}
+          title={capability.summary}
+          text="Les informations utiles restent rattachées au contexte du calcul."
+        />
+      </div>
+    </section>
+  );
+}
+
+function CapabilityMoments({ capability }: { capability: PayrollEditorialCapability }) {
+  return (
+    <section className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
+      <div className="max-w-2xl">
+        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Ce que RH Pilot conserve</p>
+        <h2 className="mt-2 font-[var(--font-dm-sans)] text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">Une lecture concrète du sujet</h2>
+      </div>
+      <div className="mt-8 grid gap-4 lg:grid-cols-3">
+        {capability.moments.map((moment) => (
+          <div key={moment.heading} className="rounded-xl border border-surface-border bg-white p-5 shadow-card">
+            <div className="h-1 w-10 rounded-full bg-brand-primary" aria-hidden="true" />
+            <h3 className="mt-4 font-[var(--font-dm-sans)] text-base font-semibold text-ink">{moment.heading}</h3>
+            <p className="mt-3 text-sm leading-6 text-ink-soft">{richText(moment.body)}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function CapabilitySources({ capability }: { capability: PayrollEditorialCapability }) {
+  return (
+    <section className="border-t border-surface-border bg-surface-subtle">
+      <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
+        <div className="flex flex-col gap-6 rounded-xl border border-surface-border bg-white p-6 sm:flex-row sm:items-center sm:justify-between sm:p-7">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Références</p>
+            <p className="mt-2 text-base font-semibold text-ink">Les règles restent rattachées à des sources identifiables.</p>
+            <p className="mt-1 text-sm leading-6 text-ink-soft">Les sources utilisées pour le traitement sont accessibles depuis cette page.</p>
+          </div>
+          <Button asChild>
+            <Link href="/contact">
+              Échanger avec l’équipe
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </Button>
+        </div>
+        <div className="mt-5">
+          <SourcesStrip sources={capability.sources} />
         </div>
       </div>
     </section>
@@ -326,45 +404,13 @@ export function PayrollFeatureEditorial({ feature }: { feature: PayrollEditorial
 }
 
 export function PayrollCapabilityEditorial({ capability }: { capability: PayrollEditorialCapability }) {
-  const keyName = getVisualKey(capability.eyebrow, capability.variant);
-
   return (
     <div className="min-h-screen bg-white text-ink">
       <MarketingHeader />
       <main>
-        <section className="border-b border-surface-border bg-white">
-          <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 sm:py-18 lg:px-10 lg:py-24">
-            <div className="grid gap-10 lg:grid-cols-[1fr_0.8fr] lg:items-center">
-              <div>
-                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary">{capability.eyebrow}</p>
-                <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-ink sm:text-5xl lg:text-6xl">{capability.title}</h1>
-                <p className="mt-6 max-w-2xl text-lg leading-8 text-ink-soft">{capability.intro}</p>
-              </div>
-              <div className="hidden lg:block">
-                <div className="relative mx-auto h-64 w-64">
-                  <Image src={MASCOT_BY_KEY[keyName] ?? MASCOT_BY_KEY.production} alt="Mascotte RH Pilot" fill className="object-contain" sizes="256px" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
+        <CapabilityHero capability={capability} />
         <CapabilityMoments capability={capability} />
-        <section className="border-t border-surface-border bg-surface-subtle">
-          <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10">
-            <div className="flex flex-col gap-5 rounded-2xl border border-surface-border bg-white p-7 shadow-card sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-lg font-semibold text-ink">Une logique de paie documentée, du paramétrage au résultat.</p>
-                <p className="mt-2 text-sm leading-6 text-ink-soft">Retrouvez les références utilisées et les éléments qui permettent de contrôler le traitement.</p>
-              </div>
-              <Button asChild>
-                <Link href="/contact">
-                  Parler à l’équipe
-                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                </Link>
-              </Button>
-            </div>
-          </div>
-        </section>
+        <CapabilitySources capability={capability} />
       </main>
       <MarketingFooter />
     </div>
