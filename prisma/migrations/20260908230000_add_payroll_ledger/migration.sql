@@ -1,9 +1,10 @@
 -- RH Pilot — Ledger de bulletin
 --
--- Le ledger conserve chaque ligne ayant un effet sur le bulletin sans
--- confondre brut, social, fiscal, net et trésorerie. Les montants réglementaires
--- restent fournis par le calcul métier / les règles versionnées ; aucune valeur
--- légale n'est codée ici.
+-- Cette migration remplace la première table de ledger expérimentale créée
+-- par 20260908220000 par la structure finale, rattachée au calcul de paie.
+-- Aucun taux légal ou calcul réglementaire n'est codé ici.
+
+DROP TABLE IF EXISTS "payroll_ledger_entries" CASCADE;
 
 CREATE TABLE "payroll_ledger_entries" (
   "id" TEXT NOT NULL,
@@ -13,6 +14,7 @@ CREATE TABLE "payroll_ledger_entries" (
   "label" TEXT NOT NULL,
   "category" TEXT NOT NULL,
   "kind" TEXT NOT NULL,
+  "side" TEXT NOT NULL DEFAULT 'EMPLOYEE',
   "amount" DECIMAL(12,2) NOT NULL,
   "gross_delta" DECIMAL(12,2) NOT NULL DEFAULT 0,
   "taxable_delta" DECIMAL(12,2) NOT NULL DEFAULT 0,
@@ -30,7 +32,9 @@ CREATE TABLE "payroll_ledger_entries" (
   CONSTRAINT "payroll_ledger_entries_calculation_id_fkey"
     FOREIGN KEY ("calculation_id") REFERENCES "payroll_calculations"("id") ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT "payroll_ledger_entries_kind_check"
-    CHECK ("kind" IN ('ADD_TO_GROSS','DEDUCT_FROM_GROSS','DEDUCT_FROM_NET','REIMBURSEMENT','NON_CASH','INFORMATIONAL'))
+    CHECK ("kind" IN ('ADD_TO_GROSS','DEDUCT_FROM_GROSS','DEDUCT_FROM_NET','REIMBURSEMENT','NON_CASH','INFORMATIONAL')),
+  CONSTRAINT "payroll_ledger_entries_side_check"
+    CHECK ("side" IN ('EMPLOYEE','EMPLOYER','NEUTRAL'))
 );
 
 CREATE INDEX "payroll_ledger_entries_calculation_id_line_order_idx"
