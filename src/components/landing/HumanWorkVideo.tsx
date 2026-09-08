@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Logomark, Wordmark } from "@/components/Brand";
 
@@ -9,6 +9,26 @@ const END_MESSAGE = "Moins de relances. Plus de temps pour l’humain.";
 
 export function HumanWorkVideo({ className = "" }: { className?: string }) {
   const [showEndCard, setShowEndCard] = useState(false);
+  const [typedMessage, setTypedMessage] = useState("");
+  const [showBrand, setShowBrand] = useState(false);
+
+  useEffect(() => {
+    if (!showEndCard) return;
+
+    setTypedMessage("");
+    setShowBrand(false);
+    let index = 0;
+    const timer = window.setInterval(() => {
+      index += 1;
+      setTypedMessage(END_MESSAGE.slice(0, index));
+      if (index >= END_MESSAGE.length) {
+        window.clearInterval(timer);
+        window.setTimeout(() => setShowBrand(true), 260);
+      }
+    }, 42);
+
+    return () => window.clearInterval(timer);
+  }, [showEndCard]);
 
   return (
     <div className={`human-work-video pointer-events-none absolute z-30 ${className}`}>
@@ -41,41 +61,33 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
               }`}
             >
               <p
-                className="font-handwriting text-[1.65rem] leading-tight text-brand-primary sm:text-[2rem]"
+                className="min-h-[2.8em] max-w-[90%] font-handwriting text-[1.65rem] leading-tight text-brand-primary sm:text-[2rem]"
                 aria-label={END_MESSAGE}
               >
-                {Array.from(END_MESSAGE).map((character, index) => (
-                  <span
-                    key={`${character}-${index}`}
-                    className={`inline-block opacity-0 ${showEndCard ? "animate-[human-work-video-letter_55ms_ease-out_forwards]" : ""}`}
-                    style={{ animationDelay: `${index * 42}ms` }}
-                    aria-hidden="true"
-                  >
-                    {character === " " ? "\u00A0" : character}
-                  </span>
-                ))}
+                {typedMessage}
+                <span className="ml-0.5 inline-block h-[1.05em] w-px translate-y-[0.12em] bg-brand-primary/70 motion-safe:animate-pulse" aria-hidden="true" />
               </p>
 
-              <Link
-                href="/"
-                aria-label="RH Pilot"
-                className={`mt-8 flex items-center gap-3 transition-all duration-700 ease-out hover:scale-[1.03] ${
-                  showEndCard ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
+              <div
+                className={`transition-all duration-700 ease-out ${
+                  showBrand ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
                 }`}
-                style={{ transitionDelay: `${END_MESSAGE.length * 42 + 220}ms` }}
               >
-                <Logomark size={46} />
-                <Wordmark />
-              </Link>
-              <Link
-                href="/pourquoi"
-                className={`mt-5 text-base font-semibold text-ink transition-all duration-700 ease-out hover:text-brand-primary ${
-                  showEndCard ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
-                }`}
-                style={{ transitionDelay: `${END_MESSAGE.length * 42 + 360}ms` }}
-              >
-                En savoir plus →
-              </Link>
+                <Link
+                  href="/"
+                  aria-label="RH Pilot"
+                  className="flex items-center gap-3 hover:scale-[1.03] transition-transform duration-300"
+                >
+                  <Logomark size={46} />
+                  <Wordmark />
+                </Link>
+                <Link
+                  href="/pourquoi"
+                  className="mt-5 block text-base font-semibold text-ink transition-colors hover:text-brand-primary"
+                >
+                  En savoir plus →
+                </Link>
+              </div>
             </div>
           </div>
         </div>
