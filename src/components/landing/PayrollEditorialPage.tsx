@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Check, ExternalLink, ShieldCheck } from "lucide-react";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
+import { AmbientNetwork } from "@/components/landing/AmbientNetwork";
 import { Reveal } from "@/components/landing/Reveal";
 import { Button } from "@/components/ui/Button";
 
