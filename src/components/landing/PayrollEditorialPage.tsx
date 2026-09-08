@@ -17,6 +17,9 @@ export type PayrollEditorialFeature = {
   eyebrow: string;
   title: string;
   intro: string;
+  image?: string;
+  imageAlt?: string;
+  imagePosition?: "left" | "right";
   visualKicker: string;
   visualTitle: string;
   visualText: string;
@@ -120,139 +123,96 @@ function SourcesStrip({ sources }: { sources?: PayrollSource[] }) {
   if (!sources?.length) return null;
 
   return (
-    <section className="border-y border-surface-border bg-surface-subtle">
-      <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
-        <div className="grid gap-10 lg:grid-cols-[0.72fr_1.28fr] lg:items-center">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">Références officielles</p>
-            <h2 className="mt-3 text-3xl font-semibold leading-tight text-ink sm:text-4xl">
-              Des sources identifiées pour chaque traitement.
-            </h2>
-            <p className="mt-4 max-w-xl text-sm leading-6 text-ink-soft">
-              RH Pilot distingue le calcul social des références juridiques, réglementaires et administratives utilisées pour documenter le traitement.
-            </p>
-          </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {sources.map((source) => (
-              <a
-                key={source.name}
-                href={source.href}
-                target="_blank"
-                rel="noreferrer"
-                className="group rounded-xl border border-surface-border bg-white p-4 transition-colors hover:border-brand-primary/40 hover:bg-[#fffaf8]"
-              >
-                <TrustMark name={source.name} />
-                <p className="mt-4 text-xs leading-5 text-ink-soft">{source.detail}</p>
-                <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-primary">
-                  Consulter la source <ExternalLink size={12} />
-                </span>
-              </a>
-            ))}
-          </div>
-        </div>
-      </div>
-    </section>
+    <div className="flex flex-wrap gap-2">
+      {sources.map((source) => (
+        <a
+          key={source.name}
+          href={source.href}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1.5 rounded-full border border-surface-border bg-white px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-brand-primary hover:text-ink"
+        >
+          {source.name}
+          <ExternalLink className="h-3 w-3" aria-hidden="true" />
+        </a>
+      ))}
+    </div>
   );
 }
 
-function VisualScene({ featureKey, title }: { featureKey: string; title: string }) {
-  const mascot = MASCOT_BY_KEY[featureKey] ?? MASCOT_BY_KEY.production;
-  const photo = PHOTO_BY_KEY[featureKey] ?? PHOTO_BY_KEY.production;
+function VisualScene({ keyName, title, text }: { keyName: string; title: string; text: string }) {
+  const photo = PHOTO_BY_KEY[keyName] ?? PHOTO_BY_KEY.production;
+  const mascot = MASCOT_BY_KEY[keyName] ?? MASCOT_BY_KEY.production;
 
   return (
-    <div className="relative min-h-[390px] overflow-hidden rounded-[1.75rem] border border-surface-border bg-[#fbf8f6] sm:min-h-[480px] lg:min-h-[560px]">
-      <div className="absolute left-[10%] top-[16%] h-[68%] w-[80%] rounded-[42%] bg-[#f5c8be]/45 blur-[1px]" aria-hidden />
-      <div className="absolute inset-x-8 bottom-8 top-14 overflow-hidden rounded-[1.5rem] border border-white bg-white shadow-elevated lg:inset-x-12">
-        <img src={photo} alt="" className="h-full w-full object-cover saturate-[0.95]" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" aria-hidden />
-      </div>
-
-      <div className="absolute bottom-0 right-[6%] h-[56%] w-[48%] max-w-[290px] sm:h-[58%] sm:w-[42%] lg:right-[8%] lg:h-[62%] lg:w-[38%]">
-        <Image
-          src={mascot}
-          alt=""
-          fill
-          sizes="(max-width: 640px) 45vw, (max-width: 1024px) 35vw, 290px"
-          className="object-contain object-bottom drop-shadow-[0_18px_28px_rgba(20,21,26,0.16)]"
-          priority
-        />
-      </div>
-
-      <div className="absolute left-5 top-5 rounded-full border border-[#E8432E]/15 bg-white/95 px-3 py-1.5 text-[11px] font-semibold text-brand-primary shadow-card sm:left-7 sm:top-7">
-        RH Pilot · aux côtés du professionnel
-      </div>
-      <div className="absolute bottom-5 left-5 max-w-[55%] rounded-xl border border-white/70 bg-white/92 px-4 py-3 shadow-card backdrop-blur-sm sm:bottom-7 sm:left-7">
-        <p className="text-xs font-semibold text-ink">{title}</p>
-        <p className="mt-1 text-[11px] leading-5 text-ink-soft">Le professionnel garde la main sur la validation.</p>
+    <div className="relative overflow-hidden rounded-[28px] border border-surface-border bg-surface-subtle shadow-elevated">
+      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${photo})` }} aria-hidden="true" />
+      <div className="absolute inset-0 bg-white/72" aria-hidden="true" />
+      <div className="relative min-h-[470px] p-6 sm:p-8">
+        <div className="max-w-sm rounded-2xl border border-white/90 bg-white/95 p-5 shadow-card backdrop-blur-sm">
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">RH Pilot</p>
+          <h3 className="mt-2 text-xl font-semibold tracking-tight text-ink">{title}</h3>
+          <p className="mt-2 text-sm leading-6 text-ink-soft">{text}</p>
+        </div>
+        <div className="absolute bottom-4 right-4 h-36 w-36 sm:h-44 sm:w-44">
+          <Image src={mascot} alt="Mascotte RH Pilot" fill className="object-contain drop-shadow-[0_18px_28px_rgba(20,21,26,0.14)]" sizes="176px" />
+        </div>
+        <div className="absolute bottom-6 left-6 h-20 w-20 rounded-full border border-white/70 bg-white/75" aria-hidden="true" />
+        <AmbientNetwork className="absolute bottom-0 right-0 h-44 w-56 opacity-25" />
       </div>
     </div>
   );
 }
 
-function PayrollHero({
-  eyebrow,
-  title,
-  intro,
-  featureKey,
-}: {
-  eyebrow: string;
-  title: string;
-  intro: string;
-  featureKey: string;
-}) {
+function PayrollHero({ feature }: { feature: PayrollEditorialFeature }) {
+  const keyName = getVisualKey(feature.eyebrow);
+
   return (
     <section className="relative overflow-hidden border-b border-surface-border bg-white">
-      <div className="pointer-events-none absolute inset-0 opacity-40" aria-hidden>
-        <div className="absolute left-[6%] top-24 h-px w-[26%] rotate-[12deg] bg-brand-primary/15" />
-        <div className="absolute right-[9%] top-40 h-px w-[24%] rotate-[-14deg] bg-brand-primary/15" />
-        <div className="absolute bottom-20 left-[18%] h-px w-[34%] rotate-[-7deg] bg-brand-primary/10" />
-      </div>
-
-      <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-6 pb-16 pt-10 sm:pb-20 sm:pt-14 lg:grid-cols-[0.93fr_1.07fr] lg:gap-16 lg:py-20">
-        <Reveal variant="left">
-          <div className="max-w-2xl">
-            <Link href="/gestion-paie" className="inline-flex items-center gap-2 text-sm text-ink-faint hover:text-ink">
-              <ArrowRight size={14} className="rotate-180" /> Gestion de la paie
-            </Link>
-            <p className="mt-10 text-sm font-semibold text-brand-primary">{eyebrow}</p>
-            <h1 className="mt-4 max-w-2xl text-5xl font-semibold leading-[1.01] tracking-[-0.035em] text-ink sm:text-6xl lg:text-[4.7rem]">
-              {title}
-            </h1>
-            <p className="mt-7 max-w-xl text-lg leading-8 text-ink-soft">{intro}</p>
-            <div className="mt-9 flex flex-wrap items-center gap-4">
-              <Link href="/sign-up">
-                <Button>
-                  Essayer RH Pilot <ArrowRight size={16} />
-                </Button>
+      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 sm:px-8 sm:py-18 lg:grid-cols-[1fr_0.95fr] lg:items-center lg:gap-14 lg:px-10 lg:py-24">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary">{feature.eyebrow}</p>
+          <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-ink sm:text-5xl lg:text-6xl">{feature.title}</h1>
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-ink-soft">{feature.intro}</p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            <Button asChild>
+              <Link href="/contact">
+                Découvrir RH Pilot
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
               </Link>
-              <Link href="/gestion-paie" className="text-sm font-medium text-ink-soft hover:text-ink">
-                Voir les autres sujets paie
-              </Link>
-            </div>
+            </Button>
+            <span className="inline-flex items-center gap-2 rounded-lg border border-surface-border bg-surface-subtle px-3 text-sm font-medium text-ink-soft">
+              <ShieldCheck className="h-4 w-4 text-brand-primary" aria-hidden="true" />
+              Données et règles traçables
+            </span>
           </div>
-        </Reveal>
-
-        <Reveal variant="right" delay={100}>
-          <VisualScene featureKey={featureKey} title={eyebrow} />
-        </Reveal>
+          <div className="mt-9 flex flex-wrap gap-2">
+            {feature.sources.slice(0, 4).map((source) => (
+              <TrustMark key={source.name} name={source.name} />
+            ))}
+          </div>
+        </div>
+        <VisualScene keyName={keyName} title={feature.visualTitle} text={feature.visualText} />
       </div>
     </section>
   );
 }
 
-function PointsSection({ points }: { points: { title: string; text: string }[] }) {
+function PointsSection({ feature }: { feature: PayrollEditorialFeature }) {
   return (
-    <section className="mx-auto max-w-6xl px-6 py-16 sm:py-20 lg:py-24">
-      <div className="grid border-y border-surface-border md:grid-cols-3">
-        {points.map((point, index) => (
-          <Reveal key={point.title} delay={index * 70}>
-            <article className="border-b border-surface-border px-0 py-8 last:border-b-0 md:border-b-0 md:px-8 md:py-10 md:[&+article]:border-l">
-              <div className="flex h-9 w-9 items-center justify-center rounded-full border border-brand-primary/20 bg-[#fff8f6] text-brand-primary">
-                <Check size={17} />
-              </div>
-              <h2 className="mt-5 text-xl font-semibold text-ink">{point.title}</h2>
-              <p className="mt-3 text-sm leading-6 text-ink-soft">{point.text}</p>
-            </article>
+    <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10 lg:py-24">
+      <div className="max-w-3xl">
+        <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-primary">Ce qu’il faut maîtriser</p>
+        <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">Une paie lisible avant d’être automatisée.</h2>
+      </div>
+      <div className="mt-10 grid gap-5 md:grid-cols-3">
+        {feature.points.map((point) => (
+          <Reveal key={point.title} className="rounded-2xl border border-surface-border bg-white p-6 shadow-card">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-brand-primary/10 text-brand-primary">
+              <Check className="h-5 w-5" aria-hidden="true" />
+            </div>
+            <h3 className="mt-5 text-xl font-semibold tracking-tight text-ink">{point.title}</h3>
+            <p className="mt-3 text-sm leading-6 text-ink-soft">{point.text}</p>
           </Reveal>
         ))}
       </div>
@@ -260,64 +220,20 @@ function PointsSection({ points }: { points: { title: string; text: string }[] }
   );
 }
 
-function WorkflowSection({ title, workflow }: { title: string; workflow: { label: string; text: string }[] }) {
+function WorkflowSection({ feature }: { feature: PayrollEditorialFeature }) {
   return (
     <section className="border-y border-surface-border bg-surface-subtle">
-      <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20 lg:py-24">
-        <div className="grid gap-12 lg:grid-cols-[0.62fr_1.38fr]">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">Le traitement</p>
-            <h2 className="mt-3 max-w-md text-3xl font-semibold leading-tight text-ink sm:text-4xl">{title}</h2>
-          </div>
-          <div className="border-t border-surface-border">
-            {workflow.map((step, index) => (
-              <Reveal key={step.label} delay={index * 55}>
-                <div className="grid gap-4 border-b border-surface-border py-6 sm:grid-cols-[52px_160px_1fr]">
-                  <span className="text-sm font-semibold text-brand-primary">{String(index + 1).padStart(2, "0")}</span>
-                  <p className="font-semibold text-ink">{step.label}</p>
-                  <p className="text-sm leading-6 text-ink-soft">{step.text}</p>
-                </div>
-              </Reveal>
-            ))}
-          </div>
+      <div className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10 lg:py-24">
+        <div className="max-w-3xl">
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-primary">Processus</p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink sm:text-4xl">{feature.workflowTitle}</h2>
         </div>
-      </div>
-    </section>
-  );
-}
-
-function CapabilityMoments({ moments }: { moments: { heading: string; body: string }[] }) {
-  return (
-    <section className="border-y border-surface-border">
-      {moments.map((moment, index) => (
-        <div key={moment.heading} className={index ? "border-t border-surface-border" : ""}>
-          <div className="mx-auto grid max-w-6xl gap-7 px-6 py-14 sm:py-16 lg:grid-cols-[0.68fr_1.32fr] lg:gap-16">
-            <Reveal variant={index % 2 === 0 ? "left" : "right"}>
-              <h2 className="max-w-md text-3xl font-semibold leading-tight tracking-tight text-ink sm:text-4xl">{moment.heading}</h2>
-            </Reveal>
-            <Reveal variant={index % 2 === 0 ? "right" : "left"}>
-              <p className="max-w-2xl text-lg leading-8 text-ink-soft">{richText(moment.body)}</p>
-            </Reveal>
-          </div>
-        </div>
-      ))}
-    </section>
-  );
-}
-
-function DetailsBlock({ detailsTitle, details }: { detailsTitle: string; details: string[] }) {
-  return (
-    <section className="mx-auto max-w-6xl px-6 py-16 sm:py-20 lg:py-24">
-      <div className="grid gap-10 lg:grid-cols-[0.55fr_1.45fr]">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">{detailsTitle}</p>
-          <h2 className="mt-3 text-3xl font-semibold leading-tight text-ink sm:text-4xl">Ce que RH Pilot conserve.</h2>
-        </div>
-        <div className="grid gap-0 border-y border-surface-border sm:grid-cols-2">
-          {details.map((detail, index) => (
-            <div key={detail} className="border-b border-surface-border p-6 last:border-b-0 sm:[&:nth-child(odd)]:border-r sm:[&:nth-last-child(-n+2)]:border-b-0">
-              <span className="text-xs font-semibold text-brand-primary">{String(index + 1).padStart(2, "0")}</span>
-              <p className="mt-3 text-sm leading-6 text-ink-soft">{detail}</p>
+        <div className="mt-10 grid gap-4 lg:grid-cols-4">
+          {feature.workflow.map((step, index) => (
+            <div key={step.label} className="rounded-2xl border border-surface-border bg-white p-6">
+              <p className="text-sm font-semibold text-brand-primary">{String(index + 1).padStart(2, "0")}</p>
+              <h3 className="mt-4 text-lg font-semibold text-ink">{step.label}</h3>
+              <p className="mt-2 text-sm leading-6 text-ink-soft">{step.text}</p>
             </div>
           ))}
         </div>
@@ -326,94 +242,126 @@ function DetailsBlock({ detailsTitle, details }: { detailsTitle: string; details
   );
 }
 
-export function PayrollFeatureEditorial({ feature }: { feature: PayrollEditorialFeature }) {
-  const key = getVisualKey(feature.eyebrow);
+function DetailsBlock({ feature }: { feature: PayrollEditorialFeature }) {
   return (
-    <div className="min-h-screen bg-white">
-      <AmbientNetwork />
-      <MarketingHeader />
-      <main>
-        <PayrollHero eyebrow={feature.eyebrow} title={feature.title} intro={feature.intro} featureKey={key} />
-        <PointsSection points={feature.points} />
-        <section className="mx-auto grid max-w-6xl gap-12 px-6 py-16 sm:py-20 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:py-24">
-          <Reveal variant="left">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">{feature.visualKicker}</p>
-              <h2 className="mt-3 text-3xl font-semibold leading-tight text-ink sm:text-4xl">{feature.visualTitle}</h2>
-              <p className="mt-5 max-w-xl text-lg leading-8 text-ink-soft">{feature.visualText}</p>
-              <div className="mt-8 rounded-xl border border-brand-primary/15 bg-[#fff8f6] p-5">
-                <p className="text-sm font-semibold text-ink">À retenir</p>
-                <p className="mt-2 text-sm leading-6 text-ink-soft">{feature.note}</p>
-              </div>
+    <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10 lg:py-24">
+      <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.16em] text-brand-primary">Références</p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight text-ink">{feature.detailsTitle}</h2>
+          <p className="mt-4 text-sm leading-6 text-ink-soft">{feature.note}</p>
+        </div>
+        <div className="space-y-3">
+          {feature.details.map((detail) => (
+            <div key={detail} className="flex gap-3 rounded-xl border border-surface-border bg-white p-4">
+              <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-primary" aria-hidden="true" />
+              <p className="text-sm leading-6 text-ink-soft">{richText(detail)}</p>
             </div>
-          </Reveal>
-          <Reveal variant="right">
-            <VisualScene featureKey={key} title={feature.visualKicker} />
-          </Reveal>
-        </section>
-        <WorkflowSection title={feature.workflowTitle} workflow={feature.workflow} />
-        <DetailsBlock detailsTitle={feature.detailsTitle} details={feature.details} />
-        <SourcesStrip sources={feature.sources} />
-        <section className="border-t border-surface-border">
-          <div className="mx-auto max-w-6xl px-6 py-16 text-center sm:py-20">
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">Gestion de la paie</p>
-            <h2 className="mt-3 text-3xl font-semibold text-ink sm:text-4xl">Les règles restent explicables et contrôlables.</h2>
-            <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-ink-soft">RH Pilot présente le résultat, son contexte et les références utilisées avant la validation de la période.</p>
-            <div className="mt-8 flex justify-center">
-              <Link href="/gestion-paie" className="inline-flex items-center gap-2 text-sm font-semibold text-ink hover:text-brand-primary">Retour aux sujets paie <ArrowRight size={15} /></Link>
+          ))}
+          <div className="pt-2">
+            <SourcesStrip sources={feature.sources} />
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function CapabilityMoments({ capability }: { capability: PayrollEditorialCapability }) {
+  const keyName = getVisualKey(capability.eyebrow, capability.variant);
+  const photo = PHOTO_BY_KEY[keyName] ?? PHOTO_BY_KEY.production;
+  const mascot = MASCOT_BY_KEY[keyName] ?? MASCOT_BY_KEY.production;
+
+  return (
+    <section className="mx-auto max-w-7xl px-6 py-16 sm:px-8 lg:px-10 lg:py-24">
+      <div className="grid gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
+        <div className="lg:sticky lg:top-24">
+          <div className="relative overflow-hidden rounded-[28px] border border-surface-border bg-surface-subtle shadow-elevated">
+            <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${photo})` }} aria-hidden="true" />
+            <div className="absolute inset-0 bg-white/78" aria-hidden="true" />
+            <div className="relative min-h-[420px] p-6 sm:p-8">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">RH Pilot</p>
+              <h2 className="mt-3 max-w-sm text-3xl font-semibold tracking-tight text-ink">{capability.summary}</h2>
+              <div className="absolute bottom-4 right-4 h-40 w-40 sm:h-48 sm:w-48">
+                <Image src={mascot} alt="Mascotte RH Pilot" fill className="object-contain drop-shadow-[0_18px_28px_rgba(20,21,26,0.14)]" sizes="192px" />
+              </div>
+              <AmbientNetwork className="absolute bottom-0 left-0 h-40 w-52 opacity-20" />
             </div>
           </div>
-        </section>
+          <div className="mt-5">
+            <SourcesStrip sources={capability.sources} />
+          </div>
+        </div>
+        <div className="space-y-5">
+          {capability.moments.map((moment) => (
+            <Reveal key={moment.heading} className="rounded-2xl border border-surface-border bg-white p-6 shadow-card sm:p-7">
+              <div className="flex items-start gap-4">
+                <div className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-brand-primary" />
+                <div>
+                  <h3 className="text-xl font-semibold tracking-tight text-ink">{moment.heading}</h3>
+                  <p className="mt-3 text-[15px] leading-7 text-ink-soft">{richText(moment.body)}</p>
+                </div>
+              </div>
+            </Reveal>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function PayrollFeatureEditorial({ feature }: { feature: PayrollEditorialFeature }) {
+  return (
+    <div className="min-h-screen bg-white text-ink">
+      <MarketingHeader />
+      <main>
+        <PayrollHero feature={feature} />
+        <PointsSection feature={feature} />
+        <WorkflowSection feature={feature} />
+        <DetailsBlock feature={feature} />
       </main>
       <MarketingFooter />
     </div>
   );
 }
 
-export function PayrollCapabilityEditorial({ feature }: { feature: PayrollEditorialCapability }) {
-  const key = getVisualKey(feature.eyebrow, feature.variant);
+export function PayrollCapabilityEditorial({ capability }: { capability: PayrollEditorialCapability }) {
+  const keyName = getVisualKey(capability.eyebrow, capability.variant);
+
   return (
-    <div className="min-h-screen bg-white">
-      <AmbientNetwork />
+    <div className="min-h-screen bg-white text-ink">
       <MarketingHeader />
       <main>
-        <PayrollHero eyebrow={feature.eyebrow} title={feature.title} intro={feature.intro} featureKey={key} />
-        <section className="mx-auto max-w-6xl px-6 py-14 sm:py-16 lg:py-20">
-          <Reveal>
-            <div className="grid gap-8 lg:grid-cols-[0.65fr_1.35fr]">
+        <section className="border-b border-surface-border bg-white">
+          <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 sm:py-18 lg:px-10 lg:py-24">
+            <div className="grid gap-10 lg:grid-cols-[1fr_0.8fr] lg:items-center">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">Le point essentiel</p>
-                <h2 className="mt-3 max-w-md text-3xl font-semibold leading-tight text-ink sm:text-4xl">Le professionnel reste au centre du traitement.</h2>
+                <p className="text-sm font-semibold uppercase tracking-[0.18em] text-brand-primary">{capability.eyebrow}</p>
+                <h1 className="mt-4 max-w-3xl text-4xl font-semibold tracking-tight text-ink sm:text-5xl lg:text-6xl">{capability.title}</h1>
+                <p className="mt-6 max-w-2xl text-lg leading-8 text-ink-soft">{capability.intro}</p>
               </div>
-              <p className="max-w-2xl text-lg leading-8 text-ink-soft">{feature.intro}</p>
+              <div className="hidden lg:block">
+                <div className="relative mx-auto h-64 w-64">
+                  <Image src={MASCOT_BY_KEY[keyName] ?? MASCOT_BY_KEY.production} alt="Mascotte RH Pilot" fill className="object-contain" sizes="256px" />
+                </div>
+              </div>
             </div>
-          </Reveal>
+          </div>
         </section>
-        <CapabilityMoments moments={feature.moments} />
-        <section className="mx-auto grid max-w-6xl gap-12 px-6 py-16 sm:py-20 lg:grid-cols-[1.08fr_0.92fr] lg:items-center lg:py-24">
-          <Reveal variant="left">
-            <div className="rounded-[1.5rem] border border-surface-border bg-[#fbf8f6] p-4 sm:p-6">
-              <VisualScene featureKey={key} title={feature.eyebrow} />
-            </div>
-          </Reveal>
-          <Reveal variant="right">
-            <div className="border-l-2 border-brand-primary/20 pl-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">En pratique</p>
-              <p className="mt-4 text-xl leading-8 text-ink-soft">{feature.summary}</p>
-            </div>
-          </Reveal>
-        </section>
-        <SourcesStrip sources={feature.sources} />
-        <section className="border-t border-surface-border">
-          <div className="mx-auto max-w-6xl px-6 py-16 sm:py-20">
-            <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <CapabilityMoments capability={capability} />
+        <section className="border-t border-surface-border bg-surface-subtle">
+          <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10">
+            <div className="flex flex-col gap-5 rounded-2xl border border-surface-border bg-white p-7 shadow-card sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">Gestion de la paie</p>
-                <p className="mt-2 text-xl font-semibold text-ink">Consulter les autres traitements.</p>
+                <p className="text-lg font-semibold text-ink">Une logique de paie documentée, du paramétrage au résultat.</p>
+                <p className="mt-2 text-sm leading-6 text-ink-soft">Retrouvez les références utilisées et les éléments qui permettent de contrôler le traitement.</p>
               </div>
-              <Link href="/gestion-paie" className="inline-flex items-center gap-2 text-sm font-semibold text-ink hover:text-brand-primary">
-                Retour aux sujets paie <ArrowRight size={15} />
-              </Link>
+              <Button asChild>
+                <Link href="/contact">
+                  Parler à l’équipe
+                  <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </Button>
             </div>
           </div>
         </section>
