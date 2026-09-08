@@ -83,36 +83,6 @@ h1, h2, h3 {
   .welcome-pulse-dot { animation: none; }
 }
 
-/* Hero vitrine : ces ajustements sont réservés à la landing qui contient
-   l'ancre #copilote. Les autres pages marketing gardent leur propre mise en page. */
-@media (min-width: 1024px) {
-  .min-h-screen:has(#copilote) > section:first-of-type > div:first-child {
-    max-width: 72rem;
-    padding-top: 5.5rem;
-    padding-bottom: 4rem;
-    text-align: left;
-  }
-
-  .min-h-screen:has(#copilote) > section:first-of-type > div:first-child h1 {
-    max-width: 39rem;
-    font-size: clamp(3.35rem, 4.25vw, 4.15rem);
-    line-height: 0.99;
-    letter-spacing: -0.035em;
-  }
-
-  .min-h-screen:has(#copilote) > section:first-of-type > div:first-child p {
-    max-width: 34rem;
-    margin-left: 0;
-    margin-top: 1.4rem;
-    font-size: 1.05rem;
-    line-height: 1.5;
-  }
-
-  .min-h-screen:has(#copilote) > section:first-of-type > div:first-child > div > div {
-    justify-content: flex-start;
-  }
-}
-
 @media (max-width: 1023px) {
   .human-work-video {
     display: none !important;
@@ -171,6 +141,17 @@ h1, h2, h3 {
   .human-work-video-dots,
   .human-work-video-note {
     display: none;
+  }
+}
+
+/* La séquence vidéo plein écran du landing ne doit pas hériter des anciens
+   réglages du hero éditorial qui contraignaient le premier enfant de section. */
+@media (min-width: 1024px) {
+  .min-h-screen:has(#copilote) > section:first-of-type > .human-work-video {
+    max-width: none;
+    padding-top: 0;
+    padding-bottom: 0;
+    text-align: initial;
   }
 }
 
