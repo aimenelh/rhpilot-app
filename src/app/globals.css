@@ -221,3 +221,12 @@ body {
     display: none;
   }
 }
+
+/* Ajustement fin : le Copilote doit être assis sur le rebord supérieur du dashboard,
+   sans s'enfoncer dans la rangée des cartes. */
+@media (min-width: 1024px) {
+  .min-h-screen:has(#copilote) > section:nth-of-type(3) img[src*="illu-copilote-hero"] {
+    right: 12%;
+    transform: translateY(-28px);
+  }
+}
