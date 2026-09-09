@@ -114,14 +114,28 @@ export function LandingPage() {
                 <p className="mt-4 text-base leading-relaxed text-ink-soft">Un calendrier clair pour savoir ce qui arrive, ce qui est en retard et qui doit agir.</p>
               </div>
               <div className="min-w-0">
-                <img
-                  src="/marketing/calendar-feature.svg"
-                  alt="Calendrier RH Pilot avec les échéances et retards à surveiller"
-                  width={1500}
-                  height={820}
-                  className="h-auto w-full"
-                  loading="lazy"
-                />
+                <div className="relative mx-auto w-full max-w-3xl">
+                  <Image
+                    src="/marketing/calendar.png"
+                    alt="Calendrier RH Pilot avec les échéances et retards à surveiller"
+                    width={1772}
+                    height={885}
+                    className="h-auto w-full rounded-[1.25rem] border border-surface-border bg-white shadow-[0_24px_70px_rgba(15,23,42,0.1)]"
+                    loading="lazy"
+                  />
+                  <Image
+                    src="/illustrations/mascot/calm.png"
+                    alt=""
+                    width={1160}
+                    height={1160}
+                    className="pointer-events-none absolute -right-3 -top-14 z-20 h-40 w-auto sm:-right-5 sm:-top-20 sm:h-52"
+                  />
+                  <p className="pointer-events-none absolute right-4 top-2 z-30 font-handwriting text-lg text-brand-primary sm:right-8 sm:top-4 sm:text-xl">Les retards sont ici !</p>
+                  <svg className="pointer-events-none absolute right-16 top-12 z-30 h-20 w-20 text-brand-primary sm:right-24 sm:top-16" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+                    <path d="M86 10C72 30 62 42 50 68" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+                    <path d="M50 68l13-5M50 68l3-14" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
               </div>
             </div>
           </Reveal>
@@ -133,14 +147,28 @@ export function LandingPage() {
           <Reveal>
             <div className="grid items-center gap-10 lg:grid-cols-[1.3fr_0.7fr]">
               <div className="order-2 min-w-0 lg:order-1">
-                <img
-                  src="/marketing/notifications-feature.svg"
-                  alt="Notifications RH Pilot et envoi des résumés"
-                  width={1500}
-                  height={820}
-                  className="h-auto w-full"
-                  loading="lazy"
-                />
+                <div className="relative mx-auto w-full max-w-3xl">
+                  <Image
+                    src="/marketing/notifications.png"
+                    alt="Notifications RH Pilot et envoi des résumés"
+                    width={1710}
+                    height={855}
+                    className="h-auto w-full rounded-[1.25rem] border border-surface-border bg-white shadow-[0_24px_70px_rgba(15,23,42,0.1)]"
+                    loading="lazy"
+                  />
+                  <Image
+                    src="/illustrations/mascot/calm.png"
+                    alt=""
+                    width={1160}
+                    height={1160}
+                    className="pointer-events-none absolute -left-7 -top-16 z-20 h-40 w-auto sm:-left-10 sm:-top-20 sm:h-52"
+                  />
+                  <p className="pointer-events-none absolute left-3 top-3 z-30 font-handwriting text-lg text-brand-primary sm:left-7 sm:top-5 sm:text-xl">Le rappel part !</p>
+                  <svg className="pointer-events-none absolute left-24 top-16 z-30 h-16 w-28 text-brand-primary sm:left-32 sm:top-20" viewBox="0 0 140 80" fill="none" aria-hidden="true">
+                    <path d="M8 40C42 40 72 39 118 39" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+                    <path d="M118 39l-11-6M118 39l-10 9" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
               </div>
               <div className="order-1 max-w-xl lg:order-2">
                 <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Notifications</span>
@@ -162,14 +190,28 @@ export function LandingPage() {
                 <p className="mt-4 text-base leading-relaxed text-ink-soft">RH Pilot regarde vos données et vous répond dans le contexte de votre entreprise, sans vous faire chercher dans cinq écrans.</p>
               </div>
               <div className="min-w-0">
-                <img
-                  src="/marketing/copilot-feature.svg"
-                  alt="Copilote RH Pilot répond à une question RH à partir des données de l'entreprise"
-                  width={1500}
-                  height={820}
-                  className="h-auto w-full"
-                  loading="lazy"
-                />
+                <div className="relative mx-auto w-full max-w-3xl">
+                  <Image
+                    src="/marketing/assistant.png"
+                    alt="Copilote RH Pilot répond à une question RH à partir des données de l'entreprise"
+                    width={1416}
+                    height={708}
+                    className="h-auto w-full rounded-[1.25rem] border border-surface-border bg-white shadow-[0_24px_70px_rgba(15,23,42,0.1)]"
+                    loading="lazy"
+                  />
+                  <Image
+                    src="/illustrations/mascot/coffee-scene-10-normal.png"
+                    alt=""
+                    width={840}
+                    height={840}
+                    className="pointer-events-none absolute -bottom-14 right-0 z-20 h-44 w-auto sm:-bottom-20 sm:h-56"
+                  />
+                  <p className="pointer-events-none absolute bottom-4 right-20 z-30 font-handwriting text-lg text-brand-primary sm:bottom-6 sm:right-28 sm:text-xl">Je regarde pour vous.</p>
+                  <svg className="pointer-events-none absolute bottom-12 right-24 z-30 h-20 w-20 text-brand-primary sm:bottom-16 sm:right-32" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+                    <path d="M78 12C66 28 57 43 40 70" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" />
+                    <path d="M40 70l13-5M40 70l3-14" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </div>
               </div>
             </div>
           </Reveal>
