@@ -115,10 +115,10 @@ export function LandingPage() {
               </div>
               <div className="min-w-0">
                 <img
-                  src="/marketing/calendar-final.webp"
+                  src="/marketing/calendar-feature.svg"
                   alt="Calendrier RH Pilot avec les échéances et retards à surveiller"
-                  width={1400}
-                  height={700}
+                  width={1500}
+                  height={820}
                   className="h-auto w-full"
                   loading="lazy"
                 />
@@ -134,10 +134,10 @@ export function LandingPage() {
             <div className="grid items-center gap-10 lg:grid-cols-[1.3fr_0.7fr]">
               <div className="order-2 min-w-0 lg:order-1">
                 <img
-                  src="/marketing/notifications-final.webp"
+                  src="/marketing/notifications-feature.svg"
                   alt="Notifications RH Pilot et envoi des résumés"
-                  width={1400}
-                  height={700}
+                  width={1500}
+                  height={820}
                   className="h-auto w-full"
                   loading="lazy"
                 />
@@ -163,10 +163,10 @@ export function LandingPage() {
               </div>
               <div className="min-w-0">
                 <img
-                  src="/marketing/copilot-final.webp"
+                  src="/marketing/copilot-feature.svg"
                   alt="Copilote RH Pilot répond à une question RH à partir des données de l'entreprise"
-                  width={1400}
-                  height={748}
+                  width={1500}
+                  height={820}
                   className="h-auto w-full"
                   loading="lazy"
                 />
