@@ -222,11 +222,11 @@ body {
   }
 }
 
-/* Ajustement fin : le Copilote doit être assis sur le rebord supérieur du dashboard,
-   sans s'enfoncer dans la rangée des cartes. */
+/* Position de la mascotte sur la landing : son bassin doit toucher le bord
+   supérieur du dashboard et ses jambes descendre naturellement devant l'interface. */
 @media (min-width: 1024px) {
   .min-h-screen:has(#copilote) > section:nth-of-type(3) img[src*="illu-copilote-hero"] {
     right: 12%;
-    transform: translateY(-28px);
+    transform: translateY(-58px);
   }
 }
