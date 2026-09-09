@@ -14,8 +14,77 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
   const [showBrand, setShowBrand] = useState(false);
 
   useEffect(() => {
+    const pageRoot = document.querySelector(".min-h-screen");
+    const headerShell = pageRoot?.querySelector(":scope > div.sticky") as HTMLElement | null;
+    const heroSection = pageRoot?.querySelector(":scope > section") as HTMLElement | null;
+
+    if (!headerShell || !heroSection) return;
+
+    const originalHeader = {
+      display: headerShell.style.display,
+      position: headerShell.style.position,
+      top: headerShell.style.top,
+      left: headerShell.style.left,
+      right: headerShell.style.right,
+      width: headerShell.style.width,
+      zIndex: headerShell.style.zIndex,
+      opacity: headerShell.style.opacity,
+      transition: headerShell.style.transition,
+    };
+    const originalHeroMinHeight = heroSection.style.minHeight;
+
+    heroSection.style.minHeight = "100vh";
+    headerShell.style.display = "none";
+
+    let revealed = false;
+    let revealFrame = 0;
+
+    const revealHeader = () => {
+      if (revealed) return;
+      revealed = true;
+      headerShell.style.display = "block";
+      headerShell.style.position = "fixed";
+      headerShell.style.top = "0";
+      headerShell.style.left = "0";
+      headerShell.style.right = "0";
+      headerShell.style.width = "100%";
+      headerShell.style.zIndex = "50";
+      headerShell.style.opacity = "0";
+      headerShell.style.transition = "opacity 500ms ease";
+      revealFrame = window.requestAnimationFrame(() => {
+        headerShell.style.opacity = "1";
+      });
+    };
+
+    const onScroll = () => {
+      if (window.scrollY > 12) revealHeader();
+    };
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("rhpilot:hero-complete", revealHeader);
+
+    return () => {
+      window.cancelAnimationFrame(revealFrame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("rhpilot:hero-complete", revealHeader);
+
+      headerShell.style.display = originalHeader.display;
+      headerShell.style.position = originalHeader.position;
+      headerShell.style.top = originalHeader.top;
+      headerShell.style.left = originalHeader.left;
+      headerShell.style.right = originalHeader.right;
+      headerShell.style.width = originalHeader.width;
+      headerShell.style.zIndex = originalHeader.zIndex;
+      headerShell.style.opacity = originalHeader.opacity;
+      headerShell.style.transition = originalHeader.transition;
+      heroSection.style.minHeight = originalHeroMinHeight;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!showEndCard) return;
 
+    window.dispatchEvent(new Event("rhpilot:hero-complete"));
     setTypedMessage("");
     setShowBrand(false);
     let index = 0;
