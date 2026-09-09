@@ -88,6 +88,7 @@ export default function PayrollVariablesSection({
 }) {
   const action = addPayrollVariable.bind(null, periodId);
   const [state, formAction] = useFormState<PayrollVariableFormState, FormData>(action, undefined);
+  const [selectedVariable, setSelectedVariable] = useState<string>(VARIABLE_OPTIONS[0][0]);
   const [contributions, setContributions] = useState<ContributionResult[]>([]);
   const [contributionsLoading, setContributionsLoading] = useState(true);
   const [contributionsError, setContributionsError] = useState<string | null>(null);
@@ -97,6 +98,7 @@ export default function PayrollVariablesSection({
     variables: variables.filter((variable) => variable.employeeId === employee.id),
   }));
   const canEdit = !readOnly;
+  const selectedLabel = VARIABLE_OPTIONS.find(([code]) => code === selectedVariable)?.[1] ?? VARIABLE_OPTIONS[0][1];
 
   useEffect(() => {
     let cancelled = false;
@@ -161,7 +163,7 @@ export default function PayrollVariablesSection({
       </div>
 
       {canEdit && (
-        <form action={formAction} className="grid gap-3 border-b border-surface-border bg-surface-subtle/30 p-5 lg:grid-cols-[1.2fr_1.2fr_1fr_auto]">
+        <form action={formAction} className="grid gap-3 border-b border-surface-border bg-surface-subtle/30 p-5 lg:grid-cols-[1.2fr_1.4fr_1fr_auto]">
           <label className="text-xs font-medium text-ink-soft">
             Salarié
             <select name="employeeId" required className="mt-1 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink">
@@ -175,13 +177,19 @@ export default function PayrollVariablesSection({
           </label>
           <label className="text-xs font-medium text-ink-soft">
             Type de variable
-            <select name="variableType" required defaultValue="" className="mt-1 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink">
-              <option value="">Sélectionner…</option>
+            <select
+              name="code"
+              value={selectedVariable}
+              onChange={(event) => setSelectedVariable(event.target.value)}
+              required
+              className="mt-1 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink"
+            >
               {VARIABLE_OPTIONS.map(([code, label]) => (
                 <option key={code} value={code}>{label}</option>
               ))}
             </select>
           </label>
+          <input type="hidden" name="label" value={selectedLabel} />
           <label className="text-xs font-medium text-ink-soft">
             Montant brut
             <input name="amount" required inputMode="decimal" placeholder="200,00" className="mt-1 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink" />
