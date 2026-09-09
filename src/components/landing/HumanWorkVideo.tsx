@@ -64,9 +64,9 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
         <div className="human-work-video-dots" />
 
         <div className="human-work-video-frame relative overflow-visible rounded-[1.75rem] border-[6px] border-white bg-white shadow-[0_28px_80px_rgba(15,23,42,0.14)]">
-          <div className="relative aspect-[16/9] overflow-hidden rounded-[1.2rem] bg-[#fff7f4]">
+          <div className="relative aspect-[16/9] overflow-hidden rounded-[1.2rem] bg-[#fff1ed]">
             <video
-              className="h-full w-full object-cover brightness-[1.02] saturate-[0.92]"
+              className="h-full w-full object-cover brightness-[1.04] saturate-[1.02]"
               autoPlay
               muted
               playsInline
@@ -83,7 +83,23 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
               <source src={VIDEO_SRC} type="video/mp4" />
             </video>
 
-            <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-br from-white/5 via-transparent to-[#f46f61]/10 mix-blend-normal" />
+            {/* Coral wash: keeps the footage natural while making RH Pilot's brand color visibly present in the video itself. */}
+            <div
+              className="pointer-events-none absolute inset-0 z-10"
+              style={{
+                background:
+                  "linear-gradient(135deg, rgba(244,111,97,0.24) 0%, rgba(255,154,118,0.14) 45%, rgba(255,247,244,0.08) 100%)",
+                mixBlendMode: "soft-light",
+              }}
+            />
+            <div
+              className="pointer-events-none absolute inset-0 z-10"
+              style={{
+                background:
+                  "linear-gradient(135deg, rgba(244,111,97,0.10) 0%, transparent 52%, rgba(244,111,97,0.16) 100%)",
+                mixBlendMode: "color",
+              }}
+            />
 
             <div
               aria-hidden={!showEndCard}
