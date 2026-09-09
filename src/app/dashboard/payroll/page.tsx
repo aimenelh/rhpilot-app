@@ -2,6 +2,7 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMemberships } from "@/lib/auth";
+import PayrollReopenInlineButton from "./PayrollReopenInlineButton";
 
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 const PAYROLL_STATUS_LABELS: Record<string, string> = {
@@ -137,10 +138,16 @@ export default async function PayrollPage() {
         <div className="divide-y divide-surface-border">
           {periods.length === 0 && <p className="px-5 py-8 text-sm text-ink-soft">Aucune période de paie ouverte pour le moment.</p>}
           {periods.map((period) => (
-            <Link key={period.id} href={`/dashboard/payroll/${period.id}`} className="flex items-center justify-between px-5 py-4 transition-colors hover:bg-surface-subtle/50">
-              <div><p className="font-medium text-ink">{MONTHS[period.month - 1]} {period.year}</p><p className="mt-0.5 text-xs text-ink-faint">Ouvrir le détail de la période</p></div>
-              <span className="rounded-full bg-surface-subtle px-3 py-1 text-xs font-semibold text-ink-soft">{PAYROLL_STATUS_LABELS[period.status] ?? period.status}</span>
-            </Link>
+            <div key={period.id} className="flex items-center justify-between gap-4 px-5 py-4 transition-colors hover:bg-surface-subtle/50">
+              <Link href={`/dashboard/payroll/${period.id}`} className="min-w-0 flex-1">
+                <p className="font-medium text-ink">{MONTHS[period.month - 1]} {period.year}</p>
+                <p className="mt-0.5 text-xs text-ink-faint">Ouvrir le détail de la période</p>
+              </Link>
+              <div className="flex shrink-0 items-center gap-3">
+                <span className="rounded-full bg-surface-subtle px-3 py-1 text-xs font-semibold text-ink-soft">{PAYROLL_STATUS_LABELS[period.status] ?? period.status}</span>
+                {period.status === "LOCKED" ? <PayrollReopenInlineButton periodId={period.id} /> : null}
+              </div>
+            </div>
           ))}
         </div>
       </section>
