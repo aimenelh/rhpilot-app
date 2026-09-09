@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
@@ -20,7 +20,10 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
   const canEditOrganization = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
-  const organization = await prisma.organization.findUnique({ where: { id: membership.organizationId } });
+  const organization = await prisma.organization.findUnique({
+    where: { id: membership.organizationId },
+    include: { collectiveAgreement: true },
+  });
   const socialRows = await prisma.$queryRaw<Array<{ legalCategory: string | null; atmpRate: unknown; healthPlanMonthlyAmount: unknown; healthPlanEmployerRate: unknown; companyCreationDate: Date | null; payrollDepartment: string | null }>>`SELECT "legalCategory", "atmpRate", "healthPlanMonthlyAmount", "healthPlanEmployerRate", "companyCreationDate", "payrollDepartment" FROM "organizations" WHERE "id" = ${membership.organizationId} LIMIT 1`;
   const legalCategory = socialRows[0]?.legalCategory ?? "";
   const atmpRate = socialRows[0]?.atmpRate === null || socialRows[0]?.atmpRate === undefined ? "" : String(socialRows[0].atmpRate);
@@ -54,9 +57,22 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
             <div className="mt-6"><Label htmlFor="healthPlanMonthlyAmount">Montant mensuel de la complémentaire santé (€)</Label><Input id="healthPlanMonthlyAmount" name="healthPlanMonthlyAmount" type="number" min="0.01" max="10000" step="0.01" defaultValue={healthPlanMonthlyAmount} placeholder="Ex. 40" /><FieldHint>Indiquez le montant mensuel prévu par le contrat de complémentaire santé de l&apos;organisation.</FieldHint><Label htmlFor="healthPlanEmployerRate" className="mt-4">Part employeur (%)</Label><Input id="healthPlanEmployerRate" name="healthPlanEmployerRate" type="number" min="50" max="100" step="0.01" defaultValue={healthPlanEmployerRate} placeholder="Ex. 50" /><FieldHint>La part employeur de la complémentaire santé doit être d&apos;au moins 50 %.</FieldHint></div>
           </Card>
           <Card className="mt-4">
-            <h2 className="text-sm font-semibold text-ink">Convention collective</h2>
-            <p className="mt-1 text-sm text-ink-soft">Renseignez celle applicable à votre organisation. RH Pilot vous orientera alors vers la bonne source officielle au bon moment.</p>
-            <div className="mt-4"><Label htmlFor="conventionCollective">Nom de la convention collective</Label><Input id="conventionCollective" name="conventionCollective" list="ccn-suggestions" defaultValue={organization?.conventionCollective ?? ""} placeholder="Ex. Syntec" /><datalist id="ccn-suggestions">{COMMON_CCN.map((ccn) => <option key={ccn} value={ccn} />)}</datalist><FieldHint>Tapez pour voir des suggestions parmi les conventions les plus courantes, ou indiquez la vôtre librement.</FieldHint></div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-ink">Convention collective</h2>
+                <p className="mt-1 text-sm text-ink-soft">Associez la convention applicable à l&apos;organisation par son IDCC. C&apos;est cette référence structurée qui servira ensuite aux règles conventionnelles de paie.</p>
+              </div>
+              <Link href="https://code.travail.gouv.fr/outils/convention-collective/entreprise" target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-brand-primary hover:underline"><ExternalLink size={13} /> Vérifier l&apos;IDCC</Link>
+            </div>
+            <div className="mt-4"><Label htmlFor="collectiveAgreementIdcc">IDCC</Label><Input id="collectiveAgreementIdcc" name="collectiveAgreementIdcc" inputMode="numeric" pattern="[0-9]{4}" maxLength={4} defaultValue={organization?.collectiveAgreement?.idcc ?? ""} placeholder="Ex. 1486" /><FieldHint>4 chiffres. Utilisez le service officiel du Code du travail numérique pour identifier l&apos;IDCC à partir de votre entreprise ou de votre SIRET.</FieldHint></div>
+            <div className="mt-4"><Label htmlFor="collectiveAgreementName">Nom de la convention</Label><Input id="collectiveAgreementName" name="collectiveAgreementName" defaultValue={organization?.collectiveAgreement?.name ?? organization?.conventionCollective ?? ""} placeholder="Ex. Bureaux d&apos;études techniques" /><FieldHint>Le nom est enregistré dans le référentiel si l&apos;IDCC n&apos;existe pas encore dans RH Pilot. Les règles conventionnelles seront ensuite versionnées séparément.</FieldHint></div>
+            {organization?.collectiveAgreement ? (
+              <div className="mt-4 rounded-lg border border-accent-teal/20 bg-accent-teal/5 px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wider text-accent-teal">Convention associée</p>
+                <p className="mt-1 font-medium text-ink">{organization.collectiveAgreement.name}</p>
+                <p className="mt-0.5 text-sm text-ink-soft">IDCC {organization.collectiveAgreement.idcc}</p>
+              </div>
+            ) : null}
           </Card>
         </>)}
         <div className="mt-6 flex justify-end"><Button type="submit">Enregistrer les modifications</Button></div>
