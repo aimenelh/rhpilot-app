@@ -166,64 +166,7 @@ body {
   }
 }
 
-/* Respiration photo : uniquement pour la landing (#copilote). */
-@media (min-width: 1100px) {
-  .min-h-screen:has(#copilote) > section:nth-of-type(5) {
-    position: relative;
-    width: 100%;
-    max-width: none;
-    overflow: hidden;
-    background: linear-gradient(110deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 247, 244, 0.98) 100%);
-    border-top: 1px solid rgba(232, 67, 46, 0.08);
-    border-bottom: 1px solid rgba(232, 67, 46, 0.08);
-  }
-
-  .min-h-screen:has(#copilote) > section:nth-of-type(5) > div {
-    position: relative;
-    z-index: 2;
-    width: calc(100% - 3rem);
-    max-width: 72rem;
-    margin-left: auto;
-    margin-right: auto;
-    padding-right: 22rem;
-  }
-
-  .min-h-screen:has(#copilote) > section:nth-of-type(5)::before {
-    content: "";
-    position: absolute;
-    z-index: 0;
-    right: clamp(2rem, 5vw, 5rem);
-    top: 50%;
-    width: clamp(18rem, 22vw, 22rem);
-    height: clamp(14rem, 18vw, 17rem);
-    transform: translateY(-50%) rotate(-4deg);
-    border-radius: 3rem;
-    background: linear-gradient(135deg, rgba(232, 67, 46, 0.06), rgba(246, 184, 172, 0.28));
-  }
-
-  .min-h-screen:has(#copilote) > section:nth-of-type(5)::after {
-    content: "";
-    position: absolute;
-    z-index: 1;
-    pointer-events: none;
-    right: clamp(3rem, 6vw, 6rem);
-    top: 50%;
-    width: clamp(15rem, 19vw, 18rem);
-    height: clamp(11rem, 14vw, 14rem);
-    transform: translateY(-50%) rotate(1.5deg);
-    border: 8px solid rgba(255, 255, 255, 0.96);
-    border-radius: 2rem;
-    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.12);
-    background-image: url("https://images.pexels.com/photos/7698715/pexels-photo-7698715.jpeg?auto=compress&cs=tinysrgb&w=900");
-    background-position: center;
-    background-size: cover;
-    background-repeat: no-repeat;
-  }
-}
-
 @media (max-width: 1099px) {
-  .min-h-screen:has(#copilote) > section:nth-of-type(5)::before,
-  .min-h-screen:has(#copilote) > section:nth-of-type(5)::after,
   .min-h-screen:has(#copilote) > section:nth-of-type(8)::before,
   .min-h-screen:has(#copilote) > section:nth-of-type(8)::after {
     display: none;
