@@ -29,6 +29,7 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
       width: headerShell.style.width,
       zIndex: headerShell.style.zIndex,
       opacity: headerShell.style.opacity,
+      transform: headerShell.style.transform,
       transition: headerShell.style.transition,
     };
     const originalHeroMinHeight = heroSection.style.minHeight;
@@ -50,9 +51,11 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
       headerShell.style.width = "100%";
       headerShell.style.zIndex = "50";
       headerShell.style.opacity = "0";
-      headerShell.style.transition = "opacity 500ms ease";
+      headerShell.style.transform = "translateY(-10px)";
+      headerShell.style.transition = "opacity 700ms cubic-bezier(0.22, 1, 0.36, 1), transform 700ms cubic-bezier(0.22, 1, 0.36, 1)";
       revealFrame = window.requestAnimationFrame(() => {
         headerShell.style.opacity = "1";
+        headerShell.style.transform = "translateY(0)";
       });
     };
 
@@ -76,6 +79,7 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
       headerShell.style.width = originalHeader.width;
       headerShell.style.zIndex = originalHeader.zIndex;
       headerShell.style.opacity = originalHeader.opacity;
+      headerShell.style.transform = originalHeader.transform;
       headerShell.style.transition = originalHeader.transition;
       heroSection.style.minHeight = originalHeroMinHeight;
     };
@@ -84,7 +88,6 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
   useEffect(() => {
     if (!showEndCard) return;
 
-    window.dispatchEvent(new Event("rhpilot:hero-complete"));
     setTypedMessage("");
     setShowBrand(false);
     let index = 0;
@@ -99,6 +102,11 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
 
     return () => window.clearInterval(timer);
   }, [showEndCard]);
+
+  useEffect(() => {
+    if (!showBrand) return;
+    window.dispatchEvent(new Event("rhpilot:hero-complete"));
+  }, [showBrand]);
 
   return (
     <>
