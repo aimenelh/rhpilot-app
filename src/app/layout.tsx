@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans, Caveat } from "next/font/google";
+import { DM_Sans, Caveat, Fraunces } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { frFR } from "@clerk/localizations";
 import { Analytics } from "@vercel/analytics/next";
@@ -22,6 +22,18 @@ const caveat = Caveat({
   weight: ["500", "600", "700"],
   display: "swap",
   variable: "--font-handwriting",
+});
+
+// Police d'affichage réservée aux gros titres éditoriaux du marketing
+// (hero, titres de page) : un sérif chaleureux et légèrement décalé,
+// à côté de DM Sans qui reste la police de tout le reste (interface,
+// texte courant, application). Jamais utilisée dans le produit lui-même.
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  style: ["normal", "italic"],
+  display: "swap",
+  variable: "--font-fraunces",
 });
 
 export const viewport: Viewport = {
@@ -80,7 +92,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider localization={frFR as any} appearance={clerkAppearance}>
-      <html lang="fr" className={`${dmSans.variable} ${caveat.variable}`}>
+      <html lang="fr" className={`${dmSans.variable} ${caveat.variable} ${fraunces.variable}`}>
         <body className={`${dmSans.className} antialiased`}>
           {children}
           <Analytics />

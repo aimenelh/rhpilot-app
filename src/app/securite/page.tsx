@@ -97,7 +97,7 @@ export default function SecurityPage() {
       {/* Hero */}
       <section className="mx-auto max-w-2xl px-6 py-20">
         <Reveal variant="left">
-          <h1 className="max-w-lg text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
+          <h1 className="font-display max-w-lg text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
             La confiance ne se décrète pas.
           </h1>
         </Reveal>

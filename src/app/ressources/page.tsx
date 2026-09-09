@@ -62,7 +62,7 @@ export default function ResourcesPage() {
 
       <section className="mx-auto max-w-3xl px-6 py-16">
         <Reveal variant="left">
-          <h1 className="max-w-xl text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
+          <h1 className="font-display max-w-xl text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
             Ce que le droit du travail dit vraiment, maintenant.
           </h1>
           <p className="mt-4 max-w-lg text-lg text-ink-soft">

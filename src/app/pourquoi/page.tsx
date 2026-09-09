@@ -47,7 +47,7 @@ export default function WhyPage() {
       {/* Le manifeste — aligné à gauche, pas centré */}
       <section className="mx-auto max-w-3xl px-6 py-20">
         <Reveal variant="left">
-          <h1 className="max-w-xl text-4xl font-semibold leading-[1.1] tracking-tight text-ink sm:text-5xl">
+          <h1 className="font-display max-w-xl text-4xl font-semibold leading-[1.1] tracking-tight text-ink sm:text-5xl">
             La mémoire ne devrait <span className="text-brand-primary">jamais</span> être le
             principal outil d&apos;une équipe RH.
           </h1>

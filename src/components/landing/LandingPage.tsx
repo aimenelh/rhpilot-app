@@ -54,7 +54,7 @@ export function LandingPage() {
       <section className="relative flex min-h-[70vh] items-center justify-center overflow-hidden border-b border-surface-border bg-white px-6 py-24 sm:min-h-[76vh]">
         <Reveal>
           <div className="mx-auto max-w-4xl text-center">
-            <h1 className="sr-only">
+            <h1 className="font-display sr-only">
               Embauche, période d&apos;essai, visite médicale. Rien n&apos;est oublié.
             </h1>
             <p className="font-handwriting text-4xl leading-tight text-brand-primary sm:text-6xl lg:text-7xl">

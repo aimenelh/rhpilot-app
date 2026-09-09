@@ -15,12 +15,15 @@ body {
   outline-offset: 2px;
 }
 
-h1, h2, h3 {
-  font-family: var(--font-heading), var(--font-inter), sans-serif;
-}
-
 .font-handwriting {
   font-family: var(--font-handwriting), cursive;
+}
+
+/* Réservée aux gros titres éditoriaux du marketing (hero, titres de
+   page) — jamais dans l'application. DM Sans reste la police par
+   défaut de h1/h2/h3 partout ailleurs. */
+.font-display {
+  font-family: var(--font-fraunces), Georgia, serif;
 }
 
 @keyframes page-fade-in {

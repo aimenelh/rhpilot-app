@@ -24,7 +24,7 @@ export default function TarifsPage() {
       {/* Le manifeste, même registre que le reste du site */}
       <section className="mx-auto max-w-3xl px-6 py-16 text-center">
         <Reveal variant="scale">
-          <h1 className="text-4xl font-bold leading-[1.1] tracking-tight text-ink sm:text-5xl">
+          <h1 className="font-display text-4xl font-semibold leading-[1.1] tracking-tight text-ink sm:text-5xl">
             Un prix simple, <span className="bg-brand-primary bg-clip-text text-transparent">par salarié</span>.
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-ink-soft">
