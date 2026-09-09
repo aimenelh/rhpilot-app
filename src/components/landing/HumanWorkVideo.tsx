@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Logomark, Wordmark } from "@/components/Brand";
 
-const VIDEO_SRC = "https://www.pexels.com/download/video/8636275/?v=8636275";
+const VIDEO_SRC = "https://www.pexels.com/download/video/6774777/?v=6774777";
 const MAX_VIDEO_SECONDS = 8;
 const END_MESSAGE = "Moins de relances. Plus de temps pour l’humain.";
 
@@ -24,9 +24,9 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
       setTypedMessage(END_MESSAGE.slice(0, index));
       if (index >= END_MESSAGE.length) {
         window.clearInterval(timer);
-        window.setTimeout(() => setShowBrand(true), 420);
+        window.setTimeout(() => setShowBrand(true), 360);
       }
-    }, 92);
+    }, 78);
 
     return () => window.clearInterval(timer);
   }, [showEndCard]);
@@ -34,6 +34,18 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
   return (
     <>
       <style>{`
+        @keyframes rhpilot-video-wash {
+          0% { opacity: 0; transform: scale(1.04); }
+          100% { opacity: 1; transform: scale(1); }
+        }
+        @keyframes rhpilot-video-glow {
+          0%, 100% { opacity: .12; transform: scale(.94); }
+          50% { opacity: .3; transform: scale(1.08); }
+        }
+        @keyframes rhpilot-brand-in {
+          0% { opacity: 0; transform: translateY(10px) scale(.97); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
         @media (max-width: 1023px) {
           .min-h-screen:has(#copilote) > section:nth-of-type(3) img[src*="illu-copilote-hero"] {
             top: -12px !important;
@@ -52,9 +64,9 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
         <div className="human-work-video-dots" />
 
         <div className="human-work-video-frame relative overflow-visible rounded-[1.75rem] border-[6px] border-white bg-white shadow-[0_28px_80px_rgba(15,23,42,0.14)]">
-          <div className="relative aspect-[16/9] overflow-hidden rounded-[1.2rem] bg-brand-primary/10">
+          <div className="relative aspect-[16/9] overflow-hidden rounded-[1.2rem] bg-[#fff7f4]">
             <video
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover brightness-[1.02] saturate-[0.92]"
               autoPlay
               muted
               playsInline
@@ -71,14 +83,25 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
               <source src={VIDEO_SRC} type="video/mp4" />
             </video>
 
+            <div className="pointer-events-none absolute inset-0 z-10 bg-gradient-to-br from-white/5 via-transparent to-[#f46f61]/10 mix-blend-normal" />
+
             <div
               aria-hidden={!showEndCard}
-              className={`absolute inset-0 z-20 flex items-center justify-center bg-white/88 backdrop-blur-[2px] transition-opacity duration-700 ease-out ${
+              className={`absolute inset-0 z-20 flex items-center justify-center overflow-hidden bg-[#fffaf8]/96 backdrop-blur-[3px] transition-all duration-1000 ease-out ${
                 showEndCard ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
               }`}
             >
               <div
-                className={`flex flex-col items-center text-center transition-opacity duration-300 ease-out ${
+                className={`pointer-events-none absolute -left-16 -top-20 h-64 w-64 rounded-full bg-[#f46f61]/20 blur-3xl transition-opacity duration-1000 ${showEndCard ? "opacity-100" : "opacity-0"}`}
+                style={{ animation: showEndCard ? "rhpilot-video-glow 5s ease-in-out infinite" : undefined }}
+              />
+              <div
+                className={`pointer-events-none absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-[#ff9a76]/20 blur-3xl transition-opacity duration-1000 ${showEndCard ? "opacity-100" : "opacity-0"}`}
+                style={{ animation: showEndCard ? "rhpilot-video-glow 6s ease-in-out 1s infinite" : undefined }}
+              />
+
+              <div
+                className={`relative flex flex-col items-center text-center transition-opacity duration-500 ease-out ${
                   showEndCard ? "opacity-100" : "opacity-0"
                 }`}
               >
@@ -91,9 +114,10 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
                 </p>
 
                 <div
-                  className={`transition-all duration-700 ease-out ${
+                  className={`mt-1 transition-all duration-700 ease-out ${
                     showBrand ? "translate-y-0 opacity-100" : "translate-y-3 opacity-0"
                   }`}
+                  style={{ animation: showBrand ? "rhpilot-brand-in 700ms ease-out both" : undefined }}
                 >
                   <Link
                     href="/"
@@ -105,9 +129,9 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
                   </Link>
                   <Link
                     href="/pourquoi"
-                    className="mt-5 block text-base font-semibold text-ink transition-colors hover:text-brand-primary"
+                    className="group mt-5 block text-base font-semibold text-ink transition-colors hover:text-brand-primary"
                   >
-                    En savoir plus →
+                    En savoir plus <span className="inline-block transition-transform duration-300 group-hover:translate-x-1">→</span>
                   </Link>
                 </div>
               </div>
