@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Image from "next/image";
-import { CircleCheck } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
@@ -105,21 +104,23 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section className="relative border-y border-surface-border bg-white/70 py-20">
+      <section className="relative border-y border-surface-border bg-white py-20">
         <div className="mx-auto max-w-6xl px-6">
           <Reveal>
-            <div className="max-w-2xl">
-              <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Vos échéances</span>
-              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">Les échéances n&apos;attendent pas.</h2>
-              <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-soft">Un calendrier clair pour savoir ce qui arrive, ce qui est en retard et qui doit agir.</p>
-            </div>
-          </Reveal>
-
-          <Reveal delay={100} className="mt-10">
-            <div className="relative overflow-visible rounded-[1.5rem] border border-surface-border bg-white p-3 shadow-[0_28px_70px_rgba(15,23,42,0.10)] sm:p-5">
-              <Image src="/marketing/calendar.png" alt="Calendrier RH Pilot" width={1880} height={1032} className="h-auto w-full rounded-[1rem] border border-surface-border" />
-              <div className="pointer-events-none absolute -right-2 top-5 hidden md:block lg:-right-8">
-                <Image src="/illustrations/illu-calendrier.png" alt="" width={340} height={500} className="h-40 w-auto lg:h-48" />
+            <div className="grid items-center gap-10 lg:grid-cols-[0.7fr_1.3fr]">
+              <div className="max-w-xl">
+                <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Vos échéances</span>
+                <h2 className="mt-3 text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">Les échéances n&apos;attendent pas.</h2>
+                <p className="mt-4 text-base leading-relaxed text-ink-soft">Un calendrier clair pour savoir ce qui arrive, ce qui est en retard et qui doit agir.</p>
+              </div>
+              <div className="min-w-0">
+                <Image
+                  src="/marketing/calendar-feature.svg"
+                  alt="Calendrier RH Pilot avec les échéances et retards à surveiller"
+                  width={1500}
+                  height={820}
+                  className="h-auto w-full"
+                />
               </div>
             </div>
           </Reveal>
@@ -129,17 +130,20 @@ export function LandingPage() {
       <section className="relative border-b border-surface-border bg-surface-subtle py-20">
         <div className="mx-auto max-w-6xl px-6">
           <Reveal>
-            <div className="grid items-center gap-10 lg:grid-cols-[0.8fr_1.2fr]">
-              <div>
+            <div className="grid items-center gap-10 lg:grid-cols-[1.3fr_0.7fr]">
+              <div className="order-2 min-w-0 lg:order-1">
+                <Image
+                  src="/marketing/notifications-feature.svg"
+                  alt="Notifications RH Pilot et envoi des résumés"
+                  width={1500}
+                  height={820}
+                  className="h-auto w-full"
+                />
+              </div>
+              <div className="order-1 max-w-xl lg:order-2">
                 <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Notifications</span>
                 <h2 className="mt-3 text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">Une relance ne devrait jamais dépendre de votre mémoire.</h2>
-                <p className="mt-4 max-w-lg text-base leading-relaxed text-ink-soft">Les résumés partent au bon moment et l&apos;historique garde la trace de ce qui a déjà été envoyé.</p>
-              </div>
-              <div className="relative overflow-visible rounded-[1.5rem] border border-surface-border bg-white p-3 shadow-[0_28px_70px_rgba(15,23,42,0.10)] sm:p-5">
-                <Image src="/marketing/notifications.png" alt="Notifications RH Pilot" width={1882} height={1032} className="h-auto w-full rounded-[1rem] border border-surface-border" />
-                <div className="pointer-events-none absolute -left-4 -top-8 hidden md:block">
-                  <Image src="/illustrations/illu-notification.png" alt="" width={340} height={500} className="h-40 w-auto lg:h-48" />
-                </div>
+                <p className="mt-4 text-base leading-relaxed text-ink-soft">Les résumés partent au bon moment et l&apos;historique garde la trace de ce qui a déjà été envoyé.</p>
               </div>
             </div>
           </Reveal>
@@ -149,19 +153,20 @@ export function LandingPage() {
       <section id="copilote" className="relative border-b border-surface-border bg-white py-20">
         <div className="mx-auto max-w-6xl px-6">
           <Reveal>
-            <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
-              <div className="order-2 lg:order-1">
-                <div className="relative overflow-visible rounded-[1.5rem] border border-surface-border bg-white p-3 shadow-[0_28px_70px_rgba(15,23,42,0.10)] sm:p-5">
-                  <Image src="/marketing/assistant.png" alt="Copilote RH Pilot" width={847} height={562} className="h-auto w-full rounded-[1rem] border border-surface-border" />
-                  <div className="pointer-events-none absolute -bottom-10 -right-3 hidden md:block lg:-right-10">
-                    <Image src="/illustrations/illu-peek.png" alt="" width={520} height={520} className="h-32 w-auto lg:h-40" />
-                  </div>
-                </div>
-              </div>
-              <div className="order-1 lg:order-2">
+            <div className="grid items-center gap-10 lg:grid-cols-[0.7fr_1.3fr]">
+              <div className="max-w-xl">
                 <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Copilote</span>
                 <h2 className="mt-3 text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">Une question RH ? Demandez, il s&apos;en occupe.</h2>
-                <p className="mt-4 max-w-lg text-base leading-relaxed text-ink-soft">RH Pilot regarde vos données et vous répond dans le contexte de votre entreprise, sans vous faire chercher dans cinq écrans.</p>
+                <p className="mt-4 text-base leading-relaxed text-ink-soft">RH Pilot regarde vos données et vous répond dans le contexte de votre entreprise, sans vous faire chercher dans cinq écrans.</p>
+              </div>
+              <div className="min-w-0">
+                <Image
+                  src="/marketing/copilot-feature.svg"
+                  alt="Copilote RH Pilot répond à une question RH à partir des données de l'entreprise"
+                  width={1500}
+                  height={820}
+                  className="h-auto w-full"
+                />
               </div>
             </div>
           </Reveal>
