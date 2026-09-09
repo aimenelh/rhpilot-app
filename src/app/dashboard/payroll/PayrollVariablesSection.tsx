@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { addPayrollVariable, deletePayrollVariable, type PayrollVariableFormState } from "./periodActions";
+import PayrollReopenButton from "./PayrollReopenButton";
 
 const UNITS = [
   ["EUR", "Euros"],
@@ -47,6 +48,10 @@ type ContributionResult = {
   contributionDetails: ContributionDetail[];
 };
 
+type PeriodStatusResult = {
+  status: string;
+};
+
 function SubmitButton() {
   const { pending } = useFormStatus();
   return (
@@ -85,6 +90,7 @@ export default function PayrollVariablesSection({
   const [contributions, setContributions] = useState<ContributionResult[]>([]);
   const [contributionsLoading, setContributionsLoading] = useState(true);
   const [contributionsError, setContributionsError] = useState<string | null>(null);
+  const [periodStatus, setPeriodStatus] = useState<string | null>(null);
   const grouped = employees.map((employee) => ({
     employee,
     variables: variables.filter((variable) => variable.employeeId === employee.id),
@@ -112,6 +118,29 @@ export default function PayrollVariablesSection({
       })
       .finally(() => {
         if (!cancelled) setContributionsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [periodId]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    fetch(`/api/payroll/periods/${encodeURIComponent(periodId)}/status`, {
+      credentials: "same-origin",
+      cache: "no-store",
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Impossible de charger le statut de la période.");
+        return (await response.json()) as PeriodStatusResult;
+      })
+      .then((data) => {
+        if (!cancelled) setPeriodStatus(data.status);
+      })
+      .catch(() => {
+        if (!cancelled) setPeriodStatus(null);
       });
 
     return () => {
@@ -295,6 +324,10 @@ export default function PayrollVariablesSection({
               })}
             </div>
           )}
+
+          {periodStatus === "LOCKED" ? (
+            <PayrollReopenButton periodId={periodId} disabled={false} />
+          ) : null}
         </div>
       </div>
     </section>
