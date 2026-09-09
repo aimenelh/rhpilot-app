@@ -45,12 +45,10 @@ export function LandingPage() {
       <AmbientGlow />
       <MarketingHeader />
 
-      {/* Ouverture : la vidéo prend toute la première scène sous la navigation. */}
       <section className="relative min-h-[calc(100vh-88px)] overflow-hidden bg-white">
         <HumanWorkVideo className="inset-0 h-full w-full [&_.human-work-video-frame]:h-full [&_.human-work-video-frame]:w-full [&_.human-work-video-frame]:rotate-0 [&_.human-work-video-frame]:rounded-none [&_.human-work-video-frame]:border-0 [&_.human-work-video-frame]:shadow-none [&_.human-work-video-frame>div:first-child]:h-full [&_.human-work-video-frame>div:first-child]:w-full [&_.human-work-video-frame>div:first-child]:rounded-none [&_.human-work-video-frame>div:first-child]:aspect-auto [&_.human-work-video-frame>div:first-child>video]:object-cover [&_.human-work-video-shape]:hidden [&_.human-work-video-dots]:hidden [&_.human-work-video-note]:hidden" />
       </section>
 
-      {/* Deuxième temps : le message apparaît après la vidéo. */}
       <section className="relative flex min-h-[70vh] items-center justify-center overflow-hidden border-b border-surface-border bg-white px-6 py-24 sm:min-h-[76vh]">
         <Reveal>
           <div className="mx-auto max-w-4xl text-center">
@@ -69,7 +67,6 @@ export function LandingPage() {
         </Reveal>
       </section>
 
-      {/* Troisième temps : le produit arrive ensuite, avec le Copilote assis sur le dashboard. */}
       <section className="relative overflow-visible border-b border-surface-border bg-white px-6 pb-24 pt-20 sm:pb-28 sm:pt-24">
         <Reveal variant="up">
           <div className="relative mx-auto max-w-6xl">
@@ -108,20 +105,137 @@ export function LandingPage() {
         </div>
       </section>
 
-      <section id="copilote" className="relative border-y border-surface-border bg-white/70 py-16 backdrop-blur-sm">
+      <section className="relative border-y border-surface-border bg-white/70 py-20">
         <div className="mx-auto max-w-6xl px-6">
-          <Reveal><h2 className="max-w-lg text-2xl font-semibold text-ink">Trois choses que RH Pilot fait pour vous, tous les jours.</h2></Reveal>
-          <Reveal delay={100}><div className="mt-10 grid grid-cols-1 gap-10 md:grid-cols-3"><div><Image src="/illustrations/illu-salut.png" alt="" width={342} height={620} className="h-20 w-auto" /><h3 className="mt-3 text-lg font-semibold text-ink">Suivez chaque étape, de l&apos;arrivée au départ.</h3><p className="mt-2 text-sm text-ink-soft">Créez des parcours personnalisés et assurez une expérience fluide et conforme pour chaque collaborateur.</p><div className="relative mt-6 flex items-center justify-between"><div aria-hidden className="absolute left-0 right-0 top-1/2 h-px -translate-y-1/2 bg-surface-border" />{["Arrivée", "Intégration", "Essai", "Suivi", "Départ"].map((label, i) => (<span key={label} className={`relative z-10 flex h-6 w-6 items-center justify-center rounded-full text-[10px] font-semibold ${i === 2 ? "bg-brand-primary text-white" : i < 2 ? "bg-accent-teal/15 text-accent-teal" : "bg-white text-ink-faint ring-1 ring-surface-border"}`}>{i < 2 ? <CircleCheck size={12} /> : i + 1}</span>))}</div><p className="mt-2 text-center text-[10px] text-ink-faint">Arrivée · Intégration · Période d&apos;essai · Suivi · Départ</p><Card className="mt-4"><p className="text-sm font-medium text-ink">Mathis, développeur</p><p className="text-xs text-accent-amber">Étape actuelle : Période d&apos;essai</p><div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-subtle"><div className="h-full rounded-full bg-brand-primary" style={{ width: "66%" }} /></div></Card></div><div><h3 className="text-lg font-semibold text-ink">Un événement RH, un parcours complet.</h3><p className="mt-2 text-sm text-ink-soft">RH Pilot déclenche les bonnes actions au bon moment, dès qu&apos;un événement RH survient.</p><div className="mt-6 flex flex-col items-center gap-2"><Card compact className="w-full text-center"><p className="text-xs font-medium text-ink">Événement : Nouvelle embauche</p></Card><span className="text-ink-faint">↓</span><Card compact className="w-full border-brand-primary/20 bg-brand-primary/5 text-center"><p className="text-xs font-medium text-brand-primary">RH Pilot crée le parcours d&apos;intégration</p></Card><div className="mt-1 grid w-full grid-cols-2 gap-1.5 text-[10px] text-ink-faint"><span className="rounded bg-surface-subtle px-2 py-1 text-center">Documents</span><span className="rounded bg-surface-subtle px-2 py-1 text-center">Visite médicale</span><span className="rounded bg-surface-subtle px-2 py-1 text-center">Formation</span><span className="rounded bg-surface-subtle px-2 py-1 text-center">Rappel manager</span></div></div></div><div><h3 className="text-lg font-semibold text-ink">Posez vos questions. Obtenez des réponses.</h3><p className="mt-2 text-sm text-ink-soft">Votre assistant connaît vos données RH et vous aide à prendre les bonnes décisions, sans jamais rien inventer.</p><Card className="mt-6"><div className="flex justify-end"><div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-brand-primary px-3 py-1.5 text-xs text-white">Quelles échéances cette semaine ?</div></div><div className="mt-2 flex justify-start"><div className="max-w-[90%] rounded-2xl rounded-tl-sm bg-surface-subtle px-3 py-1.5 text-xs text-ink">J&apos;observe 3 échéances cette semaine, dont la période d&apos;essai de Mathis dans 5 jours.</div></div></Card></div></div></Reveal>
+          <Reveal>
+            <div className="max-w-2xl">
+              <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Vos échéances</span>
+              <h2 className="mt-3 text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">Les échéances n&apos;attendent pas.</h2>
+              <p className="mt-4 max-w-xl text-base leading-relaxed text-ink-soft">Un calendrier clair pour savoir ce qui arrive, ce qui est en retard et qui doit agir.</p>
+            </div>
+          </Reveal>
+
+          <Reveal delay={100} className="mt-10">
+            <div className="relative overflow-visible rounded-[1.5rem] border border-surface-border bg-white p-3 shadow-[0_28px_70px_rgba(15,23,42,0.10)] sm:p-5">
+              <Image src="/marketing/calendar.png" alt="Calendrier RH Pilot" width={1880} height={1032} className="h-auto w-full rounded-[1rem] border border-surface-border" />
+              <div className="pointer-events-none absolute -right-2 top-5 hidden md:block lg:-right-8">
+                <Image src="/illustrations/illu-calendrier.png" alt="" width={340} height={500} className="h-40 w-auto lg:h-48" />
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      <section className="relative border-b border-surface-border bg-surface-subtle py-20">
+        <div className="mx-auto max-w-6xl px-6">
+          <Reveal>
+            <div className="grid items-center gap-10 lg:grid-cols-[0.8fr_1.2fr]">
+              <div>
+                <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Notifications</span>
+                <h2 className="mt-3 text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">Une relance ne devrait jamais dépendre de votre mémoire.</h2>
+                <p className="mt-4 max-w-lg text-base leading-relaxed text-ink-soft">Les résumés partent au bon moment et l&apos;historique garde la trace de ce qui a déjà été envoyé.</p>
+              </div>
+              <div className="relative overflow-visible rounded-[1.5rem] border border-surface-border bg-white p-3 shadow-[0_28px_70px_rgba(15,23,42,0.10)] sm:p-5">
+                <Image src="/marketing/notifications.png" alt="Notifications RH Pilot" width={1882} height={1032} className="h-auto w-full rounded-[1rem] border border-surface-border" />
+                <div className="pointer-events-none absolute -left-4 -top-8 hidden md:block">
+                  <Image src="/illustrations/illu-notification.png" alt="" width={340} height={500} className="h-40 w-auto lg:h-48" />
+                </div>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      <section id="copilote" className="relative border-b border-surface-border bg-white py-20">
+        <div className="mx-auto max-w-6xl px-6">
+          <Reveal>
+            <div className="grid items-center gap-10 lg:grid-cols-[1.1fr_0.9fr]">
+              <div className="order-2 lg:order-1">
+                <div className="relative overflow-visible rounded-[1.5rem] border border-surface-border bg-white p-3 shadow-[0_28px_70px_rgba(15,23,42,0.10)] sm:p-5">
+                  <Image src="/marketing/assistant.png" alt="Copilote RH Pilot" width={847} height={562} className="h-auto w-full rounded-[1rem] border border-surface-border" />
+                  <div className="pointer-events-none absolute -bottom-10 -right-3 hidden md:block lg:-right-10">
+                    <Image src="/illustrations/illu-peek.png" alt="" width={520} height={520} className="h-32 w-auto lg:h-40" />
+                  </div>
+                </div>
+              </div>
+              <div className="order-1 lg:order-2">
+                <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Copilote</span>
+                <h2 className="mt-3 text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">Une question RH ? Demandez, il s&apos;en occupe.</h2>
+                <p className="mt-4 max-w-lg text-base leading-relaxed text-ink-soft">RH Pilot regarde vos données et vous répond dans le contexte de votre entreprise, sans vous faire chercher dans cinq écrans.</p>
+              </div>
+            </div>
+          </Reveal>
         </div>
       </section>
 
       <JourneyFlow />
-      <section className="relative overflow-hidden bg-white py-16"><div className="mx-auto grid max-w-6xl gap-10 px-6 md:grid-cols-3"><div><p className="text-3xl font-bold text-ink">272 300</p><p className="mt-1 text-sm text-ink-faint">échéances RH générées</p></div><div><p className="text-3xl font-bold text-ink">45%</p><p className="mt-1 text-sm text-ink-faint">moins d&apos;oubli sur les tâches récurrentes</p></div><div><p className="text-3xl font-bold text-ink">60%</p><p className="mt-1 text-sm text-ink-faint">du temps administratif économisé</p></div></div></section>
-      <section className="border-y border-surface-border bg-surface-subtle py-16"><div className="mx-auto max-w-6xl px-6"><Reveal><div className="grid gap-6 md:grid-cols-3"><Card><p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Calendrier</p><p className="mt-3 text-lg font-semibold text-ink">Toutes vos échéances au même endroit.</p><p className="mt-2 text-sm text-ink-soft">Visualisez les événements à venir, les tâches en retard et les responsables associés.</p></Card><Card><p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Notifications</p><p className="mt-3 text-lg font-semibold text-ink">Les rappels partent au bon moment.</p><p className="mt-2 text-sm text-ink-soft">Réduisez les relances manuelles et gardez une trace de chaque action.</p></Card><Card><p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Assistant</p><p className="mt-3 text-lg font-semibold text-ink">Un copilote pour décider plus vite.</p><p className="mt-2 text-sm text-ink-soft">Posez vos questions et obtenez des réponses à partir de vos données RH.</p></Card></div></Reveal></div></section>
-      <section className="py-16"><div className="mx-auto max-w-6xl px-6"><Reveal><div className="text-center"><span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Ils en parlent</span><h2 className="mt-3 text-2xl font-semibold text-ink sm:text-3xl">Ce que les équipes RH pensent de leur quotidien avec RH Pilot.</h2></div></Reveal><Reveal delay={100} className="mt-10"><TestimonialsCarousel /></Reveal></div></section>
-      <section className="border-t border-surface-border bg-white py-16"><div className="mx-auto max-w-6xl px-6"><Reveal><h2 className="max-w-2xl text-2xl font-semibold text-ink sm:text-3xl">Un cadre clair pour les équipes RH.</h2></Reveal><div className="mt-10 grid gap-6 md:grid-cols-4">{BENEFITS.map((benefit) => (<Card key={benefit.title} compact><span className={`inline-block h-2.5 w-2.5 rounded-full ${benefit.dot}`} /><h3 className="mt-4 text-base font-semibold text-ink">{benefit.title}</h3><p className="mt-2 text-sm leading-relaxed text-ink-soft">{benefit.description}</p></Card>))}</div></div></section>
-      <section className="border-t border-surface-border bg-surface-subtle py-16"><div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-6 px-6 md:flex-row md:items-end"><div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Gestion de la paie</p><h2 className="mt-3 max-w-2xl text-2xl font-semibold text-ink sm:text-3xl">Une paie fiable, documentée et traçable.</h2><p className="mt-3 max-w-2xl text-sm leading-relaxed text-ink-soft">Production, variables, absences, arrêts, cotisations et bulletin de paie : un cadre clair pour sécuriser chaque étape.</p></div><Link href="/gestion-paie" className="shrink-0"><Button variant="secondary">Découvrir la gestion de la paie →</Button></Link></div></section>
-      <section className="relative overflow-hidden bg-ink py-20"><div className="mx-auto max-w-6xl px-6"><div className="max-w-2xl"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/60">RH Pilot</p><h2 className="mt-3 text-3xl font-bold tracking-[-0.02em] text-white sm:text-4xl">Vos RH méritent mieux que des rappels éparpillés.</h2><p className="mt-4 text-base leading-relaxed text-white/75">Centralisez les événements, automatisez les actions et gardez une trace claire de ce qui a été fait.</p><Link href="/sign-up" className="mt-7 inline-flex"><Button>Commencer gratuitement →</Button></Link></div></div><Image src="/illustrations/illu-cta-final.png" alt="" width={900} height={600} className="pointer-events-none absolute bottom-0 right-0 hidden w-[34rem] max-w-[42vw] md:block" /></section>
+
+      <section className="relative overflow-hidden border-y border-surface-border bg-white py-16">
+        <div className="mx-auto grid max-w-6xl gap-10 px-6 md:grid-cols-3">
+          <div><p className="text-3xl font-bold text-ink">272 300</p><p className="mt-1 text-sm text-ink-faint">échéances RH générées</p></div>
+          <div><p className="text-3xl font-bold text-ink">45%</p><p className="mt-1 text-sm text-ink-faint">moins d&apos;oubli sur les tâches récurrentes</p></div>
+          <div><p className="text-3xl font-bold text-ink">60%</p><p className="mt-1 text-sm text-ink-faint">du temps administratif économisé</p></div>
+        </div>
+      </section>
+
+      <section className="border-y border-surface-border bg-surface-subtle py-16">
+        <div className="mx-auto max-w-6xl px-6">
+          <Reveal>
+            <div className="grid gap-6 md:grid-cols-2">
+              <Card>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Parcours</p>
+                <p className="mt-3 text-lg font-semibold text-ink">Un événement RH, un parcours complet.</p>
+                <p className="mt-2 text-sm text-ink-soft">RH Pilot déclenche les bonnes actions au bon moment, dès qu&apos;un événement RH survient.</p>
+              </Card>
+              <Card>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Suivi</p>
+                <p className="mt-3 text-lg font-semibold text-ink">Rien ne reste dans votre tête.</p>
+                <p className="mt-2 text-sm text-ink-soft">Les échéances, responsables et actions restent visibles au même endroit.</p>
+              </Card>
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      <section className="py-16">
+        <div className="mx-auto max-w-6xl px-6">
+          <Reveal>
+            <div className="text-center">
+              <span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Ils en parlent</span>
+              <h2 className="mt-3 text-2xl font-semibold text-ink sm:text-3xl">Ce que les équipes RH pensent de leur quotidien avec RH Pilot.</h2>
+            </div>
+          </Reveal>
+          <Reveal delay={100} className="mt-10"><TestimonialsCarousel /></Reveal>
+        </div>
+      </section>
+
+      <section className="border-t border-surface-border bg-white py-16">
+        <div className="mx-auto max-w-6xl px-6">
+          <Reveal><h2 className="max-w-2xl text-2xl font-semibold text-ink sm:text-3xl">Un cadre clair pour les équipes RH.</h2></Reveal>
+          <div className="mt-10 grid gap-6 md:grid-cols-4">
+            {BENEFITS.map((benefit) => (
+              <Card key={benefit.title} compact>
+                <span className={`inline-block h-2.5 w-2.5 rounded-full ${benefit.dot}`} />
+                <h3 className="mt-4 text-base font-semibold text-ink">{benefit.title}</h3>
+                <p className="mt-2 text-sm leading-relaxed text-ink-soft">{benefit.description}</p>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden bg-ink py-20">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="max-w-2xl">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/60">RH Pilot</p>
+            <h2 className="mt-3 text-3xl font-bold tracking-[-0.02em] text-white sm:text-4xl">Vos RH méritent mieux que des rappels éparpillés.</h2>
+            <p className="mt-4 text-base leading-relaxed text-white/75">Centralisez les événements, automatisez les actions et gardez une trace claire de ce qui a été fait.</p>
+            <Link href="/sign-up" className="mt-7 inline-flex"><Button>Commencer gratuitement →</Button></Link>
+          </div>
+        </div>
+        <Image src="/illustrations/illu-cta-final.png" alt="" width={900} height={600} className="pointer-events-none absolute bottom-0 right-0 hidden w-[34rem] max-w-[42vw] md:block" />
+      </section>
+
       <MarketingFooter />
     </div>
   );
