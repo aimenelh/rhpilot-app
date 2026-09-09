@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Logomark, Wordmark } from "@/components/Brand";
 
-const VIDEO_SRC = "https://www.pexels.com/download/video/5716888/?v=5716888";
+const VIDEO_SRC = "https://www.pexels.com/download/video/8636275/?v=8636275";
+const MAX_VIDEO_SECONDS = 8;
 const END_MESSAGE = "Moins de relances. Plus de temps pour l’humain.";
 
 export function HumanWorkVideo({ className = "" }: { className?: string }) {
@@ -58,6 +59,13 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
               muted
               playsInline
               preload="metadata"
+              onTimeUpdate={(event) => {
+                if (event.currentTarget.currentTime >= MAX_VIDEO_SECONDS) {
+                  event.currentTarget.pause();
+                  event.currentTarget.currentTime = MAX_VIDEO_SECONDS;
+                  setShowEndCard(true);
+                }
+              }}
               onEnded={() => setShowEndCard(true)}
             >
               <source src={VIDEO_SRC} type="video/mp4" />
