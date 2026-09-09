@@ -13,6 +13,7 @@ export type PayrollCalculationFormState = { error: string } | undefined;
 export type PayrollReviewFormState = { error: string } | undefined;
 export type PayrollValidationFormState = { error: string } | undefined;
 export type PayrollLockFormState = { error: string } | undefined;
+export type PayrollReopenFormState = { error: string } | undefined;
 export type PayrollPayslipPreparationFormState = { error: string } | undefined;
 
 type EditablePayrollPeriod = { id: string; status: string };
@@ -178,26 +179,84 @@ export async function lockPayrollPeriodAction(_prevState: PayrollLockFormState, 
   return undefined;
 }
 
-export async function preparePayrollPayslipsAction(_prevState: PayrollPayslipPreparationFormState, formData: FormData): Promise<PayrollPayslipPreparationFormState> {
+export async function reopenPayrollPeriodAction(_prevState: PayrollReopenFormState, formData: FormData): Promise<PayrollReopenFormState> {
   const membership = await getCurrentMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
-  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent préparer les bulletins de paie." };
+  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent rouvrir une période de paie." };
   const periodId = String(formData.get("periodId") ?? "").trim();
+  const reason = String(formData.get("reason") ?? "").trim();
   if (!periodId) return { error: "La période de paie est obligatoire." };
+  if (!reason || reason.length > 500) return { error: "Un motif de réouverture est obligatoire." };
 
   const period = await prisma.payrollPeriod.findFirst({
     where: { id: periodId, organizationId: membership.organizationId },
     select: { id: true, year: true, month: true, status: true },
   });
   if (!period) return { error: "Période de paie introuvable." };
-  if (period.status !== "LOCKED") return { error: "Les bulletins ne peuvent être préparés qu'après verrouillage de la période." };
+  if (period.status !== "LOCKED") return { error: "Seule une période verrouillée peut être rouverte pour correction." };
+
+  const payslipCount = await prisma.payslip.count({
+    where: {
+      organizationId: membership.organizationId,
+      payrollPeriodId: period.id,
+    },
+  });
+  if (payslipCount > 0) return { error: "La période ne peut plus être rouverte après préparation d'un bulletin." };
+
+  const reopenedAt = new Date();
+  await prisma.$transaction(async (tx) => {
+    await tx.payrollPeriod.update({
+      where: { id: period.id },
+      data: {
+        status: "DRAFT",
+        lockedAt: null,
+        validatedAt: null,
+      },
+    });
+    await tx.auditLog.create({
+      data: {
+        id: randomUUID(),
+        organizationId: membership.organizationId,
+        actorUserId: user.id,
+        action: "payroll.period.reopened",
+        entityType: "PayrollPeriod",
+        entityId: period.id,
+        metadata: {
+          year: period.year,
+          month: period.month,
+          reason,
+          reopenedAt: reopenedAt.toISOString(),
+        },
+      },
+    });
+  });
+
+  revalidatePath(`/dashboard/payroll/${periodId}`);
+  revalidatePath("/dashboard/payroll");
+  return undefined;
+}
+
+export async function preparePayrollPayslipsAction(_prevState: PayrollPayslipPreparationFormState, formData: FormData): Promise<PayrollPayslipPreparationFormState> {
+  const membership = await getCurrentMembership();
+  const user = await getCurrentUser();
+  if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
+  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent préparer les bulletins de paie." };
+  const periodId = String(formData.get("periodId") ?? "").trim();
+  if (!periodId) return { error: "La période de paie est obligatoire." }
+
+  const period = await prisma.payrollPeriod.findFirst({
+    where: { id: periodId, organizationId: membership.organizationId },
+    select: { id: true, year: true, month: true, status: true },
+  });
+  if (!period) return { error: "Période de paie introuvable." };
+  if (period.status !== "LOCKED") return { error: "Les bulletins ne peuvent être préparés qu'après verrouillage de la période." }
 
   const employees = await prisma.employee.findMany({
     where: { organizationId: membership.organizationId, deletedAt: null },
     select: { id: true },
   });
-  if (employees.length === 0) return { error: "Aucun salarié actif n'est disponible pour cette période." };
+  if (employees.length === 0) return { error: "Aucun salarié actif n'est disponible pour cette période." }
 
   const calculations = await prisma.payrollCalculation.findMany({
     where: { organizationId: membership.organizationId, payrollPeriodId: period.id },
