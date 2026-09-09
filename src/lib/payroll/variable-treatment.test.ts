@@ -31,6 +31,7 @@ describe("traitement versionné des variables de paie", () => {
       code: "PRIME",
       ruleVersionId: "rule-prime-2026",
       grossDelta: 250,
+      kind: "ADD_TO_GROSS",
     });
   });
 
