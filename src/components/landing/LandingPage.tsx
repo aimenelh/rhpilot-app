@@ -114,12 +114,13 @@ export function LandingPage() {
                 <p className="mt-4 text-base leading-relaxed text-ink-soft">Un calendrier clair pour savoir ce qui arrive, ce qui est en retard et qui doit agir.</p>
               </div>
               <div className="min-w-0">
-                <Image
+                <img
                   src="/marketing/calendar-final.webp"
                   alt="Calendrier RH Pilot avec les échéances et retards à surveiller"
                   width={1400}
                   height={700}
                   className="h-auto w-full"
+                  loading="lazy"
                 />
               </div>
             </div>
@@ -132,12 +133,13 @@ export function LandingPage() {
           <Reveal>
             <div className="grid items-center gap-10 lg:grid-cols-[1.3fr_0.7fr]">
               <div className="order-2 min-w-0 lg:order-1">
-                <Image
+                <img
                   src="/marketing/notifications-final.webp"
                   alt="Notifications RH Pilot et envoi des résumés"
                   width={1400}
                   height={700}
                   className="h-auto w-full"
+                  loading="lazy"
                 />
               </div>
               <div className="order-1 max-w-xl lg:order-2">
@@ -160,12 +162,13 @@ export function LandingPage() {
                 <p className="mt-4 text-base leading-relaxed text-ink-soft">RH Pilot regarde vos données et vous répond dans le contexte de votre entreprise, sans vous faire chercher dans cinq écrans.</p>
               </div>
               <div className="min-w-0">
-                <Image
+                <img
                   src="/marketing/copilot-final.webp"
                   alt="Copilote RH Pilot répond à une question RH à partir des données de l'entreprise"
                   width={1400}
                   height={748}
                   className="h-auto w-full"
+                  loading="lazy"
                 />
               </div>
             </div>
