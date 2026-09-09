@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Logomark, Wordmark } from "@/components/Brand";
 
-const VIDEO_SRC = "https://www.pexels.com/download/video/8103022/?v=8103022";
+const VIDEO_SRC = "https://www.pexels.com/download/video/8343940/?v=8343940";
 const MAX_VIDEO_SECONDS = 8;
 const END_MESSAGE = "Moins de relances. Plus de temps pour l’humain.";
 
