@@ -23,9 +23,9 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
       setTypedMessage(END_MESSAGE.slice(0, index));
       if (index >= END_MESSAGE.length) {
         window.clearInterval(timer);
-        window.setTimeout(() => setShowBrand(true), 260);
+        window.setTimeout(() => setShowBrand(true), 420);
       }
-    }, 42);
+    }, 92);
 
     return () => window.clearInterval(timer);
   }, [showEndCard]);
@@ -76,7 +76,7 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
                 <Link
                   href="/"
                   aria-label="RH Pilot"
-                  className="flex items-center gap-3 hover:scale-[1.03] transition-transform duration-300"
+                  className="flex items-center gap-3 transition-transform duration-300 hover:scale-[1.03]"
                 >
                   <Logomark size={46} />
                   <Wordmark />
