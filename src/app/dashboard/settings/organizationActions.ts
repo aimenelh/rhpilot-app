@@ -1,8 +1,8 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
+import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership } from "@/lib/auth";
 
@@ -10,6 +10,31 @@ const LEGAL_CATEGORIES = ["EI", "SARL", "SAS", "SELARL", "SELAS", "association",
 
 function setOrganizationSavedCookie() {
   cookies().set("rhpilot-organization-saved", "1", { path: "/dashboard/configuration/organisation", maxAge: 10, httpOnly: true, sameSite: "lax" });
+}
+
+async function resolveCollectiveAgreement(formData: FormData) {
+  const idccRaw = String(formData.get("collectiveAgreementIdcc") ?? "").trim();
+  const nameRaw = String(formData.get("collectiveAgreementName") ?? "").trim();
+
+  if (!idccRaw && !nameRaw) return null;
+  if (!/^\d{4}$/.test(idccRaw)) throw new Error("L'IDCC doit comporter exactement 4 chiffres.");
+  if (!nameRaw || nameRaw.length > 200) throw new Error("Le nom de la convention collective est obligatoire.");
+
+  const existing = await prisma.collectiveAgreement.findUnique({ where: { idcc: idccRaw }, select: { id: true } });
+  if (existing) return existing.id;
+
+  const id = `ccn-${idccRaw}`;
+  await prisma.collectiveAgreement.create({
+    data: {
+      id,
+      idcc: idccRaw,
+      name: nameRaw,
+      sourceName: "Code du travail numérique — Ministère du Travail",
+      sourceUrl: "https://code.travail.gouv.fr/outils/convention-collective/entreprise",
+      status: "ACTIVE",
+    },
+  });
+  return id;
 }
 
 export async function updateOrganizationSettings(formData: FormData) {
@@ -43,10 +68,11 @@ export async function updateOrganizationSettings(formData: FormData) {
 
     const payrollDepartment = String(formData.get("payrollDepartment") ?? "").trim();
     const conventionCollective = String(formData.get("conventionCollective") ?? "").trim();
+    const collectiveAgreementId = await resolveCollectiveAgreement(formData);
 
     await prisma.$transaction(async (tx) => {
       await tx.membership.update({ where: { id: membership.id }, data: { functionalRole } });
-      await tx.organization.update({ where: { id: membership.organizationId }, data: { conventionCollective: conventionCollective || null, payrollCity: payrollCity || null } });
+      await tx.organization.update({ where: { id: membership.organizationId }, data: { conventionCollective: conventionCollective || null, collectiveAgreementId, payrollCity: payrollCity || null } });
       await tx.$executeRaw`UPDATE "organizations" SET "legalCategory" = ${legalCategory}, "companyCreationDate" = ${companyCreationDate}, "atmpRate" = ${atmpRate}, "payrollDepartment" = ${payrollDepartment || null}, "healthPlanMonthlyAmount" = ${healthPlanMonthlyAmount}, "healthPlanEmployerRate" = ${healthPlanEmployerRate} WHERE "id" = ${membership.organizationId}`;
     });
   } else {
