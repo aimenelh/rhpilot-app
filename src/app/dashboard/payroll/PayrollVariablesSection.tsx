@@ -11,6 +11,7 @@ const VARIABLE_OPTIONS = [
   ["YEAR_END_BONUS", "Prime de fin d'année / 13e mois"],
   ["OBJECTIVE_BONUS", "Prime sur objectifs"],
   ["EXCEPTIONAL_BONUS", "Prime exceptionnelle"],
+  ["SUJETION_BONUS", "Prime de sujétion"],
 ] as const;
 
 const SOURCE_LABELS: Record<string, string> = {
@@ -222,7 +223,7 @@ export default function PayrollVariablesSection({
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-ink">{variable.label}</p>
                       <p className="mt-0.5 text-xs text-ink-faint">
-                        {variable.code} · {SOURCE_LABELS[variable.source] ?? variable.source}
+                        {SOURCE_LABELS[variable.source] ?? variable.source}
                       </p>
                     </div>
                     <div className="flex items-center gap-4">
