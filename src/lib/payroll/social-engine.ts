@@ -91,6 +91,7 @@ function assertNumber(value: unknown, label: string): number {
 function assertNoMissingVariables(evaluation: ReturnType<Engine["evaluate"]>, label: string): void {
   const missingVariables = Object.keys(evaluation.missingVariables ?? {});
   if (missingVariables.length === 0) return;
+  if (evaluation.nodeValue !== undefined) return;
   throw new Error(`Le calcul social est bloqué : des données nécessaires manquent pour ${label} : ${missingVariables.join(", ")}.`);
 }
 
