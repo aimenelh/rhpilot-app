@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Logomark, Wordmark } from "@/components/Brand";
 
-const VIDEO_SRC = "https://www.pexels.com/download/video/8033297/?v=8033297";
+const VIDEO_SRC = "https://www.pexels.com/download/video/8103022/?v=8103022";
 const MAX_VIDEO_SECONDS = 8;
 const END_MESSAGE = "Moins de relances. Plus de temps pour l’humain.";
 
@@ -87,7 +87,7 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
               className="pointer-events-none absolute inset-0 z-10"
               style={{
                 background:
-                  "linear-gradient(135deg, rgba(244,111,97,0.12) 0%, rgba(255,154,118,0.06) 45%, rgba(255,247,244,0.03) 100%)",
+                  "linear-gradient(135deg, rgba(244,111,97,0.10) 0%, rgba(255,154,118,0.05) 45%, rgba(255,247,244,0.02) 100%)",
                 mixBlendMode: "soft-light",
               }}
             />
