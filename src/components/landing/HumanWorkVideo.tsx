@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Logomark, Wordmark } from "@/components/Brand";
 
-const VIDEO_SRC = "https://www.pexels.com/download/video/8636282/?v=8636282";
+const VIDEO_SRC = "https://www.pexels.com/download/video/8033297/?v=8033297";
 const MAX_VIDEO_SECONDS = 8;
 const END_MESSAGE = "Moins de relances. Plus de temps pour l’humain.";
 
@@ -83,21 +83,12 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
               <source src={VIDEO_SRC} type="video/mp4" />
             </video>
 
-            {/* Coral wash: keeps the footage natural while making RH Pilot's brand color visibly present in the video itself. */}
             <div
               className="pointer-events-none absolute inset-0 z-10"
               style={{
                 background:
-                  "linear-gradient(135deg, rgba(244,111,97,0.24) 0%, rgba(255,154,118,0.14) 45%, rgba(255,247,244,0.08) 100%)",
+                  "linear-gradient(135deg, rgba(244,111,97,0.12) 0%, rgba(255,154,118,0.06) 45%, rgba(255,247,244,0.03) 100%)",
                 mixBlendMode: "soft-light",
-              }}
-            />
-            <div
-              className="pointer-events-none absolute inset-0 z-10"
-              style={{
-                background:
-                  "linear-gradient(135deg, rgba(244,111,97,0.10) 0%, transparent 52%, rgba(244,111,97,0.16) 100%)",
-                mixBlendMode: "color",
               }}
             />
 
