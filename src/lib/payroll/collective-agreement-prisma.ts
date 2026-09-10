@@ -26,6 +26,7 @@ async function assertAlternanceMinimum(input: {
   organizationId: string;
   employeeId: string;
   periodDate: Date;
+  payrollDepartment?: string | null;
   employee: { contractType: string | null; professionalCategory: string | null };
   profile: { baseSalaryCents: number | null; monthlyHours: unknown; classificationCode: string | null; collectiveAgreementId: string | null } | null;
   collectiveResolution: CollectiveAgreementResolutionResult;
@@ -36,8 +37,10 @@ async function assertAlternanceMinimum(input: {
   if (!alternanceProfile) throw new Error(`Calcul bloqué pour le salarié ${input.employeeId} : le profil alternance versionné est manquant (date de naissance et données du contrat nécessaires au minimum légal).`);
   if (input.profile?.baseSalaryCents == null) throw new Error(`Calcul bloqué pour le salarié ${input.employeeId} : le salaire brut mensuel est requis pour contrôler le minimum alternance.`);
 
-  const smic = await resolveSmicMinimumFromPrisma({ periodDate: input.periodDate, scope: "FRANCE_HORS_MAYOTTE" });
-  if (!smic) throw new Error(`Calcul bloqué pour le salarié ${input.employeeId} : aucune version validée du SMIC n'est disponible pour le contrôle alternance.`);
+  const payrollDepartment = input.payrollDepartment?.trim() ?? "";
+  const smicScope = payrollDepartment === "976" ? "MAYOTTE" : "FRANCE_HORS_MAYOTTE";
+  const smic = await resolveSmicMinimumFromPrisma({ periodDate: input.periodDate, scope: smicScope });
+  if (!smic) throw new Error(`Calcul bloqué pour le salarié ${input.employeeId} : aucune version validée du SMIC n'est disponible pour le contrôle alternance (${smicScope}).`);
 
   const age = calculateAgeAtDate(alternanceProfile.birthDate, input.periodDate);
   let collectiveMinimumCents: number | null = null;
@@ -56,9 +59,11 @@ async function assertAlternanceMinimum(input: {
     ? alternanceProfile.contractYear === null
       ? { status: "UNRESOLVED" as const, code: "MISSING_CONTRACT_YEAR", source: "APPRENTISSAGE_LEGAL" as const, explanation: "L'année d'exécution du contrat d'apprentissage est obligatoire." }
       : resolveApprenticeshipMinimum({ age, contractYear: alternanceProfile.contractYear, smicMonthlyCents: smic.monthlyGrossCentsAt35Hours, collectiveMinimumCents })
-    : alternanceProfile.hasBaccalaureateOrHigher === null
-      ? { status: "UNRESOLVED" as const, code: "MISSING_BACCALAUREATE_LEVEL", source: "PROFESSIONNALISATION_LEGAL" as const, explanation: "Le niveau de qualification est obligatoire pour déterminer le minimum de professionnalisation des moins de 26 ans." }
-      : resolveProfessionalisationMinimum({ age, hasBaccalaureateOrHigher: alternanceProfile.hasBaccalaureateOrHigher, smicMonthlyCents: smic.monthlyGrossCentsAt35Hours, collectiveMinimumCents });
+    : age >= 26
+      ? resolveProfessionalisationMinimum({ age, hasBaccalaureateOrHigher: true, smicMonthlyCents: smic.monthlyGrossCentsAt35Hours, collectiveMinimumCents })
+      : alternanceProfile.hasBaccalaureateOrHigher === null
+        ? { status: "UNRESOLVED" as const, code: "MISSING_BACCALAUREATE_LEVEL", source: "PROFESSIONNALISATION_LEGAL" as const, explanation: "Le niveau de qualification est obligatoire pour déterminer le minimum de professionnalisation des moins de 26 ans." }
+        : resolveProfessionalisationMinimum({ age, hasBaccalaureateOrHigher: alternanceProfile.hasBaccalaureateOrHigher, smicMonthlyCents: smic.monthlyGrossCentsAt35Hours, collectiveMinimumCents });
 
   if (result.status === "UNRESOLVED") throw new Error(`Calcul bloqué pour le salarié ${input.employeeId} : contrôle du minimum alternance non résolu (${result.code}). ${result.explanation}`);
   if (input.profile.baseSalaryCents < (result.monthlyMinimumCents ?? Number.POSITIVE_INFINITY)) {
@@ -77,7 +82,7 @@ export async function resolveCollectiveAgreementFromPrisma(input: {
   ruleCode: string;
 }): Promise<CollectiveAgreementResolutionResult> {
   const [organization, profile, employee] = await Promise.all([
-    prisma.organization.findUnique({ where: { id: input.organizationId }, select: { collectiveAgreementId: true } }),
+    prisma.organization.findUnique({ where: { id: input.organizationId }, select: { collectiveAgreementId: true, payrollDepartment: true } }),
     prisma.payrollProfile.findFirst({
       where: { organizationId: input.organizationId, employeeId: input.employeeId, effectiveFrom: { lte: input.periodDate }, OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: input.periodDate } }] },
       orderBy: { effectiveFrom: "desc" },
@@ -88,10 +93,11 @@ export async function resolveCollectiveAgreementFromPrisma(input: {
 
   if (!organization) return { status: "UNRESOLVED", code: "NO_COLLECTIVE_AGREEMENT", message: "Organisation introuvable pour la résolution conventionnelle." };
 
+  const alternanceContext = { payrollDepartment: organization.payrollDepartment };
   const collectiveAgreementId = profile?.collectiveAgreementId ?? organization.collectiveAgreementId;
   if (!collectiveAgreementId) {
     const unresolved = resolveCollectiveAgreement({ organizationCollectiveAgreementId: null, employeeCollectiveAgreementId: null, periodDate: input.periodDate, ruleCode: input.ruleCode, versions: [], rules: [] });
-    if (input.ruleCode === "MINIMUM_GROSS_MONTHLY" && employee) await assertAlternanceMinimum({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate, employee, profile, collectiveResolution: unresolved });
+    if (input.ruleCode === "MINIMUM_GROSS_MONTHLY" && employee) await assertAlternanceMinimum({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate, ...alternanceContext, employee, profile, collectiveResolution: unresolved });
     return unresolved;
   }
 
@@ -103,7 +109,7 @@ export async function resolveCollectiveAgreementFromPrisma(input: {
 
   if (!agreement || agreement.status !== "ACTIVE") {
     const unresolved: CollectiveAgreementResolutionResult = { status: "UNRESOLVED", code: "NO_VALIDATED_VERSION", message: `La convention ${collectiveAgreementId} n'est pas active dans le référentiel.` };
-    if (input.ruleCode === "MINIMUM_GROSS_MONTHLY" && employee) await assertAlternanceMinimum({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate, employee, profile, collectiveResolution: unresolved });
+    if (input.ruleCode === "MINIMUM_GROSS_MONTHLY" && employee) await assertAlternanceMinimum({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate, ...alternanceContext, employee, profile, collectiveResolution: unresolved });
     return unresolved;
   }
 
@@ -116,6 +122,6 @@ export async function resolveCollectiveAgreementFromPrisma(input: {
     rules: rules.map((rule) => ({ ...rule, status: normalizeRuleStatus(rule.status) })),
   });
 
-  if (input.ruleCode === "MINIMUM_GROSS_MONTHLY" && employee) await assertAlternanceMinimum({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate, employee, profile, collectiveResolution: resolution });
+  if (input.ruleCode === "MINIMUM_GROSS_MONTHLY" && employee) await assertAlternanceMinimum({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate, ...alternanceContext, employee, profile, collectiveResolution: resolution });
   return resolution;
 }
