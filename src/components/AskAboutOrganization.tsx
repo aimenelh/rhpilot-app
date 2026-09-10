@@ -2,12 +2,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Info, CheckCheck } from "lucide-react";
-import Link from "next/link";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Field";
 import { Logomark } from "@/components/Brand";
 import { askAboutOrganizationAction, type AskAboutOrganizationState } from "@/app/dashboard/aiActions";
-const SUGGESTION_QUESTIONS = ["Qui est en retard ?", "Quels sont les parcours à risque ?", "Quelles échéances cette semaine ?"];
 type Message = { role: "user" | "assistant"; text: string; time: string };
 function nowLabel() {
   return new Date().toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
@@ -123,25 +121,6 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
           {state.error}
         </p>
       )}
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        {SUGGESTION_QUESTIONS.map((suggestion) => (
-          <button
-            key={suggestion}
-            type="button"
-            disabled={!aiEnabled}
-            onClick={() => setQuestion(suggestion)}
-            className="rounded-lg border border-brand-primary-dark/20 bg-white px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-brand-primary-dark/40 hover:text-brand-primary-dark disabled:opacity-50"
-          >
-            {suggestion}
-          </button>
-        ))}
-        <Link
-          href="/dashboard/calendar"
-          className="rounded-lg border border-brand-primary-dark/20 bg-white px-3 py-1.5 text-xs font-medium text-ink-soft transition-colors hover:border-brand-primary-dark/40 hover:text-brand-primary-dark"
-        >
-          Voir le calendrier
-        </Link>
-      </div>
       <form action={formAction} className="mt-3 flex gap-2">
         <Input
           name="question"
