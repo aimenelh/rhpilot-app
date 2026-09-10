@@ -13,6 +13,10 @@ export async function resolveEmployeeWithholdingTaxProfile(input: {
   employeeId: string;
   periodDate: Date;
 }): Promise<WithholdingTaxProfile | null> {
+  if (!Number.isFinite(input.periodDate.getTime())) {
+    throw new Error("La date de période du taux de prélèvement à la source est invalide.");
+  }
+
   const rows = await prisma.$queryRaw<Array<{
     rate: unknown;
     validFrom: Date;
@@ -27,8 +31,12 @@ export async function resolveEmployeeWithholdingTaxProfile(input: {
       AND "validFrom" <= ${input.periodDate}
       AND ("validUntil" IS NULL OR "validUntil" >= ${input.periodDate})
     ORDER BY "validFrom" DESC
-    LIMIT 1
+    LIMIT 2
   `;
+
+  if (rows.length > 1) {
+    throw new Error("Plusieurs taux de prélèvement à la source sont applicables au même salarié et à la même période.");
+  }
 
   const row = rows[0];
   if (!row) return null;
