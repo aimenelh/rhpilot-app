@@ -79,6 +79,23 @@ export async function generateDemoOrganization() {
     select: { id: true, firstName: true, isDemoData: true },
   });
 
+  // Après un précédent échec, il peut rester une période verrouillée sans aucun salarié.
+  // Si elle ne contient aucun artefact de paie, elle est manifestement orpheline : on peut
+  // la supprimer pour permettre au générateur de recréer un jeu de démonstration cohérent.
+  if (existingEmployees.length === 0 && existingPeriod && existingPeriod.status !== "DRAFT") {
+    const [calculationCount, payslipCount, variableCount] = await Promise.all([
+      prisma.payrollCalculation.count({ where: { organizationId: membership.organizationId, payrollPeriodId: existingPeriod.id } }),
+      prisma.payslip.count({ where: { organizationId: membership.organizationId, payrollPeriodId: existingPeriod.id } }),
+      prisma.payrollVariable.count({ where: { organizationId: membership.organizationId, payrollPeriodId: existingPeriod.id } }),
+    ]);
+
+    if (calculationCount === 0 && payslipCount === 0 && variableCount === 0) {
+      await prisma.payrollPeriod.delete({ where: { id: existingPeriod.id } });
+    } else {
+      redirectWithFlash("La période de paie du mois contient déjà des données et ne peut pas être remplacée. La génération fictive a été annulée pour protéger ces données.");
+    }
+  }
+
   if (existingEmployees.length > 0) {
     const allDemo = existingEmployees.every((employee) => employee.isDemoData);
     const isCompleteDemoSet = allDemo && existingEmployees.length === DEMO_EMPLOYEES.length && existingEmployees.every((employee) => DEMO_EMPLOYEE_NAMES.has(employee.firstName));
