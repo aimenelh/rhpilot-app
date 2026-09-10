@@ -81,20 +81,22 @@ export async function generateDemoOrganization() {
   const existingEmployees = allEmployees.filter((employee) => employee.deletedAt === null);
   const archivedEmployees = allEmployees.filter((employee) => employee.deletedAt !== null);
 
-  // Recover the exact demo set left archived by a previous failed generation attempt.
-  // Never recover a mixed or partially matching set, so real archived employees remain untouched.
+  // Recover the complete demo set even if other real employees are archived.
+  // Only employees explicitly marked as demo data and matching the known 15 names are eligible.
+  const archivedDemoEmployees = archivedEmployees.filter(
+    (employee) => employee.isDemoData && DEMO_EMPLOYEE_NAMES.has(employee.firstName),
+  );
   const archivedDemoSet =
     existingEmployees.length === 0 &&
-    archivedEmployees.length === DEMO_EMPLOYEES.length &&
-    archivedEmployees.every((employee) => employee.isDemoData && DEMO_EMPLOYEE_NAMES.has(employee.firstName)) &&
-    new Set(archivedEmployees.map((employee) => employee.firstName)).size === DEMO_EMPLOYEES.length;
+    archivedDemoEmployees.length === DEMO_EMPLOYEES.length &&
+    new Set(archivedDemoEmployees.map((employee) => employee.firstName)).size === DEMO_EMPLOYEES.length;
 
   if (archivedDemoSet) {
     await prisma.employee.updateMany({
-      where: { organizationId: membership.organizationId, id: { in: archivedEmployees.map((employee) => employee.id) } },
+      where: { organizationId: membership.organizationId, id: { in: archivedDemoEmployees.map((employee) => employee.id) } },
       data: { deletedAt: null },
     });
-    existingEmployees.push(...archivedEmployees.map((employee) => ({ ...employee, deletedAt: null })));
+    existingEmployees.push(...archivedDemoEmployees.map((employee) => ({ ...employee, deletedAt: null })));
   }
 
   if (existingEmployees.length === 0 && existingPeriod && existingPeriod.status !== "DRAFT") {
