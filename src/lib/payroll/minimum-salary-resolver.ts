@@ -17,46 +17,62 @@ export type MinimumSalaryResolution =
     }
   | {
       status: "UNRESOLVED";
-      code:
-        | "INVALID_SMIC"
-        | "INVALID_MONTHLY_HOURS"
-        | "COLLECTIVE_MINIMUM_UNRESOLVED";
+      code: "INVALID_SMIC" | "INVALID_MONTHLY_HOURS" | "COLLECTIVE_MINIMUM_UNRESOLVED";
       message: string;
     };
 
-function assertPositiveFinite(value: number, message: string): void {
-  if (!Number.isFinite(value) || value <= 0) throw new Error(message);
+function isPositiveFinite(value: number): boolean {
+  return Number.isFinite(value) && value > 0;
 }
 
 /**
- * Compare le SMIC proratisé à la durée mensuelle du salarié et, lorsqu'elle
- * est disponible et applicable, au minimum conventionnel. Le maximum des
- * deux constitue le minimum salarial à respecter.
+ * Compare le SMIC proratisé à la durée mensuelle du salarié et, lorsqu'il est
+ * applicable, au minimum conventionnel. Le maximum des deux constitue le
+ * minimum salarial à respecter.
  */
 export function resolveMinimumSalary(input: {
   smic: SmicMinimumResult;
-  collectiveMinimum: CollectiveMinimumSalaryResult;
+  collectiveMinimum?: CollectiveMinimumSalaryResult;
   monthlyHours: number;
   collectiveRuleVersionId?: string;
   monthlyGrossCents: number;
 }): MinimumSalaryResolution {
-  assertPositiveFinite(input.monthlyHours, "La durée mensuelle du salarié est invalide.");
+  if (!isPositiveFinite(input.monthlyHours)) {
+    return {
+      status: "UNRESOLVED",
+      code: "INVALID_MONTHLY_HOURS",
+      message: "La durée mensuelle du salarié est invalide.",
+    };
+  }
+
   if (!Number.isInteger(input.monthlyGrossCents) || input.monthlyGrossCents < 0) {
-    return { status: "UNRESOLVED", code: "INVALID_MONTHLY_HOURS", message: "Le salaire brut mensuel fourni est invalide." };
+    return {
+      status: "UNRESOLVED",
+      code: "INVALID_MONTHLY_HOURS",
+      message: "Le salaire brut mensuel fourni est invalide.",
+    };
   }
 
-  let smicMonthlyMinimumCents: number;
-  try {
-    assertPositiveFinite(input.smic.monthlyGrossCentsAt35Hours, "Le SMIC mensuel est invalide.");
-    assertPositiveFinite(input.smic.monthlyHoursAt35Hours, "La durée mensuelle de référence du SMIC est invalide.");
-    smicMonthlyMinimumCents = Math.round(
-      (input.smic.hourlyGrossCents * input.monthlyHours) + Number.EPSILON,
-    );
-  } catch {
-    return { status: "UNRESOLVED", code: "INVALID_SMIC", message: "Les paramètres du SMIC ne permettent pas de déterminer un minimum salarial." };
+  if (
+    !isPositiveFinite(input.smic.hourlyGrossCents) ||
+    !isPositiveFinite(input.smic.monthlyGrossCentsAt35Hours) ||
+    !isPositiveFinite(input.smic.monthlyHoursAt35Hours)
+  ) {
+    return {
+      status: "UNRESOLVED",
+      code: "INVALID_SMIC",
+      message: "Les paramètres du SMIC ne permettent pas de déterminer un minimum salarial.",
+    };
   }
 
-  if (input.collectiveMinimum.status === "UNRESOLVED") {
+  const smicMonthlyMinimumCents = Math.round(
+    input.smic.hourlyGrossCents * input.monthlyHours,
+  );
+
+  let collectiveMonthlyMinimumCents: number | null = null;
+  let collectiveRuleVersionId = input.collectiveRuleVersionId;
+
+  if (input.collectiveMinimum?.status === "UNRESOLVED") {
     return {
       status: "UNRESOLVED",
       code: "COLLECTIVE_MINIMUM_UNRESOLVED",
@@ -64,14 +80,20 @@ export function resolveMinimumSalary(input: {
     };
   }
 
-  const collectiveMonthlyMinimumCents = input.collectiveMinimum.monthlyMinimumCents;
-  const useCollective = collectiveMonthlyMinimumCents >= smicMonthlyMinimumCents;
-  const appliedMonthlyMinimumCents = Math.max(smicMonthlyMinimumCents, collectiveMonthlyMinimumCents);
+  if (input.collectiveMinimum?.status === "APPLICABLE") {
+    collectiveMonthlyMinimumCents = input.collectiveMinimum.monthlyMinimumCents;
+  }
+
+  const appliedMonthlyMinimumCents = Math.max(
+    smicMonthlyMinimumCents,
+    collectiveMonthlyMinimumCents ?? 0,
+  );
+  const useCollective =
+    collectiveMonthlyMinimumCents !== null &&
+    collectiveMonthlyMinimumCents >= smicMonthlyMinimumCents;
   const differenceCents = input.monthlyGrossCents - appliedMonthlyMinimumCents;
 
-  const explanation = useCollective
-    ? "Le minimum conventionnel applicable est supérieur ou égal au SMIC proratisé."
-    : "Le SMIC proratisé est supérieur au minimum conventionnel applicable.";
+  if (!useCollective) collectiveRuleVersionId = undefined;
 
   return {
     status: "APPLICABLE",
@@ -81,9 +103,13 @@ export function resolveMinimumSalary(input: {
     collectiveMonthlyMinimumCents,
     smicRuleCode: input.smic.ruleCode,
     smicRuleVersionId: input.smic.ruleVersionId,
-    ...(input.collectiveRuleVersionId ? { collectiveRuleVersionId: input.collectiveRuleVersionId } : {}),
+    ...(collectiveRuleVersionId ? { collectiveRuleVersionId } : {}),
     compliant: differenceCents >= 0,
     differenceCents,
-    explanation,
+    explanation: useCollective
+      ? "Le minimum conventionnel applicable est supérieur ou égal au SMIC proratisé."
+      : collectiveMonthlyMinimumCents === null
+        ? "Aucun minimum conventionnel applicable n'est résolu : le contrôle repose sur le SMIC proratisé."
+        : "Le SMIC proratisé est supérieur au minimum conventionnel applicable.",
   };
 }
