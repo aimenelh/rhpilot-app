@@ -18,7 +18,7 @@ type Snapshot = {
   variables?: Array<{ label?: unknown; amount?: unknown }>;
   ruleSource?: { sourceName?: unknown };
   withholdingTax?: { status?: unknown; rate?: unknown; amount?: unknown; validFrom?: unknown; validUntil?: unknown; source?: unknown; sourceReference?: unknown };
-  socialEngine?: { modelVersion?: unknown; contributionDetails?: Array<{ code?: unknown; label?: unknown; sourceRule?: unknown; side?: unknown; amount?: unknown }> };
+  socialEngine?: { modelVersion?: unknown; contributionDetails?: Array<{ code?: unknown; label?: unknown; sourceRule?: unknown; side?: unknown; amount?: unknown; baseAmount?: unknown; rate?: unknown }> };
   result?: { netSocialAmount?: unknown };
 };
 
@@ -27,7 +27,7 @@ function asString(value: unknown): string { return typeof value === "string" ? v
 function asNumber(value: unknown): number { if (typeof value === "number" && Number.isFinite(value)) return value; if (typeof value === "string" && value.trim() !== "") return Number(value); return Number(value); }
 function normalizeSnapshot(value: unknown): Snapshot { return isRecord(value) ? (value as Snapshot) : {}; }
 
-type PayslipContributionDetail = { label: string; side: "EMPLOYEE" | "EMPLOYER"; amount: number; sourceRule: string };
+type PayslipContributionDetail = { label: string; side: "EMPLOYEE" | "EMPLOYER"; amount: number; baseAmount: number | null; rate: number | null; sourceRule: string };
 
 function normalizeContributionDetails(snapshot: Snapshot): PayslipContributionDetail[] {
   if (!Array.isArray(snapshot.socialEngine?.contributionDetails)) return [];
@@ -36,12 +36,30 @@ function normalizeContributionDetails(snapshot: Snapshot): PayslipContributionDe
     const label = asString(contribution.label).trim();
     const amount = asNumber(contribution.amount);
     if (!side || !label || !Number.isFinite(amount) || amount === 0) return [];
-    return [{ label, side, amount, sourceRule: asString(contribution.sourceRule) }];
+    const rawRate = contribution.rate;
+    const rate = rawRate === null ? null : asNumber(rawRate);
+    const rawBaseAmount = contribution.baseAmount;
+    const baseAmount = rawBaseAmount === null ? null : asNumber(rawBaseAmount);
+    if ((rawRate === undefined || rawBaseAmount === undefined) || (rate !== null && !Number.isFinite(rate)) || (baseAmount !== null && !Number.isFinite(baseAmount))) return [];
+    return [{ label, side, amount, baseAmount, rate, sourceRule: asString(contribution.sourceRule) }];
   });
 }
 
 function assertClose(label: string, expected: number, actual: number): void {
   if (!Number.isFinite(expected) || !Number.isFinite(actual) || Math.abs(expected - actual) > 0.01) throw new Error(`Génération bloquée : le ${label} du bulletin ne correspond plus au calcul verrouillé.`);
+}
+
+function assertContributionDetailsMatch(snapshot: Snapshot, current: ReturnType<typeof calculateSocialPayroll>["contributionDetails"]): void {
+  const locked = normalizeContributionDetails(snapshot);
+  if (locked.length !== current.length) throw new Error("Génération bloquée : le détail des cotisations du calcul verrouillé ne correspond plus au modèle social actuel.");
+  const byCode = new Map(locked.map((detail, index) => [asString(snapshot.socialEngine?.contributionDetails?.[index]?.code), detail]));
+  for (const detail of current) {
+    const expected = byCode.get(detail.code);
+    if (!expected) throw new Error(`Génération bloquée : la cotisation ${detail.label} n'existe pas dans le calcul verrouillé.`);
+    assertClose(`montant de cotisation ${detail.label}`, expected.amount, detail.amount);
+    if (expected.baseAmount === null ? detail.baseAmount !== null : Math.abs(expected.baseAmount - (detail.baseAmount ?? Number.NaN)) > 0.01) throw new Error(`Génération bloquée : l'assiette de cotisation ${detail.label} ne correspond plus au calcul verrouillé.`);
+    if (expected.rate === null ? detail.rate !== null : Math.abs(expected.rate - (detail.rate ?? Number.NaN)) > 0.0001) throw new Error(`Génération bloquée : le taux de cotisation ${detail.label} ne correspond plus au calcul verrouillé.`);
+  }
 }
 
 export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGenerationFormState, formData: FormData): Promise<PayrollPayslipGenerationFormState> {
@@ -125,10 +143,12 @@ export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGe
       assertClose("net avant impôt", Number(calculation.netBeforeTax), socialResult.netBeforeTax);
       assertClose("net imposable", Number(calculation.netTaxableAmount), socialResult.netTaxableAmount);
       assertClose("montant net social", Number(calculation.netSocialAmount), socialResult.netSocialAmount);
+      assertContributionDetailsMatch(snapshot, socialResult.contributionDetails);
 
       const agreementId = asString(snapshot.profile?.collectiveAgreementId) || profile.collectiveAgreementId || organization.collectiveAgreementId || null;
       const agreement = agreementId ? agreementById.get(agreementId) : null;
       const contributionDetails = normalizeContributionDetails(snapshot);
+      if (contributionDetails.length !== socialResult.contributionDetails.length) return { error: `Génération bloquée pour ${employee.firstName} ${employee.lastName} : le détail des cotisations verrouillé est incomplet.` };
       const employerAddress = [organization.payrollAddress, [organization.payrollPostalCode, organization.payrollCity].filter(Boolean).join(" ")].filter(Boolean).join(", ");
       const paymentDate = period.paymentDate ? period.paymentDate.toISOString().slice(0, 10) : "";
       const withholdingTaxRate = withholdingTaxProfile.rate;
