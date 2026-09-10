@@ -32,6 +32,8 @@ export type PayslipPdfInput = {
     employeeContributions: number;
     employerContributions: number;
     netBeforeTax: number;
+    netTaxable: number;
+    withholdingTaxRate: number;
     withholdingTax: number;
     netPaid: number;
     netSocial: number;
@@ -66,6 +68,10 @@ function money(value: number): string {
   return `${value.toFixed(2).replace(".", ",")} EUR`;
 }
 
+function percentage(value: number): string {
+  return `${(value * 100).toFixed(2).replace(".", ",")} %`;
+}
+
 function requiredMissing(input: PayslipPdfInput): string[] {
   const missing: string[] = [];
   const checks: Array<[string, string]> = [
@@ -73,13 +79,12 @@ function requiredMissing(input: PayslipPdfInput): string[] {
     ["Adresse employeur", input.employer.address],
     ["SIRET employeur", input.employer.siret],
     ["Code APE/NAF", input.employer.nafCode],
-    ["Référence organisme social", input.employer.urssafReference],
     ["Nom salarié", input.employee.name],
     ["Adresse salarié", input.employee.address],
     ["Emploi salarié", input.employee.position],
     ["Classification salarié", input.employee.classification],
     ["Date de paiement", input.period.paymentDate],
-    ["Convention collective", input.collectiveAgreement],
+    ["Convention ou référence Code du travail", input.collectiveAgreement],
     ["Source du référentiel", input.source],
   ];
 
@@ -88,6 +93,9 @@ function requiredMissing(input: PayslipPdfInput): string[] {
   }
   if (!Number.isFinite(input.period.hours) || input.period.hours < 0) missing.push("Volume horaire");
   if (!Number.isFinite(input.salary.netSocial) || input.salary.netSocial < 0) missing.push("Montant net social");
+  if (!Number.isFinite(input.salary.netTaxable) || input.salary.netTaxable < 0) missing.push("Salaire net imposable");
+  if (!Number.isFinite(input.salary.withholdingTaxRate) || input.salary.withholdingTaxRate < 0 || input.salary.withholdingTaxRate > 1) missing.push("Taux de prélèvement à la source");
+  if (!Number.isFinite(input.salary.withholdingTax) || input.salary.withholdingTax < 0) missing.push("Montant du prélèvement à la source");
   return missing;
 }
 
@@ -116,8 +124,10 @@ function buildContent(input: PayslipPdfInput): string {
   addText(lines, 40, y, input.employer.address);
   y -= 13;
   addText(lines, 40, y, `SIRET : ${input.employer.siret} | APE/NAF : ${input.employer.nafCode}`);
-  y -= 13;
-  addText(lines, 40, y, `Organisme : ${input.employer.urssafReference}`);
+  if (input.employer.urssafReference.trim()) {
+    y -= 13;
+    addText(lines, 40, y, `Organisme social : ${input.employer.urssafReference}`);
+  }
   y -= 18;
 
   addText(lines, 300, y + 44, input.employee.name, 10);
@@ -162,13 +172,16 @@ function buildContent(input: PayslipPdfInput): string {
   addText(lines, 40, y, "Net avant impôt");
   addText(lines, 450, y, money(input.salary.netBeforeTax));
   y -= 15;
-  addText(lines, 40, y, "Prélèvement à la source");
+  addText(lines, 40, y, "Net imposable");
+  addText(lines, 450, y, money(input.salary.netTaxable));
+  y -= 15;
+  addText(lines, 40, y, `Prélèvement à la source (${percentage(input.salary.withholdingTaxRate)})`);
   addText(lines, 450, y, `-${money(input.salary.withholdingTax)}`);
   y -= 15;
   addText(lines, 40, y, "Net payé", 11);
   addText(lines, 450, y, money(input.salary.netPaid), 11);
   y -= 15;
-  addText(lines, 40, y, "Net social");
+  addText(lines, 40, y, "Montant net social");
   addText(lines, 450, y, money(input.salary.netSocial));
   y -= 25;
   addRule(lines, y);
