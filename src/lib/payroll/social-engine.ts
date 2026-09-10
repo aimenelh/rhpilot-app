@@ -104,7 +104,7 @@ function formatPublicodesDate(value: Date): string {
 }
 
 function evaluateContributionDetails(engine: Engine): SocialContributionDetail[] {
-  return DETAIL_RULES.flatMap((detail) => {
+  return DETAIL_RULES.flatMap((detail): SocialContributionDetail[] => {
     const evaluation = engine.evaluate(detail.rule);
     assertNoMissingVariables(evaluation, detail.rule);
     if (evaluation.nodeValue === null || evaluation.nodeValue === undefined) return [];
@@ -112,7 +112,16 @@ function evaluateContributionDetails(engine: Engine): SocialContributionDetail[]
     if (amount === 0) return [];
 
     if (detail.flat) {
-      return [{ code: detail.code, label: detail.label, sourceRule: detail.rule, side: detail.side, amount, baseAmount: amount, rate: null }];
+      const contribution: SocialContributionDetail = {
+        code: detail.code,
+        label: detail.label,
+        sourceRule: detail.rule,
+        side: detail.side,
+        amount,
+        baseAmount: amount,
+        rate: null,
+      };
+      return [contribution];
     }
 
     const baseEvaluation = engine.evaluate(`${detail.rule} . assiette`);
@@ -123,7 +132,16 @@ function evaluateContributionDetails(engine: Engine): SocialContributionDetail[]
     const rate = assertNumber(rateEvaluation.nodeValue, `${detail.rule} . taux`);
     if (baseAmount < 0 || rate < 0 || rate > 1) throw new Error(`Le modèle social a fourni une assiette ou un taux invalide pour ${detail.rule}.`);
 
-    return [{ code: detail.code, label: detail.label, sourceRule: detail.rule, side: detail.side, amount, baseAmount, rate }];
+    const contribution: SocialContributionDetail = {
+      code: detail.code,
+      label: detail.label,
+      sourceRule: detail.rule,
+      side: detail.side,
+      amount,
+      baseAmount,
+      rate,
+    };
+    return [contribution];
   });
 }
 
