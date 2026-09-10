@@ -43,13 +43,13 @@ const DEMO_EMPLOYEES = [
   { firstName: "Nicolas", lastName: "Fabre", civility: "M" as const, position: "Analyste financier", hireOffset: -80, contractType: "CDI" as const, probationDuration: 3 as number | null, probationDurationUnit: "MONTHS" as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
   { firstName: "Julien", lastName: "Marchand", civility: "M" as const, position: "Développeur", hireOffset: -25, contractType: null as "CDI" | "CDD" | "APPRENTISSAGE" | "PROFESSIONNALISATION" | null, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: false },
   { firstName: "Léa", lastName: "Fontaine", civility: "MME" as const, position: "Secrétaire médicale", hireOffset: -400, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: false },
-  { firstName: "Sarah", lastName: "Benali", civility: "AUTRE" as const, position: "Comptable", hireOffset: -1000, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as "DAYS" | "WEEKS" | "MONTHS" | null, hasManager: true },
+  { firstName: "Sarah", lastName: "Benali", civility: "AUTRE" as const, position: "Comptable", hireOffset: -1000, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
   { firstName: "Sophie", lastName: "Lemoine", civility: "MME" as const, position: "Assistante comptable", hireOffset: -60, contractType: "CDD" as const, probationDuration: 4 as number | null, probationDurationUnit: "MONTHS" as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
   { firstName: "Thomas", lastName: "Girard", civility: "M" as const, position: "Chargé de projet", hireOffset: -60, contractType: "PROFESSIONNALISATION" as const, probationDuration: 4 as number | null, probationDurationUnit: "MONTHS" as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
   { firstName: "Hugo", lastName: "Lacroix", civility: "M" as const, position: "Commercial", hireOffset: -200, contractType: "CDD" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
   { firstName: "Chloé", lastName: "Bertin", civility: "MME" as const, position: "Apprentie assistante RH", hireOffset: -5, contractType: "APPRENTISSAGE" as const, probationDuration: 45 as number | null, probationDurationUnit: "DAYS" as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
   { firstName: "Inès", lastName: "Chevalier", civility: "MME" as const, position: "Chargée de recrutement", hireOffset: -300, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
-  { firstName: "Maxime", lastName: "Renard", civility: "M" as const, position: "Magasinier", hireOffset: -45, contractType: "CDD" as const, probationDuration: 3 as number | null, probationDurationUnit: "MONTHS" as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as "DAYS" | "WEEKS" | "MONTHS" | null, hasManager: true },
+  { firstName: "Maxime", lastName: "Renard", civility: "M" as const, position: "Magasinier", hireOffset: -45, contractType: "CDD" as const, probationDuration: 3 as number | null, probationDurationUnit: "MONTHS" as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
   { firstName: "Camille", lastName: "Vidal", civility: "AUTRE" as const, position: "Chargée de clientèle", hireOffset: -540, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: 45 as number | null, hasManager: true },
 ];
 
@@ -68,9 +68,6 @@ export async function generateDemoOrganization() {
   const user = await getCurrentUser();
   if (!membership || !user) throw new Error("Non authentifié ou aucune organisation active");
 
-  // Préflight : une période de paie déjà verrouillée doit empêcher toute
-  // création de données fictives. Cela évite de laisser 15 salariés créés
-  // alors que la préparation de paie ne peut plus s'exécuter.
   const periodStart = startOfCurrentMonth();
   const existingPeriod = await prisma.payrollPeriod.findUnique({
     where: { organizationId_year_month: { organizationId: membership.organizationId, year: periodStart.getFullYear(), month: periodStart.getMonth() + 1 } },
@@ -94,9 +91,6 @@ export async function generateDemoOrganization() {
       redirectWithFlash("Les salariés fictifs existent déjà, mais la période de paie du mois est verrouillée. Aucune donnée existante n'a été écrasée.");
     }
 
-    // Cas de reprise après une exécution interrompue : les 15 salariés sont
-    // déjà présents, on complète simplement leurs données de paie si la
-    // période est encore en préparation.
     await prepareDemoPayrollDataForOrganization(membership.organizationId);
     redirectWithFlash("Les données fictives existaient déjà : leur jeu de paie a été réparé et est prêt pour le test.");
   }
