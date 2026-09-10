@@ -4,7 +4,7 @@ import { useFormState, useFormStatus } from "react-dom";
 import {
   preparePayrollPayslipsAction,
   type PayrollPayslipPreparationFormState,
-} from "./periodActions";
+} from "./preparePayslipsAction";
 
 function SubmitButton({ disabled }: { disabled: boolean }) {
   const { pending } = useFormStatus();
