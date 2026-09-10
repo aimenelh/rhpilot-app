@@ -74,10 +74,28 @@ export async function generateDemoOrganization() {
     select: { id: true, status: true },
   });
 
-  const existingEmployees = await prisma.employee.findMany({
-    where: { organizationId: membership.organizationId, deletedAt: null },
-    select: { id: true, firstName: true, isDemoData: true },
+  const allEmployees = await prisma.employee.findMany({
+    where: { organizationId: membership.organizationId },
+    select: { id: true, firstName: true, isDemoData: true, deletedAt: true },
   });
+  const existingEmployees = allEmployees.filter((employee) => employee.deletedAt === null);
+  const archivedEmployees = allEmployees.filter((employee) => employee.deletedAt !== null);
+
+  // Recover the exact demo set left archived by a previous failed generation attempt.
+  // Never recover a mixed or partially matching set, so real archived employees remain untouched.
+  const archivedDemoSet =
+    existingEmployees.length === 0 &&
+    archivedEmployees.length === DEMO_EMPLOYEES.length &&
+    archivedEmployees.every((employee) => employee.isDemoData && DEMO_EMPLOYEE_NAMES.has(employee.firstName)) &&
+    new Set(archivedEmployees.map((employee) => employee.firstName)).size === DEMO_EMPLOYEES.length;
+
+  if (archivedDemoSet) {
+    await prisma.employee.updateMany({
+      where: { organizationId: membership.organizationId, id: { in: archivedEmployees.map((employee) => employee.id) } },
+      data: { deletedAt: null },
+    });
+    existingEmployees.push(...archivedEmployees.map((employee) => ({ ...employee, deletedAt: null })));
+  }
 
   if (existingEmployees.length === 0 && existingPeriod && existingPeriod.status !== "DRAFT") {
     const [calculationCount, payslipCount, variableCount] = await Promise.all([
@@ -107,7 +125,7 @@ export async function generateDemoOrganization() {
     }
 
     await prepareDemoPayrollDataForOrganization(membership.organizationId);
-    redirectWithFlash("Les données fictives existaient déjà : leur jeu de paie a été réparé et est prêt pour le test.");
+    redirectWithFlash(archivedDemoSet ? "Les 15 salariés fictifs ont été récupérés et leur jeu de paie est prêt pour le test." : "Les données fictives existaient déjà : leur jeu de paie a été réparé et est prêt pour le test.");
   }
 
   if (existingPeriod && existingPeriod.status !== "DRAFT") {
