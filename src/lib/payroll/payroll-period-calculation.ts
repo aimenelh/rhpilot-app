@@ -2,10 +2,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { composeGrossAmount, resolvePayrollVariableTreatment } from "./variable-treatment";
 import { resolvePayrollRuleSetFromPrisma } from "./payroll-rule-set-prisma";
-import {
-  resolveValidatedAbsencePayrollImpacts,
-  resolveValidatedAbsencesForPayrollPeriod,
-} from "./absence-payroll-impact";
+import { resolveValidatedAbsencePayrollImpacts, resolveValidatedAbsencesForPayrollPeriod } from "./absence-payroll-impact";
 import { calculateAbsenceGrossImpact } from "./absence-payroll-gross-impact";
 import { resolveCollectiveAgreementAbsenceTreatment } from "./collective-agreement-absence-prisma";
 import { resolveCollectiveAgreementFromPrisma } from "./collective-agreement-prisma";
@@ -19,12 +16,7 @@ import { resolveEmployeeWithholdingTaxProfile } from "./withholding-tax-profile"
 import { calculateEmployeeWithholdingTax } from "./withholding-tax-validation";
 import type { PayrollVariableInput } from "./domain";
 
-export type PayrollPeriodCalculationResult = {
-  status: "CALCULATED";
-  periodId: string;
-  employeeCount: number;
-  ruleVersionId: string;
-};
+export type PayrollPeriodCalculationResult = { status: "CALCULATED"; periodId: string; employeeCount: number; ruleVersionId: string };
 
 function periodBounds(year: number, month: number): { start: Date; end: Date; calculationDate: Date } {
   const start = new Date(year, month - 1, 1, 0, 0, 0, 0);
@@ -59,8 +51,7 @@ function snapshotForEmployee(input: {
   socialResult: ReturnType<typeof calculateSocialPayroll>;
 }): Prisma.InputJsonObject {
   return {
-    calculatedAt: new Date().toISOString(),
-    period: { id: input.period.id, year: input.period.year, month: input.period.month },
+    calculatedAt: new Date().toISOString(), period: { id: input.period.id, year: input.period.year, month: input.period.month },
     profile: { id: input.profile.id, baseSalaryCents: input.profile.baseSalaryCents, monthlyHours: input.profile.monthlyHours, effectiveFrom: input.profile.effectiveFrom, effectiveUntil: input.profile.effectiveUntil, collectiveAgreementId: input.profile.collectiveAgreementId, classificationCode: input.profile.classificationCode, classificationLabel: input.profile.classificationLabel, level: input.profile.level, coefficient: input.profile.coefficient },
     variables: input.variables.map((variable) => ({ code: variable.code, label: variable.label, amount: variable.amount, unit: variable.unit, source: variable.source })),
     validatedAbsences: input.validatedAbsences.map((absence) => ({ absenceId: absence.absenceId, type: absence.type, startDate: absence.startDate, endDate: absence.endDate, payrollImpactStatus: absence.payrollImpactStatus })),
@@ -72,7 +63,7 @@ function snapshotForEmployee(input: {
     ruleSource: { sourceName: input.ruleSource.sourceName, sourceUrl: input.ruleSource.sourceUrl, validFrom: input.ruleSource.validFrom.toISOString(), validUntil: input.ruleSource.validUntil?.toISOString() ?? null },
     withholdingTax: { status: input.withholdingTaxStatus, rate: input.withholdingTaxRate, amount: input.withholdingTax, validFrom: input.withholdingTaxProfile.validFrom.toISOString(), validUntil: input.withholdingTaxProfile.validUntil?.toISOString() ?? null, source: input.withholdingTaxProfile.source, sourceReference: input.withholdingTaxProfile.sourceReference },
     calculationSource: { engine: "PUBLICODES", modelVersion: input.socialResult.modelVersion, socialTotalsAuthoritative: true },
-    socialEngine: { modelVersion: input.socialResult.modelVersion, grossAmount: input.socialResult.grossAmount, employeeContributions: input.socialResult.employeeContributions, employerContributions: input.socialResult.employerContributions, netBeforeTax: input.socialResult.netBeforeTax, netTaxableAmount: input.socialResult.netTaxableAmount, netSocialAmount: input.socialResult.netSocialAmount, employerCost: input.socialResult.employerCost, contributionDetails: input.socialResult.contributionDetails.map((contribution) => ({ code: contribution.code, label: contribution.label, sourceRule: contribution.sourceRule, side: contribution.side, amount: contribution.amount })) },
+    socialEngine: { modelVersion: input.socialResult.modelVersion, grossAmount: input.socialResult.grossAmount, employeeContributions: input.socialResult.employeeContributions, employerContributions: input.socialResult.employerContributions, netBeforeTax: input.socialResult.netBeforeTax, netTaxableAmount: input.socialResult.netTaxableAmount, netSocialAmount: input.socialResult.netSocialAmount, employerCost: input.socialResult.employerCost, contributionDetails: input.socialResult.contributionDetails.map((contribution) => ({ code: contribution.code, label: contribution.label, sourceRule: contribution.sourceRule, side: contribution.side, amount: contribution.amount, baseAmount: contribution.baseAmount, rate: contribution.rate })) },
   };
 }
 
@@ -154,7 +145,6 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     const grossAmount = composeGrossAmount({ baseSalaryAmount, variableTreatments: grossTreatments });
     const socialResult = calculateSocialPayroll({ grossAmount, legalCategory: socialContext.legalCategory, calculationDate, companyCreationDate: socialContext.companyCreationDate, contractType: employee.contractType, hireDate: employee.hireDate, executiveStatus, healthPlanMonthlyAmount: socialContext.healthPlanMonthlyAmount, healthPlanEmployerRate: socialContext.healthPlanEmployerRate, situation: { "établissement . taux ATMP": `${socialContext.atmpRate}%`, "établissement . commune . nom": `'${socialContext.payrollCity}'`, "établissement . commune . département": `'${socialContext.payrollDepartment}'` } });
     const withholdingTax = calculateEmployeeWithholdingTax(socialResult.netBeforeTax, withholdingTaxProfile, employee.id);
-
     calculatedEmployees.push({ employeeId: employee.id, socialResult, profile: { id: profile.id, employeeId: profile.employeeId, baseSalaryCents: profile.baseSalaryCents, monthlyHours: profile.monthlyHours, effectiveFrom: profile.effectiveFrom, effectiveUntil: profile.effectiveUntil, collectiveAgreementId: profile.collectiveAgreementId, classificationCode: profile.classificationCode, classificationLabel: profile.classificationLabel, level: profile.level, coefficient: profile.coefficient }, variables: [...employeeVariables, ...absenceVariableInputs], treatments, validatedAbsences: employeeAbsences, absenceGrossImpacts, collectiveMinimum, minimumSalaryControl, withholdingTax, withholdingTaxRate: withholdingTaxProfile.rate, withholdingTaxProfile });
   }
 
@@ -163,15 +153,11 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
       const withholdingTaxRate = calculated.withholdingTaxRate;
       const withholdingTaxStatus = "RATE_PROVIDED" as const;
       const snapshot = snapshotForEmployee({ period: { id: period.id, year: period.year, month: period.month }, profile: { id: calculated.profile.id, baseSalaryCents: calculated.profile.baseSalaryCents, monthlyHours: calculated.profile.monthlyHours === null ? null : String(calculated.profile.monthlyHours), effectiveFrom: calculated.profile.effectiveFrom.toISOString(), effectiveUntil: calculated.profile.effectiveUntil?.toISOString() ?? null, collectiveAgreementId: calculated.profile.collectiveAgreementId, classificationCode: calculated.profile.classificationCode, classificationLabel: calculated.profile.classificationLabel, level: calculated.profile.level, coefficient: calculated.profile.coefficient }, variables: calculated.variables, validatedAbsences: calculated.validatedAbsences.map((absence) => ({ absenceId: absence.absenceId, type: absence.type, startDate: absence.startDate.toISOString(), endDate: absence.endDate.toISOString(), payrollImpactStatus: absence.status })), variableTreatments: calculated.treatments, absenceGrossImpacts: calculated.absenceGrossImpacts, collectiveMinimum: calculated.collectiveMinimum, minimumSalaryControl: calculated.minimumSalaryControl, ruleSet: rules.ruleSet, ruleSource: rules.source, withholdingTaxStatus, withholdingTaxRate, withholdingTax: calculated.withholdingTax, withholdingTaxProfile: calculated.withholdingTaxProfile, socialResult: calculated.socialResult });
-      await tx.payrollCalculation.upsert({
-        where: { organizationId_payrollPeriodId_employeeId: { organizationId: input.organizationId, payrollPeriodId: period.id, employeeId: calculated.employeeId } },
-        create: { id: crypto.randomUUID(), organizationId: input.organizationId, payrollPeriodId: period.id, employeeId: calculated.employeeId, ruleSetVersion: rules.ruleVersionId, grossAmount: calculated.socialResult.grossAmount, employeeContributions: calculated.socialResult.employeeContributions, employerContributions: calculated.socialResult.employerContributions, netBeforeTax: calculated.socialResult.netBeforeTax, withholdingTax: calculated.withholdingTax, netPaid: calculated.socialResult.netBeforeTax - calculated.withholdingTax, netTaxableAmount: calculated.socialResult.netTaxableAmount, netSocialAmount: calculated.socialResult.netSocialAmount, calculationSnapshot: snapshot },
-        update: { ruleSetVersion: rules.ruleVersionId, grossAmount: calculated.socialResult.grossAmount, employeeContributions: calculated.socialResult.employeeContributions, employerContributions: calculated.socialResult.employerContributions, netBeforeTax: calculated.socialResult.netBeforeTax, withholdingTax: calculated.withholdingTax, netPaid: calculated.socialResult.netBeforeTax - calculated.withholdingTax, netTaxableAmount: calculated.socialResult.netTaxableAmount, netSocialAmount: calculated.socialResult.netSocialAmount, calculationSnapshot: snapshot },
-      });
+      await tx.payrollCalculation.upsert({ where: { organizationId_payrollPeriodId_employeeId: { organizationId: input.organizationId, payrollPeriodId: period.id, employeeId: calculated.employeeId } }, create: { id: crypto.randomUUID(), organizationId: input.organizationId, payrollPeriodId: period.id, employeeId: calculated.employeeId, ruleSetVersion: rules.ruleVersionId, grossAmount: calculated.socialResult.grossAmount, employeeContributions: calculated.socialResult.employeeContributions, employerContributions: calculated.socialResult.employerContributions, netBeforeTax: calculated.socialResult.netBeforeTax, withholdingTax: calculated.withholdingTax, netPaid: calculated.socialResult.netBeforeTax - calculated.withholdingTax, netTaxableAmount: calculated.socialResult.netTaxableAmount, netSocialAmount: calculated.socialResult.netSocialAmount, calculationSnapshot: snapshot }, update: { ruleSetVersion: rules.ruleVersionId, grossAmount: calculated.socialResult.grossAmount, employeeContributions: calculated.socialResult.employeeContributions, employerContributions: calculated.socialResult.employerContributions, netBeforeTax: calculated.socialResult.netBeforeTax, withholdingTax: calculated.withholdingTax, netPaid: calculated.socialResult.netBeforeTax - calculated.withholdingTax, netTaxableAmount: calculated.socialResult.netTaxableAmount, netSocialAmount: calculated.socialResult.netSocialAmount, calculationSnapshot: snapshot } });
       const calculation = await tx.payrollCalculation.findUniqueOrThrow({ where: { organizationId_payrollPeriodId_employeeId: { organizationId: input.organizationId, payrollPeriodId: period.id, employeeId: calculated.employeeId } }, select: { id: true } });
       await tx.payrollContribution.deleteMany({ where: { calculationId: calculation.id } });
       for (const contribution of calculated.socialResult.contributionDetails) {
-        await tx.payrollContribution.create({ data: { id: crypto.randomUUID(), calculationId: calculation.id, code: contribution.code, label: contribution.label, side: contribution.side, baseAmount: calculated.socialResult.grossAmount, rate: 0, amount: contribution.amount, ruleVersionId: rules.ruleVersionId } });
+        await tx.payrollContribution.create({ data: { id: crypto.randomUUID(), calculationId: calculation.id, code: contribution.code, label: contribution.label, side: contribution.side, baseAmount: contribution.baseAmount ?? calculated.socialResult.grossAmount, rate: contribution.rate ?? 0, amount: contribution.amount, ruleVersionId: rules.ruleVersionId } });
       }
       const ledgerEntries = buildPayrollLedger({ baseSalaryAmount: calculated.profile.baseSalaryCents / 100, ruleVersionId: rules.ruleVersionId, sourceName: rules.source.sourceName, sourceUrl: rules.source.sourceUrl, variables: calculated.treatments.map((treatment, index) => ({ code: calculated.variables[index]?.code ?? treatment.code, label: calculated.variables[index]?.label ?? treatment.code, amount: Math.abs(treatment.grossDelta), grossDelta: treatment.grossDelta, kind: treatment.kind, ruleVersionId: treatment.ruleVersionId })), absences: calculated.absenceGrossImpacts.map((impact) => ({ absenceId: impact.absenceId, absenceType: impact.absenceType, label: impact.derivedVariableLabel, grossDelta: impact.grossDelta, kind: impact.effect === "DEDUCT_FROM_GROSS" ? "DEDUCT_FROM_GROSS" : "ADD_TO_GROSS", ruleVersionId: impact.ruleVersionId })), socialResult: calculated.socialResult, withholdingTax: calculated.withholdingTax, withholdingTaxRateProvided: true, minimumSalaryControl: calculated.minimumSalaryControl });
       await persistPayrollLedger(tx, calculation.id, ledgerEntries);
