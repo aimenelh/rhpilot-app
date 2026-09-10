@@ -39,18 +39,18 @@ const DEMO_EMPLOYEES = [
   { firstName: "Antoine", lastName: "Perrot", civility: "M" as const, position: "Technicien de maintenance", hireOffset: -5, contractType: "CDI" as const, probationDuration: 2, probationDurationUnit: "MONTHS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
   { firstName: "Emma", lastName: "Roussel", civility: "MME" as const, position: "Responsable marketing", hireOffset: -900, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: false },
   { firstName: "Manon", lastName: "Dubreuil", civility: "MME" as const, position: "Responsable RH", hireOffset: -700, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: false },
-  { firstName: "Karim", lastName: "Belhaj", civility: "M" as const, position: "Apprenti technicien", hireOffset: -20, contractType: "APPRENTISSAGE" as const, probationDuration: 45 as number | null, probationDurationUnit: "DAYS" as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
-  { firstName: "Nicolas", lastName: "Fabre", civility: "M" as const, position: "Analyste financier", hireOffset: -80, contractType: "CDI" as const, probationDuration: 3 as number | null, probationDurationUnit: "MONTHS" as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
+  { firstName: "Karim", lastName: "Belhaj", civility: "M" as const, position: "Apprenti technicien", hireOffset: -20, contractType: "APPRENTISSAGE" as const, probationDuration: 45, probationDurationUnit: "DAYS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
+  { firstName: "Nicolas", lastName: "Fabre", civility: "M" as const, position: "Analyste financier", hireOffset: -80, contractType: "CDI" as const, probationDuration: 3, probationDurationUnit: "MONTHS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
   { firstName: "Julien", lastName: "Marchand", civility: "M" as const, position: "Développeur", hireOffset: -25, contractType: null as "CDI" | "CDD" | "APPRENTISSAGE" | "PROFESSIONNALISATION" | null, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: false },
   { firstName: "Léa", lastName: "Fontaine", civility: "MME" as const, position: "Secrétaire médicale", hireOffset: -400, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: false },
   { firstName: "Sarah", lastName: "Benali", civility: "AUTRE" as const, position: "Comptable", hireOffset: -1000, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
-  { firstName: "Sophie", lastName: "Lemoine", civility: "MME" as const, position: "Assistante comptable", hireOffset: -60, contractType: "CDD" as const, probationDuration: 4 as number | null, probationDurationUnit: "MONTHS" as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
-  { firstName: "Thomas", lastName: "Girard", civility: "M" as const, position: "Chargé de projet", hireOffset: -60, contractType: "PROFESSIONNALISATION" as const, probationDuration: 4 as number | null, probationDurationUnit: "MONTHS" as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
+  { firstName: "Sophie", lastName: "Lemoine", civility: "MME" as const, position: "Assistante comptable", hireOffset: -60, contractType: "CDD" as const, probationDuration: 4, probationDurationUnit: "MONTHS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
+  { firstName: "Thomas", lastName: "Girard", civility: "M" as const, position: "Chargé de projet", hireOffset: -60, contractType: "PROFESSIONNALISATION" as const, probationDuration: 4, probationDurationUnit: "MONTHS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
   { firstName: "Hugo", lastName: "Lacroix", civility: "M" as const, position: "Commercial", hireOffset: -200, contractType: "CDD" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
-  { firstName: "Chloé", lastName: "Bertin", civility: "MME" as const, position: "Apprentie assistante RH", hireOffset: -5, contractType: "APPRENTISSAGE" as const, probationDuration: 45 as number | null, probationDurationUnit: "DAYS" as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
+  { firstName: "Chloé", lastName: "Bertin", civility: "MME" as const, position: "Apprentie assistante RH", hireOffset: -5, contractType: "APPRENTISSAGE" as const, probationDuration: 45, probationDurationUnit: "DAYS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
   { firstName: "Inès", lastName: "Chevalier", civility: "MME" as const, position: "Chargée de recrutement", hireOffset: -300, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
-  { firstName: "Maxime", lastName: "Renard", civility: "M" as const, position: "Magasinier", hireOffset: -45, contractType: "CDD" as const, probationDuration: 3 as number | null, probationDurationUnit: "MONTHS" as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
-  { firstName: "Camille", lastName: "Vidal", civility: "AUTRE" as const, position: "Chargée de clientèle", hireOffset: -540, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: 45 as number | null, hasManager: true },
+  { firstName: "Maxime", lastName: "Renard", civility: "M" as const, position: "Magasinier", hireOffset: -45, contractType: "CDD" as const, probationDuration: 3, probationDurationUnit: "MONTHS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
+  { firstName: "Camille", lastName: "Vidal", civility: "AUTRE" as const, position: "Chargée de clientèle", hireOffset: -540, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: 45, hasManager: true },
 ];
 
 const DEMO_EMPLOYEE_NAMES = new Set(DEMO_EMPLOYEES.map((employee) => employee.firstName));
@@ -79,9 +79,6 @@ export async function generateDemoOrganization() {
     select: { id: true, firstName: true, isDemoData: true },
   });
 
-  // Après un précédent échec, il peut rester une période verrouillée sans aucun salarié.
-  // Si elle ne contient aucun artefact de paie, elle est manifestement orpheline : on peut
-  // la supprimer pour permettre au générateur de recréer un jeu de démonstration cohérent.
   if (existingEmployees.length === 0 && existingPeriod && existingPeriod.status !== "DRAFT") {
     const [calculationCount, payslipCount, variableCount] = await Promise.all([
       prisma.payrollCalculation.count({ where: { organizationId: membership.organizationId, payrollPeriodId: existingPeriod.id } }),
@@ -137,7 +134,14 @@ export async function generateDemoOrganization() {
   );
 
   await prisma.auditLog.create({
-    data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "organization.demo_generated", entityType: "Organization", entityId: membership.organizationId },
+    data: {
+      id: randomUUID(),
+      organizationId: membership.organizationId,
+      actorUserId: user.id,
+      action: "organization.demo_generated",
+      entityType: "Organization",
+      entityId: membership.organizationId,
+    },
   });
 
   const skipOnboarding = new Set(["Antoine", "Julien"]);
@@ -157,7 +161,7 @@ export async function generateDemoOrganization() {
   await mapWithConcurrencyLimit(eventTasks, DB_CONCURRENCY_LIMIT, (task) => task());
   await prepareDemoPayrollDataForOrganization(membership.organizationId);
 
-  redirectWithFlash("Entreprise de démonstration générée (15 salariés) avec données de paie prêtes pour le test. Les fiches sont temporaires et seront automatiquement archivées après 48h, sauf si vous passez sur Pro entre-temps.");
+  redirectWithFlash("Entreprise de démonstration générée (15 salariés) avec données de paie prêtes pour le test.");
 }
 
 export async function archiveAllEmployees() {
@@ -165,12 +169,24 @@ export async function archiveAllEmployees() {
   const user = await getCurrentUser();
   if (!membership || !user) throw new Error("Non authentifié ou aucune organisation active");
 
-  const result = await prisma.employee.updateMany({ where: { organizationId: membership.organizationId, deletedAt: null }, data: { deletedAt: new Date() } });
+  const result = await prisma.employee.updateMany({
+    where: { organizationId: membership.organizationId, deletedAt: null },
+    data: { deletedAt: new Date() },
+  });
   await prisma.auditLog.create({
-    data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "employees.bulk_archived", entityType: "Organization", entityId: membership.organizationId, metadata: { count: result.count } },
+    data: {
+      id: randomUUID(),
+      organizationId: membership.organizationId,
+      actorUserId: user.id,
+      action: "employees.bulk_archived",
+      entityType: "Organization",
+      entityId: membership.organizationId,
+      metadata: { count: result.count },
+    },
   });
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/employees");
   revalidatePath("/dashboard/events");
-  redirect(`/dashboard/employees?flash=${encodeURIComponent(`${result.count} salarié${result.count > 1 ? "s" : ""} archivé${result.count > 1 ? "s" : ""}`)}");
+  const label = `${result.count} salarié${result.count > 1 ? "s" : ""} archivé${result.count > 1 ? "s" : ""}`;
+  redirectWithFlash(label);
 }
