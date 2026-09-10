@@ -30,7 +30,7 @@ describe("snapshot du contrôle du salaire minimum", () => {
       status: "APPLICABLE",
       source: "COLLECTIVE_AGREEMENT",
       appliedMonthlyMinimumCents: 213500,
-      smicMonthlyMinimumCents: 186706,
+      smicMonthlyMinimumCents: 186702,
       collectiveMonthlyMinimumCents: 213500,
       compliant: true,
       differenceCents: 6500,
@@ -72,6 +72,18 @@ describe("snapshot du contrôle du salaire minimum", () => {
       status: "UNRESOLVED",
       explanation: "Le minimum conventionnel n'est pas déterminable : Classification absente.",
       code: "COLLECTIVE_MINIMUM_UNRESOLVED",
+    });
+  });
+
+  it("ne fabrique pas de contrôle sans version SMIC validée", () => {
+    expect(buildMinimumSalaryControlSnapshot({
+      smic: null,
+      monthlyHours: 151.67,
+      monthlyGrossCents: 190000,
+    })).toEqual({
+      status: "UNRESOLVED",
+      explanation: "Aucune version validée du SMIC n'est disponible pour la période de paie.",
+      code: "NO_VALIDATED_SMIC_RULE",
     });
   });
 });
