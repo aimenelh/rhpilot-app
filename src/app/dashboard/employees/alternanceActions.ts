@@ -4,6 +4,9 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { resolveApprenticeshipMinimum, resolveProfessionalisationMinimum } from "@/lib/payroll/alternance-minimum";
+import { calculateAgeAtDate } from "@/lib/payroll/alternance-profile";
+import { resolveSmicMinimumFromPrisma } from "@/lib/payroll/minimum-wage-prisma";
 
 export type AlternanceProfileFormState = { error: string } | undefined;
 
@@ -15,6 +18,15 @@ export type AlternanceProfileData = {
   validFrom: string | null;
   validUntil: string | null;
   sourceReference: string | null;
+};
+
+export type AlternanceMinimumPreview = {
+  status: "APPLICABLE" | "UNRESOLVED";
+  age: number | null;
+  percentageOfSmic: number | null;
+  monthlyMinimumCents: number | null;
+  smicMonthlyCents: number | null;
+  detail: string;
 };
 
 export async function getAlternanceProfile(employeeId: string): Promise<AlternanceProfileData | null> {
@@ -52,6 +64,103 @@ export async function getAlternanceProfile(employeeId: string): Promise<Alternan
     validFrom: row?.validFrom.toISOString() ?? null,
     validUntil: row?.validUntil?.toISOString() ?? null,
     sourceReference: row?.sourceReference ?? null,
+  };
+}
+
+export async function getAlternanceMinimumPreview(employeeId: string): Promise<AlternanceMinimumPreview | null> {
+  const membership = await getCurrentMembership();
+  if (!membership) return null;
+
+  const employee = await prisma.employee.findFirst({
+    where: { id: employeeId, organizationId: membership.organizationId, deletedAt: null },
+    select: { contractType: true },
+  });
+  if (!employee || !["APPRENTISSAGE", "PROFESSIONNALISATION"].includes(employee.contractType ?? "")) return null;
+
+  const rows = await prisma.$queryRaw<Array<{
+    birthDate: Date;
+    contractYear: number | null;
+    hasBaccalaureateOrHigher: boolean | null;
+    validFrom: Date;
+  }>>`
+    SELECT "birthDate", "contractYear", "hasBaccalaureateOrHigher", "validFrom"
+    FROM "employee_alternance_profiles"
+    WHERE "organizationId" = ${membership.organizationId}
+      AND "employeeId" = ${employeeId}
+      AND "validFrom" <= CURRENT_DATE
+      AND ("validUntil" IS NULL OR "validUntil" >= CURRENT_DATE)
+    ORDER BY "validFrom" DESC
+    LIMIT 1
+  `;
+  const profile = rows[0];
+  if (!profile) {
+    return {
+      status: "UNRESOLVED",
+      age: null,
+      percentageOfSmic: null,
+      monthlyMinimumCents: null,
+      smicMonthlyCents: null,
+      detail: "Complétez le profil alternance pour calculer le minimum légal.",
+    };
+  }
+
+  const payrollDepartmentRows = await prisma.$queryRaw<Array<{ payrollDepartment: string | null }>>`
+    SELECT "payrollDepartment" FROM "organizations" WHERE "id" = ${membership.organizationId} LIMIT 1
+  `;
+  const scope = payrollDepartmentRows[0]?.payrollDepartment?.trim() === "976" ? "MAYOTTE" : "FRANCE_HORS_MAYOTTE";
+  const smic = await resolveSmicMinimumFromPrisma({ periodDate: new Date(), scope });
+  if (!smic) {
+    return {
+      status: "UNRESOLVED",
+      age: null,
+      percentageOfSmic: null,
+      monthlyMinimumCents: null,
+      smicMonthlyCents: null,
+      detail: "Aucune version validée du SMIC n'est disponible pour cette période.",
+    };
+  }
+
+  const age = calculateAgeAtDate(profile.birthDate, new Date());
+  const result = employee.contractType === "APPRENTISSAGE"
+    ? profile.contractYear === null
+      ? null
+      : resolveApprenticeshipMinimum({
+          age,
+          contractYear: profile.contractYear,
+          smicMonthlyCents: smic.monthlyGrossCentsAt35Hours,
+        })
+    : age >= 26
+      ? resolveProfessionalisationMinimum({
+          age,
+          hasBaccalaureateOrHigher: true,
+          smicMonthlyCents: smic.monthlyGrossCentsAt35Hours,
+        })
+      : profile.hasBaccalaureateOrHigher === null
+        ? null
+        : resolveProfessionalisationMinimum({
+            age,
+            hasBaccalaureateOrHigher: profile.hasBaccalaureateOrHigher,
+            smicMonthlyCents: smic.monthlyGrossCentsAt35Hours,
+          });
+
+  if (!result || result.status === "UNRESOLVED") {
+    return {
+      status: "UNRESOLVED",
+      age,
+      percentageOfSmic: null,
+      monthlyMinimumCents: null,
+      smicMonthlyCents: smic.monthlyGrossCentsAt35Hours,
+      detail: result?.explanation ?? "Les informations du profil alternance sont insuffisantes pour déterminer le minimum légal.",
+    };
+  }
+
+  return {
+    status: "APPLICABLE",
+    age,
+    percentageOfSmic: result.percentageOfSmic ?? null,
+    monthlyMinimumCents: result.monthlyMinimumCents ?? null,
+    smicMonthlyCents: smic.monthlyGrossCentsAt35Hours,
+    detail: result.explanation,
   };
 }
 
