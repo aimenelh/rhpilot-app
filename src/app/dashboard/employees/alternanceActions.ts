@@ -25,9 +25,7 @@ export async function getAlternanceProfile(employeeId: string): Promise<Alternan
     where: { id: employeeId, organizationId: membership.organizationId, deletedAt: null },
     select: { contractType: true },
   });
-  if (!employee || !["APPRENTISSAGE", "PROFESSIONNALISATION"].includes(employee.contractType ?? "")) {
-    return null;
-  }
+  if (!employee || !["APPRENTISSAGE", "PROFESSIONNALISATION"].includes(employee.contractType ?? "")) return null;
 
   const rows = await prisma.$queryRaw<Array<{
     birthDate: Date;
@@ -41,31 +39,21 @@ export async function getAlternanceProfile(employeeId: string): Promise<Alternan
     FROM "employee_alternance_profiles"
     WHERE "organizationId" = ${membership.organizationId}
       AND "employeeId" = ${employeeId}
+      AND "validFrom" <= CURRENT_DATE
+      AND ("validUntil" IS NULL OR "validUntil" >= CURRENT_DATE)
     ORDER BY "validFrom" DESC
     LIMIT 1
   `;
 
   const row = rows[0];
-  if (!row) {
-    return {
-      contractType: employee.contractType,
-      birthDate: null,
-      contractYear: null,
-      hasBaccalaureateOrHigher: null,
-      validFrom: null,
-      validUntil: null,
-      sourceReference: null,
-    };
-  }
-
   return {
     contractType: employee.contractType,
-    birthDate: row.birthDate.toISOString(),
-    contractYear: row.contractYear,
-    hasBaccalaureateOrHigher: row.hasBaccalaureateOrHigher,
-    validFrom: row.validFrom.toISOString(),
-    validUntil: row.validUntil?.toISOString() ?? null,
-    sourceReference: row.sourceReference,
+    birthDate: row?.birthDate.toISOString() ?? null,
+    contractYear: row?.contractYear ?? null,
+    hasBaccalaureateOrHigher: row?.hasBaccalaureateOrHigher ?? null,
+    validFrom: row?.validFrom.toISOString() ?? null,
+    validUntil: row?.validUntil?.toISOString() ?? null,
+    sourceReference: row?.sourceReference ?? null,
   };
 }
 
@@ -85,15 +73,10 @@ export async function saveAlternanceProfile(
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
 
   const employee = await prisma.employee.findFirst({
-    where: {
-      id: employeeId,
-      organizationId: membership.organizationId,
-      deletedAt: null,
-    },
+    where: { id: employeeId, organizationId: membership.organizationId, deletedAt: null },
     select: { id: true, contractType: true },
   });
   if (!employee) return { error: "Salarié introuvable dans cette organisation." };
-
   if (!["APPRENTISSAGE", "PROFESSIONNALISATION"].includes(employee.contractType ?? "")) {
     return { error: "Le profil alternance ne peut être renseigné que pour un contrat d'apprentissage ou de professionnalisation." };
   }
@@ -124,55 +107,83 @@ export async function saveAlternanceProfile(
 
   let contractYear: number | null = null;
   let hasBaccalaureateOrHigher: boolean | null = null;
-
   if (employee.contractType === "APPRENTISSAGE") {
-    if (!["1", "2", "3"].includes(contractYearRaw)) {
-      return { error: "Sélectionnez l'année d'exécution du contrat d'apprentissage (1re, 2e ou 3e année)." };
-    }
+    if (!["1", "2", "3"].includes(contractYearRaw)) return { error: "Sélectionnez l'année d'exécution du contrat d'apprentissage (1re, 2e ou 3e année)." };
     contractYear = Number(contractYearRaw);
   } else {
-    if (!["true", "false"].includes(baccalaureateRaw)) {
-      return { error: "Indiquez si le salarié possède le baccalauréat ou un diplôme supérieur." };
-    }
+    if (!["true", "false"].includes(baccalaureateRaw)) return { error: "Indiquez si le salarié possède le baccalauréat ou un diplôme supérieur." };
     hasBaccalaureateOrHigher = baccalaureateRaw === "true";
   }
 
   try {
     await prisma.$transaction(async (tx) => {
-      await tx.$executeRaw`
-        UPDATE "employee_alternance_profiles"
-        SET "validUntil" = (${validFrom}::date - INTERVAL '1 day'), "updatedAt" = CURRENT_TIMESTAMP
-        WHERE "organizationId" = ${membership.organizationId}
-          AND "employeeId" = ${employeeId}
-          AND "validUntil" IS NULL
-          AND "validFrom" < ${validFrom}::date
-      `;
-
-      const overlapping = await tx.$queryRaw<Array<{ id: string }>>`
+      const exactVersion = await tx.$queryRaw<Array<{ id: string }>>`
         SELECT "id"
         FROM "employee_alternance_profiles"
         WHERE "organizationId" = ${membership.organizationId}
           AND "employeeId" = ${employeeId}
-          AND "validFrom" <= COALESCE(${validUntil}::date, DATE '9999-12-31')
-          AND COALESCE("validUntil", DATE '9999-12-31') >= ${validFrom}::date
+          AND "validFrom" = ${validFrom}::date
         LIMIT 1
       `;
-      if (overlapping.length > 0) {
-        throw new Error("Une version du profil alternance couvre déjà cette période. Modifiez ses dates de validité avant d'enregistrer.");
-      }
 
-      await tx.$executeRaw`
-        INSERT INTO "employee_alternance_profiles" (
-          "id", "organizationId", "employeeId", "birthDate", "contractYear",
-          "hasBaccalaureateOrHigher", "validFrom", "validUntil", "source",
-          "sourceReference", "createdAt", "updatedAt"
-        ) VALUES (
-          ${randomUUID()}, ${membership.organizationId}, ${employeeId}, ${birthDate}::date,
-          ${contractYear}, ${hasBaccalaureateOrHigher}, ${validFrom}::date,
-          ${validUntil}::date, 'MANUAL', ${sourceReference || null},
-          CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
-        )
-      `;
+      if (exactVersion[0]) {
+        const overlapping = await tx.$queryRaw<Array<{ id: string }>>`
+          SELECT "id"
+          FROM "employee_alternance_profiles"
+          WHERE "organizationId" = ${membership.organizationId}
+            AND "employeeId" = ${employeeId}
+            AND "id" <> ${exactVersion[0].id}
+            AND "validFrom" <= COALESCE(${validUntil}::date, DATE '9999-12-31')
+            AND COALESCE("validUntil", DATE '9999-12-31') >= ${validFrom}::date
+          LIMIT 1
+        `;
+        if (overlapping.length > 0) throw new Error("Une autre version du profil alternance couvre déjà cette période.");
+
+        await tx.$executeRaw`
+          UPDATE "employee_alternance_profiles"
+          SET "birthDate" = ${birthDate}::date,
+              "contractYear" = ${contractYear},
+              "hasBaccalaureateOrHigher" = ${hasBaccalaureateOrHigher},
+              "validUntil" = ${validUntil}::date,
+              "source" = 'MANUAL',
+              "sourceReference" = ${sourceReference || null},
+              "updatedAt" = CURRENT_TIMESTAMP
+          WHERE "id" = ${exactVersion[0].id}
+        `;
+      } else {
+        await tx.$executeRaw`
+          UPDATE "employee_alternance_profiles"
+          SET "validUntil" = (${validFrom}::date - INTERVAL '1 day'), "updatedAt" = CURRENT_TIMESTAMP
+          WHERE "organizationId" = ${membership.organizationId}
+            AND "employeeId" = ${employeeId}
+            AND "validUntil" IS NULL
+            AND "validFrom" < ${validFrom}::date
+        `;
+
+        const overlapping = await tx.$queryRaw<Array<{ id: string }>>`
+          SELECT "id"
+          FROM "employee_alternance_profiles"
+          WHERE "organizationId" = ${membership.organizationId}
+            AND "employeeId" = ${employeeId}
+            AND "validFrom" <= COALESCE(${validUntil}::date, DATE '9999-12-31')
+            AND COALESCE("validUntil", DATE '9999-12-31') >= ${validFrom}::date
+          LIMIT 1
+        `;
+        if (overlapping.length > 0) throw new Error("Une version du profil alternance couvre déjà cette période. Modifiez ses dates de validité avant d'enregistrer.");
+
+        await tx.$executeRaw`
+          INSERT INTO "employee_alternance_profiles" (
+            "id", "organizationId", "employeeId", "birthDate", "contractYear",
+            "hasBaccalaureateOrHigher", "validFrom", "validUntil", "source",
+            "sourceReference", "createdAt", "updatedAt"
+          ) VALUES (
+            ${randomUUID()}, ${membership.organizationId}, ${employeeId}, ${birthDate}::date,
+            ${contractYear}, ${hasBaccalaureateOrHigher}, ${validFrom}::date,
+            ${validUntil}::date, 'MANUAL', ${sourceReference || null},
+            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+          )
+        `;
+      }
 
       await tx.auditLog.create({
         data: {
@@ -191,5 +202,5 @@ export async function saveAlternanceProfile(
 
   revalidatePath(`/dashboard/employees/${employeeId}`);
   revalidatePath("/dashboard/employees");
-  return undefined;
+  return { error: "" };
 }
