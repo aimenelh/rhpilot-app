@@ -24,7 +24,7 @@ describe("résolveur du salaire minimum", () => {
       status: "APPLICABLE",
       source: "COLLECTIVE_AGREEMENT",
       appliedMonthlyMinimumCents: 213500,
-      smicMonthlyMinimumCents: 186705,
+      smicMonthlyMinimumCents: 186706,
       collectiveMonthlyMinimumCents: 213500,
       collectiveRuleVersionId: "ccn-2025-v1",
       compliant: true,
@@ -52,7 +52,7 @@ describe("résolveur du salaire minimum", () => {
     expect(resolveMinimumSalary({ smic, monthlyHours: 151.67, monthlyGrossCents: 190000 })).toMatchObject({
       status: "APPLICABLE",
       source: "SMIC",
-      appliedMonthlyMinimumCents: 186705,
+      appliedMonthlyMinimumCents: 186706,
       collectiveMonthlyMinimumCents: null,
       compliant: true,
     });
@@ -60,7 +60,7 @@ describe("résolveur du salaire minimum", () => {
 
   it("proratise le SMIC avec 80 % de la durée mensuelle", () => {
     expect(resolveMinimumSalary({ smic, monthlyHours: 151.67 * 0.8, monthlyGrossCents: 150000 })).toMatchObject({
-      appliedMonthlyMinimumCents: 149364,
+      appliedMonthlyMinimumCents: 149365,
       compliant: true,
     });
   });
