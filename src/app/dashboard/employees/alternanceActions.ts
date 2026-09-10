@@ -20,7 +20,6 @@ export type AlternanceProfileData = {
 export async function getAlternanceProfile(employeeId: string): Promise<AlternanceProfileData | null> {
   const membership = await getCurrentMembership();
   if (!membership) return null;
-
   const employee = await prisma.employee.findFirst({
     where: { id: employeeId, organizationId: membership.organizationId, deletedAt: null },
     select: { contractType: true },
@@ -44,7 +43,6 @@ export async function getAlternanceProfile(employeeId: string): Promise<Alternan
     ORDER BY "validFrom" DESC
     LIMIT 1
   `;
-
   const row = rows[0];
   return {
     contractType: employee.contractType,
@@ -71,6 +69,7 @@ export async function saveAlternanceProfile(
   const membership = await getCurrentMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
+  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Vous n'avez pas les droits pour modifier le profil de paie de ce salarié." };
 
   const employee = await prisma.employee.findFirst({
     where: { id: employeeId, organizationId: membership.organizationId, deletedAt: null },
@@ -87,7 +86,6 @@ export async function saveAlternanceProfile(
   const contractYearRaw = String(formData.get("contractYear") ?? "");
   const baccalaureateRaw = String(formData.get("hasBaccalaureateOrHigher") ?? "");
   const sourceReference = String(formData.get("sourceReference") ?? "").trim();
-
   if (!birthDateRaw) return { error: "La date de naissance est obligatoire pour sécuriser le minimum alternance." };
   if (!validFromRaw) return { error: "La date de prise d'effet du profil alternance est obligatoire." };
 
@@ -101,7 +99,6 @@ export async function saveAlternanceProfile(
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Une date n'est pas valide." };
   }
-
   if (birthDate >= validFrom) return { error: "La date de naissance doit être antérieure à la prise d'effet du profil." };
   if (validUntil && validUntil < validFrom) return { error: "La fin de validité doit être postérieure ou égale à la prise d'effet." };
 
@@ -118,82 +115,56 @@ export async function saveAlternanceProfile(
   try {
     await prisma.$transaction(async (tx) => {
       const exactVersion = await tx.$queryRaw<Array<{ id: string }>>`
-        SELECT "id"
-        FROM "employee_alternance_profiles"
-        WHERE "organizationId" = ${membership.organizationId}
-          AND "employeeId" = ${employeeId}
-          AND "validFrom" = ${validFrom}::date
-        LIMIT 1
+        SELECT "id" FROM "employee_alternance_profiles"
+        WHERE "organizationId" = ${membership.organizationId} AND "employeeId" = ${employeeId}
+          AND "validFrom" = ${validFrom}::date LIMIT 1
       `;
 
       if (exactVersion[0]) {
         const overlapping = await tx.$queryRaw<Array<{ id: string }>>`
-          SELECT "id"
-          FROM "employee_alternance_profiles"
-          WHERE "organizationId" = ${membership.organizationId}
-            AND "employeeId" = ${employeeId}
+          SELECT "id" FROM "employee_alternance_profiles"
+          WHERE "organizationId" = ${membership.organizationId} AND "employeeId" = ${employeeId}
             AND "id" <> ${exactVersion[0].id}
             AND "validFrom" <= COALESCE(${validUntil}::date, DATE '9999-12-31')
-            AND COALESCE("validUntil", DATE '9999-12-31') >= ${validFrom}::date
-          LIMIT 1
+            AND COALESCE("validUntil", DATE '9999-12-31') >= ${validFrom}::date LIMIT 1
         `;
         if (overlapping.length > 0) throw new Error("Une autre version du profil alternance couvre déjà cette période.");
-
         await tx.$executeRaw`
           UPDATE "employee_alternance_profiles"
-          SET "birthDate" = ${birthDate}::date,
-              "contractYear" = ${contractYear},
-              "hasBaccalaureateOrHigher" = ${hasBaccalaureateOrHigher},
-              "validUntil" = ${validUntil}::date,
-              "source" = 'MANUAL',
-              "sourceReference" = ${sourceReference || null},
-              "updatedAt" = CURRENT_TIMESTAMP
+          SET "birthDate" = ${birthDate}::date, "contractYear" = ${contractYear},
+              "hasBaccalaureateOrHigher" = ${hasBaccalaureateOrHigher}, "validUntil" = ${validUntil}::date,
+              "source" = 'MANUAL', "sourceReference" = ${sourceReference || null}, "updatedAt" = CURRENT_TIMESTAMP
           WHERE "id" = ${exactVersion[0].id}
         `;
       } else {
         await tx.$executeRaw`
           UPDATE "employee_alternance_profiles"
           SET "validUntil" = (${validFrom}::date - INTERVAL '1 day'), "updatedAt" = CURRENT_TIMESTAMP
-          WHERE "organizationId" = ${membership.organizationId}
-            AND "employeeId" = ${employeeId}
-            AND "validUntil" IS NULL
-            AND "validFrom" < ${validFrom}::date
+          WHERE "organizationId" = ${membership.organizationId} AND "employeeId" = ${employeeId}
+            AND "validUntil" IS NULL AND "validFrom" < ${validFrom}::date
         `;
-
         const overlapping = await tx.$queryRaw<Array<{ id: string }>>`
-          SELECT "id"
-          FROM "employee_alternance_profiles"
-          WHERE "organizationId" = ${membership.organizationId}
-            AND "employeeId" = ${employeeId}
+          SELECT "id" FROM "employee_alternance_profiles"
+          WHERE "organizationId" = ${membership.organizationId} AND "employeeId" = ${employeeId}
             AND "validFrom" <= COALESCE(${validUntil}::date, DATE '9999-12-31')
-            AND COALESCE("validUntil", DATE '9999-12-31') >= ${validFrom}::date
-          LIMIT 1
+            AND COALESCE("validUntil", DATE '9999-12-31') >= ${validFrom}::date LIMIT 1
         `;
         if (overlapping.length > 0) throw new Error("Une version du profil alternance couvre déjà cette période. Modifiez ses dates de validité avant d'enregistrer.");
-
         await tx.$executeRaw`
           INSERT INTO "employee_alternance_profiles" (
-            "id", "organizationId", "employeeId", "birthDate", "contractYear",
-            "hasBaccalaureateOrHigher", "validFrom", "validUntil", "source",
-            "sourceReference", "createdAt", "updatedAt"
+            "id", "organizationId", "employeeId", "birthDate", "contractYear", "hasBaccalaureateOrHigher",
+            "validFrom", "validUntil", "source", "sourceReference", "createdAt", "updatedAt"
           ) VALUES (
-            ${randomUUID()}, ${membership.organizationId}, ${employeeId}, ${birthDate}::date,
-            ${contractYear}, ${hasBaccalaureateOrHigher}, ${validFrom}::date,
-            ${validUntil}::date, 'MANUAL', ${sourceReference || null},
+            ${randomUUID()}, ${membership.organizationId}, ${employeeId}, ${birthDate}::date, ${contractYear},
+            ${hasBaccalaureateOrHigher}, ${validFrom}::date, ${validUntil}::date, 'MANUAL', ${sourceReference || null},
             CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
           )
         `;
       }
 
       await tx.auditLog.create({
-        data: {
-          id: randomUUID(),
-          organizationId: membership.organizationId,
-          actorUserId: user.id,
-          action: "employee.alternance_profile.updated",
-          entityType: "Employee",
-          entityId: employeeId,
-        },
+        data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id,
+          action: "employee.alternance_profile.updated", entityType: "Employee", entityId: employeeId },
       });
     });
   } catch (error) {
