@@ -81,6 +81,7 @@ class PdfPageWriter {
 
   get current(): string[] { return this.pages[this.pages.length - 1]; }
   get allPages(): string[][] { return this.pages; }
+  get currentY(): number { return this.y; }
 
   text(x: number, y: number, text: string, size = 9): void {
     this.current.push(`BT /F1 ${size} Tf 0 g 1 0 0 1 ${x} ${y} Tm (${escapePdfText(text)}) Tj ET`);
@@ -114,19 +115,19 @@ class PdfPageWriter {
 
 function buildPages(input: PayslipPdfInput): string[][] {
   const page = new PdfPageWriter();
-  page.text(40, page["y"], "BULLETIN DE PAIE", 16);
+  page.text(40, page.currentY, "BULLETIN DE PAIE", 16);
   page.spacer(20);
-  page.text(40, page["y"], `${input.period.month.toString().padStart(2, "0")}/${input.period.year}`);
-  page.text(420, page["y"], `Paiement : ${input.period.paymentDate}`);
+  page.text(40, page.currentY, `${input.period.month.toString().padStart(2, "0")}/${input.period.year}`);
+  page.text(420, page.currentY, `Paiement : ${input.period.paymentDate}`);
   page.spacer(16); page.rule(); page.spacer(18);
   page.line(input.employer.name, undefined, 10);
   page.line(input.employer.address);
   page.line(`SIRET : ${input.employer.siret} | APE/NAF : ${input.employer.nafCode}`);
   if (input.employer.urssafReference.trim()) page.line(`Organisme social : ${input.employer.urssafReference}`);
   page.spacer(5);
-  page.text(300, page["y"] + 49, input.employee.name, 10);
-  page.text(300, page["y"] + 36, input.employee.address);
-  page.text(300, page["y"] + 23, `${input.employee.position} - ${input.employee.classification}`);
+  page.text(300, page.currentY + 49, input.employee.name, 10);
+  page.text(300, page.currentY + 36, input.employee.address);
+  page.text(300, page.currentY + 23, `${input.employee.position} - ${input.employee.classification}`);
   page.line(`Convention collective : ${input.collectiveAgreement}`, undefined, 9, 24);
   page.rule(); page.spacer(20);
 
@@ -137,9 +138,7 @@ function buildPages(input: PayslipPdfInput): string[][] {
   page.rule(); page.spacer(20);
 
   page.line("COTISATIONS ET CONTRIBUTIONS", undefined, 10, 16);
-  for (const contribution of input.contributions) {
-    if (contribution.side === "EMPLOYEE") page.line(contribution.label, `-${money(contribution.amount)}`);
-  }
+  for (const contribution of input.contributions) if (contribution.side === "EMPLOYEE") page.line(contribution.label, `-${money(contribution.amount)}`);
   page.line("Total cotisations salariales", `-${money(input.salary.employeeContributions)}`, 10, 18);
   page.line("Net avant impôt", money(input.salary.netBeforeTax), 9, 15);
   page.line("Net imposable", money(input.salary.netTaxable), 9, 15);
@@ -149,9 +148,7 @@ function buildPages(input: PayslipPdfInput): string[][] {
   page.rule(); page.spacer(18);
 
   page.line("CHARGES PATRONALES", undefined, 10, 15);
-  for (const contribution of input.contributions) {
-    if (contribution.side === "EMPLOYER") page.line(contribution.label, money(contribution.amount));
-  }
+  for (const contribution of input.contributions) if (contribution.side === "EMPLOYER") page.line(contribution.label, money(contribution.amount));
   page.line("Total cotisations patronales", money(input.salary.employerContributions), 10, 15);
   page.line("Total versé par l'employeur", money(input.salary.totalEmployerCost), 10, 30);
   page.rule(); page.spacer(18);
@@ -170,7 +167,6 @@ function buildPdf(pages: string[][]): Buffer {
   const fontObject = firstPageObject + pageCount * 2;
   const kids = pages.map((_, index) => `${firstPageObject + index * 2} 0 R`).join(" ");
   objects.push(`<< /Type /Pages /Kids [${kids}] /Count ${pageCount} >>`);
-
   for (let index = 0; index < pageCount; index += 1) {
     const pageObjectNumber = firstPageObject + index * 2;
     const contentObjectNumber = pageObjectNumber + 1;
