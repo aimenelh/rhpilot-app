@@ -17,7 +17,13 @@ export type CollectiveMinimumSalaryResult =
     }
   | {
       status: "UNRESOLVED";
-      code: "INVALID_PARAMETERS" | "CLASSIFICATION_MISMATCH" | "CONTRACT_NOT_ELIGIBLE";
+      code:
+        | "INVALID_PARAMETERS"
+        | "CLASSIFICATION_MISMATCH"
+        | "CONTRACT_NOT_ELIGIBLE"
+        | "NO_COLLECTIVE_AGREEMENT"
+        | "NO_VALIDATED_VERSION"
+        | "NO_VALIDATED_RULE";
       message: string;
     };
 
