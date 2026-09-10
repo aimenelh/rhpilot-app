@@ -17,7 +17,7 @@ export type MinimumSalaryResolution =
     }
   | {
       status: "UNRESOLVED";
-      code: "INVALID_SMIC" | "INVALID_MONTHLY_HOURS" | "COLLECTIVE_MINIMUM_UNRESOLVED";
+      code: "INVALID_SMIC" | "INVALID_MONTHLY_HOURS" | "INVALID_GROSS_SALARY" | "COLLECTIVE_MINIMUM_UNRESOLVED";
       message: string;
     };
 
@@ -48,7 +48,7 @@ export function resolveMinimumSalary(input: {
   if (!Number.isInteger(input.monthlyGrossCents) || input.monthlyGrossCents < 0) {
     return {
       status: "UNRESOLVED",
-      code: "INVALID_MONTHLY_HOURS",
+      code: "INVALID_GROSS_SALARY",
       message: "Le salaire brut mensuel fourni est invalide.",
     };
   }
