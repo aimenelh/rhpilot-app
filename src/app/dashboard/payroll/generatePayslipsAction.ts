@@ -4,6 +4,8 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { calculateSocialPayroll, SOCIAL_MODEL_VERSION } from "@/lib/payroll/social-engine";
+import { resolveOrganizationLegalCategory } from "@/lib/payroll/social-organization-context";
 import { generatePayslipPdf, PayslipPdfPrerequisiteError } from "@/lib/payroll/payslip-pdf";
 import { storePayslipDocument } from "@/lib/payroll/payslip-storage";
 
@@ -19,6 +21,7 @@ type Snapshot = {
   };
   variables?: Array<{ label?: unknown; amount?: unknown }>;
   ruleSource?: { sourceName?: unknown };
+  withholdingTax?: { status?: unknown; rate?: unknown; amount?: unknown };
   socialEngine?: {
     modelVersion?: unknown;
     contributionDetails?: Array<{
@@ -69,13 +72,14 @@ function normalizeContributionDetails(snapshot: Snapshot): PayslipContributionDe
     const label = asString(contribution.label).trim();
     const amount = asNumber(contribution.amount);
     if (!side || !label || !Number.isFinite(amount) || amount === 0) return [];
-    return [{
-      label,
-      side,
-      amount,
-      sourceRule: asString(contribution.sourceRule),
-    }];
+    return [{ label, side, amount, sourceRule: asString(contribution.sourceRule) }];
   });
+}
+
+function assertClose(label: string, expected: number, actual: number): void {
+  if (!Number.isFinite(expected) || !Number.isFinite(actual) || Math.abs(expected - actual) > 0.01) {
+    throw new Error(`Génération bloquée : le ${label} du bulletin ne correspond plus au calcul verrouillé.`);
+  }
 }
 
 export async function generatePayrollPayslipsAction(
@@ -85,9 +89,7 @@ export async function generatePayrollPayslipsAction(
   const membership = await getCurrentMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
-  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {
-    return { error: "Seuls les administrateurs peuvent générer les bulletins de paie." };
-  }
+  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent générer les bulletins de paie." };
 
   const periodId = String(formData.get("periodId") ?? "").trim();
   if (!periodId) return { error: "La période de paie est obligatoire." };
@@ -99,7 +101,7 @@ export async function generatePayrollPayslipsAction(
   if (!period) return { error: "Période de paie introuvable." };
   if (period.status !== "LOCKED") return { error: "Les bulletins ne peuvent être générés qu'après verrouillage de la période." };
 
-  const [organization, employees, calculations, profiles, agreements] = await Promise.all([
+  const [organization, employees, calculations, profiles, agreements, socialContext] = await Promise.all([
     prisma.organization.findFirst({
       where: { id: membership.organizationId, deletedAt: null },
       select: {
@@ -117,21 +119,20 @@ export async function generatePayrollPayslipsAction(
     }),
     prisma.employee.findMany({
       where: { organizationId: membership.organizationId, deletedAt: null },
-      select: { id: true, firstName: true, lastName: true, position: true },
+      select: { id: true, firstName: true, lastName: true, position: true, hireDate: true, contractType: true, professionalCategory: true },
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     }),
     prisma.payrollCalculation.findMany({
       where: { organizationId: membership.organizationId, payrollPeriodId: period.id },
-      select: { id: true, employeeId: true, calculationSnapshot: true, grossAmount: true, employeeContributions: true, employerContributions: true, netBeforeTax: true, withholdingTax: true, netPaid: true },
+      select: { id: true, employeeId: true, calculationSnapshot: true, grossAmount: true, employeeContributions: true, employerContributions: true, netBeforeTax: true, withholdingTax: true, netPaid: true, netSocialAmount: true },
     }),
     prisma.payrollProfile.findMany({
       where: { organizationId: membership.organizationId },
       select: { employeeId: true, monthlyHours: true, classificationCode: true, classificationLabel: true, employeeAddress: true, collectiveAgreementId: true, baseSalaryCents: true },
       orderBy: { effectiveFrom: "desc" },
     }),
-    prisma.collectiveAgreement.findMany({
-      select: { id: true, name: true, idcc: true },
-    }),
+    prisma.collectiveAgreement.findMany({ select: { id: true, name: true, idcc: true } }),
+    resolveOrganizationLegalCategory(membership.organizationId),
   ]);
 
   if (!organization) return { error: "Organisation introuvable." };
@@ -140,10 +141,9 @@ export async function generatePayrollPayslipsAction(
   if (calculations.some((calculation) => calculation.calculationSnapshot === null)) return { error: "Génération impossible : un calcul verrouillé ne possède pas de snapshot." };
 
   const profileByEmployee = new Map<string, (typeof profiles)[number]>();
-  for (const profile of profiles) {
-    if (!profileByEmployee.has(profile.employeeId)) profileByEmployee.set(profile.employeeId, profile);
-  }
+  for (const profile of profiles) if (!profileByEmployee.has(profile.employeeId)) profileByEmployee.set(profile.employeeId, profile);
   const calculationByEmployee = new Map(calculations.map((calculation) => [calculation.employeeId, calculation]));
+  const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
   const agreementById = new Map(agreements.map((agreement) => [agreement.id, agreement]));
   const existingPayslips = await prisma.payslip.findMany({
     where: { organizationId: membership.organizationId, payrollPeriodId: period.id },
@@ -157,15 +157,43 @@ export async function generatePayrollPayslipsAction(
       const profile = profileByEmployee.get(employee.id);
       if (!calculation || !profile) return { error: `Données de bulletin incomplètes pour ${employee.firstName} ${employee.lastName}.` };
       if (payslipByEmployee.get(employee.id)?.documentStatus === "GENERATED") continue;
+      if (!employee.contractType || !employee.professionalCategory) return { error: `Données sociales incomplètes pour ${employee.firstName} ${employee.lastName}.` };
 
       const snapshot = normalizeSnapshot(calculation.calculationSnapshot);
+      const snapshotModelVersion = asString(snapshot.socialEngine?.modelVersion);
+      if (snapshotModelVersion !== SOCIAL_MODEL_VERSION) {
+        return { error: `Génération bloquée pour ${employee.firstName} ${employee.lastName} : le modèle social du calcul verrouillé (${snapshotModelVersion || "inconnu"}) n'est plus celui utilisé pour produire le bulletin.` };
+      }
+
+      const socialResult = calculateSocialPayroll({
+        grossAmount: Number(calculation.grossAmount),
+        legalCategory: socialContext.legalCategory,
+        calculationDate: new Date(Date.UTC(period.year, period.month - 1, 1, 12, 0, 0, 0)),
+        companyCreationDate: socialContext.companyCreationDate,
+        contractType: employee.contractType,
+        hireDate: employee.hireDate,
+        executiveStatus: employee.professionalCategory === "CADRE",
+        healthPlanMonthlyAmount: socialContext.healthPlanMonthlyAmount,
+        healthPlanEmployerRate: socialContext.healthPlanEmployerRate,
+        situation: {
+          "établissement . taux ATMP": `${socialContext.atmpRate}%`,
+          "établissement . commune . nom": `'${socialContext.payrollCity}'`,
+          "établissement . commune . département": `'${socialContext.payrollDepartment}'`,
+        },
+      });
+      assertClose("brut", Number(calculation.grossAmount), socialResult.grossAmount);
+      assertClose("total des cotisations salariales", Number(calculation.employeeContributions), socialResult.employeeContributions);
+      assertClose("total des cotisations patronales", Number(calculation.employerContributions), socialResult.employerContributions);
+      assertClose("net avant impôt", Number(calculation.netBeforeTax), socialResult.netBeforeTax);
+      assertClose("montant net social", Number(calculation.netSocialAmount), socialResult.netSocialAmount);
+
       const agreementId = asString(snapshot.profile?.collectiveAgreementId) || profile.collectiveAgreementId || organization.collectiveAgreementId || null;
       const agreement = agreementId ? agreementById.get(agreementId) : null;
       const contributionDetails = normalizeContributionDetails(snapshot);
-      const employerAddress = [organization.payrollAddress, [organization.payrollPostalCode, organization.payrollCity].filter(Boolean).join(" ")]
-        .filter(Boolean)
-        .join(", ");
+      const employerAddress = [organization.payrollAddress, [organization.payrollPostalCode, organization.payrollCity].filter(Boolean).join(" ")].filter(Boolean).join(", ");
       const paymentDate = period.paymentDate ? period.paymentDate.toISOString().slice(0, 10) : "";
+      const withholdingTaxRate = asNumber(snapshot.withholdingTax?.rate);
+      const source = asString(snapshot.ruleSource?.sourceName).trim() || `Publicodes modèle social ${SOCIAL_MODEL_VERSION}`;
 
       const pdf = generatePayslipPdf({
         employer: {
@@ -189,48 +217,33 @@ export async function generatePayrollPayslipsAction(
         },
         salary: {
           baseGross: profile.baseSalaryCents === null || profile.baseSalaryCents === undefined ? Number(calculation.grossAmount) : profile.baseSalaryCents / 100,
-          variables: Array.isArray(snapshot.variables)
-            ? snapshot.variables.map((variable) => ({ label: asString(variable.label), amount: asNumber(variable.amount) }))
-            : [],
+          variables: Array.isArray(snapshot.variables) ? snapshot.variables.map((variable) => ({ label: asString(variable.label), amount: asNumber(variable.amount) })) : [],
           gross: Number(calculation.grossAmount),
           employeeContributions: Number(calculation.employeeContributions),
           employerContributions: Number(calculation.employerContributions),
           netBeforeTax: Number(calculation.netBeforeTax),
+          netTaxable: socialResult.netTaxableAmount,
+          withholdingTaxRate,
           withholdingTax: Number(calculation.withholdingTax),
           netPaid: Number(calculation.netPaid),
-          netSocial: asNumber(snapshot.result?.netSocialAmount),
+          netSocial: Number(calculation.netSocialAmount),
           totalEmployerCost: Number(calculation.grossAmount) + Number(calculation.employerContributions),
         },
         contributions: contributionDetails,
-        collectiveAgreement: agreement ? `${agreement.name} (IDCC ${agreement.idcc})` : "",
-        source: asString(snapshot.ruleSource?.sourceName),
+        collectiveAgreement: agreement ? `${agreement.name} (IDCC ${agreement.idcc})` : "Code du travail",
+        source,
       });
 
       const stored = storePayslipDocument(pdf);
       const generatedAt = new Date();
       await prisma.payslip.upsert({
         where: { calculationId: calculation.id },
-        create: {
-          id: payslipByEmployee.get(employee.id)?.id ?? randomUUID(),
-          organizationId: membership.organizationId,
-          payrollPeriodId: period.id,
-          employeeId: employee.id,
-          calculationId: calculation.id,
-          documentStatus: "GENERATED",
-          storageKey: stored.storageKey,
-          generatedAt,
-        },
-        update: {
-          documentStatus: "GENERATED",
-          storageKey: stored.storageKey,
-          generatedAt,
-        },
+        create: { id: payslipByEmployee.get(employee.id)?.id ?? randomUUID(), organizationId: membership.organizationId, payrollPeriodId: period.id, employeeId: employee.id, calculationId: calculation.id, documentStatus: "GENERATED", storageKey: stored.storageKey, generatedAt },
+        update: { documentStatus: "GENERATED", storageKey: stored.storageKey, generatedAt },
       });
     }
   } catch (error) {
-    if (error instanceof PayslipPdfPrerequisiteError) {
-      return { error: `Génération bloquée. Données manquantes : ${error.missing.join(", ")}.` };
-    }
+    if (error instanceof PayslipPdfPrerequisiteError) return { error: `Génération bloquée. Données manquantes : ${error.missing.join(", ")}.` };
     return { error: error instanceof Error ? error.message : "La génération des bulletins a échoué." };
   }
 
@@ -242,7 +255,7 @@ export async function generatePayrollPayslipsAction(
       action: "payroll.payslips.generated",
       entityType: "PayrollPeriod",
       entityId: period.id,
-      metadata: { year: period.year, month: period.month, employeeCount: employees.length },
+      metadata: { year: period.year, month: period.month, employeeCount: employees.length, socialModelVersion: SOCIAL_MODEL_VERSION },
     },
   });
 
