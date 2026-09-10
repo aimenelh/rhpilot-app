@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildPayrollLedger } from "./payroll-ledger-builder";
 import type { SocialPayrollResult } from "./social-engine";
+import type { MinimumSalaryControlSnapshot } from "./minimum-salary-control";
 
 const socialResult: SocialPayrollResult = {
   modelVersion: "11.1.0",
@@ -101,5 +102,42 @@ describe("buildPayrollLedger", () => {
     expect(netBeforeTax?.netDelta).toBe(0);
     expect(netSocial?.amount).toBe(1785);
     expect(netSocial?.netDelta).toBe(0);
+  });
+
+  it("ajoute le contrôle du salaire minimum comme ligne informative traçable", () => {
+    const minimumSalaryControl: MinimumSalaryControlSnapshot = {
+      status: "APPLICABLE",
+      source: "COLLECTIVE_AGREEMENT",
+      appliedMonthlyMinimumCents: 213500,
+      smicMonthlyMinimumCents: 186702,
+      collectiveMonthlyMinimumCents: 213500,
+      smicRuleCode: "FR.SMIC.MONTHLY_GROSS",
+      smicRuleVersionId: "smic-2026-06",
+      collectiveRuleVersionId: "syntec-2025",
+      compliant: true,
+      differenceCents: 6500,
+      explanation: "Le minimum conventionnel applicable est supérieur ou égal au SMIC proratisé.",
+    };
+
+    const entries = buildPayrollLedger({
+      ...commonInput,
+      variables: [],
+      absences: [],
+      minimumSalaryControl,
+    });
+    const control = entries.find((entry) => entry.code === "MINIMUM_SALARY_CONTROL");
+
+    expect(control?.kind).toBe("INFORMATIONAL");
+    expect(control?.side).toBe("NEUTRAL");
+    expect(control?.amount).toBe(2135);
+    expect(control?.grossDelta).toBe(0);
+    expect(control?.netDelta).toBe(0);
+    expect(control?.ruleVersionId).toBe("syntec-2025");
+    expect(control?.metadata).toMatchObject({
+      authoritativeControl: true,
+      source: "COLLECTIVE_AGREEMENT",
+      compliant: true,
+      differenceCents: 6500,
+    });
   });
 });
