@@ -100,7 +100,7 @@ function assertContributionDetailsMatch(snapshot: Snapshot, current: ReturnType<
   }
 }
 
-function assertAlternanceSnapshotMatchesCurrent(input: {
+async function assertAlternanceSnapshotMatchesCurrent(input: {
   snapshot: Snapshot;
   contractType: string;
   professionalCategory: string;
@@ -109,57 +109,61 @@ function assertAlternanceSnapshotMatchesCurrent(input: {
   periodDate: Date;
   payrollDepartment: string | null;
 }): Promise<void> {
-  return (async () => {
-    const isAlternance = input.contractType === "APPRENTISSAGE" || input.contractType === "PROFESSIONNALISATION";
-    if (!isAlternance) {
-      if (input.snapshot.alternanceMinimum) throw new Error("Génération bloquée : un contrôle alternance est présent dans le calcul verrouillé alors que le contrat actuel n'est plus en alternance.");
-      return;
-    }
+  const isAlternance = input.contractType === "APPRENTISSAGE" || input.contractType === "PROFESSIONNALISATION";
+  if (!isAlternance) {
+    if (input.snapshot.alternanceMinimum) throw new Error("Génération bloquée : un contrôle alternance est présent dans le calcul verrouillé alors que le contrat actuel n'est plus en alternance.");
+    return;
+  }
 
-    const locked = input.snapshot.alternanceMinimum;
-    if (!locked || locked.status !== "APPLICABLE") throw new Error("Génération bloquée : le calcul verrouillé ne contient pas de contrôle alternance applicable.");
+  const locked = input.snapshot.alternanceMinimum;
+  if (!locked || locked.status !== "APPLICABLE") throw new Error("Génération bloquée : le calcul verrouillé ne contient pas de contrôle alternance applicable.");
 
-    const alternanceProfile = await resolveEmployeeAlternanceProfile({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate });
-    if (!alternanceProfile) throw new Error("Génération bloquée : le profil alternance applicable n'est plus disponible.");
+  const alternanceProfile = await resolveEmployeeAlternanceProfile({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate });
+  if (!alternanceProfile) throw new Error("Génération bloquée : le profil alternance applicable n'est plus disponible.");
 
-    const lockedValidFrom = asString(locked.profileValidFrom);
-    const lockedValidUntil = locked.profileValidUntil === null ? null : asString(locked.profileValidUntil);
-    if (lockedValidFrom !== alternanceProfile.validFrom.toISOString() || lockedValidUntil !== alternanceProfile.validUntil?.toISOString() ?? null || asString(locked.profileSource) !== alternanceProfile.source || (locked.profileSourceReference === null ? null : asString(locked.profileSourceReference)) !== alternanceProfile.sourceReference) {
-      throw new Error("Génération bloquée : le profil alternance applicable a changé depuis le calcul verrouillé.");
-    }
+  const lockedValidFrom = asString(locked.profileValidFrom);
+  const lockedValidUntil = locked.profileValidUntil === null ? null : asString(locked.profileValidUntil);
+  const currentValidUntil = alternanceProfile.validUntil?.toISOString() ?? null;
+  const lockedSourceReference = locked.profileSourceReference === null ? null : asString(locked.profileSourceReference);
+  if (lockedValidFrom !== alternanceProfile.validFrom.toISOString() || lockedValidUntil !== currentValidUntil || asString(locked.profileSource) !== alternanceProfile.source || lockedSourceReference !== alternanceProfile.sourceReference) {
+    throw new Error("Génération bloquée : le profil alternance applicable a changé depuis le calcul verrouillé.");
+  }
 
-    const smicScope = input.payrollDepartment?.trim() === "976" ? "MAYOTTE" as const : "FRANCE_HORS_MAYOTTE" as const;
-    const smic = await resolveSmicMinimumFromPrisma({ periodDate: input.periodDate, scope: smicScope });
-    const lockedSmic = asNumber(locked.smicMonthlyCents);
-    if (locked.smicScope !== smicScope || Math.abs(lockedSmic - smic.monthlyGrossCentsAt35Hours) > 0.001) throw new Error("Génération bloquée : le SMIC applicable au contrôle alternance a changé depuis le calcul verrouillé.");
+  const smicScope = input.payrollDepartment?.trim() === "976" ? "MAYOTTE" as const : "FRANCE_HORS_MAYOTTE" as const;
+  const smic = await resolveSmicMinimumFromPrisma({ periodDate: input.periodDate, scope: smicScope });
+  if (!smic) throw new Error("Génération bloquée : aucune version validée du SMIC n'est disponible pour le contrôle alternance.");
+  const lockedSmic = asNumber(locked.smicMonthlyCents);
+  if (locked.smicScope !== smicScope || Math.abs(lockedSmic - smic.monthlyGrossCentsAt35Hours) > 0.001) throw new Error("Génération bloquée : le SMIC applicable au contrôle alternance a changé depuis le calcul verrouillé.");
 
-    const collectiveResolution = await resolveCollectiveAgreementFromPrisma({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate, ruleCode: "MINIMUM_GROSS_MONTHLY" });
-    let collectiveMinimumCents: number | null = null;
-    if (collectiveResolution.status === "RESOLVED") {
-      const collective = evaluateCollectiveMinimumSalary({ monthlyGrossCents: asNumber(locked.baseSalaryCents), classificationCode: asString(input.snapshot.profile?.classificationCode) || null, professionalCategory: input.professionalCategory, contractType: input.contractType, parameters: collectiveResolution.rule.parameters });
-      if (collective.status === "APPLICABLE") collectiveMinimumCents = collective.monthlyMinimumCents;
-    }
+  const collectiveResolution = await resolveCollectiveAgreementFromPrisma({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate, ruleCode: "MINIMUM_GROSS_MONTHLY" });
+  let collectiveMinimumCents: number | null = null;
+  if (collectiveResolution.status === "RESOLVED") {
+    const collective = evaluateCollectiveMinimumSalary({ monthlyGrossCents: asNumber(locked.baseSalaryCents), classificationCode: asString(input.snapshot.profile?.classificationCode) || null, professionalCategory: input.professionalCategory, contractType: input.contractType, parameters: collectiveResolution.rule.parameters });
+    if (collective.status === "APPLICABLE") collectiveMinimumCents = collective.monthlyMinimumCents;
+  }
 
-    const age = calculateAgeAtDate(alternanceProfile.birthDate, input.periodDate);
-    const result = input.contractType === "APPRENTISSAGE"
-      ? alternanceProfile.contractYear === null
-        ? { status: "UNRESOLVED" as const, code: "MISSING_CONTRACT_YEAR", source: "APPRENTISSAGE_LEGAL" as const, explanation: "L'année d'exécution du contrat d'apprentissage est obligatoire." }
-        : resolveApprenticeshipMinimum({ age, contractYear: alternanceProfile.contractYear, smicMonthlyCents: smic.monthlyGrossCentsAt35Hours, collectiveMinimumCents })
-      : age >= 26
-        ? resolveProfessionalisationMinimum({ age, hasBaccalaureateOrHigher: true, smicMonthlyCents: smic.monthlyGrossCentsAt35Hours, collectiveMinimumCents })
-        : alternanceProfile.hasBaccalaureateOrHigher === null
-          ? { status: "UNRESOLVED" as const, code: "MISSING_BACCALAUREATE_LEVEL", source: "PROFESSIONNALISATION_LEGAL" as const, explanation: "Le niveau de qualification est obligatoire pour déterminer le minimum de professionnalisation des moins de 26 ans." }
-          : resolveProfessionalisationMinimum({ age, hasBaccalaureateOrHigher: alternanceProfile.hasBaccalaureateOrHigher, smicMonthlyCents: smic.monthlyGrossCentsAt35Hours, collectiveMinimumCents });
-    if (result.status === "UNRESOLVED") throw new Error(`Génération bloquée : le contrôle du minimum alternance n'est plus résolu (${result.code}).`);
+  const age = calculateAgeAtDate(alternanceProfile.birthDate, input.periodDate);
+  const result = input.contractType === "APPRENTISSAGE"
+    ? alternanceProfile.contractYear === null
+      ? { status: "UNRESOLVED" as const, code: "MISSING_CONTRACT_YEAR", source: "APPRENTISSAGE_LEGAL" as const, explanation: "L'année d'exécution du contrat d'apprentissage est obligatoire." }
+      : resolveApprenticeshipMinimum({ age, contractYear: alternanceProfile.contractYear, smicMonthlyCents: smic.monthlyGrossCentsAt35Hours, collectiveMinimumCents })
+    : age >= 26
+      ? resolveProfessionalisationMinimum({ age, hasBaccalaureateOrHigher: true, smicMonthlyCents: smic.monthlyGrossCentsAt35Hours, collectiveMinimumCents })
+      : alternanceProfile.hasBaccalaureateOrHigher === null
+        ? { status: "UNRESOLVED" as const, code: "MISSING_BACCALAUREATE_LEVEL", source: "PROFESSIONNALISATION_LEGAL" as const, explanation: "Le niveau de qualification est obligatoire pour déterminer le minimum de professionnalisation des moins de 26 ans." }
+        : resolveProfessionalisationMinimum({ age, hasBaccalaureateOrHigher: alternanceProfile.hasBaccalaureateOrHigher, smicMonthlyCents: smic.monthlyGrossCentsAt35Hours, collectiveMinimumCents });
+  if (result.status === "UNRESOLVED") throw new Error(`Génération bloquée : le contrôle du minimum alternance n'est plus résolu (${result.code}).`);
 
-    const lockedContractYear = locked.contractYear === null ? null : asNumber(locked.contractYear);
-    const lockedBac = locked.hasBaccalaureateOrHigher === null ? null : locked.hasBaccalaureateOrHigher === true;
-    if (locked.age !== age || lockedContractYear !== alternanceProfile.contractYear || lockedBac !== alternanceProfile.hasBaccalaureateOrHigher) throw new Error("Génération bloquée : les données du salarié utilisées pour le contrôle alternance ont changé depuis le calcul verrouillé.");
-    if (asNumber(locked.legalMinimumCents) !== (input.contractType === "PROFESSIONNALISATION" && age >= 26 ? Math.max(smic.monthlyGrossCentsAt35Hours, Math.round((collectiveMinimumCents ?? 0) * 0.85)) : Math.round(smic.monthlyGrossCentsAt35Hours * (result.percentageOfSmic ?? 0)))) throw new Error("Génération bloquée : le minimum légal alternance ne correspond plus au contrôle verrouillé.");
-    if (asNumber(locked.collectiveMinimumCents) !== (collectiveMinimumCents ?? 0)) throw new Error("Génération bloquée : le minimum conventionnel alternance a changé depuis le calcul verrouillé.");
-    if (asNumber(locked.applicableMinimumCents) !== (result.monthlyMinimumCents ?? 0)) throw new Error("Génération bloquée : le minimum alternance applicable a changé depuis le calcul verrouillé.");
-    if (asNumber(locked.baseSalaryCents) !== asNumber(input.snapshot.profile?.baseSalaryCents)) throw new Error("Génération bloquée : le salaire de référence du contrôle alternance est incohérent dans le calcul verrouillé.");
-  })();
+  const lockedContractYear = locked.contractYear === null ? null : asNumber(locked.contractYear);
+  const lockedBac = locked.hasBaccalaureateOrHigher === null ? null : locked.hasBaccalaureateOrHigher === true;
+  if (asNumber(locked.age) !== age || lockedContractYear !== alternanceProfile.contractYear || lockedBac !== alternanceProfile.hasBaccalaureateOrHigher) throw new Error("Génération bloquée : les données du salarié utilisées pour le contrôle alternance ont changé depuis le calcul verrouillé.");
+  const currentLegalMinimum = input.contractType === "PROFESSIONNALISATION" && age >= 26
+    ? Math.max(smic.monthlyGrossCentsAt35Hours, Math.round((collectiveMinimumCents ?? 0) * 0.85))
+    : Math.round(smic.monthlyGrossCentsAt35Hours * (result.percentageOfSmic ?? 0));
+  if (asNumber(locked.legalMinimumCents) !== currentLegalMinimum) throw new Error("Génération bloquée : le minimum légal alternance ne correspond plus au contrôle verrouillé.");
+  if (asNumber(locked.collectiveMinimumCents) !== (collectiveMinimumCents ?? 0)) throw new Error("Génération bloquée : le minimum conventionnel alternance a changé depuis le calcul verrouillé.");
+  if (asNumber(locked.applicableMinimumCents) !== (result.monthlyMinimumCents ?? 0)) throw new Error("Génération bloquée : le minimum alternance applicable a changé depuis le calcul verrouillé.");
+  if (asNumber(locked.baseSalaryCents) !== asNumber(input.snapshot.profile?.baseSalaryCents)) throw new Error("Génération bloquée : le salaire de référence du contrôle alternance est incohérent dans le calcul verrouillé.");
 }
 
 export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGenerationFormState, formData: FormData): Promise<PayrollPayslipGenerationFormState> {
