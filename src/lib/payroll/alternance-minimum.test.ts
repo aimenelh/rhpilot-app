@@ -37,6 +37,13 @@ describe("minimums alternance", () => {
   it("apprentissage rejette une année de contrat non supportée", () => {
     const result = resolveApprenticeshipMinimum({ age: 19, contractYear: 4 as 1 | 2 | 3, smicMonthlyCents: smic });
     expect(result.status).toBe("UNRESOLVED");
+    expect(result.code).toBe("INVALID_CONTRACT_YEAR");
+  });
+
+  it("apprentissage refuse un SMIC nul", () => {
+    const result = resolveApprenticeshipMinimum({ age: 19, contractYear: 1, smicMonthlyCents: 0 });
+    expect(result.status).toBe("UNRESOLVED");
+    expect(result.code).toBe("INVALID_SMIC");
   });
 
   it("professionnalisation distingue le niveau bac", () => {
@@ -49,5 +56,17 @@ describe("minimums alternance", () => {
   it("professionnalisation à partir de 26 ans applique le plus favorable entre SMIC et 85 % du conventionnel", () => {
     const result = resolveProfessionalisationMinimum({ age: 26, hasBaccalaureateOrHigher: true, smicMonthlyCents: smic, collectiveMinimumCents: 250000 });
     expect(result.monthlyMinimumCents).toBe(Math.max(smic, Math.round(250000 * 0.85)));
+  });
+
+  it("professionnalisation rejette un minimum conventionnel négatif", () => {
+    const result = resolveProfessionalisationMinimum({ age: 22, hasBaccalaureateOrHigher: true, smicMonthlyCents: smic, collectiveMinimumCents: -1 });
+    expect(result.status).toBe("UNRESOLVED");
+    expect(result.code).toBe("INVALID_COLLECTIVE_MINIMUM");
+  });
+
+  it("professionnalisation refuse un SMIC non numérique", () => {
+    const result = resolveProfessionalisationMinimum({ age: 22, hasBaccalaureateOrHigher: true, smicMonthlyCents: Number.NaN });
+    expect(result.status).toBe("UNRESOLVED");
+    expect(result.code).toBe("INVALID_SMIC");
   });
 });
