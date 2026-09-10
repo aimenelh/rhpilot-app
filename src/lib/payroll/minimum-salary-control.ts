@@ -40,7 +40,7 @@ export function buildMinimumSalaryControlSnapshot(input: {
   const collectiveMinimum = input.collectiveMinimum;
   const noCollectiveAgreement =
     collectiveMinimum?.status === "UNRESOLVED" &&
-    collectiveMinimum.message.startsWith("Aucune convention collective applicable");
+    collectiveMinimum.code === "NO_COLLECTIVE_AGREEMENT";
 
   const resolution = resolveMinimumSalary({
     smic: input.smic,
