@@ -27,21 +27,31 @@ function asString(value: unknown): string { return typeof value === "string" ? v
 function asNumber(value: unknown): number { if (typeof value === "number" && Number.isFinite(value)) return value; if (typeof value === "string" && value.trim() !== "") return Number(value); return Number(value); }
 function normalizeSnapshot(value: unknown): Snapshot { return isRecord(value) ? (value as Snapshot) : {}; }
 
-type PayslipContributionDetail = { label: string; side: "EMPLOYEE" | "EMPLOYER"; amount: number; baseAmount: number | null; rate: number | null; sourceRule: string };
+type PayslipContributionDetail = {
+  code: string;
+  label: string;
+  side: "EMPLOYEE" | "EMPLOYER";
+  amount: number;
+  baseAmount: number | null;
+  rate: number | null;
+  sourceRule: string;
+};
 
 function normalizeContributionDetails(snapshot: Snapshot): PayslipContributionDetail[] {
   if (!Array.isArray(snapshot.socialEngine?.contributionDetails)) return [];
   return snapshot.socialEngine.contributionDetails.flatMap((contribution): PayslipContributionDetail[] => {
+    const code = asString(contribution.code).trim();
     const side: PayslipContributionDetail["side"] | null = contribution.side === "EMPLOYER" ? "EMPLOYER" : contribution.side === "EMPLOYEE" ? "EMPLOYEE" : null;
     const label = asString(contribution.label).trim();
     const amount = asNumber(contribution.amount);
-    if (!side || !label || !Number.isFinite(amount) || amount === 0) return [];
+    if (!code || !side || !label || !Number.isFinite(amount) || amount === 0) return [];
     const rawRate = contribution.rate;
     const rate = rawRate === null ? null : asNumber(rawRate);
     const rawBaseAmount = contribution.baseAmount;
     const baseAmount = rawBaseAmount === null ? null : asNumber(rawBaseAmount);
-    if ((rawRate === undefined || rawBaseAmount === undefined) || (rate !== null && !Number.isFinite(rate)) || (baseAmount !== null && !Number.isFinite(baseAmount))) return [];
-    return [{ label, side, amount, baseAmount, rate, sourceRule: asString(contribution.sourceRule) }];
+    if (rawRate === undefined || rawBaseAmount === undefined) return [];
+    if ((rate !== null && !Number.isFinite(rate)) || (baseAmount !== null && !Number.isFinite(baseAmount))) return [];
+    return [{ code, label, side, amount, baseAmount, rate, sourceRule: asString(contribution.sourceRule) }];
   });
 }
 
@@ -51,11 +61,14 @@ function assertClose(label: string, expected: number, actual: number): void {
 
 function assertContributionDetailsMatch(snapshot: Snapshot, current: ReturnType<typeof calculateSocialPayroll>["contributionDetails"]): void {
   const locked = normalizeContributionDetails(snapshot);
-  if (locked.length !== current.length) throw new Error("Génération bloquée : le détail des cotisations du calcul verrouillé ne correspond plus au modèle social actuel.");
-  const byCode = new Map(locked.map((detail, index) => [asString(snapshot.socialEngine?.contributionDetails?.[index]?.code), detail]));
+  if (locked.length !== current.length) throw new Error("Génération bloquée : le détail des cotisations du calcul verrouillé ne correspond pas au modèle social actuel.");
+  const byCode = new Map(locked.map((detail) => [detail.code, detail]));
   for (const detail of current) {
     const expected = byCode.get(detail.code);
     if (!expected) throw new Error(`Génération bloquée : la cotisation ${detail.label} n'existe pas dans le calcul verrouillé.`);
+    if (expected.side !== detail.side) throw new Error(`Génération bloquée : le côté de cotisation ${detail.label} ne correspond plus au calcul verrouillé.`);
+    if (expected.label !== detail.label) throw new Error(`Génération bloquée : le libellé de cotisation ${detail.label} ne correspond plus au calcul verrouillé.`);
+    if (expected.sourceRule !== detail.sourceRule) throw new Error(`Génération bloquée : la règle source de cotisation ${detail.label} ne correspond plus au calcul verrouillé.`);
     assertClose(`montant de cotisation ${detail.label}`, expected.amount, detail.amount);
     if (expected.baseAmount === null ? detail.baseAmount !== null : Math.abs(expected.baseAmount - (detail.baseAmount ?? Number.NaN)) > 0.01) throw new Error(`Génération bloquée : l'assiette de cotisation ${detail.label} ne correspond plus au calcul verrouillé.`);
     if (expected.rate === null ? detail.rate !== null : Math.abs(expected.rate - (detail.rate ?? Number.NaN)) > 0.0001) throw new Error(`Génération bloquée : le taux de cotisation ${detail.label} ne correspond plus au calcul verrouillé.`);
