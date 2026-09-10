@@ -2,25 +2,26 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { ProfessionalCategory } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMemberships } from "@/lib/auth";
 
 const DEMO_PAYROLL_DATA = [
-  { firstName: "Antoine", professionalCategory: "OUVRIER", salaryEuros: 2250, pasRate: 0.03 },
-  { firstName: "Emma", professionalCategory: "CADRE", salaryEuros: 3900, pasRate: 0.07 },
-  { firstName: "Manon", professionalCategory: "EMPLOYE", salaryEuros: 2850, pasRate: 0.05 },
-  { firstName: "Karim", professionalCategory: "OUVRIER", salaryEuros: 1200, pasRate: 0.00 },
-  { firstName: "Nicolas", professionalCategory: "CADRE", salaryEuros: 4600, pasRate: 0.12 },
-  { firstName: "Julien", professionalCategory: "AUTRE", salaryEuros: 3100, pasRate: 0.10 },
-  { firstName: "Léa", professionalCategory: "EMPLOYE", salaryEuros: 2050, pasRate: 0.03 },
-  { firstName: "Sarah", professionalCategory: "EMPLOYE", salaryEuros: 2600, pasRate: 0.07 },
-  { firstName: "Sophie", professionalCategory: "EMPLOYE", salaryEuros: 2100, pasRate: 0.05 },
-  { firstName: "Thomas", professionalCategory: "EMPLOYE", salaryEuros: 1950, pasRate: 0.03 },
-  { firstName: "Hugo", professionalCategory: "EMPLOYE", salaryEuros: 2400, pasRate: 0.05 },
-  { firstName: "Chloé", professionalCategory: "EMPLOYE", salaryEuros: 1750, pasRate: 0.00 },
-  { firstName: "Inès", professionalCategory: "EMPLOYE", salaryEuros: 2700, pasRate: 0.07 },
-  { firstName: "Maxime", professionalCategory: "OUVRIER", salaryEuros: 1950, pasRate: 0.03 },
-  { firstName: "Camille", professionalCategory: "EMPLOYE", salaryEuros: 2350, pasRate: 0.05 },
+  { firstName: "Antoine", professionalCategory: ProfessionalCategory.OUVRIER, classificationCode: "DEMO-OUV", classificationLabel: "Ouvrier", salaryEuros: 2250, pasRate: 0.03 },
+  { firstName: "Emma", professionalCategory: ProfessionalCategory.CADRE, classificationCode: "DEMO-CAD", classificationLabel: "Cadre", salaryEuros: 3900, pasRate: 0.07 },
+  { firstName: "Manon", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-EMP", classificationLabel: "Employé", salaryEuros: 2850, pasRate: 0.05 },
+  { firstName: "Karim", professionalCategory: ProfessionalCategory.OUVRIER, classificationCode: "DEMO-ALT", classificationLabel: "Alternant", salaryEuros: 1200, pasRate: 0.00 },
+  { firstName: "Nicolas", professionalCategory: ProfessionalCategory.CADRE, classificationCode: "DEMO-CAD", classificationLabel: "Cadre", salaryEuros: 4600, pasRate: 0.12 },
+  { firstName: "Julien", professionalCategory: ProfessionalCategory.AUTRE, classificationCode: "DEMO-AUT", classificationLabel: "Autre", salaryEuros: 3100, pasRate: 0.10 },
+  { firstName: "Léa", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-EMP", classificationLabel: "Employé", salaryEuros: 2050, pasRate: 0.03 },
+  { firstName: "Sarah", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-EMP", classificationLabel: "Employé", salaryEuros: 2600, pasRate: 0.07 },
+  { firstName: "Sophie", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-EMP", classificationLabel: "Employé", salaryEuros: 2100, pasRate: 0.05 },
+  { firstName: "Thomas", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-ALT", classificationLabel: "Alternant", salaryEuros: 1950, pasRate: 0.03 },
+  { firstName: "Hugo", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-EMP", classificationLabel: "Employé", salaryEuros: 2400, pasRate: 0.05 },
+  { firstName: "Chloé", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-ALT", classificationLabel: "Alternant", salaryEuros: 1750, pasRate: 0.00 },
+  { firstName: "Inès", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-EMP", classificationLabel: "Employé", salaryEuros: 2700, pasRate: 0.07 },
+  { firstName: "Maxime", professionalCategory: ProfessionalCategory.OUVRIER, classificationCode: "DEMO-OUV", classificationLabel: "Ouvrier", salaryEuros: 1950, pasRate: 0.03 },
+  { firstName: "Camille", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-EMP", classificationLabel: "Employé", salaryEuros: 2350, pasRate: 0.05 },
 ] as const;
 
 const ALTERNANCE_DATA = {
@@ -44,7 +45,7 @@ export async function prepareDemoPayrollData() {
 
   const employees = await prisma.employee.findMany({
     where: { organizationId: membership.organizationId, deletedAt: null },
-    select: { id: true, firstName: true, contractType: true, isDemoData: true },
+    select: { id: true, firstName: true, isDemoData: true },
   });
 
   if (employees.length === 0 || !employees.every((employee) => employee.isDemoData)) {
@@ -59,7 +60,6 @@ export async function prepareDemoPayrollData() {
   }
 
   const periodStart = startOfCurrentMonth();
-  const periodEnd = new Date(periodStart.getFullYear(), periodStart.getMonth() + 1, 0, 23, 59, 59, 999);
 
   const existingPeriod = await prisma.payrollPeriod.findUnique({
     where: {
@@ -104,7 +104,7 @@ export async function prepareDemoPayrollData() {
       const employee = employeeByFirstName.get(row.firstName)!;
       await tx.employee.update({
         where: { id: employee.id },
-        data: { professionalCategory: row.professionalCategory as never },
+        data: { professionalCategory: row.professionalCategory },
       });
 
       const profile = await tx.payrollProfile.findFirst({
@@ -116,29 +116,26 @@ export async function prepareDemoPayrollData() {
         select: { id: true },
       });
 
+      const profileData = {
+        baseSalaryCents: Math.round(row.salaryEuros * 100),
+        monthlyHours: 151.67,
+        payFrequency: "MONTHLY",
+        currency: "EUR",
+        employeeAddress: "12 avenue de la République, 30000 Nîmes",
+        classificationCode: row.classificationCode,
+        classificationLabel: row.classificationLabel,
+        effectiveUntil: null as Date | null,
+      };
+
       if (profile) {
-        await tx.payrollProfile.update({
-          where: { id: profile.id },
-          data: {
-            baseSalaryCents: Math.round(row.salaryEuros * 100),
-            monthlyHours: 151.67,
-            payFrequency: "MONTHLY",
-            currency: "EUR",
-            employeeAddress: "12 avenue de la République, 30000 Nîmes",
-            effectiveUntil: null,
-          },
-        });
+        await tx.payrollProfile.update({ where: { id: profile.id }, data: profileData });
       } else {
         await tx.payrollProfile.create({
           data: {
             id: randomUUID(),
             organizationId: membership.organizationId,
             employeeId: employee.id,
-            payFrequency: "MONTHLY",
-            currency: "EUR",
-            baseSalaryCents: Math.round(row.salaryEuros * 100),
-            monthlyHours: 151.67,
-            employeeAddress: "12 avenue de la République, 30000 Nîmes",
+            ...profileData,
             effectiveFrom: periodStart,
           },
         });
@@ -202,5 +199,5 @@ export async function prepareDemoPayrollData() {
   });
 
   revalidatePath("/dashboard/payroll");
-  revalidatePath("/dashboard/payroll/" + (existingPeriod?.id ?? ""));
+  if (existingPeriod) revalidatePath(`/dashboard/payroll/${existingPeriod.id}`);
 }
