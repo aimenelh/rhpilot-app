@@ -7,68 +7,30 @@ import { prisma } from "@/lib/prisma";
 import { calculateSocialPayroll, SOCIAL_MODEL_VERSION } from "@/lib/payroll/social-engine";
 import { resolveOrganizationLegalCategory } from "@/lib/payroll/social-organization-context";
 import { generatePayslipPdf, PayslipPdfPrerequisiteError } from "@/lib/payroll/payslip-pdf";
-import { storePayslipDocument } from "@/lib/payroll/payslip-storage";
+import { readPayslipDocument, storePayslipDocument } from "@/lib/payroll/payslip-storage";
 
 export type PayrollPayslipGenerationFormState = { error: string } | undefined;
 
 type Snapshot = {
-  profile?: {
-    monthlyHours?: unknown;
-    classificationLabel?: unknown;
-    classificationCode?: unknown;
-    collectiveAgreementId?: unknown;
-    baseSalaryCents?: unknown;
-  };
+  profile?: { monthlyHours?: unknown; classificationLabel?: unknown; classificationCode?: unknown; collectiveAgreementId?: unknown; baseSalaryCents?: unknown };
   variables?: Array<{ label?: unknown; amount?: unknown }>;
   ruleSource?: { sourceName?: unknown };
   withholdingTax?: { status?: unknown; rate?: unknown; amount?: unknown };
-  socialEngine?: {
-    modelVersion?: unknown;
-    contributionDetails?: Array<{
-      code?: unknown;
-      label?: unknown;
-      sourceRule?: unknown;
-      side?: unknown;
-      amount?: unknown;
-    }>;
-  };
+  socialEngine?: { modelVersion?: unknown; contributionDetails?: Array<{ code?: unknown; label?: unknown; sourceRule?: unknown; side?: unknown; amount?: unknown }> };
   result?: { netSocialAmount?: unknown };
 };
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
+function isRecord(value: unknown): value is Record<string, unknown> { return typeof value === "object" && value !== null && !Array.isArray(value); }
+function asString(value: unknown): string { return typeof value === "string" ? value : ""; }
+function asNumber(value: unknown): number { if (typeof value === "number" && Number.isFinite(value)) return value; if (typeof value === "string" && value.trim() !== "") return Number(value); return Number(value); }
+function normalizeSnapshot(value: unknown): Snapshot { return isRecord(value) ? (value as Snapshot) : {}; }
 
-function asString(value: unknown): string {
-  return typeof value === "string" ? value : "";
-}
-
-function asNumber(value: unknown): number {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string" && value.trim() !== "") return Number(value);
-  return Number(value);
-}
-
-function normalizeSnapshot(value: unknown): Snapshot {
-  return isRecord(value) ? (value as Snapshot) : {};
-}
-
-type PayslipContributionDetail = {
-  label: string;
-  side: "EMPLOYEE" | "EMPLOYER";
-  amount: number;
-  sourceRule: string;
-};
+type PayslipContributionDetail = { label: string; side: "EMPLOYEE" | "EMPLOYER"; amount: number; sourceRule: string };
 
 function normalizeContributionDetails(snapshot: Snapshot): PayslipContributionDetail[] {
   if (!Array.isArray(snapshot.socialEngine?.contributionDetails)) return [];
   return snapshot.socialEngine.contributionDetails.flatMap((contribution): PayslipContributionDetail[] => {
-    const side: PayslipContributionDetail["side"] | null =
-      contribution.side === "EMPLOYER"
-        ? "EMPLOYER"
-        : contribution.side === "EMPLOYEE"
-          ? "EMPLOYEE"
-          : null;
+    const side: PayslipContributionDetail["side"] | null = contribution.side === "EMPLOYER" ? "EMPLOYER" : contribution.side === "EMPLOYEE" ? "EMPLOYEE" : null;
     const label = asString(contribution.label).trim();
     const amount = asNumber(contribution.amount);
     if (!side || !label || !Number.isFinite(amount) || amount === 0) return [];
@@ -77,15 +39,10 @@ function normalizeContributionDetails(snapshot: Snapshot): PayslipContributionDe
 }
 
 function assertClose(label: string, expected: number, actual: number): void {
-  if (!Number.isFinite(expected) || !Number.isFinite(actual) || Math.abs(expected - actual) > 0.01) {
-    throw new Error(`Génération bloquée : le ${label} du bulletin ne correspond plus au calcul verrouillé.`);
-  }
+  if (!Number.isFinite(expected) || !Number.isFinite(actual) || Math.abs(expected - actual) > 0.01) throw new Error(`Génération bloquée : le ${label} du bulletin ne correspond plus au calcul verrouillé.`);
 }
 
-export async function generatePayrollPayslipsAction(
-  _prevState: PayrollPayslipGenerationFormState,
-  formData: FormData,
-): Promise<PayrollPayslipGenerationFormState> {
+export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGenerationFormState, formData: FormData): Promise<PayrollPayslipGenerationFormState> {
   const membership = await getCurrentMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
@@ -93,44 +50,15 @@ export async function generatePayrollPayslipsAction(
 
   const periodId = String(formData.get("periodId") ?? "").trim();
   if (!periodId) return { error: "La période de paie est obligatoire." };
-
-  const period = await prisma.payrollPeriod.findFirst({
-    where: { id: periodId, organizationId: membership.organizationId },
-    select: { id: true, year: true, month: true, status: true, paymentDate: true },
-  });
+  const period = await prisma.payrollPeriod.findFirst({ where: { id: periodId, organizationId: membership.organizationId }, select: { id: true, year: true, month: true, status: true, paymentDate: true } });
   if (!period) return { error: "Période de paie introuvable." };
   if (period.status !== "LOCKED") return { error: "Les bulletins ne peuvent être générés qu'après verrouillage de la période." };
 
   const [organization, employees, calculations, profiles, agreements, socialContext] = await Promise.all([
-    prisma.organization.findFirst({
-      where: { id: membership.organizationId, deletedAt: null },
-      select: {
-        id: true,
-        name: true,
-        siret: true,
-        conventionCollective: true,
-        collectiveAgreementId: true,
-        payrollAddress: true,
-        payrollPostalCode: true,
-        payrollCity: true,
-        payrollNafCode: true,
-        payrollUrssafReference: true,
-      },
-    }),
-    prisma.employee.findMany({
-      where: { organizationId: membership.organizationId, deletedAt: null },
-      select: { id: true, firstName: true, lastName: true, position: true, hireDate: true, contractType: true, professionalCategory: true },
-      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-    }),
-    prisma.payrollCalculation.findMany({
-      where: { organizationId: membership.organizationId, payrollPeriodId: period.id },
-      select: { id: true, employeeId: true, calculationSnapshot: true, grossAmount: true, employeeContributions: true, employerContributions: true, netBeforeTax: true, withholdingTax: true, netPaid: true, netSocialAmount: true },
-    }),
-    prisma.payrollProfile.findMany({
-      where: { organizationId: membership.organizationId },
-      select: { employeeId: true, monthlyHours: true, classificationCode: true, classificationLabel: true, employeeAddress: true, collectiveAgreementId: true, baseSalaryCents: true },
-      orderBy: { effectiveFrom: "desc" },
-    }),
+    prisma.organization.findFirst({ where: { id: membership.organizationId, deletedAt: null }, select: { id: true, name: true, siret: true, conventionCollective: true, collectiveAgreementId: true, payrollAddress: true, payrollPostalCode: true, payrollCity: true, payrollNafCode: true, payrollUrssafReference: true } }),
+    prisma.employee.findMany({ where: { organizationId: membership.organizationId, deletedAt: null }, select: { id: true, firstName: true, lastName: true, position: true, hireDate: true, contractType: true, professionalCategory: true }, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] }),
+    prisma.payrollCalculation.findMany({ where: { organizationId: membership.organizationId, payrollPeriodId: period.id }, select: { id: true, employeeId: true, calculationSnapshot: true, grossAmount: true, employeeContributions: true, employerContributions: true, netBeforeTax: true, withholdingTax: true, netPaid: true, netSocialAmount: true } }),
+    prisma.payrollProfile.findMany({ where: { organizationId: membership.organizationId }, select: { employeeId: true, monthlyHours: true, classificationCode: true, classificationLabel: true, employeeAddress: true, collectiveAgreementId: true, baseSalaryCents: true }, orderBy: { effectiveFrom: "desc" } }),
     prisma.collectiveAgreement.findMany({ select: { id: true, name: true, idcc: true } }),
     resolveOrganizationLegalCategory(membership.organizationId),
   ]);
@@ -143,12 +71,8 @@ export async function generatePayrollPayslipsAction(
   const profileByEmployee = new Map<string, (typeof profiles)[number]>();
   for (const profile of profiles) if (!profileByEmployee.has(profile.employeeId)) profileByEmployee.set(profile.employeeId, profile);
   const calculationByEmployee = new Map(calculations.map((calculation) => [calculation.employeeId, calculation]));
-  const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
   const agreementById = new Map(agreements.map((agreement) => [agreement.id, agreement]));
-  const existingPayslips = await prisma.payslip.findMany({
-    where: { organizationId: membership.organizationId, payrollPeriodId: period.id },
-    select: { id: true, employeeId: true, documentStatus: true },
-  });
+  const existingPayslips = await prisma.payslip.findMany({ where: { organizationId: membership.organizationId, payrollPeriodId: period.id }, select: { id: true, employeeId: true, documentStatus: true, storageKey: true } });
   const payslipByEmployee = new Map(existingPayslips.map((payslip) => [payslip.employeeId, payslip]));
 
   try {
@@ -156,14 +80,21 @@ export async function generatePayrollPayslipsAction(
       const calculation = calculationByEmployee.get(employee.id);
       const profile = profileByEmployee.get(employee.id);
       if (!calculation || !profile) return { error: `Données de bulletin incomplètes pour ${employee.firstName} ${employee.lastName}.` };
-      if (payslipByEmployee.get(employee.id)?.documentStatus === "GENERATED") continue;
+
+      const existing = payslipByEmployee.get(employee.id);
+      if (existing?.documentStatus === "GENERATED" && existing.storageKey) {
+        try {
+          readPayslipDocument(existing.storageKey);
+          continue;
+        } catch {
+          // Le document est corrompu ou incompatible : il sera régénéré depuis le calcul verrouillé.
+        }
+      }
       if (!employee.contractType || !employee.professionalCategory) return { error: `Données sociales incomplètes pour ${employee.firstName} ${employee.lastName}.` };
 
       const snapshot = normalizeSnapshot(calculation.calculationSnapshot);
       const snapshotModelVersion = asString(snapshot.socialEngine?.modelVersion);
-      if (snapshotModelVersion !== SOCIAL_MODEL_VERSION) {
-        return { error: `Génération bloquée pour ${employee.firstName} ${employee.lastName} : le modèle social du calcul verrouillé (${snapshotModelVersion || "inconnu"}) n'est plus celui utilisé pour produire le bulletin.` };
-      }
+      if (snapshotModelVersion !== SOCIAL_MODEL_VERSION) return { error: `Génération bloquée pour ${employee.firstName} ${employee.lastName} : le modèle social du calcul verrouillé (${snapshotModelVersion || "inconnu"}) n'est plus celui utilisé pour produire le bulletin.` };
 
       const socialResult = calculateSocialPayroll({
         grossAmount: Number(calculation.grossAmount),
@@ -175,11 +106,7 @@ export async function generatePayrollPayslipsAction(
         executiveStatus: employee.professionalCategory === "CADRE",
         healthPlanMonthlyAmount: socialContext.healthPlanMonthlyAmount,
         healthPlanEmployerRate: socialContext.healthPlanEmployerRate,
-        situation: {
-          "établissement . taux ATMP": `${socialContext.atmpRate}%`,
-          "établissement . commune . nom": `'${socialContext.payrollCity}'`,
-          "établissement . commune . département": `'${socialContext.payrollDepartment}'`,
-        },
+        situation: { "établissement . taux ATMP": `${socialContext.atmpRate}%`, "établissement . commune . nom": `'${socialContext.payrollCity}'`, "établissement . commune . département": `'${socialContext.payrollDepartment}'` },
       });
       assertClose("brut", Number(calculation.grossAmount), socialResult.grossAmount);
       assertClose("total des cotisations salariales", Number(calculation.employeeContributions), socialResult.employeeContributions);
@@ -196,25 +123,9 @@ export async function generatePayrollPayslipsAction(
       const source = asString(snapshot.ruleSource?.sourceName).trim() || `Publicodes modèle social ${SOCIAL_MODEL_VERSION}`;
 
       const pdf = generatePayslipPdf({
-        employer: {
-          name: organization.name,
-          address: employerAddress,
-          siret: organization.siret ?? "",
-          nafCode: organization.payrollNafCode ?? "",
-          urssafReference: organization.payrollUrssafReference ?? "",
-        },
-        employee: {
-          name: `${employee.firstName} ${employee.lastName}`.trim(),
-          address: profile.employeeAddress ?? "",
-          position: employee.position ?? "",
-          classification: profile.classificationLabel || profile.classificationCode || "",
-        },
-        period: {
-          year: period.year,
-          month: period.month,
-          paymentDate,
-          hours: asNumber(snapshot.profile?.monthlyHours ?? profile.monthlyHours),
-        },
+        employer: { name: organization.name, address: employerAddress, siret: organization.siret ?? "", nafCode: organization.payrollNafCode ?? "", urssafReference: organization.payrollUrssafReference ?? "" },
+        employee: { name: `${employee.firstName} ${employee.lastName}`.trim(), address: profile.employeeAddress ?? "", position: employee.position ?? "", classification: profile.classificationLabel || profile.classificationCode || "" },
+        period: { year: period.year, month: period.month, paymentDate, hours: asNumber(snapshot.profile?.monthlyHours ?? profile.monthlyHours) },
         salary: {
           baseGross: profile.baseSalaryCents === null || profile.baseSalaryCents === undefined ? Number(calculation.grossAmount) : profile.baseSalaryCents / 100,
           variables: Array.isArray(snapshot.variables) ? snapshot.variables.map((variable) => ({ label: asString(variable.label), amount: asNumber(variable.amount) })) : [],
@@ -238,7 +149,7 @@ export async function generatePayrollPayslipsAction(
       const generatedAt = new Date();
       await prisma.payslip.upsert({
         where: { calculationId: calculation.id },
-        create: { id: payslipByEmployee.get(employee.id)?.id ?? randomUUID(), organizationId: membership.organizationId, payrollPeriodId: period.id, employeeId: employee.id, calculationId: calculation.id, documentStatus: "GENERATED", storageKey: stored.storageKey, generatedAt },
+        create: { id: existing?.id ?? randomUUID(), organizationId: membership.organizationId, payrollPeriodId: period.id, employeeId: employee.id, calculationId: calculation.id, documentStatus: "GENERATED", storageKey: stored.storageKey, generatedAt },
         update: { documentStatus: "GENERATED", storageKey: stored.storageKey, generatedAt },
       });
     }
@@ -247,18 +158,7 @@ export async function generatePayrollPayslipsAction(
     return { error: error instanceof Error ? error.message : "La génération des bulletins a échoué." };
   }
 
-  await prisma.auditLog.create({
-    data: {
-      id: randomUUID(),
-      organizationId: membership.organizationId,
-      actorUserId: user.id,
-      action: "payroll.payslips.generated",
-      entityType: "PayrollPeriod",
-      entityId: period.id,
-      metadata: { year: period.year, month: period.month, employeeCount: employees.length, socialModelVersion: SOCIAL_MODEL_VERSION },
-    },
-  });
-
+  await prisma.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.payslips.generated", entityType: "PayrollPeriod", entityId: period.id, metadata: { year: period.year, month: period.month, employeeCount: employees.length, socialModelVersion: SOCIAL_MODEL_VERSION } } });
   revalidatePath(`/dashboard/payroll/${periodId}`);
   revalidatePath(`/dashboard/payroll/${periodId}/payslips`);
   return undefined;
