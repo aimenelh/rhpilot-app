@@ -81,12 +81,21 @@ describe("moteur des minima conventionnels", () => {
   });
 
   it("refuse un paramétrage sans minimum positif", () => {
-    expect(() =>
+    expect(
       parseCollectiveMinimumSalaryParameters({
         ...parameters,
         monthlyMinimumCents: 0,
       }),
-    ).toThrow();
+    ).toBeNull();
+  });
+
+  it("refuse un minimum non numérique", () => {
+    expect(
+      parseCollectiveMinimumSalaryParameters({
+        ...parameters,
+        monthlyMinimumCents: "213500",
+      }),
+    ).toBeNull();
   });
 
   it("reste explicite si les paramètres sont invalides", () => {
