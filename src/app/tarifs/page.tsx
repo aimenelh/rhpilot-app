@@ -34,7 +34,7 @@ export default function TarifsPage() {
             Un prix simple, <span className="bg-brand-primary bg-clip-text text-transparent">par salarié</span>.
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-ink-soft">
-            Pas de palier caché ni de fonctionnalité verrouillée pour vous faire changer d&apos;offre.
+            Le forfait de base et le prix par salarié sont ceux que vous voyez plus bas. Rien d&apos;autre à calculer.
           </p>
         </Reveal>
       </section>
@@ -99,8 +99,7 @@ export default function TarifsPage() {
           <div className="flex flex-col items-start justify-between gap-4 py-8 sm:flex-row sm:items-center">
             <div>
               <p className="text-sm font-semibold text-ink">
-                Vous voulez tester avant ? Le palier Gratuit couvre jusqu&apos;à 3 salariés, Copilote IA
-                inclus le temps de la bêta.
+                Le palier Gratuit couvre jusqu&apos;à 3 salariés, Copilote IA inclus le temps de la bêta.
               </p>
               <p className="mt-1 text-sm text-ink-soft">Sans engagement, hébergé en Europe.</p>
             </div>
@@ -112,7 +111,7 @@ export default function TarifsPage() {
         <Reveal>
           <div className="flex flex-col items-start justify-between gap-4 py-8 sm:flex-row sm:items-center">
             <div>
-              <p className="text-sm font-semibold text-ink">Besoin sur mesure ? Plusieurs sites, SIRH existant, accompagnement dédié.</p>
+              <p className="text-sm font-semibold text-ink">Plusieurs sites, SIRH existant, accompagnement dédié.</p>
               <p className="mt-1 text-sm text-ink-soft">Enterprise sur devis, on en discute directement.</p>
             </div>
             <Link
