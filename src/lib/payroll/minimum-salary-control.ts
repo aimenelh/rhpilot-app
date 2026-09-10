@@ -37,9 +37,19 @@ export function buildMinimumSalaryControlSnapshot(input: {
     };
   }
 
+  const collectiveMinimum = input.collectiveMinimum;
+  const noCollectiveAgreement =
+    collectiveMinimum?.status === "UNRESOLVED" &&
+    (collectiveMinimum.code === "NO_COLLECTIVE_AGREEMENT" ||
+      (collectiveMinimum.code === "INVALID_PARAMETERS" &&
+        collectiveMinimum.message.startsWith("Aucune convention collective applicable")));
+
   const resolution = resolveMinimumSalary({
-    ...input,
     smic: input.smic,
+    collectiveMinimum: noCollectiveAgreement ? undefined : collectiveMinimum,
+    monthlyHours: input.monthlyHours,
+    collectiveRuleVersionId: input.collectiveRuleVersionId,
+    monthlyGrossCents: input.monthlyGrossCents,
   });
 
   if (resolution.status === "UNRESOLVED") {
