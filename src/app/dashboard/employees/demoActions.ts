@@ -69,7 +69,7 @@ export async function generateDemoOrganization() {
   if (!membership || !user) throw new Error("Non authentifié ou aucune organisation active");
 
   const periodStart = startOfCurrentMonth();
-  const existingPeriod = await prisma.payrollPeriod.findUnique({
+  let existingPeriod = await prisma.payrollPeriod.findUnique({
     where: { organizationId_year_month: { organizationId: membership.organizationId, year: periodStart.getFullYear(), month: periodStart.getMonth() + 1 } },
     select: { id: true, status: true },
   });
@@ -91,6 +91,7 @@ export async function generateDemoOrganization() {
 
     if (calculationCount === 0 && payslipCount === 0 && variableCount === 0) {
       await prisma.payrollPeriod.delete({ where: { id: existingPeriod.id } });
+      existingPeriod = null;
     } else {
       redirectWithFlash("La période de paie du mois contient déjà des données et ne peut pas être remplacée. La génération fictive a été annulée pour protéger ces données.");
     }
@@ -171,5 +172,5 @@ export async function archiveAllEmployees() {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/employees");
   revalidatePath("/dashboard/events");
-  redirect(`/dashboard/employees?flash=${encodeURIComponent(`${result.count} salarié${result.count > 1 ? "s" : ""} archivé${result.count > 1 ? "s" : ""}`)}`);
+  redirect(`/dashboard/employees?flash=${encodeURIComponent(`${result.count} salarié${result.count > 1 ? "s" : ""} archivé${result.count > 1 ? "s" : ""}`)}");
 }
