@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { getPayslipPrerequisites, hasBlockingPayslipPrerequisites } from "./payslip-prerequisites";
 
 describe("payslip prerequisites", () => {
-  it("blocks generation when required data is missing", () => {
+  it("blocks generation when a genuinely mandatory baseline datum is missing", () => {
     const prerequisites = getPayslipPrerequisites({
       periodLocked: true,
       hasEmployees: true,
@@ -16,7 +16,8 @@ describe("payslip prerequisites", () => {
 
     expect(hasBlockingPayslipPrerequisites(prerequisites)).toBe(true);
     expect(prerequisites.find((item) => item.code === "EMPLOYER_ID")?.ready).toBe(false);
-    expect(prerequisites.find((item) => item.code === "COLLECTIVE_AGREEMENT")?.ready).toBe(false);
+    expect(prerequisites.find((item) => item.code === "EMPLOYEE_CONTEXT")?.ready).toBe(false);
+    expect(prerequisites.find((item) => item.code === "COLLECTIVE_AGREEMENT")?.ready).toBe(true);
   });
 
   it("allows all checks when the current model contains the required baseline", () => {
