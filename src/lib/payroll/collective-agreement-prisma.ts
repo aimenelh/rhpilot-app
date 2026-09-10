@@ -98,6 +98,7 @@ export async function resolveCollectiveAgreementFromPrisma(input: {
         id: true,
         versionId: true,
         code: true,
+        parameters: true,
         validFrom: true,
         validUntil: true,
         status: true,
