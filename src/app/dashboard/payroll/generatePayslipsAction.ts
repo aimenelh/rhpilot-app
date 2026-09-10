@@ -22,26 +22,7 @@ type Snapshot = {
   profile?: { monthlyHours?: unknown; classificationLabel?: unknown; classificationCode?: unknown; collectiveAgreementId?: unknown; baseSalaryCents?: unknown };
   variables?: Array<{ label?: unknown; amount?: unknown }>;
   ruleSource?: { sourceName?: unknown };
-  alternanceMinimum?: {
-    status?: unknown;
-    source?: unknown;
-    code?: unknown;
-    explanation?: unknown;
-    age?: unknown;
-    contractYear?: unknown;
-    hasBaccalaureateOrHigher?: unknown;
-    smicMonthlyCents?: unknown;
-    smicScope?: unknown;
-    legalMinimumCents?: unknown;
-    collectiveMinimumCents?: unknown;
-    applicableMinimumCents?: unknown;
-    percentageOfSmic?: unknown;
-    baseSalaryCents?: unknown;
-    profileValidFrom?: unknown;
-    profileValidUntil?: unknown;
-    profileSource?: unknown;
-    profileSourceReference?: unknown;
-  };
+  alternanceMinimum?: { status?: unknown; source?: unknown; code?: unknown; explanation?: unknown; age?: unknown; contractYear?: unknown; hasBaccalaureateOrHigher?: unknown; smicMonthlyCents?: unknown; smicScope?: unknown; legalMinimumCents?: unknown; collectiveMinimumCents?: unknown; applicableMinimumCents?: unknown; percentageOfSmic?: unknown; baseSalaryCents?: unknown; profileValidFrom?: unknown; profileValidUntil?: unknown; profileSource?: unknown; profileSourceReference?: unknown };
   withholdingTax?: { status?: unknown; rate?: unknown; amount?: unknown; validFrom?: unknown; validUntil?: unknown; source?: unknown; sourceReference?: unknown };
   socialEngine?: { modelVersion?: unknown; contributionDetails?: Array<{ code?: unknown; label?: unknown; sourceRule?: unknown; side?: unknown; amount?: unknown; baseAmount?: unknown; rate?: unknown }> };
   result?: { netSocialAmount?: unknown };
@@ -51,20 +32,9 @@ function isRecord(value: unknown): value is Record<string, unknown> { return typ
 function asString(value: unknown): string { return typeof value === "string" ? value : ""; }
 function asNumber(value: unknown): number { if (typeof value === "number" && Number.isFinite(value)) return value; if (typeof value === "string" && value.trim() !== "") return Number(value); return Number(value); }
 function normalizeSnapshot(value: unknown): Snapshot { return isRecord(value) ? (value as Snapshot) : {}; }
+function assertClose(label: string, expected: number, actual: number): void { if (!Number.isFinite(expected) || !Number.isFinite(actual) || Math.abs(expected - actual) > 0.01) throw new Error(`Génération bloquée : le ${label} du bulletin ne correspond plus au calcul verrouillé.`); }
 
-function assertClose(label: string, expected: number, actual: number): void {
-  if (!Number.isFinite(expected) || !Number.isFinite(actual) || Math.abs(expected - actual) > 0.01) throw new Error(`Génération bloquée : le ${label} du bulletin ne correspond plus au calcul verrouillé.`);
-}
-
-type PayslipContributionDetail = {
-  code: string;
-  label: string;
-  side: "EMPLOYEE" | "EMPLOYER";
-  amount: number;
-  baseAmount: number | null;
-  rate: number | null;
-  sourceRule: string;
-};
+type PayslipContributionDetail = { code: string; label: string; side: "EMPLOYEE" | "EMPLOYER"; amount: number; baseAmount: number | null; rate: number | null; sourceRule: string };
 
 function normalizeContributionDetails(snapshot: Snapshot): PayslipContributionDetail[] {
   if (!Array.isArray(snapshot.socialEngine?.contributionDetails)) return [];
@@ -100,24 +70,14 @@ function assertContributionDetailsMatch(snapshot: Snapshot, current: ReturnType<
   }
 }
 
-async function assertAlternanceSnapshotMatchesCurrent(input: {
-  snapshot: Snapshot;
-  contractType: string;
-  professionalCategory: string;
-  organizationId: string;
-  employeeId: string;
-  periodDate: Date;
-  payrollDepartment: string | null;
-}): Promise<void> {
+async function assertAlternanceSnapshotMatchesCurrent(input: { snapshot: Snapshot; contractType: string; professionalCategory: string; organizationId: string; employeeId: string; periodDate: Date; payrollDepartment: string | null }): Promise<void> {
   const isAlternance = input.contractType === "APPRENTISSAGE" || input.contractType === "PROFESSIONNALISATION";
   if (!isAlternance) {
     if (input.snapshot.alternanceMinimum) throw new Error("Génération bloquée : un contrôle alternance est présent dans le calcul verrouillé alors que le contrat actuel n'est plus en alternance.");
     return;
   }
-
   const locked = input.snapshot.alternanceMinimum;
   if (!locked || locked.status !== "APPLICABLE") throw new Error("Génération bloquée : le calcul verrouillé ne contient pas de contrôle alternance applicable.");
-
   const alternanceProfile = await resolveEmployeeAlternanceProfile({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate });
   if (!alternanceProfile) throw new Error("Génération bloquée : le profil alternance applicable n'est plus disponible.");
 
@@ -125,9 +85,7 @@ async function assertAlternanceSnapshotMatchesCurrent(input: {
   const lockedValidUntil = locked.profileValidUntil === null ? null : asString(locked.profileValidUntil);
   const currentValidUntil = alternanceProfile.validUntil?.toISOString() ?? null;
   const lockedSourceReference = locked.profileSourceReference === null ? null : asString(locked.profileSourceReference);
-  if (lockedValidFrom !== alternanceProfile.validFrom.toISOString() || lockedValidUntil !== currentValidUntil || asString(locked.profileSource) !== alternanceProfile.source || lockedSourceReference !== alternanceProfile.sourceReference) {
-    throw new Error("Génération bloquée : le profil alternance applicable a changé depuis le calcul verrouillé.");
-  }
+  if (lockedValidFrom !== alternanceProfile.validFrom.toISOString() || lockedValidUntil !== currentValidUntil || asString(locked.profileSource) !== alternanceProfile.source || lockedSourceReference !== alternanceProfile.sourceReference) throw new Error("Génération bloquée : le profil alternance applicable a changé depuis le calcul verrouillé.");
 
   const smicScope = input.payrollDepartment?.trim() === "976" ? "MAYOTTE" as const : "FRANCE_HORS_MAYOTTE" as const;
   const smic = await resolveSmicMinimumFromPrisma({ periodDate: input.periodDate, scope: smicScope });
@@ -157,9 +115,7 @@ async function assertAlternanceSnapshotMatchesCurrent(input: {
   const lockedContractYear = locked.contractYear === null ? null : asNumber(locked.contractYear);
   const lockedBac = locked.hasBaccalaureateOrHigher === null ? null : locked.hasBaccalaureateOrHigher === true;
   if (asNumber(locked.age) !== age || lockedContractYear !== alternanceProfile.contractYear || lockedBac !== alternanceProfile.hasBaccalaureateOrHigher) throw new Error("Génération bloquée : les données du salarié utilisées pour le contrôle alternance ont changé depuis le calcul verrouillé.");
-  const currentLegalMinimum = input.contractType === "PROFESSIONNALISATION" && age >= 26
-    ? Math.max(smic.monthlyGrossCentsAt35Hours, Math.round((collectiveMinimumCents ?? 0) * 0.85))
-    : Math.round(smic.monthlyGrossCentsAt35Hours * (result.percentageOfSmic ?? 0));
+  const currentLegalMinimum = input.contractType === "PROFESSIONNALISATION" && age >= 26 ? Math.max(smic.monthlyGrossCentsAt35Hours, Math.round((collectiveMinimumCents ?? 0) * 0.85)) : Math.round(smic.monthlyGrossCentsAt35Hours * (result.percentageOfSmic ?? 0));
   if (asNumber(locked.legalMinimumCents) !== currentLegalMinimum) throw new Error("Génération bloquée : le minimum légal alternance ne correspond plus au contrôle verrouillé.");
   if (asNumber(locked.collectiveMinimumCents) !== (collectiveMinimumCents ?? 0)) throw new Error("Génération bloquée : le minimum conventionnel alternance a changé depuis le calcul verrouillé.");
   if (asNumber(locked.applicableMinimumCents) !== (result.monthlyMinimumCents ?? 0)) throw new Error("Génération bloquée : le minimum alternance applicable a changé depuis le calcul verrouillé.");
@@ -171,7 +127,6 @@ export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGe
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent générer les bulletins de paie." };
-
   const periodId = String(formData.get("periodId") ?? "").trim();
   if (!periodId) return { error: "La période de paie est obligatoire." };
   const period = await prisma.payrollPeriod.findFirst({ where: { id: periodId, organizationId: membership.organizationId }, select: { id: true, year: true, month: true, status: true, paymentDate: true } });
@@ -186,7 +141,6 @@ export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGe
     prisma.collectiveAgreement.findMany({ select: { id: true, name: true, idcc: true } }),
     resolveOrganizationLegalCategory(membership.organizationId),
   ]);
-
   if (!organization) return { error: "Organisation introuvable." };
   if (employees.length === 0) return { error: "Aucun salarié actif n'est disponible pour cette période." };
   if (calculations.length !== employees.length) return { error: `Génération impossible : ${calculations.length}/${employees.length} calculs verrouillés disponibles.` };
@@ -204,22 +158,15 @@ export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGe
       const calculation = calculationByEmployee.get(employee.id);
       const profile = profileByEmployee.get(employee.id);
       if (!calculation || !profile) return { error: `Données de bulletin incomplètes pour ${employee.firstName} ${employee.lastName}.` };
-
       const existing = payslipByEmployee.get(employee.id);
       if (existing?.documentStatus === "GENERATED" && existing.storageKey) {
-        try {
-          readPayslipDocument(existing.storageKey);
-          continue;
-        } catch {
-          // Le document est corrompu ou incompatible : il sera régénéré depuis le calcul verrouillé.
-        }
+        try { readPayslipDocument(existing.storageKey); continue; } catch { /* Régénération depuis le calcul verrouillé. */ }
       }
       if (!employee.contractType || !employee.professionalCategory) return { error: `Données sociales incomplètes pour ${employee.firstName} ${employee.lastName}.` };
 
       const snapshot = normalizeSnapshot(calculation.calculationSnapshot);
       const snapshotModelVersion = asString(snapshot.socialEngine?.modelVersion);
       if (snapshotModelVersion !== SOCIAL_MODEL_VERSION) return { error: `Génération bloquée pour ${employee.firstName} ${employee.lastName} : le modèle social du calcul verrouillé (${snapshotModelVersion || "inconnu"}) n'est plus celui utilisé pour produire le bulletin.` };
-
       const periodDate = new Date(Date.UTC(period.year, period.month - 1, 1, 12, 0, 0, 0));
       await assertAlternanceSnapshotMatchesCurrent({ snapshot, contractType: employee.contractType, professionalCategory: employee.professionalCategory, organizationId: membership.organizationId, employeeId: employee.id, periodDate, payrollDepartment: socialContext.payrollDepartment });
 
@@ -232,18 +179,7 @@ export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGe
       const snapshotTax = asNumber(snapshot.withholdingTax?.amount);
       assertClose("montant du prélèvement à la source snapshot", expectedWithholdingTax, snapshotTax);
 
-      const socialResult = calculateSocialPayroll({
-        grossAmount: Number(calculation.grossAmount),
-        legalCategory: socialContext.legalCategory,
-        calculationDate: periodDate,
-        companyCreationDate: socialContext.companyCreationDate,
-        contractType: employee.contractType,
-        hireDate: employee.hireDate,
-        executiveStatus: employee.professionalCategory === "CADRE",
-        healthPlanMonthlyAmount: socialContext.healthPlanMonthlyAmount,
-        healthPlanEmployerRate: socialContext.healthPlanEmployerRate,
-        situation: { "établissement . taux ATMP": `${socialContext.atmpRate}%`, "établissement . commune . nom": `'${socialContext.payrollCity}'`, "établissement . commune . département": `'${socialContext.payrollDepartment}'` },
-      });
+      const socialResult = calculateSocialPayroll({ grossAmount: Number(calculation.grossAmount), legalCategory: socialContext.legalCategory, calculationDate: periodDate, companyCreationDate: socialContext.companyCreationDate, contractType: employee.contractType, hireDate: employee.hireDate, executiveStatus: employee.professionalCategory === "CADRE", healthPlanMonthlyAmount: socialContext.healthPlanMonthlyAmount, healthPlanEmployerRate: socialContext.healthPlanEmployerRate, situation: { "établissement . taux ATMP": `${socialContext.atmpRate}%`, "établissement . commune . nom": `'${socialContext.payrollCity}'`, "établissement . commune . département": `'${socialContext.payrollDepartment}'` } });
       assertClose("brut", Number(calculation.grossAmount), socialResult.grossAmount);
       assertClose("total des cotisations salariales", Number(calculation.employeeContributions), socialResult.employeeContributions);
       assertClose("total des cotisations patronales", Number(calculation.employerContributions), socialResult.employerContributions);
@@ -265,32 +201,14 @@ export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGe
         employer: { name: organization.name, address: employerAddress, siret: organization.siret ?? "", nafCode: organization.payrollNafCode ?? "", urssafReference: organization.payrollUrssafReference ?? "" },
         employee: { name: `${employee.firstName} ${employee.lastName}`.trim(), address: profile.employeeAddress ?? "", position: employee.position ?? "", classification: profile.classificationLabel || profile.classificationCode || "" },
         period: { year: period.year, month: period.month, paymentDate, hours: asNumber(snapshot.profile?.monthlyHours ?? profile.monthlyHours) },
-        salary: {
-          baseGross: profile.baseSalaryCents === null || profile.baseSalaryCents === undefined ? Number(calculation.grossAmount) : profile.baseSalaryCents / 100,
-          variables: Array.isArray(snapshot.variables) ? snapshot.variables.map((variable) => ({ label: asString(variable.label), amount: asNumber(variable.amount) })) : [],
-          gross: Number(calculation.grossAmount),
-          employeeContributions: Number(calculation.employeeContributions),
-          employerContributions: Number(calculation.employerContributions),
-          netBeforeTax: Number(calculation.netBeforeTax),
-          netTaxable: Number(calculation.netTaxableAmount),
-          withholdingTaxRate,
-          withholdingTax: Number(calculation.withholdingTax),
-          netPaid: Number(calculation.netPaid),
-          netSocial: Number(calculation.netSocialAmount),
-          totalEmployerCost: Number(calculation.grossAmount) + Number(calculation.employerContributions),
-        },
+        salary: { baseGross: profile.baseSalaryCents === null || profile.baseSalaryCents === undefined ? Number(calculation.grossAmount) : profile.baseSalaryCents / 100, variables: Array.isArray(snapshot.variables) ? snapshot.variables.map((variable) => ({ label: asString(variable.label), amount: asNumber(variable.amount) })) : [], gross: Number(calculation.grossAmount), employeeContributions: Number(calculation.employeeContributions), employerContributions: Number(calculation.employerContributions), netBeforeTax: Number(calculation.netBeforeTax), netTaxable: Number(calculation.netTaxableAmount), withholdingTaxRate, withholdingTax: Number(calculation.withholdingTax), netPaid: Number(calculation.netPaid), netSocial: Number(calculation.netSocialAmount), totalEmployerCost: Number(calculation.grossAmount) + Number(calculation.employerContributions) },
         contributions: contributionDetails,
         collectiveAgreement: agreement ? `${agreement.name} (IDCC ${agreement.idcc})` : "Code du travail",
         source,
       });
-
       const stored = storePayslipDocument(pdf);
       const generatedAt = new Date();
-      await prisma.payslip.upsert({
-        where: { calculationId: calculation.id },
-        create: { id: existing?.id ?? randomUUID(), organizationId: membership.organizationId, payrollPeriodId: period.id, employeeId: employee.id, calculationId: calculation.id, documentStatus: "GENERATED", storageKey: stored.storageKey, generatedAt },
-        update: { documentStatus: "GENERATED", storageKey: stored.storageKey, generatedAt },
-      });
+      await prisma.payslip.upsert({ where: { calculationId: calculation.id }, create: { id: existing?.id ?? randomUUID(), organizationId: membership.organizationId, payrollPeriodId: period.id, employeeId: employee.id, calculationId: calculation.id, documentStatus: "GENERATED", storageKey: stored.storageKey, generatedAt }, update: { documentStatus: "GENERATED", storageKey: stored.storageKey, generatedAt } });
     }
   } catch (error) {
     if (error instanceof PayslipPdfPrerequisiteError) return { error: `Génération bloquée. Données manquantes : ${error.missing.join(", ")}.` };
