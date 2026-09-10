@@ -4,11 +4,7 @@ import { resolveMinimumSalary, type MinimumSalaryResolution } from "./minimum-sa
 
 export type MinimumSalaryControlSnapshot = {
   status: MinimumSalaryResolution["status"];
-  source?: MinimumSalaryResolution extends infer T
-    ? T extends { status: "APPLICABLE" }
-      ? T["source"]
-      : never
-    : never;
+  source?: "SMIC" | "COLLECTIVE_AGREEMENT";
   appliedMonthlyMinimumCents?: number;
   smicMonthlyMinimumCents?: number;
   collectiveMonthlyMinimumCents?: number | null;
