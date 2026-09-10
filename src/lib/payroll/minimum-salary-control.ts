@@ -37,7 +37,10 @@ export function buildMinimumSalaryControlSnapshot(input: {
     };
   }
 
-  const resolution = resolveMinimumSalary(input);
+  const resolution = resolveMinimumSalary({
+    ...input,
+    smic: input.smic,
+  });
 
   if (resolution.status === "UNRESOLVED") {
     return {
