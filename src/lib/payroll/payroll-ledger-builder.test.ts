@@ -140,4 +140,21 @@ describe("buildPayrollLedger", () => {
       differenceCents: 6500,
     });
   });
+
+  it("n'ajoute aucune ligne de contrôle lorsqu'un salaire minimum reste non résolu", () => {
+    const minimumSalaryControl: MinimumSalaryControlSnapshot = {
+      status: "UNRESOLVED",
+      explanation: "La classification conventionnelle est absente.",
+      code: "COLLECTIVE_MINIMUM_UNRESOLVED",
+    };
+
+    const entries = buildPayrollLedger({
+      ...commonInput,
+      variables: [],
+      absences: [],
+      minimumSalaryControl,
+    });
+
+    expect(entries.some((entry) => entry.code === "MINIMUM_SALARY_CONTROL")).toBe(false);
+  });
 });
