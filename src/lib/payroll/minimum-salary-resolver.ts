@@ -66,7 +66,8 @@ export function resolveMinimumSalary(input: {
   }
 
   const smicMonthlyMinimumCents = Math.round(
-    input.smic.hourlyGrossCents * input.monthlyHours,
+    input.smic.monthlyGrossCentsAt35Hours *
+      (input.monthlyHours / input.smic.monthlyHoursAt35Hours),
   );
 
   let collectiveMonthlyMinimumCents: number | null = null;
