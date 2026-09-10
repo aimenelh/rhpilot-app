@@ -16,7 +16,7 @@ export default function NotFound() {
           <Compass size={26} />
         </span>
         <p className="mt-6 text-sm font-semibold uppercase tracking-wide text-brand-primary">Erreur 404</p>
-        <h1 className="mt-2 text-3xl font-semibold text-ink sm:text-4xl">
+        <h1 className="font-display mt-2 text-3xl font-semibold text-ink sm:text-4xl">
           Cette page a été oubliée.
         </h1>
         <p className="mt-4 max-w-md text-ink-soft">

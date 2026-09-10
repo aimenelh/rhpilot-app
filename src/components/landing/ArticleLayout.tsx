@@ -40,7 +40,7 @@ export function ArticleLayout({
               <Clock size={12} /> {readTime}
             </span>
           </div>
-          <h1 className="mt-4 text-3xl font-semibold leading-tight tracking-tight text-ink sm:text-4xl">
+          <h1 className="font-display mt-4 text-3xl font-semibold leading-tight tracking-tight text-ink sm:text-4xl">
             {title}
           </h1>
         </Reveal>

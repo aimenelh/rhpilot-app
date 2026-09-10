@@ -176,7 +176,7 @@ function HeroCopy({ eyebrow, title, intro, sources, keyName }: {
   return (
     <div className="max-w-2xl">
       <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">{eyebrow}</p>
-      <h1 className="mt-4 text-4xl font-semibold leading-[1.02] tracking-[-0.045em] text-ink sm:text-5xl lg:text-[3.75rem]">
+      <h1 className="font-display mt-4 text-4xl font-semibold leading-[1.02] tracking-[-0.045em] text-ink sm:text-5xl lg:text-[3.75rem]">
         <AccentTitle title={title} phrase={ACCENT_PHRASES[keyName] ?? ""} />
       </h1>
       <p className="mt-6 max-w-xl text-base leading-7 text-ink-soft sm:text-lg sm:leading-8">{richText(intro)}</p>

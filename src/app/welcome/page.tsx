@@ -116,7 +116,7 @@ export default function WelcomePage({
             Bêta
           </span>
 
-          <h1 className="mt-5 max-w-2xl text-center text-4xl font-bold leading-tight text-ink sm:text-5xl">
+          <h1 className="font-display mt-5 max-w-2xl text-center text-4xl font-bold leading-tight text-ink sm:text-5xl">
             Bienvenue sur la bêta de{" "}
             <span className="bg-brand-primary bg-clip-text text-transparent">RH Pilot</span>
           </h1>
