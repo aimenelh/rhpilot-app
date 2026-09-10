@@ -13,6 +13,7 @@ const EXECUTIVE_STATUS_RULE = "salarié . contrat . statut cadre";
 const HEALTH_PLAN_RULE = "salarié . cotisations . prévoyances . santé . montant";
 const HEALTH_EMPLOYER_RATE_RULE = "salarié . cotisations . prévoyances . santé . taux employeur";
 const NET_BEFORE_TAX_RULE = "salarié . rémunération . net . à payer avant impôt";
+const NET_TAXABLE_RULE = "salarié . rémunération . net . imposable";
 const NET_SOCIAL_RULE = "salarié . rémunération . montant net social";
 const EMPLOYEE_CONTRIBUTIONS_RULE = "salarié . cotisations . salarié";
 const EMPLOYER_CONTRIBUTIONS_RULE = "salarié . cotisations . employeur";
@@ -66,6 +67,7 @@ export type SocialPayrollResult = {
   employeeContributions: number;
   employerContributions: number;
   netBeforeTax: number;
+  netTaxableAmount: number;
   netSocialAmount: number;
   employerCost: number;
   contributionDetails: SocialContributionDetail[];
@@ -151,6 +153,8 @@ export function calculateSocialPayroll(input: {
 
   const netBeforeTaxEvaluation = engine.evaluate(NET_BEFORE_TAX_RULE);
   assertNoMissingVariables(netBeforeTaxEvaluation, NET_BEFORE_TAX_RULE);
+  const netTaxableEvaluation = engine.evaluate(NET_TAXABLE_RULE);
+  assertNoMissingVariables(netTaxableEvaluation, NET_TAXABLE_RULE);
   const netSocialEvaluation = engine.evaluate(NET_SOCIAL_RULE);
   assertNoMissingVariables(netSocialEvaluation, NET_SOCIAL_RULE);
   const employeeContributionsEvaluation = engine.evaluate(EMPLOYEE_CONTRIBUTIONS_RULE);
@@ -159,6 +163,7 @@ export function calculateSocialPayroll(input: {
   assertNoMissingVariables(employerContributionsEvaluation, EMPLOYER_CONTRIBUTIONS_RULE);
 
   const netBeforeTax = assertNumber(netBeforeTaxEvaluation.nodeValue, NET_BEFORE_TAX_RULE);
+  const netTaxableAmount = assertNumber(netTaxableEvaluation.nodeValue, NET_TAXABLE_RULE);
   const netSocialAmount = assertNumber(netSocialEvaluation.nodeValue, NET_SOCIAL_RULE);
   const employeeContributions = assertNumber(employeeContributionsEvaluation.nodeValue, EMPLOYEE_CONTRIBUTIONS_RULE);
   const employerContributions = assertNumber(employerContributionsEvaluation.nodeValue, EMPLOYER_CONTRIBUTIONS_RULE);
@@ -171,6 +176,7 @@ export function calculateSocialPayroll(input: {
     employeeContributions,
     employerContributions,
     netBeforeTax,
+    netTaxableAmount,
     netSocialAmount,
     employerCost: Math.round((input.grossAmount + employerContributions + Number.EPSILON) * 100) / 100,
     contributionDetails,
