@@ -15,6 +15,30 @@ describe("minimums alternance", () => {
     expect(result.monthlyMinimumCents).toBe(160000);
   });
 
+  it("apprentissage en troisième année applique 78 % du SMIC entre 21 et 25 ans", () => {
+    const result = resolveApprenticeshipMinimum({ age: 24, contractYear: 3, smicMonthlyCents: smic });
+    expect(result.status).toBe("APPLICABLE");
+    expect(result.percentageOfSmic).toBe(0.78);
+    expect(result.monthlyMinimumCents).toBe(Math.round(smic * 0.78));
+  });
+
+  it("apprentissage à partir de 26 ans atteint au minimum 100 % du SMIC", () => {
+    const result = resolveApprenticeshipMinimum({ age: 26, contractYear: 1, smicMonthlyCents: smic });
+    expect(result.status).toBe("APPLICABLE");
+    expect(result.percentageOfSmic).toBe(1);
+    expect(result.monthlyMinimumCents).toBe(smic);
+  });
+
+  it("apprentissage rejette un âge impossible", () => {
+    const result = resolveApprenticeshipMinimum({ age: 15, contractYear: 1, smicMonthlyCents: smic });
+    expect(result.status).toBe("UNRESOLVED");
+  });
+
+  it("apprentissage rejette une année de contrat non supportée", () => {
+    const result = resolveApprenticeshipMinimum({ age: 19, contractYear: 4 as 1 | 2 | 3, smicMonthlyCents: smic });
+    expect(result.status).toBe("UNRESOLVED");
+  });
+
   it("professionnalisation distingue le niveau bac", () => {
     const withoutBac = resolveProfessionalisationMinimum({ age: 20, hasBaccalaureateOrHigher: false, smicMonthlyCents: smic });
     const withBac = resolveProfessionalisationMinimum({ age: 20, hasBaccalaureateOrHigher: true, smicMonthlyCents: smic });
