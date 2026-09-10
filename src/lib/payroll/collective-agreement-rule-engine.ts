@@ -52,7 +52,7 @@ export function parseCollectiveMinimumSalaryParameters(
       : undefined;
 
   if (!classificationCode || monthlyMinimumCents === null) return null;
-  if (!Number.isInteger(monthlyMinimumCents) || monthlyMinimumCents < 0) return null;
+  if (!Number.isInteger(monthlyMinimumCents) || monthlyMinimumCents <= 0) return null;
   if (contractTypes !== undefined && contractTypes.length === 0) return null;
 
   return {
