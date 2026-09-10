@@ -122,6 +122,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     }
 
     const smicMinimum = await resolveSmicMinimumFromPrisma({ periodDate: calculationDate, scope: socialContext.payrollDepartment === "976" ? "MAYOTTE" : "FRANCE_HORS_MAYOTTE" });
+    if (!smicMinimum) throw new Error(`Calcul bloqué pour le salarié ${employee.id} : aucune version validée du SMIC n'est disponible.`);
     const smicScope = socialContext.payrollDepartment === "976" ? "MAYOTTE" as const : "FRANCE_HORS_MAYOTTE" as const;
     const minimumSalaryControl = buildMinimumSalaryControlSnapshot({ smic: smicMinimum, collectiveMinimum, monthlyHours: Number(profile.monthlyHours), collectiveRuleVersionId: collectiveMinimumResolution.status === "RESOLVED" ? collectiveMinimumResolution.rule.versionId : undefined, monthlyGrossCents: profile.baseSalaryCents });
 
