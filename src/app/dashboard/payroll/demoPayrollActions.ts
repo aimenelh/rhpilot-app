@@ -35,16 +35,9 @@ function startOfCurrentMonth() {
   return new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
 }
 
-export async function prepareDemoPayrollData() {
-  const { memberships } = await getCurrentMemberships();
-  const membership = memberships[0];
-  if (!membership) throw new Error("Organisation introuvable.");
-  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {
-    throw new Error("Seuls les administrateurs peuvent préparer le jeu de paie de démonstration.");
-  }
-
+export async function prepareDemoPayrollDataForOrganization(organizationId: string) {
   const employees = await prisma.employee.findMany({
-    where: { organizationId: membership.organizationId, deletedAt: null },
+    where: { organizationId, deletedAt: null },
     select: { id: true, firstName: true, isDemoData: true },
   });
 
@@ -54,21 +47,12 @@ export async function prepareDemoPayrollData() {
 
   const employeeByFirstName = new Map(employees.map((employee) => [employee.firstName, employee]));
   for (const row of DEMO_PAYROLL_DATA) {
-    if (!employeeByFirstName.has(row.firstName)) {
-      throw new Error(`Salarié fictif introuvable : ${row.firstName}.`);
-    }
+    if (!employeeByFirstName.has(row.firstName)) throw new Error(`Salarié fictif introuvable : ${row.firstName}.`);
   }
 
   const periodStart = startOfCurrentMonth();
-
   const existingPeriod = await prisma.payrollPeriod.findUnique({
-    where: {
-      organizationId_year_month: {
-        organizationId: membership.organizationId,
-        year: periodStart.getFullYear(),
-        month: periodStart.getMonth() + 1,
-      },
-    },
+    where: { organizationId_year_month: { organizationId, year: periodStart.getFullYear(), month: periodStart.getMonth() + 1 } },
     select: { id: true, status: true },
   });
   if (existingPeriod && existingPeriod.status !== "DRAFT") {
@@ -77,7 +61,7 @@ export async function prepareDemoPayrollData() {
 
   await prisma.$transaction(async (tx) => {
     await tx.organization.update({
-      where: { id: membership.organizationId },
+      where: { id: organizationId },
       data: {
         siret: "99999999999999",
         payrollAddress: "10 rue de la Démonstration",
@@ -90,32 +74,20 @@ export async function prepareDemoPayrollData() {
 
     await tx.$executeRaw`
       UPDATE "organizations"
-      SET
-        "legalCategory" = 'SAS',
-        "atmpRate" = 1.00,
-        "healthPlanMonthlyAmount" = 30.00,
-        "healthPlanEmployerRate" = 50.00,
-        "companyCreationDate" = ${new Date(2020, 0, 1)},
-        "payrollDepartment" = '30'
-      WHERE "id" = ${membership.organizationId}
+      SET "legalCategory" = 'SAS', "atmpRate" = 1.00, "healthPlanMonthlyAmount" = 30.00,
+          "healthPlanEmployerRate" = 50.00, "companyCreationDate" = ${new Date(2020, 0, 1)},
+          "payrollDepartment" = '30'
+      WHERE "id" = ${organizationId}
     `;
 
     for (const row of DEMO_PAYROLL_DATA) {
       const employee = employeeByFirstName.get(row.firstName)!;
-      await tx.employee.update({
-        where: { id: employee.id },
-        data: { professionalCategory: row.professionalCategory },
-      });
+      await tx.employee.update({ where: { id: employee.id }, data: { professionalCategory: row.professionalCategory } });
 
       const profile = await tx.payrollProfile.findFirst({
-        where: {
-          organizationId: membership.organizationId,
-          employeeId: employee.id,
-          effectiveFrom: periodStart,
-        },
+        where: { organizationId, employeeId: employee.id, effectiveFrom: periodStart },
         select: { id: true },
       });
-
       const profileData = {
         baseSalaryCents: Math.round(row.salaryEuros * 100),
         monthlyHours: 151.67,
@@ -126,33 +98,19 @@ export async function prepareDemoPayrollData() {
         classificationLabel: row.classificationLabel,
         effectiveUntil: null as Date | null,
       };
-
-      if (profile) {
-        await tx.payrollProfile.update({ where: { id: profile.id }, data: profileData });
-      } else {
-        await tx.payrollProfile.create({
-          data: {
-            id: randomUUID(),
-            organizationId: membership.organizationId,
-            employeeId: employee.id,
-            ...profileData,
-            effectiveFrom: periodStart,
-          },
-        });
-      }
+      if (profile) await tx.payrollProfile.update({ where: { id: profile.id }, data: profileData });
+      else await tx.payrollProfile.create({ data: { id: randomUUID(), organizationId, employeeId: employee.id, ...profileData, effectiveFrom: periodStart } });
 
       const pasValidFrom = new Date(2020, 0, 1);
       await tx.$executeRaw`
         DELETE FROM "employee_withholding_tax_profiles"
-        WHERE "organizationId" = ${membership.organizationId}
-          AND "employeeId" = ${employee.id}
-          AND "validFrom" = ${pasValidFrom}
+        WHERE "organizationId" = ${organizationId} AND "employeeId" = ${employee.id} AND "validFrom" = ${pasValidFrom}
       `;
       await tx.$executeRaw`
         INSERT INTO "employee_withholding_tax_profiles"
           ("id", "organizationId", "employeeId", "rate", "validFrom", "validUntil", "source", "sourceReference", "createdAt", "updatedAt")
         VALUES
-          (${randomUUID()}, ${membership.organizationId}, ${employee.id}, ${row.pasRate}, ${pasValidFrom}, NULL, 'DEMO', 'RH-PILOT-DEMO', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+          (${randomUUID()}, ${organizationId}, ${employee.id}, ${row.pasRate}, ${pasValidFrom}, NULL, 'DEMO', 'RH-PILOT-DEMO', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       `;
     }
 
@@ -162,42 +120,35 @@ export async function prepareDemoPayrollData() {
       const validFrom = new Date(2020, 0, 1);
       await tx.$executeRaw`
         DELETE FROM "employee_alternance_profiles"
-        WHERE "organizationId" = ${membership.organizationId}
-          AND "employeeId" = ${employee.id}
-          AND "validFrom" = ${validFrom}
+        WHERE "organizationId" = ${organizationId} AND "employeeId" = ${employee.id} AND "validFrom" = ${validFrom}
       `;
       await tx.$executeRaw`
         INSERT INTO "employee_alternance_profiles"
           ("id", "organizationId", "employeeId", "birthDate", "contractYear", "hasBaccalaureateOrHigher", "validFrom", "validUntil", "source", "sourceReference", "createdAt", "updatedAt")
         VALUES
-          (${randomUUID()}, ${membership.organizationId}, ${employee.id}, ${new Date(`${alternance.birthDate}T00:00:00.000Z`)}, ${alternance.contractYear}, ${alternance.hasBaccalaureateOrHigher}, ${validFrom}, NULL, 'DEMO', 'RH-PILOT-DEMO', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+          (${randomUUID()}, ${organizationId}, ${employee.id}, ${new Date(`${alternance.birthDate}T00:00:00.000Z`)}, ${alternance.contractYear}, ${alternance.hasBaccalaureateOrHigher}, ${validFrom}, NULL, 'DEMO', 'RH-PILOT-DEMO', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       `;
     }
 
     const period = await tx.payrollPeriod.upsert({
-      where: {
-        organizationId_year_month: {
-          organizationId: membership.organizationId,
-          year: periodStart.getFullYear(),
-          month: periodStart.getMonth() + 1,
-        },
-      },
-      create: {
-        id: randomUUID(),
-        organizationId: membership.organizationId,
-        year: periodStart.getFullYear(),
-        month: periodStart.getMonth() + 1,
-        status: "DRAFT",
-      },
+      where: { organizationId_year_month: { organizationId, year: periodStart.getFullYear(), month: periodStart.getMonth() + 1 } },
+      create: { id: randomUUID(), organizationId, year: periodStart.getFullYear(), month: periodStart.getMonth() + 1, status: "DRAFT" },
       update: {},
       select: { id: true },
     });
-
-    await tx.payrollVariable.deleteMany({
-      where: { organizationId: membership.organizationId, payrollPeriodId: period.id },
-    });
+    await tx.payrollVariable.deleteMany({ where: { organizationId, payrollPeriodId: period.id } });
   });
 
   revalidatePath("/dashboard/payroll");
   if (existingPeriod) revalidatePath(`/dashboard/payroll/${existingPeriod.id}`);
+}
+
+export async function prepareDemoPayrollData() {
+  const { memberships } = await getCurrentMemberships();
+  const membership = memberships[0];
+  if (!membership) throw new Error("Organisation introuvable.");
+  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {
+    throw new Error("Seuls les administrateurs peuvent préparer le jeu de paie de démonstration.");
+  }
+  await prepareDemoPayrollDataForOrganization(membership.organizationId);
 }
