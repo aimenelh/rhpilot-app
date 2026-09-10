@@ -29,15 +29,7 @@ describe("résolveur des conventions collectives", () => {
   };
 
   it("privilégie la convention du profil salarié", () => {
-    const result = resolveCollectiveAgreement({
-      organizationCollectiveAgreementId: "agreement-org",
-      employeeCollectiveAgreementId: agreementId,
-      periodDate: new Date("2026-06-01T00:00:00.000Z"),
-      ruleCode: rule.code,
-      versions: [version2026],
-      rules: [rule],
-    });
-
+    const result = resolveCollectiveAgreement({ organizationCollectiveAgreementId: "agreement-org", employeeCollectiveAgreementId: agreementId, periodDate: new Date("2026-06-01T00:00:00.000Z"), ruleCode: rule.code, versions: [version2026], rules: [rule] });
     expect(result.status).toBe("RESOLVED");
     if (result.status === "RESOLVED") {
       expect(result.collectiveAgreementId).toBe(agreementId);
@@ -47,103 +39,34 @@ describe("résolveur des conventions collectives", () => {
   });
 
   it("utilise la convention de l'organisation en l'absence de convention sur le profil", () => {
-    const result = resolveCollectiveAgreement({
-      organizationCollectiveAgreementId: agreementId,
-      employeeCollectiveAgreementId: null,
-      periodDate: new Date("2026-06-01T00:00:00.000Z"),
-      ruleCode: rule.code,
-      versions: [version2026],
-      rules: [rule],
-    });
-
+    const result = resolveCollectiveAgreement({ organizationCollectiveAgreementId: agreementId, employeeCollectiveAgreementId: null, periodDate: new Date("2026-06-01T00:00:00.000Z"), ruleCode: rule.code, versions: [version2026], rules: [rule] });
     expect(result.status).toBe("RESOLVED");
   });
 
   it("refuse de résoudre sans convention", () => {
-    const result = resolveCollectiveAgreement({
-      organizationCollectiveAgreementId: null,
-      employeeCollectiveAgreementId: null,
-      periodDate: new Date("2026-06-01T00:00:00.000Z"),
-      ruleCode: rule.code,
-      versions: [version2026],
-      rules: [rule],
-    });
-
-    expect(result).toMatchObject({
-      status: "UNRESOLVED",
-      code: "NO_COLLECTIVE_AGREEMENT",
-    });
+    const result = resolveCollectiveAgreement({ organizationCollectiveAgreementId: null, employeeCollectiveAgreementId: null, periodDate: new Date("2026-06-01T00:00:00.000Z"), ruleCode: rule.code, versions: [version2026], rules: [rule] });
+    expect(result).toMatchObject({ status: "UNRESOLVED", code: "NO_COLLECTIVE_AGREEMENT" });
   });
 
   it("ignore les versions non validées", () => {
-    const result = resolveCollectiveAgreement({
-      organizationCollectiveAgreementId: agreementId,
-      periodDate: new Date("2026-06-01T00:00:00.000Z"),
-      ruleCode: rule.code,
-      versions: [draftVersion],
-      rules: [rule],
-    });
-
-    expect(result).toMatchObject({
-      status: "UNRESOLVED",
-      code: "NO_VALIDATED_VERSION",
-    });
+    const result = resolveCollectiveAgreement({ organizationCollectiveAgreementId: agreementId, periodDate: new Date("2026-06-01T00:00:00.000Z"), ruleCode: rule.code, versions: [draftVersion], rules: [rule] });
+    expect(result).toMatchObject({ status: "UNRESOLVED", code: "NO_VALIDATED_VERSION" });
   });
 
   it("respecte les bornes de validité des versions", () => {
-    const historicalVersion = {
-      ...version2026,
-      id: "agreement-1-v1",
-      version: 1,
-      validFrom: new Date("2025-01-01T00:00:00.000Z"),
-      validUntil: new Date("2025-12-31T00:00:00.000Z"),
-    };
-
-    const result = resolveCollectiveAgreement({
-      organizationCollectiveAgreementId: agreementId,
-      periodDate: new Date("2025-06-01T00:00:00.000Z"),
-      ruleCode: rule.code,
-      versions: [historicalVersion, version2026],
-      rules: [rule],
-    });
-
-    expect(result).toMatchObject({
-      status: "UNRESOLVED",
-      code: "NO_VALIDATED_RULE",
-    });
+    const historicalVersion = { ...version2026, id: "agreement-1-v1", version: 1, validFrom: new Date("2025-01-01T00:00:00.000Z"), validUntil: new Date("2025-12-31T00:00:00.000Z") };
+    const result = resolveCollectiveAgreement({ organizationCollectiveAgreementId: agreementId, periodDate: new Date("2025-06-01T00:00:00.000Z"), ruleCode: rule.code, versions: [historicalVersion, version2026], rules: [rule] });
+    expect(result).toMatchObject({ status: "UNRESOLVED", code: "NO_VALIDATED_RULE" });
   });
 
   it("ignore les règles non validées", () => {
-    const result = resolveCollectiveAgreement({
-      organizationCollectiveAgreementId: agreementId,
-      periodDate: new Date("2026-06-01T00:00:00.000Z"),
-      ruleCode: rule.code,
-      versions: [version2026],
-      rules: [{ ...rule, status: "DRAFT" }],
-    });
-
-    expect(result).toMatchObject({
-      status: "UNRESOLVED",
-      code: "NO_VALIDATED_RULE",
-    });
+    const result = resolveCollectiveAgreement({ organizationCollectiveAgreementId: agreementId, periodDate: new Date("2026-06-01T00:00:00.000Z"), ruleCode: rule.code, versions: [version2026], rules: [{ ...rule, status: "DRAFT" }] });
+    expect(result).toMatchObject({ status: "UNRESOLVED", code: "NO_VALIDATED_RULE" });
   });
 
   it("sélectionne la version validée la plus récente applicable", () => {
-    const version2027 = {
-      ...version2026,
-      id: "agreement-1-v3",
-      version: 3,
-      validFrom: new Date("2027-01-01T00:00:00.000Z"),
-    };
-
-    const result = resolveCollectiveAgreement({
-      organizationCollectiveAgreementId: agreementId,
-      periodDate: new Date("2027-06-01T00:00:00.000Z"),
-      ruleCode: rule.code,
-      versions: [version2026, version2027],
-      rules: [{ ...rule, versionId: version2027.id }],
-    });
-
+    const version2027 = { ...version2026, id: "agreement-1-v3", version: 3, validFrom: new Date("2027-01-01T00:00:00.000Z") };
+    const result = resolveCollectiveAgreement({ organizationCollectiveAgreementId: agreementId, periodDate: new Date("2027-06-01T00:00:00.000Z"), ruleCode: rule.code, versions: [version2026, version2027], rules: [{ ...rule, versionId: version2027.id }] });
     expect(result.status).toBe("RESOLVED");
     if (result.status === "RESOLVED") {
       expect(result.version.version).toBe(3);
@@ -152,25 +75,18 @@ describe("résolveur des conventions collectives", () => {
   });
 
   it("conserve les paramètres de la règle résolue", () => {
-    const parameters = {
-      ruleType: "MINIMUM_GROSS_MONTHLY",
-      classificationCode: "IC_1.1",
-      monthlyMinimumCents: 213500,
-      professionalCategory: "CADRE",
-      sourceReference: "Annexe III — salaires minimaux",
-    };
-
-    const result = resolveCollectiveAgreement({
-      organizationCollectiveAgreementId: agreementId,
-      periodDate: new Date("2026-06-01T00:00:00.000Z"),
-      ruleCode: rule.code,
-      versions: [version2026],
-      rules: [{ ...rule, parameters }],
-    });
-
+    const parameters = { ruleType: "MINIMUM_GROSS_MONTHLY", classificationCode: "IC_1.1", monthlyMinimumCents: 213500, professionalCategory: "CADRE", sourceReference: "Annexe III — salaires minimaux" };
+    const result = resolveCollectiveAgreement({ organizationCollectiveAgreementId: agreementId, periodDate: new Date("2026-06-01T00:00:00.000Z"), ruleCode: rule.code, versions: [version2026], rules: [{ ...rule, parameters }] });
     expect(result.status).toBe("RESOLVED");
-    if (result.status === "RESOLVED") {
-      expect(result.rule.parameters).toEqual(parameters);
-    }
+    if (result.status === "RESOLVED") expect(result.rule.parameters).toEqual(parameters);
+  });
+
+  it("accepte une date exactement à la borne de début", () => {
+    const result = resolveCollectiveAgreement({ organizationCollectiveAgreementId: agreementId, periodDate: new Date("2026-01-01T00:00:00.000Z"), ruleCode: rule.code, versions: [version2026], rules: [rule] });
+    expect(result.status).toBe("RESOLVED");
+  });
+
+  it("rejette une date de période invalide", () => {
+    expect(() => resolveCollectiveAgreement({ organizationCollectiveAgreementId: agreementId, periodDate: new Date("invalid"), ruleCode: rule.code, versions: [version2026], rules: [rule] })).toThrow("date de période de paie est invalide");
   });
 });
