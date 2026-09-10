@@ -126,7 +126,7 @@ export async function getAlternanceMinimumPreview(employeeId: string): Promise<A
       ? null
       : resolveApprenticeshipMinimum({
           age,
-          contractYear: profile.contractYear,
+          contractYear: profile.contractYear as 1 | 2 | 3,
           smicMonthlyCents: smic.monthlyGrossCentsAt35Hours,
         })
     : age >= 26
@@ -178,7 +178,7 @@ export async function saveAlternanceProfile(
   const membership = await getCurrentMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
-  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Vous n'avez pas les droits pour modifier le profil de paie de ce salarié." };
+  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Vous n'avez pas les droits pour modifier le profil alternance de ce salarié." };
 
   const employee = await prisma.employee.findFirst({
     where: { id: employeeId, organizationId: membership.organizationId, deletedAt: null },
