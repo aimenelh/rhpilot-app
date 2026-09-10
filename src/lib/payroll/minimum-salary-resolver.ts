@@ -29,6 +29,10 @@ function isPositiveFinite(value: number): boolean {
  * Compare le SMIC proratisé à la durée mensuelle du salarié et, lorsqu'il est
  * applicable, au minimum conventionnel. Le maximum des deux constitue le
  * minimum salarial à respecter.
+ *
+ * Une absence de convention collective n'empêche pas le contrôle du SMIC.
+ * En revanche, lorsqu'une convention est bien identifiée mais que son minimum
+ * ne peut pas être déterminé, le contrôle reste explicitement non résolu.
  */
 export function resolveMinimumSalary(input: {
   smic: SmicMinimumResult;
@@ -74,11 +78,13 @@ export function resolveMinimumSalary(input: {
   let collectiveRuleVersionId = input.collectiveRuleVersionId;
 
   if (input.collectiveMinimum?.status === "UNRESOLVED") {
-    return {
-      status: "UNRESOLVED",
-      code: "COLLECTIVE_MINIMUM_UNRESOLVED",
-      message: `Le minimum conventionnel n'est pas déterminable : ${input.collectiveMinimum.message}`,
-    };
+    if (input.collectiveMinimum.code !== "NO_COLLECTIVE_AGREEMENT") {
+      return {
+        status: "UNRESOLVED",
+        code: "COLLECTIVE_MINIMUM_UNRESOLVED",
+        message: `Le minimum conventionnel n'est pas déterminable : ${input.collectiveMinimum.message}`,
+      };
+    }
   }
 
   if (input.collectiveMinimum?.status === "APPLICABLE") {
