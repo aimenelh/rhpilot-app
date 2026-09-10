@@ -64,4 +64,46 @@ describe("moteur des minima conventionnels", () => {
       code: "CLASSIFICATION_MISMATCH",
     });
   });
+
+  it("refuse une catégorie professionnelle différente", () => {
+    expect(
+      evaluateCollectiveMinimumSalary({
+        monthlyGrossCents: 220000,
+        classificationCode: "IC_1.1",
+        professionalCategory: "ETAM",
+        contractType: "CDI",
+        parameters,
+      }),
+    ).toMatchObject({
+      status: "UNRESOLVED",
+      code: "CLASSIFICATION_MISMATCH",
+    });
+  });
+
+  it("refuse un paramétrage sans minimum positif", () => {
+    expect(() =>
+      parseCollectiveMinimumSalaryParameters({
+        ...parameters,
+        monthlyMinimumCents: 0,
+      }),
+    ).toThrow();
+  });
+
+  it("reste explicite si les paramètres sont invalides", () => {
+    expect(
+      evaluateCollectiveMinimumSalary({
+        monthlyGrossCents: 220000,
+        classificationCode: "IC_1.1",
+        professionalCategory: "CADRE",
+        contractType: "CDI",
+        parameters: {
+          ...parameters,
+          monthlyMinimumCents: -1,
+        },
+      }),
+    ).toMatchObject({
+      status: "UNRESOLVED",
+      code: "INVALID_PARAMETERS",
+    });
+  });
 });
