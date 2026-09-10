@@ -14,39 +14,35 @@ describe("référentiel SMIC versionné", () => {
   };
 
   it("retourne les montants de la version de règle fournie", () => {
-    expect(resolveSmicMinimum(rule)).toEqual({
-      hourlyGrossCents: 1231,
-      monthlyGrossCentsAt35Hours: 186702,
-      monthlyHoursAt35Hours: 151.67,
-      ruleCode: "FR.SMIC.MONTHLY_GROSS",
-      ruleVersionId: "smic-2026-06-france",
-    });
+    expect(resolveSmicMinimum(rule)).toEqual({ hourlyGrossCents: 1231, monthlyGrossCentsAt35Hours: 186702, monthlyHoursAt35Hours: 151.67, ruleCode: "FR.SMIC.MONTHLY_GROSS", ruleVersionId: "smic-2026-06-france" });
   });
 
   it("refuse un territoire inconnu", () => {
-    expect(() =>
-      resolveSmicMinimum({
-        ...rule,
-        parameters: { ...rule.parameters, territory: "UNKNOWN" },
-      }),
-    ).toThrow("territoire");
+    expect(() => resolveSmicMinimum({ ...rule, parameters: { ...rule.parameters, territory: "UNKNOWN" } })).toThrow("territoire");
   });
 
   it("refuse un montant non positif", () => {
-    expect(() =>
-      resolveSmicMinimum({
-        ...rule,
-        parameters: { ...rule.parameters, hourlyGrossCents: 0 },
-      }),
-    ).toThrow("SMIC horaire");
+    expect(() => resolveSmicMinimum({ ...rule, parameters: { ...rule.parameters, hourlyGrossCents: 0 } })).toThrow("SMIC horaire");
   });
 
   it("refuse des paramètres absents", () => {
-    expect(() =>
-      resolveSmicMinimum({
-        ...rule,
-        parameters: null,
-      }),
-    ).toThrow("paramètres");
+    expect(() => resolveSmicMinimum({ ...rule, parameters: null })).toThrow("paramètres");
+  });
+
+  it("accepte le référentiel spécifique à Mayotte", () => {
+    expect(resolveSmicMinimum({
+      ruleCode: "FR.SMIC.MONTHLY_GROSS",
+      ruleVersionId: "smic-2026-06-mayotte",
+      parameters: {
+        territory: "MAYOTTE",
+        hourlyGrossCents: 956,
+        monthlyGrossCentsAt35Hours: 144993,
+        monthlyHoursAt35Hours: 151.67,
+      },
+    })).toMatchObject({
+      hourlyGrossCents: 956,
+      monthlyGrossCentsAt35Hours: 144993,
+      ruleVersionId: "smic-2026-06-mayotte",
+    });
   });
 });
