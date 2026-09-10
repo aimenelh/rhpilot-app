@@ -11,8 +11,7 @@ CREATE TABLE "employee_withholding_tax_profiles" (
   "updatedAt" TIMESTAMP(3) NOT NULL,
   CONSTRAINT "employee_withholding_tax_profiles_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "employee_withholding_tax_profiles_rate_check" CHECK ("rate" >= 0 AND "rate" <= 1),
-  CONSTRAINT "employee_withholding_tax_profiles_dates_check" CHECK ("validUntil" IS NULL OR "validUntil" >= "validFrom"),
-  CONSTRAINT "employee_withholding_tax_profiles_employee_fk" FOREIGN KEY ("organizationId", "employeeId") REFERENCES "employees"("organizationId", "id") ON DELETE RESTRICT ON UPDATE CASCADE
+  CONSTRAINT "employee_withholding_tax_profiles_dates_check" CHECK ("validUntil" IS NULL OR "validUntil" >= "validFrom")
 );
 
 CREATE INDEX "employee_withholding_tax_profiles_lookup_idx" ON "employee_withholding_tax_profiles" ("organizationId", "employeeId", "validFrom", "validUntil");
