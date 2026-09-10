@@ -101,4 +101,45 @@ describe("résolveur du salaire minimum", () => {
       code: "INVALID_SMIC",
     });
   });
+
+  it("considère conforme un brut exactement égal au minimum applicable", () => {
+    expect(resolveMinimumSalary({
+      smic,
+      collectiveMinimum: collective,
+      monthlyHours: 151.67,
+      monthlyGrossCents: 213500,
+    })).toMatchObject({
+      status: "APPLICABLE",
+      appliedMonthlyMinimumCents: 213500,
+      compliant: true,
+      differenceCents: 0,
+    });
+  });
+
+  it("conserve la règle SMIC comme trace même lorsque le minimum conventionnel est retenu", () => {
+    const result = resolveMinimumSalary({
+      smic,
+      collectiveMinimum: collective,
+      monthlyHours: 151.67,
+      collectiveRuleVersionId: "ccn-2025-v1",
+      monthlyGrossCents: 220000,
+    });
+
+    expect(result).toMatchObject({
+      smicRuleCode: "SMIC_GROSS",
+      smicRuleVersionId: "smic-2026-06",
+      collectiveRuleVersionId: "ccn-2025-v1",
+    });
+  });
+
+  it("signale un brut mensuel négatif", () => {
+    expect(resolveMinimumSalary({
+      smic,
+      monthlyHours: 151.67,
+      monthlyGrossCents: -1,
+    })).toMatchObject({
+      status: "UNRESOLVED",
+      code: "INVALID_GROSS_SALARY",
+    });
+  });
 });
