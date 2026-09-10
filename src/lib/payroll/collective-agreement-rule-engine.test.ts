@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  evaluateCollectiveMinimumSalary,
-  parseCollectiveMinimumSalaryParameters,
-} from "./collective-agreement-rule-engine";
+import { evaluateCollectiveMinimumSalary, parseCollectiveMinimumSalaryParameters } from "./collective-agreement-rule-engine";
 
 describe("moteur des minima conventionnels", () => {
   const parameters = {
@@ -13,106 +10,49 @@ describe("moteur des minima conventionnels", () => {
     sourceReference: "Annexe III — salaires minimaux",
   };
 
-  it("parse une règle de minimum mensuel valide", () => {
-    expect(parseCollectiveMinimumSalaryParameters(parameters)).toEqual(parameters);
-  });
+  it("parse une règle de minimum mensuel valide", () => expect(parseCollectiveMinimumSalaryParameters(parameters)).toEqual(parameters));
 
   it("déclare le salaire conforme lorsque le brut atteint le minimum", () => {
-    expect(
-      evaluateCollectiveMinimumSalary({
-        monthlyGrossCents: 220000,
-        classificationCode: "IC_1.1",
-        professionalCategory: "CADRE",
-        contractType: "CDI",
-        parameters,
-      }),
-    ).toMatchObject({
-      status: "APPLICABLE",
-      monthlyMinimumCents: 213500,
-      compliant: true,
-      differenceCents: 6500,
-    });
+    expect(evaluateCollectiveMinimumSalary({ monthlyGrossCents: 220000, classificationCode: "IC_1.1", professionalCategory: "CADRE", contractType: "CDI", parameters })).toMatchObject({ status: "APPLICABLE", monthlyMinimumCents: 213500, compliant: true, differenceCents: 6500 });
   });
 
   it("détecte un salaire inférieur au minimum", () => {
-    expect(
-      evaluateCollectiveMinimumSalary({
-        monthlyGrossCents: 200000,
-        classificationCode: "IC_1.1",
-        professionalCategory: "CADRE",
-        contractType: "CDI",
-        parameters,
-      }),
-    ).toMatchObject({
-      status: "APPLICABLE",
-      compliant: false,
-      differenceCents: -13500,
-    });
+    expect(evaluateCollectiveMinimumSalary({ monthlyGrossCents: 200000, classificationCode: "IC_1.1", professionalCategory: "CADRE", contractType: "CDI", parameters })).toMatchObject({ status: "APPLICABLE", compliant: false, differenceCents: -13500 });
   });
 
   it("refuse une classification différente", () => {
-    expect(
-      evaluateCollectiveMinimumSalary({
-        monthlyGrossCents: 220000,
-        classificationCode: "IC_1.2",
-        professionalCategory: "CADRE",
-        contractType: "CDI",
-        parameters,
-      }),
-    ).toMatchObject({
-      status: "UNRESOLVED",
-      code: "CLASSIFICATION_MISMATCH",
-    });
+    expect(evaluateCollectiveMinimumSalary({ monthlyGrossCents: 220000, classificationCode: "IC_1.2", professionalCategory: "CADRE", contractType: "CDI", parameters })).toMatchObject({ status: "UNRESOLVED", code: "CLASSIFICATION_MISMATCH" });
   });
 
   it("refuse une catégorie professionnelle différente", () => {
-    expect(
-      evaluateCollectiveMinimumSalary({
-        monthlyGrossCents: 220000,
-        classificationCode: "IC_1.1",
-        professionalCategory: "ETAM",
-        contractType: "CDI",
-        parameters,
-      }),
-    ).toMatchObject({
-      status: "UNRESOLVED",
-      code: "CLASSIFICATION_MISMATCH",
-    });
+    expect(evaluateCollectiveMinimumSalary({ monthlyGrossCents: 220000, classificationCode: "IC_1.1", professionalCategory: "ETAM", contractType: "CDI", parameters })).toMatchObject({ status: "UNRESOLVED", code: "CLASSIFICATION_MISMATCH" });
   });
 
-  it("refuse un paramétrage sans minimum positif", () => {
-    expect(
-      parseCollectiveMinimumSalaryParameters({
-        ...parameters,
-        monthlyMinimumCents: 0,
-      }),
-    ).toBeNull();
+  it("refuse un paramétrage sans minimum positif", () => expect(parseCollectiveMinimumSalaryParameters({ ...parameters, monthlyMinimumCents: 0 })).toBeNull());
+
+  it("refuse un minimum non numérique", () => expect(parseCollectiveMinimumSalaryParameters({ ...parameters, monthlyMinimumCents: "213500" })).toBeNull());
+
+  it("refuse un contrat non couvert par une règle ciblée", () => {
+    expect(evaluateCollectiveMinimumSalary({
+      monthlyGrossCents: 220000,
+      classificationCode: "IC_1.1",
+      professionalCategory: "CADRE",
+      contractType: "CDD",
+      parameters: { ...parameters, contractTypes: ["CDI", "APPRENTISSAGE"] },
+    })).toMatchObject({ status: "UNRESOLVED", code: "CONTRACT_NOT_ELIGIBLE" });
   });
 
-  it("refuse un minimum non numérique", () => {
-    expect(
-      parseCollectiveMinimumSalaryParameters({
-        ...parameters,
-        monthlyMinimumCents: "213500",
-      }),
-    ).toBeNull();
+  it("refuse l'absence de type de contrat quand la règle en exige un", () => {
+    expect(evaluateCollectiveMinimumSalary({
+      monthlyGrossCents: 220000,
+      classificationCode: "IC_1.1",
+      professionalCategory: "CADRE",
+      contractType: null,
+      parameters: { ...parameters, contractTypes: ["CDI"] },
+    })).toMatchObject({ status: "UNRESOLVED", code: "CONTRACT_NOT_ELIGIBLE" });
   });
 
   it("reste explicite si les paramètres sont invalides", () => {
-    expect(
-      evaluateCollectiveMinimumSalary({
-        monthlyGrossCents: 220000,
-        classificationCode: "IC_1.1",
-        professionalCategory: "CADRE",
-        contractType: "CDI",
-        parameters: {
-          ...parameters,
-          monthlyMinimumCents: -1,
-        },
-      }),
-    ).toMatchObject({
-      status: "UNRESOLVED",
-      code: "INVALID_PARAMETERS",
-    });
+    expect(evaluateCollectiveMinimumSalary({ monthlyGrossCents: 220000, classificationCode: "IC_1.1", professionalCategory: "CADRE", contractType: "CDI", parameters: { ...parameters, monthlyMinimumCents: -1 } })).toMatchObject({ status: "UNRESOLVED", code: "INVALID_PARAMETERS" });
   });
 });
