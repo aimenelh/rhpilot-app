@@ -150,4 +150,27 @@ describe("résolveur des conventions collectives", () => {
       expect(result.rule.versionId).toBe(version2027.id);
     }
   });
+
+  it("conserve les paramètres de la règle résolue", () => {
+    const parameters = {
+      ruleType: "MINIMUM_GROSS_MONTHLY",
+      classificationCode: "IC_1.1",
+      monthlyMinimumCents: 213500,
+      professionalCategory: "CADRE",
+      sourceReference: "Annexe III — salaires minimaux",
+    };
+
+    const result = resolveCollectiveAgreement({
+      organizationCollectiveAgreementId: agreementId,
+      periodDate: new Date("2026-06-01T00:00:00.000Z"),
+      ruleCode: rule.code,
+      versions: [version2026],
+      rules: [{ ...rule, parameters }],
+    });
+
+    expect(result.status).toBe("RESOLVED");
+    if (result.status === "RESOLVED") {
+      expect(result.rule.parameters).toEqual(parameters);
+    }
+  });
 });
