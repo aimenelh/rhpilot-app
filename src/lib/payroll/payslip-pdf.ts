@@ -6,25 +6,9 @@ export type PayslipPdfContribution = {
 };
 
 export type PayslipPdfInput = {
-  employer: {
-    name: string;
-    address: string;
-    siret: string;
-    nafCode: string;
-    urssafReference: string;
-  };
-  employee: {
-    name: string;
-    address: string;
-    position: string;
-    classification: string;
-  };
-  period: {
-    year: number;
-    month: number;
-    paymentDate: string;
-    hours: number;
-  };
+  employer: { name: string; address: string; siret: string; nafCode: string; urssafReference: string };
+  employee: { name: string; address: string; position: string; classification: string };
+  period: { year: number; month: number; paymentDate: string; hours: number };
   salary: {
     baseGross: number;
     variables: Array<{ label: string; amount: number }>;
@@ -52,12 +36,7 @@ export class PayslipPdfPrerequisiteError extends Error {
 }
 
 function sanitizeText(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[–—]/g, "-")
-    .replace(/€/g, "EUR")
-    .replace(/[^\u0000-\u00ff]/g, "?");
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[–—]/g, "-").replace(/€/g, "EUR").replace(/[^\u0000-\u00ff]/g, "?");
 }
 
 function escapePdfText(value: string): string {
@@ -87,10 +66,7 @@ function requiredMissing(input: PayslipPdfInput): string[] {
     ["Convention ou référence Code du travail", input.collectiveAgreement],
     ["Source du référentiel", input.source],
   ];
-
-  for (const [label, value] of checks) {
-    if (!value.trim()) missing.push(label);
-  }
+  for (const [label, value] of checks) if (!value.trim()) missing.push(label);
   if (!Number.isFinite(input.period.hours) || input.period.hours < 0) missing.push("Volume horaire");
   if (!Number.isFinite(input.salary.netSocial) || input.salary.netSocial < 0) missing.push("Montant net social");
   if (!Number.isFinite(input.salary.netTaxable) || input.salary.netTaxable < 0) missing.push("Salaire net imposable");
@@ -99,128 +75,110 @@ function requiredMissing(input: PayslipPdfInput): string[] {
   return missing;
 }
 
-function addText(lines: string[], x: number, y: number, text: string, size = 9): void {
-  lines.push(`BT /F1 ${size} Tf 0 g 1 0 0 1 ${x} ${y} Tm (${escapePdfText(text)}) Tj ET`);
-}
+class PdfPageWriter {
+  private pages: string[][] = [[]];
+  private y = 800;
 
-function addRule(lines: string[], y: number): void {
-  lines.push(`0.5 w 40 ${y} m 555 ${y} l S`);
-}
+  get current(): string[] { return this.pages[this.pages.length - 1]; }
+  get allPages(): string[][] { return this.pages; }
 
-function buildContent(input: PayslipPdfInput): string {
-  const lines: string[] = [];
-  let y = 800;
-
-  addText(lines, 40, y, "BULLETIN DE PAIE", 16);
-  y -= 20;
-  addText(lines, 40, y, `${input.period.month.toString().padStart(2, "0")}/${input.period.year}`);
-  addText(lines, 420, y, `Paiement : ${input.period.paymentDate}`);
-  y -= 16;
-  addRule(lines, y);
-  y -= 18;
-
-  addText(lines, 40, y, input.employer.name, 10);
-  y -= 13;
-  addText(lines, 40, y, input.employer.address);
-  y -= 13;
-  addText(lines, 40, y, `SIRET : ${input.employer.siret} | APE/NAF : ${input.employer.nafCode}`);
-  if (input.employer.urssafReference.trim()) {
-    y -= 13;
-    addText(lines, 40, y, `Organisme social : ${input.employer.urssafReference}`);
-  }
-  y -= 18;
-
-  addText(lines, 300, y + 44, input.employee.name, 10);
-  addText(lines, 300, y + 31, input.employee.address);
-  addText(lines, 300, y + 18, `${input.employee.position} - ${input.employee.classification}`);
-
-  addText(lines, 40, y, `Convention collective : ${input.collectiveAgreement}`);
-  y -= 24;
-  addRule(lines, y);
-  y -= 20;
-
-  addText(lines, 40, y, "ELEMENTS DE REMUNERATION", 10);
-  y -= 16;
-  addText(lines, 40, y, "Salaire de base");
-  addText(lines, 450, y, money(input.salary.baseGross));
-  y -= 14;
-
-  for (const variable of input.salary.variables) {
-    addText(lines, 40, y, variable.label);
-    addText(lines, 450, y, money(variable.amount));
-    y -= 14;
+  text(x: number, y: number, text: string, size = 9): void {
+    this.current.push(`BT /F1 ${size} Tf 0 g 1 0 0 1 ${x} ${y} Tm (${escapePdfText(text)}) Tj ET`);
   }
 
-  addText(lines, 40, y, `Brut total (${input.period.hours.toFixed(2)} h)`, 10);
-  addText(lines, 450, y, money(input.salary.gross), 10);
-  y -= 22;
-  addRule(lines, y);
-  y -= 20;
+  rule(): void { this.current.push(`0.5 w 40 ${this.y} m 555 ${this.y} l S`); }
 
-  addText(lines, 40, y, "COTISATIONS ET CONTRIBUTIONS", 10);
-  y -= 16;
+  line(text: string, amount?: string, size = 9, gap = 13): void {
+    this.ensure(28);
+    this.text(40, this.y, text, size);
+    if (amount !== undefined) this.text(450, this.y, amount, size);
+    this.y -= gap;
+  }
+
+  ensure(required: number): void {
+    if (this.y - required >= 48) return;
+    this.newPage();
+  }
+
+  newPage(): void {
+    this.pages.push([]);
+    this.y = 800;
+    this.text(40, this.y, "BULLETIN DE PAIE - SUITE", 12);
+    this.y -= 22;
+    this.current.push(`0.5 w 40 ${this.y} m 555 ${this.y} l S`);
+    this.y -= 18;
+  }
+
+  spacer(amount: number): void { this.y -= amount; }
+}
+
+function buildPages(input: PayslipPdfInput): string[][] {
+  const page = new PdfPageWriter();
+  page.text(40, page["y"], "BULLETIN DE PAIE", 16);
+  page.spacer(20);
+  page.text(40, page["y"], `${input.period.month.toString().padStart(2, "0")}/${input.period.year}`);
+  page.text(420, page["y"], `Paiement : ${input.period.paymentDate}`);
+  page.spacer(16); page.rule(); page.spacer(18);
+  page.line(input.employer.name, undefined, 10);
+  page.line(input.employer.address);
+  page.line(`SIRET : ${input.employer.siret} | APE/NAF : ${input.employer.nafCode}`);
+  if (input.employer.urssafReference.trim()) page.line(`Organisme social : ${input.employer.urssafReference}`);
+  page.spacer(5);
+  page.text(300, page["y"] + 49, input.employee.name, 10);
+  page.text(300, page["y"] + 36, input.employee.address);
+  page.text(300, page["y"] + 23, `${input.employee.position} - ${input.employee.classification}`);
+  page.line(`Convention collective : ${input.collectiveAgreement}`, undefined, 9, 24);
+  page.rule(); page.spacer(20);
+
+  page.line("ELEMENTS DE REMUNERATION", undefined, 10, 16);
+  page.line("Salaire de base", money(input.salary.baseGross), 9, 14);
+  for (const variable of input.salary.variables) page.line(variable.label, money(variable.amount), 9, 14);
+  page.line(`Brut total (${input.period.hours.toFixed(2)} h)`, money(input.salary.gross), 10, 22);
+  page.rule(); page.spacer(20);
+
+  page.line("COTISATIONS ET CONTRIBUTIONS", undefined, 10, 16);
   for (const contribution of input.contributions) {
-    if (contribution.side !== "EMPLOYEE") continue;
-    addText(lines, 40, y, contribution.label);
-    addText(lines, 450, y, `-${money(contribution.amount)}`);
-    y -= 13;
+    if (contribution.side === "EMPLOYEE") page.line(contribution.label, `-${money(contribution.amount)}`);
   }
+  page.line("Total cotisations salariales", `-${money(input.salary.employeeContributions)}`, 10, 18);
+  page.line("Net avant impôt", money(input.salary.netBeforeTax), 9, 15);
+  page.line("Net imposable", money(input.salary.netTaxable), 9, 15);
+  page.line(`Prélèvement à la source (${percentage(input.salary.withholdingTaxRate)})`, `-${money(input.salary.withholdingTax)}`, 9, 15);
+  page.line("Net payé", money(input.salary.netPaid), 11, 15);
+  page.line("Montant net social", money(input.salary.netSocial), 9, 25);
+  page.rule(); page.spacer(18);
 
-  addText(lines, 40, y, "Total cotisations salariales", 10);
-  addText(lines, 450, y, `-${money(input.salary.employeeContributions)}`, 10);
-  y -= 18;
-  addText(lines, 40, y, "Net avant impôt");
-  addText(lines, 450, y, money(input.salary.netBeforeTax));
-  y -= 15;
-  addText(lines, 40, y, "Net imposable");
-  addText(lines, 450, y, money(input.salary.netTaxable));
-  y -= 15;
-  addText(lines, 40, y, `Prélèvement à la source (${percentage(input.salary.withholdingTaxRate)})`);
-  addText(lines, 450, y, `-${money(input.salary.withholdingTax)}`);
-  y -= 15;
-  addText(lines, 40, y, "Net payé", 11);
-  addText(lines, 450, y, money(input.salary.netPaid), 11);
-  y -= 15;
-  addText(lines, 40, y, "Montant net social");
-  addText(lines, 450, y, money(input.salary.netSocial));
-  y -= 25;
-  addRule(lines, y);
-  y -= 18;
-
-  addText(lines, 40, y, "CHARGES PATRONALES", 10);
-  y -= 15;
+  page.line("CHARGES PATRONALES", undefined, 10, 15);
   for (const contribution of input.contributions) {
-    if (contribution.side !== "EMPLOYER") continue;
-    addText(lines, 40, y, contribution.label);
-    addText(lines, 450, y, money(contribution.amount));
-    y -= 13;
+    if (contribution.side === "EMPLOYER") page.line(contribution.label, money(contribution.amount));
   }
-  addText(lines, 40, y, "Total cotisations patronales", 10);
-  addText(lines, 450, y, money(input.salary.employerContributions), 10);
-  y -= 15;
-  addText(lines, 40, y, "Total versé par l'employeur", 10);
-  addText(lines, 450, y, money(input.salary.totalEmployerCost), 10);
-  y -= 30;
-  addRule(lines, y);
-  y -= 18;
+  page.line("Total cotisations patronales", money(input.salary.employerContributions), 10, 15);
+  page.line("Total versé par l'employeur", money(input.salary.totalEmployerCost), 10, 30);
+  page.rule(); page.spacer(18);
+  page.line("Conservez ce bulletin sans limitation de duree.", undefined, 8, 13);
+  page.line("Pour plus d'informations, consultez la rubrique bulletin de paie sur service-public.fr.", undefined, 8, 16);
+  page.line(`Referentiel de calcul : ${input.source}`, undefined, 7, 10);
 
-  addText(lines, 40, y, "Conservez ce bulletin sans limitation de duree.", 8);
-  y -= 13;
-  addText(lines, 40, y, "Pour plus d'informations, consultez la rubrique bulletin de paie sur service-public.fr.", 8);
-  y -= 16;
-  addText(lines, 40, y, `Referentiel de calcul : ${input.source}`, 7);
-
-  return lines.join("\n");
+  return page.allPages;
 }
 
-function buildPdf(content: string): Buffer {
+function buildPdf(pages: string[][]): Buffer {
   const objects: string[] = [];
   objects.push("<< /Type /Catalog /Pages 2 0 R >>");
-  objects.push("<< /Type /Pages /Kids [3 0 R] /Count 1 >>");
-  objects.push("<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>");
+  const pageCount = pages.length;
+  const firstPageObject = 3;
+  const fontObject = firstPageObject + pageCount * 2;
+  const kids = pages.map((_, index) => `${firstPageObject + index * 2} 0 R`).join(" ");
+  objects.push(`<< /Type /Pages /Kids [${kids}] /Count ${pageCount} >>`);
+
+  for (let index = 0; index < pageCount; index += 1) {
+    const pageObjectNumber = firstPageObject + index * 2;
+    const contentObjectNumber = pageObjectNumber + 1;
+    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fontObject} 0 R >> >> /Contents ${contentObjectNumber} 0 R >>`);
+    const stream = `q\n${pages[index].join("\n")}\nQ`;
+    objects.push(`<< /Length ${Buffer.byteLength(stream, "latin1")} >>\nstream\n${stream}\nendstream`);
+  }
   objects.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
-  const stream = `q\n${content}\nQ`;
-  objects.push(`<< /Length ${Buffer.byteLength(stream, "latin1")} >>\nstream\n${stream}\nendstream`);
 
   let pdf = "%PDF-1.4\n%âãÏÓ\n";
   const offsets: number[] = [0];
@@ -228,12 +186,9 @@ function buildPdf(content: string): Buffer {
     offsets[index + 1] = Buffer.byteLength(pdf, "latin1");
     pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
   });
-
   const xrefOffset = Buffer.byteLength(pdf, "latin1");
   pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  for (let i = 1; i <= objects.length; i++) {
-    pdf += `${offsets[i].toString().padStart(10, "0")} 00000 n \n`;
-  }
+  for (let index = 1; index <= objects.length; index += 1) pdf += `${offsets[index].toString().padStart(10, "0")} 00000 n \n`;
   pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
   return Buffer.from(pdf, "latin1");
 }
@@ -241,5 +196,5 @@ function buildPdf(content: string): Buffer {
 export function generatePayslipPdf(input: PayslipPdfInput): Buffer {
   const missing = requiredMissing(input);
   if (missing.length > 0) throw new PayslipPdfPrerequisiteError(missing);
-  return buildPdf(buildContent(input));
+  return buildPdf(buildPages(input));
 }
