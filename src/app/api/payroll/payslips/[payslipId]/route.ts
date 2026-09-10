@@ -5,31 +5,17 @@ import { prisma } from "@/lib/prisma";
 import { readPayslipDocument } from "@/lib/payroll/payslip-storage";
 
 function safeFilePart(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-zA-Z0-9_-]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 80) || "salarie";
+  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "salarie";
 }
 
-export async function GET(
-  _request: Request,
-  { params }: { params: { payslipId: string } },
-) {
+export async function GET(_request: Request, { params }: { params: { payslipId: string } }) {
   const membership = await getCurrentMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return new NextResponse("Non autorisé", { status: 401 });
 
   const payslip = await prisma.payslip.findFirst({
     where: { id: params.payslipId, organizationId: membership.organizationId },
-    select: {
-      id: true,
-      employeeId: true,
-      documentStatus: true,
-      storageKey: true,
-      employee: { select: { firstName: true, lastName: true } },
-    },
+    select: { id: true, employeeId: true, documentStatus: true, storageKey: true },
   });
 
   if (!payslip) return new NextResponse("Bulletin introuvable", { status: 404 });
@@ -50,12 +36,11 @@ export async function GET(
       },
     });
 
-    const employeeName = safeFilePart(`${payslip.employee.firstName}-${payslip.employee.lastName}`);
     return new NextResponse(new Uint8Array(pdf), {
       status: 200,
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="bulletin-${employeeName}.pdf"`,
+        "Content-Disposition": `attachment; filename="bulletin-${safeFilePart(payslip.employeeId)}.pdf"`,
         "Content-Length": String(pdf.length),
         "Cache-Control": "private, no-store",
         "X-Content-Type-Options": "nosniff",
