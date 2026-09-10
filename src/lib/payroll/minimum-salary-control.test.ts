@@ -16,5 +16,7 @@ describe("snapshot du contrôle du salaire minimum", () => {
 
   it("préserve l'absence de version conventionnelle validée", () => expect(buildMinimumSalaryControlSnapshot({ smic, collectiveMinimum: { status: "UNRESOLVED", code: "NO_VALIDATED_VERSION", message: "Aucune version validée." }, monthlyHours: 151.67, monthlyGrossCents: 190000 })).toEqual({ status: "UNRESOLVED", explanation: "Le minimum conventionnel n'est pas déterminable : Aucune version validée.", code: "COLLECTIVE_MINIMUM_UNRESOLVED" }));
 
+  it("préserve l'absence de règle conventionnelle validée", () => expect(buildMinimumSalaryControlSnapshot({ smic, collectiveMinimum: { status: "UNRESOLVED", code: "NO_VALIDATED_RULE", message: "Aucune règle validée." }, monthlyHours: 151.67, monthlyGrossCents: 190000 })).toEqual({ status: "UNRESOLVED", explanation: "Le minimum conventionnel n'est pas déterminable : Aucune règle validée.", code: "COLLECTIVE_MINIMUM_UNRESOLVED" }));
+
   it("ne fabrique pas de contrôle sans version SMIC validée", () => expect(buildMinimumSalaryControlSnapshot({ smic: null, monthlyHours: 151.67, monthlyGrossCents: 190000 })).toEqual({ status: "UNRESOLVED", explanation: "Aucune version validée du SMIC n'est disponible pour la période de paie.", code: "NO_VALIDATED_SMIC_RULE" }));
 });
