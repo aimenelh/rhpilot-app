@@ -4,6 +4,7 @@ import {
   type PayrollLedgerSide,
 } from "./payroll-ledger";
 import type { SocialPayrollResult } from "./social-engine";
+import type { MinimumSalaryControlSnapshot } from "./minimum-salary-control";
 
 export { persistPayrollLedger } from "./payroll-ledger";
 
@@ -50,6 +51,7 @@ export function buildPayrollLedger(input: {
   socialResult: SocialPayrollResult;
   withholdingTax: number;
   withholdingTaxRateProvided: boolean;
+  minimumSalaryControl?: MinimumSalaryControlSnapshot;
 }): PayrollLedgerEntry[] {
   const entries: PayrollLedgerEntry[] = [];
 
@@ -113,6 +115,48 @@ export function buildPayrollLedger(input: {
         metadata: { absenceId: absence.absenceId, absenceType: absence.absenceType },
       }),
     );
+  }
+
+  if (input.minimumSalaryControl?.status === "APPLICABLE") {
+    const minimumRuleVersionId =
+      input.minimumSalaryControl.source === "COLLECTIVE_AGREEMENT"
+        ? input.minimumSalaryControl.collectiveRuleVersionId
+        : input.minimumSalaryControl.smicRuleVersionId;
+
+    if (minimumRuleVersionId) {
+      entries.push(
+        createPayrollLedgerEntry({
+          code: "MINIMUM_SALARY_CONTROL",
+          label: "Contrôle du salaire minimum applicable",
+          category: "SALARY_COMPLIANCE",
+          kind: "INFORMATIONAL",
+          side: "NEUTRAL",
+          amount: roundMoney((input.minimumSalaryControl.appliedMonthlyMinimumCents ?? 0) / 100),
+          grossDelta: 0,
+          taxableDelta: 0,
+          socialDelta: 0,
+          netDelta: 0,
+          cashImpact: 0,
+          ruleVersionId: minimumRuleVersionId,
+          sourceName:
+            input.minimumSalaryControl.source === "COLLECTIVE_AGREEMENT"
+              ? "Convention collective"
+              : "SMIC",
+          sourceUrl: null,
+          metadata: {
+            authoritativeControl: true,
+            source: input.minimumSalaryControl.source,
+            appliedMonthlyMinimumCents: input.minimumSalaryControl.appliedMonthlyMinimumCents,
+            smicMonthlyMinimumCents: input.minimumSalaryControl.smicMonthlyMinimumCents,
+            collectiveMonthlyMinimumCents:
+              input.minimumSalaryControl.collectiveMonthlyMinimumCents,
+            compliant: input.minimumSalaryControl.compliant,
+            differenceCents: input.minimumSalaryControl.differenceCents,
+            explanation: input.minimumSalaryControl.explanation,
+          },
+        }),
+      );
+    }
   }
 
   for (const contribution of input.socialResult.contributionDetails) {
