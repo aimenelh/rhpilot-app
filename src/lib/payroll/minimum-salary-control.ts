@@ -23,12 +23,20 @@ export type MinimumSalaryControlSnapshot = {
  * modifie jamais le salaire saisi.
  */
 export function buildMinimumSalaryControlSnapshot(input: {
-  smic: SmicMinimumResult;
+  smic: SmicMinimumResult | null;
   collectiveMinimum?: CollectiveMinimumSalaryResult;
   monthlyHours: number;
   collectiveRuleVersionId?: string;
   monthlyGrossCents: number;
 }): MinimumSalaryControlSnapshot {
+  if (!input.smic) {
+    return {
+      status: "UNRESOLVED",
+      explanation: "Aucune version validée du SMIC n'est disponible pour la période de paie.",
+      code: "NO_VALIDATED_SMIC_RULE",
+    };
+  }
+
   const resolution = resolveMinimumSalary(input);
 
   if (resolution.status === "UNRESOLVED") {
