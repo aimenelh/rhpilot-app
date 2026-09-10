@@ -55,7 +55,7 @@ export function PricingCalculator() {
           <>
             <p className="font-display text-3xl font-semibold text-ink">0 €<span className="text-base font-normal text-ink-soft"> / mois</span></p>
             <p className="mt-1 text-sm text-ink-soft">
-              Le palier Gratuit couvre jusqu&apos;à {FREE_TIER_LIMIT} salariés — pas besoin de Pro pour l&apos;instant.
+              Le palier Gratuit couvre jusqu&apos;à {FREE_TIER_LIMIT} salariés. Pas besoin de Pro pour l&apos;instant.
             </p>
           </>
         ) : (
@@ -64,7 +64,7 @@ export function PricingCalculator() {
               {formatEuros(proTotalCents)} €<span className="text-base font-normal text-ink-soft"> / mois</span>
             </p>
             <p className="mt-1 text-sm text-ink-soft">
-              15 € + {headcount} × 3 € — palier Pro, salariés illimités, résiliable à tout moment.
+              15 € + {headcount} × 3 €. Palier Pro, salariés illimités, résiliable à tout moment.
             </p>
           </>
         )}

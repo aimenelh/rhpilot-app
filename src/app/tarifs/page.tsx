@@ -12,14 +12,10 @@ export const metadata = {
   description: "Un prix simple, par salarié. Le Copilote IA reste gratuit pendant toute la bêta.",
 };
 
-function FeatureLine({ tone, children }: { tone: "ink" | "brand"; children: React.ReactNode }) {
+function FeatureLine({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex items-start gap-2.5">
-      <Check
-        size={16}
-        className={`mt-0.5 shrink-0 ${tone === "brand" ? "text-brand-primary" : "text-ink-faint"}`}
-        aria-hidden
-      />
+      <Check size={16} className="mt-0.5 shrink-0 text-brand-primary" aria-hidden />
       <span>{children}</span>
     </div>
   );
@@ -39,7 +35,6 @@ export default function TarifsPage() {
           </h1>
           <p className="mx-auto mt-5 max-w-xl text-lg text-ink-soft">
             Pas de palier caché ni de fonctionnalité verrouillée pour vous faire changer d&apos;offre.
-            Le Copilote IA est inclus partout, gratuitement, pendant toute la durée de la bêta.
           </p>
         </Reveal>
       </section>
@@ -53,56 +48,39 @@ export default function TarifsPage() {
         </Reveal>
       </section>
 
-      {/* Gratuit et Pro, en vis-à-vis plutôt qu'en cartes identiques :
-          Pro porte le vrai poids visuel, c'est le produit tel qu'il
-          est pensé pour durer, pas une case parmi d'autres. */}
-      <section className="mx-auto max-w-4xl px-6 pb-16">
-        <div className="grid grid-cols-1 gap-10 border-t border-surface-border pt-12 sm:grid-cols-5 sm:gap-12">
-          <div className="sm:col-span-2">
-            <Reveal variant="left">
+      {/* Pro comme seul vrai contenu de cette section, pas une carte parmi
+          deux : c'est le produit tel qu'il est pensé pour durer. Gratuit
+          redescend en simple mention texte plus bas, pas en case
+          concurrente au même niveau visuel. */}
+      <section className="mx-auto max-w-3xl border-t border-surface-border px-6 py-16">
+        <Reveal>
+          <div className="grid gap-10 sm:grid-cols-[auto_1fr] sm:items-start">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Gratuit</p>
-              <p className="mt-3 text-4xl font-bold text-ink">0 €</p>
-              <p className="mt-1 text-sm text-ink-soft">Pour découvrir RH Pilot, jusqu&apos;à 3 salariés.</p>
-
-              <div className="mt-6 flex flex-col gap-3 text-sm text-ink-soft">
-                <FeatureLine tone="ink">Parcours et rappels illimités</FeatureLine>
-                <FeatureLine tone="ink">Copilote IA inclus (gratuit pendant la bêta)</FeatureLine>
-                <FeatureLine tone="ink">Hébergé en Europe, sans engagement</FeatureLine>
-              </div>
-
-              <Link href="/sign-up" className="mt-6 inline-block">
-                <Button variant="secondary" className="text-sm">
-                  Essayer gratuitement
-                </Button>
-              </Link>
-            </div>
-            </Reveal>
-          </div>
-
-          <div className="sm:col-span-3">
-            <Reveal variant="right" delay={100}>
-            <div className="rounded-2xl border border-brand-primary/20 bg-brand-primary/[0.03] p-8">
               <p className="text-xs font-semibold uppercase tracking-[0.15em] text-brand-primary">Pro</p>
-              <p className="mt-3 flex items-baseline gap-2">
-                <span className="text-4xl font-bold text-ink">15 €</span>
-                <span className="text-sm text-ink-soft">/ mois</span>
-                <span className="text-base text-ink-faint">+ 3 € / salarié / mois</span>
+              <p className="mt-3 flex items-baseline gap-1">
+                <span className="font-display text-5xl font-semibold text-ink">15 €</span>
               </p>
-              <p className="mt-1 text-sm text-ink-soft">
+              <p className="text-sm text-ink-faint">+ 3 € / salarié / mois</p>
+            </div>
+
+            <div>
+              <p className="text-base leading-relaxed text-ink-soft">
                 Salariés illimités, pour les équipes qui veulent que RH Pilot suive vraiment leur
                 effectif au quotidien.
               </p>
 
               <div className="mt-6 flex flex-col gap-3 text-sm text-ink-soft">
-                <FeatureLine tone="brand">Tout ce qui est dans Gratuit, sans limite de salariés</FeatureLine>
-                <FeatureLine tone="brand">Bulletins de paie calculés à partir de règles versionnées, jamais estimées</FeatureLine>
-                <FeatureLine tone="brand">Copilote IA inclus, gratuit pendant toute la bêta</FeatureLine>
-                <FeatureLine tone="brand">Facture unique mensuelle, forfait de base + salariés détaillés</FeatureLine>
-                <FeatureLine tone="brand">Résiliable à tout moment</FeatureLine>
+                <FeatureLine>Parcours et rappels illimités, sans limite de salariés</FeatureLine>
+                <FeatureLine>
+                  Toute la gestion de la paie : bulletins, cotisations sociales, congés et absences,
+                  arrêts de travail, référentiel conventionnel, contexte employeur
+                </FeatureLine>
+                <FeatureLine>Copilote IA inclus, gratuit à vie</FeatureLine>
+                <FeatureLine>Facture unique mensuelle, forfait de base + salariés détaillés</FeatureLine>
+                <FeatureLine>Résiliable à tout moment</FeatureLine>
               </div>
 
-              <Link href="/sign-up" className="mt-6 inline-block">
+              <Link href="/sign-up" className="mt-7 inline-block">
                 <Button className="text-sm">
                   <span className="inline-flex items-center gap-2">
                     Créer mon compte <ArrowRight size={16} />
@@ -110,16 +88,29 @@ export default function TarifsPage() {
                 </Button>
               </Link>
             </div>
-            </Reveal>
           </div>
-        </div>
+        </Reveal>
       </section>
 
-      {/* Enterprise, en ligne discrète plutôt qu'une troisième carte
-          identique aux deux premières */}
-      <section className="mx-auto max-w-4xl border-t border-surface-border px-6 py-10">
+      {/* Gratuit et Enterprise, deux mentions discrètes au même registre,
+          pas deux cartes qui concurrencent Pro visuellement. */}
+      <section className="mx-auto max-w-3xl divide-y divide-surface-border border-t border-surface-border px-6">
         <Reveal>
-          <div className="flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+          <div className="flex flex-col items-start justify-between gap-4 py-8 sm:flex-row sm:items-center">
+            <div>
+              <p className="text-sm font-semibold text-ink">
+                Vous voulez tester avant ? Le palier Gratuit couvre jusqu&apos;à 3 salariés, Copilote IA
+                inclus le temps de la bêta.
+              </p>
+              <p className="mt-1 text-sm text-ink-soft">Sans engagement, hébergé en Europe.</p>
+            </div>
+            <Link href="/sign-up" className="shrink-0 text-sm font-medium text-brand-primary hover:underline">
+              Essayer gratuitement →
+            </Link>
+          </div>
+        </Reveal>
+        <Reveal>
+          <div className="flex flex-col items-start justify-between gap-4 py-8 sm:flex-row sm:items-center">
             <div>
               <p className="text-sm font-semibold text-ink">Besoin sur mesure ? Plusieurs sites, SIRH existant, accompagnement dédié.</p>
               <p className="mt-1 text-sm text-ink-soft">Enterprise sur devis, on en discute directement.</p>
@@ -135,12 +126,12 @@ export default function TarifsPage() {
       </section>
 
       {/* Honnêteté sur la bêta, cohérent avec le reste du site */}
-      <section className="mx-auto max-w-2xl px-6 pb-16 text-center">
+      <section className="mx-auto max-w-2xl px-6 py-16 text-center">
         <Reveal>
           <p className="text-sm text-ink-faint">
-            RH Pilot est en bêta. Le Copilote IA reste gratuit pour tout le monde tant que la bêta
-            dure, quel que soit le palier choisi. Le module Paie calcule à partir de règles
-            versionnées et continue de se construire vers une conformité complète.
+            RH Pilot est en bêta. Sur le palier Gratuit, le Copilote IA reste inclus tant que la bêta
+            dure. Sur le palier Pro, il reste inclus gratuitement, bêta ou pas. Le module Paie continue
+            de se construire vers une conformité complète.
           </p>
         </Reveal>
       </section>
