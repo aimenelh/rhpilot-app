@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { addPayrollVariable, deletePayrollVariable, type PayrollVariableFormState } from "./periodActions";
 import PayrollReopenButton from "./PayrollReopenButton";
+import MinimumSalaryControlSection from "./MinimumSalaryControlSection";
 
 const VARIABLE_OPTIONS = [
   ["ACTIVITY_BONUS", "Prime liée à l'activité"],
@@ -245,6 +246,8 @@ export default function PayrollVariablesSection({
           <p className="px-5 py-8 text-sm text-ink-soft">Aucun salarié actif dans cette organisation.</p>
         )}
       </div>
+
+      <MinimumSalaryControlSection periodId={periodId} employees={employees} />
 
       <div className="border-t border-surface-border">
         <div className="px-5 py-4">
