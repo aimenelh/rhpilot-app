@@ -5,19 +5,25 @@ import { useFormState, useFormStatus } from "react-dom";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, Select, FieldHint } from "@/components/ui/Field";
-import { getAlternanceProfile, saveAlternanceProfile, type AlternanceProfileData, type AlternanceProfileFormState } from "./alternanceActions";
+import { getAlternanceMinimumPreview, getAlternanceProfile, saveAlternanceProfile, type AlternanceMinimumPreview, type AlternanceProfileData, type AlternanceProfileFormState } from "./alternanceActions";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
-  return <Button type="submit" disabled={pending}>{pending ? "Enregistrement..." : "Enregistrer le profil"}</Button>;
+  return <Button type="submit" disabled={pending}>{pending ? "Enregistrement..." : "Enregistrer"}</Button>;
 }
 
 function dateOnly(value: string | null) {
   return value ? value.slice(0, 10) : "";
 }
 
-export function AlternanceProfileSection({ employeeId, canEdit }: { employeeId: string; canEdit: boolean }) {
+function formatEuros(cents: number | null) {
+  if (cents === null) return "—";
+  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(cents / 100);
+}
+
+export function AlternanceProfileSection({ employeeId, canEdit, embedded = false }: { employeeId: string; canEdit: boolean; embedded?: boolean }) {
   const [profile, setProfile] = useState<AlternanceProfileData | null | undefined>(undefined);
+  const [preview, setPreview] = useState<AlternanceMinimumPreview | null>(null);
   const [state, formAction] = useFormState<AlternanceProfileFormState, FormData>(
     saveAlternanceProfile.bind(null, employeeId),
     undefined
@@ -25,8 +31,11 @@ export function AlternanceProfileSection({ employeeId, canEdit }: { employeeId: 
 
   useEffect(() => {
     let active = true;
-    getAlternanceProfile(employeeId).then((data) => {
-      if (active) setProfile(data);
+    Promise.all([getAlternanceProfile(employeeId), getAlternanceMinimumPreview(employeeId)]).then(([data, minimum]) => {
+      if (active) {
+        setProfile(data);
+        setPreview(minimum);
+      }
     });
     return () => { active = false; };
   }, [employeeId, state]);
@@ -34,24 +43,49 @@ export function AlternanceProfileSection({ employeeId, canEdit }: { employeeId: 
   if (profile === undefined || profile === null) return null;
 
   const isApprenticeship = profile.contractType === "APPRENTISSAGE";
+  const wrapperClass = embedded ? "mt-6 border-t border-line pt-6" : "mt-5";
 
   return (
-    <Card className="mt-5" id="alternance">
+    <div className={wrapperClass} id="alternance">
       <div className="flex flex-col gap-1">
-        <h2 className="text-sm font-semibold text-ink">Profil alternance</h2>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h3 className="text-sm font-semibold text-ink">Paramètres de rémunération alternance</h3>
+          {preview?.status === "APPLICABLE" && (
+            <span className="rounded-full bg-accent-teal/10 px-2.5 py-1 text-xs font-semibold text-accent-teal">
+              {preview.percentageOfSmic}% du SMIC minimum
+            </span>
+          )}
+        </div>
         <p className="text-sm text-ink-soft">
-          Ces informations permettent de contrôler le minimum de rémunération applicable avant le calcul de la paie.
+          Ces informations déterminent le minimum légal applicable. Le salaire brut saisi dans le profil paie reste la rémunération contractuelle réellement appliquée.
         </p>
       </div>
+
+      {preview?.status === "APPLICABLE" && (
+        <div className="mt-4 grid grid-cols-1 gap-3 rounded-xl border border-line bg-surface-muted p-4 sm:grid-cols-3">
+          <div>
+            <p className="text-xs text-ink-faint">Âge retenu</p>
+            <p className="mt-1 text-sm font-semibold text-ink">{preview.age} ans</p>
+          </div>
+          <div>
+            <p className="text-xs text-ink-faint">Minimum légal</p>
+            <p className="mt-1 text-sm font-semibold text-ink">{formatEuros(preview.monthlyMinimumCents)}</p>
+          </div>
+          <div>
+            <p className="text-xs text-ink-faint">SMIC de référence</p>
+            <p className="mt-1 text-sm font-semibold text-ink">{formatEuros(preview.smicMonthlyCents)}</p>
+          </div>
+        </div>
+      )}
+      {preview?.status === "UNRESOLVED" && (
+        <p className="mt-4 rounded-lg border border-accent-amber/30 bg-accent-amber/5 px-3.5 py-2.5 text-sm text-ink">
+          {preview.detail}
+        </p>
+      )}
 
       {state?.error && (
         <p role="alert" className="mt-4 rounded-lg border border-accent-rose/30 bg-accent-rose/5 px-3.5 py-2.5 text-sm text-accent-rose">
           {state.error}
-        </p>
-      )}
-      {!state?.error && state !== undefined && (
-        <p className="mt-4 rounded-lg border border-accent-teal/25 bg-accent-teal/5 px-3.5 py-2.5 text-sm text-ink">
-          Profil alternance enregistré. Il sera pris en compte par le contrôle du minimum lors du prochain calcul.
         </p>
       )}
 
@@ -72,14 +106,14 @@ export function AlternanceProfileSection({ employeeId, canEdit }: { employeeId: 
             </div>
             {isApprenticeship ? (
               <div>
-                <Label htmlFor="alternance-contractYear">Année du contrat</Label>
+                <Label htmlFor="alternance-contractYear">Année d'exécution</Label>
                 <Select id="alternance-contractYear" name="contractYear" defaultValue={profile.contractYear ? String(profile.contractYear) : ""} required>
                   <option value="">Sélectionner</option>
                   <option value="1">1re année</option>
                   <option value="2">2e année</option>
                   <option value="3">3e année</option>
                 </Select>
-                <FieldHint>Le taux légal d'apprentissage dépend de l'année d'exécution du contrat.</FieldHint>
+                <FieldHint>Détermine le taux minimum d'apprentissage.</FieldHint>
               </div>
             ) : (
               <div>
@@ -89,7 +123,7 @@ export function AlternanceProfileSection({ employeeId, canEdit }: { employeeId: 
                   <option value="true">Baccalauréat ou diplôme supérieur</option>
                   <option value="false">Inférieur au baccalauréat</option>
                 </Select>
-                <FieldHint>Ce niveau intervient dans le minimum du contrat de professionnalisation lorsque le salarié a moins de 26 ans.</FieldHint>
+                <FieldHint>Utilisé pour déterminer le minimum de professionnalisation avant 26 ans.</FieldHint>
               </div>
             )}
           </div>
@@ -107,9 +141,8 @@ export function AlternanceProfileSection({ employeeId, canEdit }: { employeeId: 
           </div>
 
           <div>
-            <Label htmlFor="alternance-sourceReference">Référence justificative (facultatif)</Label>
-            <Input id="alternance-sourceReference" name="sourceReference" defaultValue={profile.sourceReference ?? ""} placeholder="Ex. contrat d'apprentissage signé le 01/09/2026" />
-            <FieldHint>La référence est conservée avec la version du profil pour faciliter la traçabilité.</FieldHint>
+            <Label htmlFor="alternance-sourceReference">Référence justificative <span className="font-normal text-ink-faint">(facultatif)</span></Label>
+            <Input id="alternance-sourceReference" name="sourceReference" defaultValue={profile.sourceReference ?? ""} placeholder="Ex. contrat signé le 01/09/2026" />
           </div>
 
           <div className="flex justify-end pt-1">
@@ -117,6 +150,6 @@ export function AlternanceProfileSection({ employeeId, canEdit }: { employeeId: 
           </div>
         </form>
       )}
-    </Card>
+    </div>
   );
 }
