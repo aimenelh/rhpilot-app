@@ -39,21 +39,17 @@ export function buildAlternanceMinimumSnapshot(input: {
   profileValidUntil: Date | null;
   profileSource: string;
   profileSourceReference: string | null;
-  legalMinimumCents?: number | null;
+  legalMinimumCents: number | null;
 }): AlternanceMinimumSnapshot {
   if (!Number.isInteger(input.age) || input.age < 0 || input.age > 100) throw new Error("L'âge du snapshot alternance est invalide.");
   if (!Number.isInteger(input.baseSalaryCents) || input.baseSalaryCents < 0) throw new Error("Le salaire brut du snapshot alternance est invalide.");
   if (!Number.isFinite(input.smicMonthlyCents) || input.smicMonthlyCents <= 0) throw new Error("Le SMIC du snapshot alternance est invalide.");
   if (!Number.isFinite(input.collectiveMinimumCents ?? 0) || (input.collectiveMinimumCents ?? 0) < 0) throw new Error("Le minimum conventionnel du snapshot alternance est invalide.");
+  if (input.legalMinimumCents !== null && (!Number.isFinite(input.legalMinimumCents) || input.legalMinimumCents < 0)) throw new Error("Le minimum légal du snapshot alternance est invalide.");
   if (!Number.isFinite(input.profileValidFrom.getTime())) throw new Error("La date de début du profil alternance est invalide.");
   if (input.profileValidUntil && !Number.isFinite(input.profileValidUntil.getTime())) throw new Error("La date de fin du profil alternance est invalide.");
 
   const applicableMinimumCents = input.result.status === "APPLICABLE" ? input.result.monthlyMinimumCents ?? null : null;
-  const legalMinimumCents = input.legalMinimumCents ?? (
-    input.result.status === "APPLICABLE" && input.collectiveMinimumCents != null
-      ? Math.min(applicableMinimumCents ?? 0, input.collectiveMinimumCents)
-      : applicableMinimumCents
-  );
 
   return {
     status: input.result.status,
@@ -65,7 +61,7 @@ export function buildAlternanceMinimumSnapshot(input: {
     hasBaccalaureateOrHigher: input.hasBaccalaureateOrHigher,
     smicMonthlyCents: input.smicMonthlyCents,
     smicScope: input.smicScope,
-    legalMinimumCents,
+    legalMinimumCents: input.legalMinimumCents,
     collectiveMinimumCents: input.collectiveMinimumCents,
     applicableMinimumCents,
     percentageOfSmic: input.result.percentageOfSmic ?? null,
