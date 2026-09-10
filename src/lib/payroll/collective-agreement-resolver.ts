@@ -17,6 +17,7 @@ export interface CollectiveAgreementRuleRef {
   validFrom: Date;
   validUntil?: Date | null;
   status: CollectiveAgreementRuleStatus;
+  parameters?: unknown;
 }
 
 export interface CollectiveAgreementResolutionInput {
