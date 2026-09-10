@@ -1,18 +1,28 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import { AmbientGlow } from "@/components/landing/AmbientGlow";
 import { Reveal } from "@/components/landing/Reveal";
+import { PricingCalculator } from "@/components/landing/PricingCalculator";
 
 export const metadata = {
   title: "Tarifs, RH Pilot",
   description: "Un prix simple, par salarié. Le Copilote IA reste gratuit pendant toute la bêta.",
 };
 
-function Dot({ color }: { color: string }) {
-  return <span aria-hidden className={`mt-2 h-1.5 w-1.5 shrink-0 rounded-full ${color}`} />;
+function FeatureLine({ tone, children }: { tone: "ink" | "brand"; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2.5">
+      <Check
+        size={16}
+        className={`mt-0.5 shrink-0 ${tone === "brand" ? "text-brand-primary" : "text-ink-faint"}`}
+        aria-hidden
+      />
+      <span>{children}</span>
+    </div>
+  );
 }
 
 export default function TarifsPage() {
@@ -22,7 +32,7 @@ export default function TarifsPage() {
       <MarketingHeader />
 
       {/* Le manifeste, même registre que le reste du site */}
-      <section className="mx-auto max-w-3xl px-6 py-16 text-center">
+      <section className="mx-auto max-w-3xl px-6 pb-10 pt-16 text-center">
         <Reveal variant="scale">
           <h1 className="font-display text-4xl font-semibold leading-[1.1] tracking-tight text-ink sm:text-5xl">
             Un prix simple, <span className="bg-brand-primary bg-clip-text text-transparent">par salarié</span>.
@@ -31,6 +41,15 @@ export default function TarifsPage() {
             Pas de palier caché ni de fonctionnalité verrouillée pour vous faire changer d&apos;offre.
             Le Copilote IA est inclus partout, gratuitement, pendant toute la durée de la bêta.
           </p>
+        </Reveal>
+      </section>
+
+      {/* Le calculateur d'abord : la formule de prix n'est pas un slogan,
+          c'est un vrai calcul. Autant laisser le visiteur le faire lui-même
+          plutôt que de le lui résumer en une ligne. */}
+      <section className="mx-auto max-w-xl px-6 pb-16">
+        <Reveal variant="up">
+          <PricingCalculator />
         </Reveal>
       </section>
 
@@ -47,18 +66,9 @@ export default function TarifsPage() {
               <p className="mt-1 text-sm text-ink-soft">Pour découvrir RH Pilot, jusqu&apos;à 3 salariés.</p>
 
               <div className="mt-6 flex flex-col gap-3 text-sm text-ink-soft">
-                <div className="flex items-start gap-2.5">
-                  <Dot color="bg-accent-teal" />
-                  <span>Parcours et rappels illimités</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <Dot color="bg-accent-teal" />
-                  <span>Copilote IA inclus (gratuit pendant la bêta)</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <Dot color="bg-accent-teal" />
-                  <span>Hébergé en Europe, sans engagement</span>
-                </div>
+                <FeatureLine tone="ink">Parcours et rappels illimités</FeatureLine>
+                <FeatureLine tone="ink">Copilote IA inclus (gratuit pendant la bêta)</FeatureLine>
+                <FeatureLine tone="ink">Hébergé en Europe, sans engagement</FeatureLine>
               </div>
 
               <Link href="/sign-up" className="mt-6 inline-block">
@@ -85,26 +95,11 @@ export default function TarifsPage() {
               </p>
 
               <div className="mt-6 flex flex-col gap-3 text-sm text-ink-soft">
-                <div className="flex items-start gap-2.5">
-                  <Dot color="bg-brand-primary" />
-                  <span>Tout ce qui est dans Gratuit, sans limite de salariés</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <Dot color="bg-brand-primary" />
-                  <span>Bulletins de paie calculés à partir de règles versionnées, jamais estimées</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <Dot color="bg-brand-primary" />
-                  <span>Copilote IA inclus, gratuit pendant toute la bêta</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <Dot color="bg-brand-primary" />
-                  <span>Facture unique mensuelle, forfait de base + salariés détaillés</span>
-                </div>
-                <div className="flex items-start gap-2.5">
-                  <Dot color="bg-brand-primary" />
-                  <span>Résiliable à tout moment</span>
-                </div>
+                <FeatureLine tone="brand">Tout ce qui est dans Gratuit, sans limite de salariés</FeatureLine>
+                <FeatureLine tone="brand">Bulletins de paie calculés à partir de règles versionnées, jamais estimées</FeatureLine>
+                <FeatureLine tone="brand">Copilote IA inclus, gratuit pendant toute la bêta</FeatureLine>
+                <FeatureLine tone="brand">Facture unique mensuelle, forfait de base + salariés détaillés</FeatureLine>
+                <FeatureLine tone="brand">Résiliable à tout moment</FeatureLine>
               </div>
 
               <Link href="/sign-up" className="mt-6 inline-block">
