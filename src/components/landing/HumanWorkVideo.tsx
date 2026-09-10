@@ -115,10 +115,6 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
           0% { opacity: 0; transform: scale(1.04); }
           100% { opacity: 1; transform: scale(1); }
         }
-        @keyframes rhpilot-video-glow {
-          0%, 100% { opacity: .12; transform: scale(.94); }
-          50% { opacity: .3; transform: scale(1.08); }
-        }
         @keyframes rhpilot-brand-in {
           0% { opacity: 0; transform: translateY(10px) scale(.97); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
@@ -177,11 +173,9 @@ export function HumanWorkVideo({ className = "" }: { className?: string }) {
             >
               <div
                 className={`pointer-events-none absolute -left-16 -top-20 h-64 w-64 rounded-full bg-[#f46f61]/20 blur-3xl transition-opacity duration-1000 ${showEndCard ? "opacity-100" : "opacity-0"}`}
-                style={{ animation: showEndCard ? "rhpilot-video-glow 5s ease-in-out infinite" : undefined }}
               />
               <div
                 className={`pointer-events-none absolute -bottom-24 -right-16 h-72 w-72 rounded-full bg-[#ff9a76]/20 blur-3xl transition-opacity duration-1000 ${showEndCard ? "opacity-100" : "opacity-0"}`}
-                style={{ animation: showEndCard ? "rhpilot-video-glow 6s ease-in-out 1s infinite" : undefined }}
               />
 
               <div
