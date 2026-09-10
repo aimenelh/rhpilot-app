@@ -7,6 +7,68 @@ import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 
 export type AlternanceProfileFormState = { error: string } | undefined;
 
+export type AlternanceProfileData = {
+  contractType: string | null;
+  birthDate: string | null;
+  contractYear: number | null;
+  hasBaccalaureateOrHigher: boolean | null;
+  validFrom: string | null;
+  validUntil: string | null;
+  sourceReference: string | null;
+};
+
+export async function getAlternanceProfile(employeeId: string): Promise<AlternanceProfileData | null> {
+  const membership = await getCurrentMembership();
+  if (!membership) return null;
+
+  const employee = await prisma.employee.findFirst({
+    where: { id: employeeId, organizationId: membership.organizationId, deletedAt: null },
+    select: { contractType: true },
+  });
+  if (!employee || !["APPRENTISSAGE", "PROFESSIONNALISATION"].includes(employee.contractType ?? "")) {
+    return null;
+  }
+
+  const rows = await prisma.$queryRaw<Array<{
+    birthDate: Date;
+    contractYear: number | null;
+    hasBaccalaureateOrHigher: boolean | null;
+    validFrom: Date;
+    validUntil: Date | null;
+    sourceReference: string | null;
+  }>>`
+    SELECT "birthDate", "contractYear", "hasBaccalaureateOrHigher", "validFrom", "validUntil", "sourceReference"
+    FROM "employee_alternance_profiles"
+    WHERE "organizationId" = ${membership.organizationId}
+      AND "employeeId" = ${employeeId}
+    ORDER BY "validFrom" DESC
+    LIMIT 1
+  `;
+
+  const row = rows[0];
+  if (!row) {
+    return {
+      contractType: employee.contractType,
+      birthDate: null,
+      contractYear: null,
+      hasBaccalaureateOrHigher: null,
+      validFrom: null,
+      validUntil: null,
+      sourceReference: null,
+    };
+  }
+
+  return {
+    contractType: employee.contractType,
+    birthDate: row.birthDate.toISOString(),
+    contractYear: row.contractYear,
+    hasBaccalaureateOrHigher: row.hasBaccalaureateOrHigher,
+    validFrom: row.validFrom.toISOString(),
+    validUntil: row.validUntil?.toISOString() ?? null,
+    sourceReference: row.sourceReference,
+  };
+}
+
 function parseDate(value: string, label: string): Date {
   const date = new Date(`${value}T00:00:00.000Z`);
   if (!value || Number.isNaN(date.getTime())) throw new Error(`${label} n'est pas valide.`);
@@ -77,9 +139,6 @@ export async function saveAlternanceProfile(
 
   try {
     await prisma.$transaction(async (tx) => {
-      // Une seule version doit être applicable à une date donnée. On
-      // ferme la version ouverte avant d'insérer la nouvelle, sans
-      // jamais supprimer l'historique.
       await tx.$executeRaw`
         UPDATE "employee_alternance_profiles"
         SET "validUntil" = (${validFrom}::date - INTERVAL '1 day'), "updatedAt" = CURRENT_TIMESTAMP
