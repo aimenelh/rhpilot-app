@@ -3,6 +3,8 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMemberships } from "@/lib/auth";
 import PayrollReopenInlineButton from "./PayrollReopenInlineButton";
+import { prepareDemoPayrollData } from "./demoPayrollActions";
+import { DemoPayrollSetupButton } from "./DemoPayrollSetupButton";
 
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 const PAYROLL_STATUS_LABELS: Record<string, string> = {
@@ -79,13 +81,14 @@ export default async function PayrollPage() {
 
   const [periods, employees, profileRows] = await Promise.all([
     prisma.payrollPeriod.findMany({ where: { organizationId: membership.organizationId }, select: { id: true, year: true, month: true, status: true }, orderBy: [{ year: "desc" }, { month: "desc" }], take: 12 }),
-    prisma.employee.findMany({ where: { organizationId: membership.organizationId, deletedAt: null }, select: { id: true, firstName: true, lastName: true, position: true }, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] }),
+    prisma.employee.findMany({ where: { organizationId: membership.organizationId, deletedAt: null }, select: { id: true, firstName: true, lastName: true, position: true, isDemoData: true }, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] }),
     prisma.payrollProfile.findMany({ where: { organizationId: membership.organizationId, OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: new Date() } }] }, select: { employeeId: true, baseSalaryCents: true, monthlyHours: true, effectiveFrom: true }, orderBy: [{ employeeId: "asc" }, { effectiveFrom: "desc" }] }),
   ]);
 
   const profileByEmployee = new Map<string, (typeof profileRows)[number]>();
   for (const profile of profileRows) if (!profileByEmployee.has(profile.employeeId)) profileByEmployee.set(profile.employeeId, profile);
   const configuredCount = employees.filter((employee) => profileByEmployee.has(employee.id)).length;
+  const demoOnly = employees.length > 0 && employees.every((employee) => employee.isDemoData);
   const now = new Date();
   const currentPeriod = periods.find((period) => period.year === now.getFullYear() && period.month === now.getMonth() + 1);
 
@@ -95,13 +98,20 @@ export default async function PayrollPage() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-brand-primary">Paie</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink">Préparer et sécuriser la paie</h1>
-          <p className="mt-1 max-w-2xl text-sm text-ink-soft">Le socle paie est en place. On commence par les profils salariés et les périodes, avant de brancher les règles sociales officielles et les calculs complets.</p>
+          <p className="mt-1 max-w-2xl text-sm text-ink-soft">Configurez les profils salariés, préparez une période, puis contrôlez le calcul social avant la génération des bulletins.</p>
         </div>
-        <form action={createPayrollPeriod} className="flex items-center gap-2 rounded-xl border border-surface-border bg-white p-2 shadow-sm">
-          <select name="month" defaultValue={String(now.getMonth() + 1)} className="rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink">{MONTHS.map((month, index) => <option key={month} value={index + 1}>{month}</option>)}</select>
-          <input name="year" type="number" defaultValue={now.getFullYear()} min="2000" max="2100" className="w-24 rounded-lg border border-surface-border px-3 py-2 text-sm text-ink" />
-          <button type="submit" className="rounded-lg bg-brand-primary px-3 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90">Ouvrir la période</button>
-        </form>
+        <div className="flex flex-wrap items-center gap-2">
+          {demoOnly && (
+            <form action={prepareDemoPayrollData}>
+              <DemoPayrollSetupButton />
+            </form>
+          )}
+          <form action={createPayrollPeriod} className="flex items-center gap-2 rounded-xl border border-surface-border bg-white p-2 shadow-sm">
+            <select name="month" defaultValue={String(now.getMonth() + 1)} className="rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink">{MONTHS.map((month, index) => <option key={month} value={index + 1}>{month}</option>)}</select>
+            <input name="year" type="number" defaultValue={now.getFullYear()} min="2000" max="2100" className="w-24 rounded-lg border border-surface-border px-3 py-2 text-sm text-ink" />
+            <button type="submit" className="rounded-lg bg-brand-primary px-3 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90">Ouvrir la période</button>
+          </form>
+        </div>
       </div>
 
       <div className="mt-7 grid gap-4 sm:grid-cols-3">
@@ -109,6 +119,13 @@ export default async function PayrollPage() {
         <div className="rounded-xl border border-surface-border bg-white p-5"><p className="text-xs text-ink-faint">Profils paie configurés</p><p className="mt-2 text-2xl font-semibold text-ink">{configuredCount}/{employees.length}</p></div>
         <div className="rounded-xl border border-surface-border bg-white p-5"><p className="text-xs text-ink-faint">Période en cours</p><p className="mt-2 text-2xl font-semibold text-ink">{currentPeriod ? (PAYROLL_STATUS_LABELS[currentPeriod.status] ?? currentPeriod.status) : "À ouvrir"}</p></div>
       </div>
+
+      {demoOnly && (
+        <div className="mt-6 rounded-xl border border-surface-border bg-surface-subtle px-5 py-4">
+          <p className="text-sm font-medium text-ink">Jeu de données de démonstration</p>
+          <p className="mt-1 text-xs leading-5 text-ink-soft">15 salariés fictifs avec des salaires, catégories professionnelles, taux de prélèvement et trois situations d’alternance différentes. La préparation crée la période du mois courant en brouillon, sans calculer ni clôturer la paie à votre place.</p>
+        </div>
+      )}
 
       <section className="mt-7 rounded-xl border border-surface-border bg-white">
         <div className="border-b border-surface-border px-5 py-4"><h2 className="font-semibold text-ink">Profils de paie</h2><p className="mt-1 text-xs text-ink-faint">Le salaire est historisé par date d'effet. Une modification ne réécrit pas les périodes déjà clôturées.</p></div>
