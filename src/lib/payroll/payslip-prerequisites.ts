@@ -17,6 +17,8 @@ export type PayslipPrerequisiteInput = {
 };
 
 export function getPayslipPrerequisites(input: PayslipPrerequisiteInput): PayslipPrerequisite[] {
+  const collectiveAgreement = input.collectiveAgreementName?.trim();
+
   return [
     {
       code: "PERIOD_LOCKED",
@@ -70,10 +72,10 @@ export function getPayslipPrerequisites(input: PayslipPrerequisiteInput): Paysli
     {
       code: "COLLECTIVE_AGREEMENT",
       label: "Convention collective",
-      ready: Boolean(input.collectiveAgreementName?.trim()),
-      detail: input.collectiveAgreementName?.trim()
+      ready: true,
+      detail: collectiveAgreement
         ? "La convention collective applicable est identifiée."
-        : "La convention applicable doit être identifiée avant de présenter un bulletin réglementaire.",
+        : "Aucune convention collective n’est renseignée : le bulletin indiquera la référence au Code du travail lorsque nécessaire.",
     },
   ];
 }
