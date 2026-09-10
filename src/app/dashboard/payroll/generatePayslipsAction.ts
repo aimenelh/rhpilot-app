@@ -6,6 +6,8 @@ import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateSocialPayroll, SOCIAL_MODEL_VERSION } from "@/lib/payroll/social-engine";
 import { resolveOrganizationLegalCategory } from "@/lib/payroll/social-organization-context";
+import { resolveEmployeeWithholdingTaxProfile } from "@/lib/payroll/withholding-tax-profile";
+import { calculateEmployeeWithholdingTax } from "@/lib/payroll/withholding-tax-validation";
 import { generatePayslipPdf, PayslipPdfPrerequisiteError } from "@/lib/payroll/payslip-pdf";
 import { readPayslipDocument, storePayslipDocument } from "@/lib/payroll/payslip-storage";
 
@@ -15,7 +17,7 @@ type Snapshot = {
   profile?: { monthlyHours?: unknown; classificationLabel?: unknown; classificationCode?: unknown; collectiveAgreementId?: unknown; baseSalaryCents?: unknown };
   variables?: Array<{ label?: unknown; amount?: unknown }>;
   ruleSource?: { sourceName?: unknown };
-  withholdingTax?: { status?: unknown; rate?: unknown; amount?: unknown };
+  withholdingTax?: { status?: unknown; rate?: unknown; amount?: unknown; validFrom?: unknown; validUntil?: unknown; source?: unknown; sourceReference?: unknown };
   socialEngine?: { modelVersion?: unknown; contributionDetails?: Array<{ code?: unknown; label?: unknown; sourceRule?: unknown; side?: unknown; amount?: unknown }> };
   result?: { netSocialAmount?: unknown };
 };
@@ -57,7 +59,7 @@ export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGe
   const [organization, employees, calculations, profiles, agreements, socialContext] = await Promise.all([
     prisma.organization.findFirst({ where: { id: membership.organizationId, deletedAt: null }, select: { id: true, name: true, siret: true, conventionCollective: true, collectiveAgreementId: true, payrollAddress: true, payrollPostalCode: true, payrollCity: true, payrollNafCode: true, payrollUrssafReference: true } }),
     prisma.employee.findMany({ where: { organizationId: membership.organizationId, deletedAt: null }, select: { id: true, firstName: true, lastName: true, position: true, hireDate: true, contractType: true, professionalCategory: true }, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] }),
-    prisma.payrollCalculation.findMany({ where: { organizationId: membership.organizationId, payrollPeriodId: period.id }, select: { id: true, employeeId: true, calculationSnapshot: true, grossAmount: true, employeeContributions: true, employerContributions: true, netBeforeTax: true, withholdingTax: true, netPaid: true, netSocialAmount: true } }),
+    prisma.payrollCalculation.findMany({ where: { organizationId: membership.organizationId, payrollPeriodId: period.id }, select: { id: true, employeeId: true, calculationSnapshot: true, grossAmount: true, employeeContributions: true, employerContributions: true, netBeforeTax: true, withholdingTax: true, netPaid: true, netTaxableAmount: true, netSocialAmount: true } }),
     prisma.payrollProfile.findMany({ where: { organizationId: membership.organizationId }, select: { employeeId: true, monthlyHours: true, classificationCode: true, classificationLabel: true, employeeAddress: true, collectiveAgreementId: true, baseSalaryCents: true }, orderBy: { effectiveFrom: "desc" } }),
     prisma.collectiveAgreement.findMany({ select: { id: true, name: true, idcc: true } }),
     resolveOrganizationLegalCategory(membership.organizationId),
@@ -96,6 +98,15 @@ export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGe
       const snapshotModelVersion = asString(snapshot.socialEngine?.modelVersion);
       if (snapshotModelVersion !== SOCIAL_MODEL_VERSION) return { error: `Génération bloquée pour ${employee.firstName} ${employee.lastName} : le modèle social du calcul verrouillé (${snapshotModelVersion || "inconnu"}) n'est plus celui utilisé pour produire le bulletin.` };
 
+      const withholdingTaxProfile = await resolveEmployeeWithholdingTaxProfile({ organizationId: membership.organizationId, employeeId: employee.id, periodDate: new Date(Date.UTC(period.year, period.month - 1, 1, 12, 0, 0, 0)) });
+      if (!withholdingTaxProfile) return { error: `Génération bloquée pour ${employee.firstName} ${employee.lastName} : aucun taux de prélèvement à la source salarié valide n'est disponible pour ${period.month}/${period.year}.` };
+      const expectedWithholdingTax = calculateEmployeeWithholdingTax(Number(calculation.netBeforeTax), withholdingTaxProfile, employee.id);
+      assertClose("prélèvement à la source", expectedWithholdingTax, Number(calculation.withholdingTax));
+      const snapshotRate = asNumber(snapshot.withholdingTax?.rate);
+      assertClose("taux de prélèvement à la source", withholdingTaxProfile.rate, snapshotRate);
+      const snapshotTax = asNumber(snapshot.withholdingTax?.amount);
+      assertClose("montant du prélèvement à la source snapshot", expectedWithholdingTax, snapshotTax);
+
       const socialResult = calculateSocialPayroll({
         grossAmount: Number(calculation.grossAmount),
         legalCategory: socialContext.legalCategory,
@@ -112,6 +123,7 @@ export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGe
       assertClose("total des cotisations salariales", Number(calculation.employeeContributions), socialResult.employeeContributions);
       assertClose("total des cotisations patronales", Number(calculation.employerContributions), socialResult.employerContributions);
       assertClose("net avant impôt", Number(calculation.netBeforeTax), socialResult.netBeforeTax);
+      assertClose("net imposable", Number(calculation.netTaxableAmount), socialResult.netTaxableAmount);
       assertClose("montant net social", Number(calculation.netSocialAmount), socialResult.netSocialAmount);
 
       const agreementId = asString(snapshot.profile?.collectiveAgreementId) || profile.collectiveAgreementId || organization.collectiveAgreementId || null;
@@ -119,7 +131,7 @@ export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGe
       const contributionDetails = normalizeContributionDetails(snapshot);
       const employerAddress = [organization.payrollAddress, [organization.payrollPostalCode, organization.payrollCity].filter(Boolean).join(" ")].filter(Boolean).join(", ");
       const paymentDate = period.paymentDate ? period.paymentDate.toISOString().slice(0, 10) : "";
-      const withholdingTaxRate = asNumber(snapshot.withholdingTax?.rate);
+      const withholdingTaxRate = withholdingTaxProfile.rate;
       const source = asString(snapshot.ruleSource?.sourceName).trim() || `Publicodes modèle social ${SOCIAL_MODEL_VERSION}`;
 
       const pdf = generatePayslipPdf({
@@ -133,7 +145,7 @@ export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGe
           employeeContributions: Number(calculation.employeeContributions),
           employerContributions: Number(calculation.employerContributions),
           netBeforeTax: Number(calculation.netBeforeTax),
-          netTaxable: socialResult.netTaxableAmount,
+          netTaxable: Number(calculation.netTaxableAmount),
           withholdingTaxRate,
           withholdingTax: Number(calculation.withholdingTax),
           netPaid: Number(calculation.netPaid),
