@@ -19,12 +19,8 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Mascot, isPoseAvailable, type MascotPose } from "@/components/Mascot";
 import { formatRelativeDueDate, isOverdue } from "@/lib/urgency";
-import { getAnomalies } from "@/lib/anomalies";
-import { triggerEventQuick } from "./events/actions";
-import { dismissAnomaly } from "./anomalyActions";
 import { getUserDisplayName } from "@/lib/displayName";
 import { DidYouKnowCard } from "@/components/DidYouKnowCard";
-import { AnomalyReasoning } from "@/components/AnomalyReasoning";
 import { AskAboutOrganization } from "@/components/AskAboutOrganization";
 export const dynamic = "force-dynamic";
 type AttentionReason = "overdue" | "unassigned" | "soon";
@@ -69,6 +65,14 @@ const AUDIT_LABELS: Record<string, (metadata: unknown) => string> = {
   "invitation.accepted": () => "Invitation acceptée",
   "invitation.accepted_via_code": () => "Invitation acceptée (via lien)",
   "membership.left_for_another_org": () => "A quitté cette organisation",
+  "payroll.variable.created": () => "Variable de paie ajoutée",
+  "payroll.variable.deleted": () => "Variable de paie supprimée",
+  "payroll.period.review.started": () => "Contrôle de paie ouvert",
+  "payroll.period.validated": () => "Période de paie validée",
+  "payroll.period.locked": () => "Période de paie verrouillée",
+  "payroll.period.reopened": () => "Période de paie rouverte",
+  "payroll.payslips.prepared": () => "Bulletins préparés",
+  "payroll.payslips.generated": () => "Bulletins générés",
 };
 function timeAgo(date: Date): string {
   const diffMs = Date.now() - date.getTime();
@@ -81,52 +85,6 @@ function timeAgo(date: Date): string {
   if (days === 1) return "hier";
   if (days < 7) return `il y a ${days} jours`;
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(date);
-}
-type Anomaly = Awaited<ReturnType<typeof getAnomalies>>[number];
-function AnomalyRow({ anomaly, severityDot }: { anomaly: Anomaly; severityDot: Record<string, string> }) {
-  return (
-    <li className="py-3 first:pt-0">
-      <p className="flex items-start gap-2 text-sm text-ink">
-        <span className={`mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full ${severityDot[anomaly.severity]}`} />
-        {anomaly.message}
-      </p>
-      <div className="pl-3.5">
-        <AnomalyReasoning reasoning={anomaly.reasoning} />
-        {anomaly.consequence && (
-          <p className="mt-1 text-xs italic text-ink-faint">{anomaly.consequence}</p>
-        )}
-      </div>
-      <div className="mt-2 flex items-center gap-2 pl-3.5">
-        {anomaly.action && (
-          <form action={triggerEventQuick} className="flex-1">
-            <input type="hidden" name="employeeId" value={anomaly.action.employeeId} />
-            <input type="hidden" name="eventTemplateKey" value={anomaly.action.eventTemplateKey} />
-            <input type="hidden" name="triggerDate" value={anomaly.action.triggerDate} />
-            <Button type="submit" variant="secondary" className="w-full text-xs">
-              {anomaly.action.label}
-            </Button>
-          </form>
-        )}
-        {anomaly.link && (
-          <Link href={anomaly.link.href} className="flex-1">
-            <Button variant="secondary" type="button" className="w-full text-xs">
-              {anomaly.link.label}
-            </Button>
-          </Link>
-        )}
-        <form action={dismissAnomaly.bind(null, anomaly.key, "later")}>
-          <button type="submit" className="whitespace-nowrap text-xs text-ink-faint hover:text-ink-soft">
-            Plus tard
-          </button>
-        </form>
-        <form action={dismissAnomaly.bind(null, anomaly.key, "ignore")}>
-          <button type="submit" className="whitespace-nowrap text-xs text-ink-faint hover:text-accent-rose">
-            Ignorer
-          </button>
-        </form>
-      </div>
-    </li>
-  );
 }
 export default async function DashboardPage({
   searchParams,
@@ -146,7 +104,6 @@ export default async function DashboardPage({
     eventCount,
     doneCount,
     openTasks,
-    anomalies,
     membersInOrgCount,
     recentActivity,
   ] = await Promise.all([
@@ -156,7 +113,6 @@ export default async function DashboardPage({
       where: { organizationId, status: "DONE", employeeEvent: { employee: { deletedAt: null } } },
     }),
     getOpenTasks(organizationId),
-    getAnomalies(organizationId),
     prisma.membership.count({ where: { organizationId, deletedAt: null } }),
     prisma.auditLog.findMany({
       where: { organizationId },
@@ -204,15 +160,6 @@ export default async function DashboardPage({
     if (sa !== sb) return sa - sb;
     return a.earliestDue.getTime() - b.earliestDue.getTime();
   });
-  const SUGGESTIONS_LIMIT = 3;
-  const visibleAnomalies = anomalies.slice(0, SUGGESTIONS_LIMIT);
-  const hiddenAnomalies = anomalies.slice(SUGGESTIONS_LIMIT);
-  const hiddenAnomaliesCount = hiddenAnomalies.length;
-  const SEVERITY_DOT: Record<string, string> = {
-    critical: "bg-accent-rose",
-    medium: "bg-accent-amber",
-    low: "bg-ink-faint",
-  };
   const EMPLOYEE_GROUPS_LIMIT = 8;
   const visibleEmployeeGroups = employeeGroups.slice(0, EMPLOYEE_GROUPS_LIMIT);
   const hiddenEmployeeGroupsCount = employeeGroups.length - visibleEmployeeGroups.length;
@@ -266,8 +213,6 @@ export default async function DashboardPage({
   } else {
     synthesis = "Aucune échéance critique aujourd'hui. Tout est sous contrôle.";
   }
-  // Pose de la mascotte alignée sur la même logique que le message de
-  // synthèse ci-dessus — pas une condition séparée à maintenir à part.
   let mascotPose: MascotPose = "dashboard";
   if (!isEmpty) {
     if (overdueCount > 0) mascotPose = "urgent";
@@ -421,46 +366,17 @@ export default async function DashboardPage({
         </Card>
       )}
 
-      {/* Niveau 3 : le Copilote et les anomalies détectées, juste
-          après l'attention immédiate. Contenu et logique inchangés. */}
-      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className={`self-start lg:sticky lg:top-4 ${!isEmpty && anomalies.length > 0 ? "lg:col-span-2" : "lg:col-span-3"}`}>
-          <AskAboutOrganization aiEnabled={aiEnabled} />
-        </div>
-        {!isEmpty && anomalies.length > 0 && (
-          <Card className="lg:col-span-1">
-            <h2 className="text-sm font-semibold text-ink">
-              {anomalies.length} point{anomalies.length > 1 ? "s" : ""} nécessitant votre
-              attention
-            </h2>
-            <ul className="mt-2 flex flex-col divide-y divide-surface-border">
-              {visibleAnomalies.map((anomaly) => (
-                <AnomalyRow key={anomaly.key} anomaly={anomaly} severityDot={SEVERITY_DOT} />
-              ))}
-            </ul>
-            {hiddenAnomaliesCount > 0 && (
-              <details className="mt-1">
-                <summary className="cursor-pointer py-2 text-xs font-medium text-brand-primary">
-                  Voir les {hiddenAnomaliesCount} autre{hiddenAnomaliesCount > 1 ? "s" : ""} suggestion
-                  {hiddenAnomaliesCount > 1 ? "s" : ""}
-                </summary>
-                <ul className="flex flex-col divide-y divide-surface-border border-t border-surface-border">
-                  {hiddenAnomalies.map((anomaly) => (
-                    <AnomalyRow key={anomaly.key} anomaly={anomaly} severityDot={SEVERITY_DOT} />
-                  ))}
-                </ul>
-              </details>
-            )}
-          </Card>
-        )}
+      {/* Le Copilote est désormais le seul bloc de conseil sur le
+          dashboard. Les anciennes suggestions/anomalies ont été
+          retirées : elles faisaient doublon avec les priorités du jour
+          et le Copilote, tout en ajoutant un second niveau d'information. */}
+      <div className="mt-5">
+        <AskAboutOrganization aiEnabled={aiEnabled} />
       </div>
 
       {/* Niveau 4 : statistiques secondaires — une seule barre
-          consolidée (auparavant deux barres distinctes qui
-          répétaient plusieurs fois les mêmes chiffres : échéances de
-          la semaine et nombre d'anomalies apparaissaient déjà en
-          détail juste au-dessus). Utile pour une vue d'ensemble,
-          jamais en concurrence avec les priorités du jour. */}
+          consolidée. Utile pour une vue d'ensemble, jamais en
+          concurrence avec les priorités du jour. */}
       {!isEmpty && (
         <Card className="mt-5 p-0">
           <div className="grid grid-cols-2 divide-x divide-y divide-surface-border sm:grid-cols-4 sm:divide-y-0">
