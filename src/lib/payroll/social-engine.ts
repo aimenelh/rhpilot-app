@@ -18,26 +18,163 @@ const NET_SOCIAL_RULE = "salarié . rémunération . montant net social";
 const EMPLOYEE_CONTRIBUTIONS_RULE = "salarié . cotisations . salarié";
 const EMPLOYER_CONTRIBUTIONS_RULE = "salarié . cotisations . employeur";
 const GENERAL_CONTRIBUTION_BASE_RULE = "salarié . cotisations . assiette";
+const PRORATED_SOCIAL_SECURITY_CEILING_RULE = "salarié . temps de travail . plafond sécurité sociale";
+const CSG_BASE_RULE = "salarié . cotisations . CSG-CRDS . assiette de base";
 
 const DETAIL_RULES = [
-  { code: "maladie_salarie", label: "Assurance maladie, maternité, invalidité, décès", rule: "salarié . cotisations . maladie . salarié", side: "EMPLOYEE", flat: false },
-  { code: "sante_employeur", label: "Complémentaire santé — part employeur", rule: "salarié . cotisations . prévoyances . santé . employeur", side: "EMPLOYER", flat: true },
-  { code: "atmp", label: "Accidents du travail et maladies professionnelles", rule: "salarié . cotisations . ATMP", side: "EMPLOYER", flat: false },
-  { code: "vieillesse_plafonnee_salarie", label: "Assurance vieillesse plafonnée", rule: "salarié . cotisations . vieillesse . plafonnée . salarié", side: "EMPLOYEE", flat: false },
-  { code: "vieillesse_deplafonnee_salarie", label: "Assurance vieillesse déplafonnée", rule: "salarié . cotisations . vieillesse . déplafonnée . salarié", side: "EMPLOYEE", flat: false },
-  { code: "vieillesse_plafonnee_employeur", label: "Assurance vieillesse plafonnée", rule: "salarié . cotisations . vieillesse . plafonnée . employeur", side: "EMPLOYER", flat: false },
-  { code: "vieillesse_deplafonnee_employeur", label: "Assurance vieillesse déplafonnée", rule: "salarié . cotisations . vieillesse . déplafonnée . employeur", side: "EMPLOYER", flat: false },
-  { code: "retraite_complementaire_salarie", label: "Retraite complémentaire — part salarié", rule: "salarié . cotisations . retraite complémentaire-CEG-CET . salarié", side: "EMPLOYEE", flat: false },
-  { code: "retraite_complementaire_employeur", label: "Retraite complémentaire — part employeur", rule: "salarié . cotisations . retraite complémentaire-CEG-CET . employeur", side: "EMPLOYER", flat: false },
-  { code: "allocations_familiales", label: "Allocations familiales", rule: "salarié . cotisations . allocations familiales", side: "EMPLOYER", flat: false },
-  { code: "assurance_chomage", label: "Assurance chômage", rule: "salarié . cotisations . chômage", side: "EMPLOYER", flat: false },
-  { code: "apec_salarie", label: "APEC — part salarié", rule: "salarié . cotisations . APEC . salarié", side: "EMPLOYEE", flat: false },
-  { code: "apec_employeur", label: "APEC — part employeur", rule: "salarié . cotisations . APEC . employeur", side: "EMPLOYER", flat: false },
-  { code: "csg_deductible", label: "CSG déductible", rule: "salarié . cotisations . CSG-CRDS . CSG . déductible", side: "EMPLOYEE", flat: false },
-  { code: "csg_non_deductible", label: "CSG/CRDS non déductible", rule: "salarié . cotisations . CSG-CRDS . sur revenus imposables non déductible", side: "EMPLOYEE", flat: false },
-  { code: "csg_non_imposable", label: "CSG/CRDS sur revenus non imposables", rule: "salarié . cotisations . CSG-CRDS . sur revenus non imposables", side: "EMPLOYEE", flat: false },
-  { code: "invalidite_deces_salarie", label: "Prévoyance incapacité, invalidité, décès — part salarié", rule: "salarié . cotisations . prévoyances . incapacité invalidité décès . salarié", side: "EMPLOYEE", flat: false },
-  { code: "invalidite_deces_employeur", label: "Prévoyance incapacité, invalidité, décès — part employeur", rule: "salarié . cotisations . prévoyances . incapacité invalidité décès . employeur", side: "EMPLOYER", flat: false },
+  {
+    code: "maladie_salarie",
+    label: "Assurance maladie, maternité, invalidité, décès",
+    rule: "salarié . cotisations . maladie . salarié",
+    side: "EMPLOYEE",
+    flat: false,
+    baseRule: GENERAL_CONTRIBUTION_BASE_RULE,
+    rateRule: "salarié . cotisations . maladie . salarié . taux",
+  },
+  {
+    code: "sante_employeur",
+    label: "Complémentaire santé — part employeur",
+    rule: "salarié . cotisations . prévoyances . santé . employeur",
+    side: "EMPLOYER",
+    flat: true,
+  },
+  {
+    code: "atmp",
+    label: "Accidents du travail et maladies professionnelles",
+    rule: "salarié . cotisations . ATMP",
+    side: "EMPLOYER",
+    flat: false,
+    baseRule: GENERAL_CONTRIBUTION_BASE_RULE,
+    baseCapMultiplier: 1,
+    rateRule: "salarié . cotisations . ATMP . taux",
+  },
+  {
+    code: "vieillesse_plafonnee_salarie",
+    label: "Assurance vieillesse plafonnée",
+    rule: "salarié . cotisations . vieillesse . plafonnée . salarié",
+    side: "EMPLOYEE",
+    flat: false,
+    baseRule: GENERAL_CONTRIBUTION_BASE_RULE,
+    baseCapMultiplier: 1,
+    rateRule: "salarié . cotisations . vieillesse . salarié . plafonnée . taux",
+  },
+  {
+    code: "vieillesse_deplafonnee_salarie",
+    label: "Assurance vieillesse déplafonnée",
+    rule: "salarié . cotisations . vieillesse . déplafonnée . salarié",
+    side: "EMPLOYEE",
+    flat: false,
+    baseRule: GENERAL_CONTRIBUTION_BASE_RULE,
+    rateRule: "salarié . cotisations . vieillesse . salarié . déplafonnée . taux",
+  },
+  {
+    code: "vieillesse_plafonnee_employeur",
+    label: "Assurance vieillesse plafonnée",
+    rule: "salarié . cotisations . vieillesse . plafonnée . employeur",
+    side: "EMPLOYER",
+    flat: false,
+    baseRule: GENERAL_CONTRIBUTION_BASE_RULE,
+    baseCapMultiplier: 1,
+    rateRule: "salarié . cotisations . vieillesse . employeur . plafonnée . taux",
+  },
+  {
+    code: "vieillesse_deplafonnee_employeur",
+    label: "Assurance vieillesse déplafonnée",
+    rule: "salarié . cotisations . vieillesse . déplafonnée . employeur",
+    side: "EMPLOYER",
+    flat: false,
+    baseRule: GENERAL_CONTRIBUTION_BASE_RULE,
+    rateRule: "salarié . cotisations . vieillesse . employeur . déplafonnée . taux",
+  },
+  {
+    code: "retraite_complementaire_salarie",
+    label: "Retraite complémentaire — part salarié",
+    rule: "salarié . cotisations . retraite complémentaire-CEG-CET . salarié",
+    side: "EMPLOYEE",
+    flat: false,
+  },
+  {
+    code: "retraite_complementaire_employeur",
+    label: "Retraite complémentaire — part employeur",
+    rule: "salarié . cotisations . retraite complémentaire-CEG-CET . employeur",
+    side: "EMPLOYER",
+    flat: false,
+  },
+  {
+    code: "allocations_familiales",
+    label: "Allocations familiales",
+    rule: "salarié . cotisations . allocations familiales",
+    side: "EMPLOYER",
+    flat: false,
+    baseRule: GENERAL_CONTRIBUTION_BASE_RULE,
+    baseCapMultiplier: 1,
+    rateRule: "salarié . cotisations . allocations familiales . taux",
+  },
+  {
+    code: "assurance_chomage",
+    label: "Assurance chômage",
+    rule: "salarié . cotisations . chômage",
+    side: "EMPLOYER",
+    flat: false,
+    baseRule: GENERAL_CONTRIBUTION_BASE_RULE,
+    baseCapMultiplier: 4,
+    rateRule: "salarié . cotisations . chômage . taux",
+  },
+  {
+    code: "apec_salarie",
+    label: "APEC — part salarié",
+    rule: "salarié . cotisations . APEC . salarié",
+    side: "EMPLOYEE",
+    flat: false,
+    baseRule: GENERAL_CONTRIBUTION_BASE_RULE,
+    baseCapMultiplier: 4,
+  },
+  {
+    code: "apec_employeur",
+    label: "APEC — part employeur",
+    rule: "salarié . cotisations . APEC . employeur",
+    side: "EMPLOYER",
+    flat: false,
+    baseRule: GENERAL_CONTRIBUTION_BASE_RULE,
+    baseCapMultiplier: 4,
+  },
+  {
+    code: "csg_deductible",
+    label: "CSG déductible",
+    rule: "salarié . cotisations . CSG-CRDS . CSG . déductible",
+    side: "EMPLOYEE",
+    flat: false,
+    baseRule: CSG_BASE_RULE,
+    rateRule: "salarié . cotisations . CSG-CRDS . CSG . déductible . taux",
+  },
+  {
+    code: "csg_non_deductible",
+    label: "CSG/CRDS non déductible",
+    rule: "salarié . cotisations . CSG-CRDS . sur revenus imposables non déductible",
+    side: "EMPLOYEE",
+    flat: false,
+  },
+  {
+    code: "csg_non_imposable",
+    label: "CSG/CRDS sur revenus non imposables",
+    rule: "salarié . cotisations . CSG-CRDS . sur revenus non imposables",
+    side: "EMPLOYEE",
+    flat: false,
+  },
+  {
+    code: "invalidite_deces_salarie",
+    label: "Prévoyance incapacité, invalidité, décès — part salarié",
+    rule: "salarié . cotisations . prévoyances . incapacité invalidité décès . salarié",
+    side: "EMPLOYEE",
+    flat: false,
+  },
+  {
+    code: "invalidite_deces_employeur",
+    label: "Prévoyance incapacité, invalidité, décès — part employeur",
+    rule: "salarié . cotisations . prévoyances . incapacité invalidité décès . employeur",
+    side: "EMPLOYER",
+    flat: false,
+  },
 ] as const;
 
 const MODEL_DEFAULT_SITUATION: SocialPayrollSituation = {
@@ -104,6 +241,36 @@ function formatPublicodesDate(value: Date): string {
   return `${day}/${month}/${value.getUTCFullYear()}`;
 }
 
+function evaluateContributionBase(
+  engine: Engine,
+  detail: (typeof DETAIL_RULES)[number],
+): number | null {
+  if (!detail.baseRule) return null;
+
+  const baseEvaluation = engine.evaluate(detail.baseRule);
+  assertNoMissingVariables(baseEvaluation, detail.baseRule);
+  const baseAmount = assertNumber(baseEvaluation.nodeValue, detail.baseRule);
+
+  if (!detail.baseCapMultiplier) return baseAmount;
+
+  const ceilingEvaluation = engine.evaluate(PRORATED_SOCIAL_SECURITY_CEILING_RULE);
+  assertNoMissingVariables(ceilingEvaluation, PRORATED_SOCIAL_SECURITY_CEILING_RULE);
+  const ceiling = assertNumber(ceilingEvaluation.nodeValue, PRORATED_SOCIAL_SECURITY_CEILING_RULE);
+  return Math.min(baseAmount, ceiling * detail.baseCapMultiplier);
+}
+
+function evaluateContributionRate(
+  engine: Engine,
+  detail: (typeof DETAIL_RULES)[number],
+): number | null {
+  if (!detail.rateRule) return null;
+  const rateEvaluation = engine.evaluate(detail.rateRule);
+  assertNoMissingVariables(rateEvaluation, detail.rateRule);
+  const rate = assertNumber(rateEvaluation.nodeValue, detail.rateRule);
+  if (rate < 0 || rate > 1) throw new Error(`Le modèle social a fourni un taux invalide pour ${detail.rule}.`);
+  return rate;
+}
+
 function evaluateContributionDetails(engine: Engine): SocialContributionDetail[] {
   return DETAIL_RULES.flatMap((detail): SocialContributionDetail[] => {
     const evaluation = engine.evaluate(detail.rule);
@@ -125,14 +292,9 @@ function evaluateContributionDetails(engine: Engine): SocialContributionDetail[]
       return [contribution];
     }
 
-    const baseRule = detail.code === "atmp" ? GENERAL_CONTRIBUTION_BASE_RULE : `${detail.rule} . assiette`;
-    const baseEvaluation = engine.evaluate(baseRule);
-    const rateEvaluation = engine.evaluate(`${detail.rule} . taux`);
-    assertNoMissingVariables(baseEvaluation, baseRule);
-    assertNoMissingVariables(rateEvaluation, `${detail.rule} . taux`);
-    const baseAmount = assertNumber(baseEvaluation.nodeValue, baseRule);
-    const rate = assertNumber(rateEvaluation.nodeValue, `${detail.rule} . taux`);
-    if (baseAmount < 0 || rate < 0 || rate > 1) throw new Error(`Le modèle social a fourni une assiette ou un taux invalide pour ${detail.rule}.`);
+    const baseAmount = evaluateContributionBase(engine, detail);
+    const rate = evaluateContributionRate(engine, detail);
+    if (baseAmount !== null && baseAmount < 0) throw new Error(`Le modèle social a fourni une assiette invalide pour ${detail.rule}.`);
 
     const contribution: SocialContributionDetail = {
       code: detail.code,
