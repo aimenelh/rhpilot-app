@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { CircleCheck } from "lucide-react";
 import { Logomark } from "@/components/Brand";
 import { AmbientGlow } from "@/components/landing/AmbientGlow";
 
@@ -60,16 +59,10 @@ export function AuthLayout({
             {preview}
           </div>
 
-          <div className="auth-in mt-10 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs font-medium text-ink-faint" style={{ animationDelay: "0.3s" }}>
-            <span className="flex items-center gap-1.5">
-              <CircleCheck size={13} className="text-accent-teal" /> Hébergé en Europe
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CircleCheck size={13} className="text-accent-teal" /> Sécurisé
-            </span>
-            <span className="flex items-center gap-1.5">
-              <CircleCheck size={13} className="text-accent-teal" /> Pensé pour le RGPD
-            </span>
+          <div className="auth-in mt-10" style={{ animationDelay: "0.3s" }}>
+            <Link href="/securite" className="text-xs font-medium text-ink-faint hover:text-brand-primary hover:underline">
+              Sécurité et RGPD →
+            </Link>
           </div>
         </div>
 

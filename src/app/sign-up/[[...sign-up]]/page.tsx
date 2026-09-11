@@ -27,10 +27,10 @@ export default function SignUpPage() {
       <div className="hidden md:block">
         <AuthLayout
           title="Votre équipe RH n'oublie plus rien."
-          subtitle="Créez votre espace en quelques minutes. Sans engagement, sans configuration compliquée."
+          subtitle="Ajoutez votre premier salarié et RH Pilot commence à suivre ses échéances."
           preview={<ProductPreview />}
           formTitle="Créez votre espace RH"
-          formSubtitle="Quelques minutes pour commencer."
+          formSubtitle="Gratuit jusqu'à 3 salariés."
         >
           <SignUp
             forceRedirectUrl="/creating-account"

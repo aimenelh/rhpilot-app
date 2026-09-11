@@ -24,7 +24,7 @@ const ANNOUNCEMENTS = [
     cta: "Lire l'article",
   },
   {
-    text: "RH Pilot est gratuit jusqu'à 3 salariés, sans engagement.",
+    text: "RH Pilot est gratuit jusqu'à 3 salariés.",
     href: "/tarifs",
     cta: "Voir les tarifs",
   },

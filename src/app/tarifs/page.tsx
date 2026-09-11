@@ -101,7 +101,6 @@ export default function TarifsPage() {
               <p className="text-sm font-semibold text-ink">
                 Le palier Gratuit couvre jusqu&apos;à 3 salariés, Copilote IA inclus le temps de la bêta.
               </p>
-              <p className="mt-1 text-sm text-ink-soft">Sans engagement, hébergé en Europe.</p>
             </div>
             <Link href="/sign-up" className="shrink-0 text-sm font-medium text-brand-primary hover:underline">
               Essayer gratuitement →

@@ -163,8 +163,7 @@ export default function QuestionsPage() {
                 <div className="mt-3">
                   <FaqItem question="Mon équipe va-t-elle devoir apprendre un outil compliqué ?">
                     Non. Si vous savez lire un tableau de bord et cliquer sur un bouton, vous
-                    savez utiliser RH Pilot, sans configuration compliquée ni formation
-                    nécessaire.
+                    savez utiliser RH Pilot.
                   </FaqItem>
                   <FaqItem question="Combien de temps pour être opérationnel ?">
                     Quelques minutes. Créez votre organisation, ajoutez un salarié ou générez une
