@@ -137,7 +137,7 @@ export async function prepareDemoPayrollDataForOrganization(organizationId: stri
       select: { id: true },
     });
     await tx.payrollVariable.deleteMany({ where: { organizationId, payrollPeriodId: period.id } });
-  });
+  }, { timeout: 30000, maxWait: 10000 });
 
   revalidatePath("/dashboard/payroll");
   if (existingPeriod) revalidatePath(`/dashboard/payroll/${existingPeriod.id}`);
