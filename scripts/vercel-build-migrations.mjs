@@ -6,6 +6,7 @@ const RECOVERABLE_FAILED_MIGRATIONS = [
   "20260906195500_align_payroll_columns_with_prisma",
   "20260907220000_seed_publicodes_payroll_rule",
   "20260908230000_add_payroll_ledger",
+  "20260911190000_add_missing_employee_and_org_columns",
 ];
 
 function runCapture(args) {
