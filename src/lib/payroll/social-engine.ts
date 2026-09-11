@@ -17,6 +17,7 @@ const NET_TAXABLE_RULE = "salarié . rémunération . net . imposable";
 const NET_SOCIAL_RULE = "salarié . rémunération . montant net social";
 const EMPLOYEE_CONTRIBUTIONS_RULE = "salarié . cotisations . salarié";
 const EMPLOYER_CONTRIBUTIONS_RULE = "salarié . cotisations . employeur";
+const GENERAL_CONTRIBUTION_BASE_RULE = "salarié . cotisations . assiette";
 
 const DETAIL_RULES = [
   { code: "maladie_salarie", label: "Assurance maladie, maternité, invalidité, décès", rule: "salarié . cotisations . maladie . salarié", side: "EMPLOYEE", flat: false },
@@ -124,11 +125,12 @@ function evaluateContributionDetails(engine: Engine): SocialContributionDetail[]
       return [contribution];
     }
 
-    const baseEvaluation = engine.evaluate(`${detail.rule} . assiette`);
+    const baseRule = detail.code === "atmp" ? GENERAL_CONTRIBUTION_BASE_RULE : `${detail.rule} . assiette`;
+    const baseEvaluation = engine.evaluate(baseRule);
     const rateEvaluation = engine.evaluate(`${detail.rule} . taux`);
-    assertNoMissingVariables(baseEvaluation, `${detail.rule} . assiette`);
+    assertNoMissingVariables(baseEvaluation, baseRule);
     assertNoMissingVariables(rateEvaluation, `${detail.rule} . taux`);
-    const baseAmount = assertNumber(baseEvaluation.nodeValue, `${detail.rule} . assiette`);
+    const baseAmount = assertNumber(baseEvaluation.nodeValue, baseRule);
     const rate = assertNumber(rateEvaluation.nodeValue, `${detail.rule} . taux`);
     if (baseAmount < 0 || rate < 0 || rate > 1) throw new Error(`Le modèle social a fourni une assiette ou un taux invalide pour ${detail.rule}.`);
 
