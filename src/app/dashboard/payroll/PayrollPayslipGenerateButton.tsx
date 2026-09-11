@@ -31,13 +31,22 @@ export default function PayrollPayslipGenerateButton({ periodId }: { periodId: s
         <div>
           <p className="text-sm font-semibold text-ink">Génération des bulletins</p>
           <p className="mt-1 text-xs text-ink-faint">
-            Le PDF est produit uniquement depuis les calculs verrouillés et les données réglementaires disponibles.
+            Les bulletins sont produits à partir des calculs verrouillés de la période.
           </p>
         </div>
         <form action={formAction} className="shrink-0">
           <input type="hidden" name="periodId" value={periodId} />
           <SubmitButton />
         </form>
+      </div>
+      <div className="mt-3 flex flex-col gap-2 border-t border-surface-border pt-3 sm:flex-row sm:items-center sm:justify-between">
+        <p className="text-xs text-ink-faint">Une fois les bulletins générés, téléchargez-les en un seul document.</p>
+        <a
+          href={`/api/payroll/periods/${periodId}/payslips`}
+          className="inline-flex items-center justify-center rounded-lg border border-surface-border bg-white px-3 py-2 text-xs font-semibold text-ink transition hover:bg-surface-subtle"
+        >
+          Télécharger tous les bulletins (PDF)
+        </a>
       </div>
       {state?.error ? (
         <p className="mt-3 rounded-md bg-accent-amber/10 px-3 py-2 text-sm text-accent-amber" role="alert">
