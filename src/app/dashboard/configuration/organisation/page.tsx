@@ -6,14 +6,13 @@ import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Input, Label, Select, FieldHint } from "@/components/ui/Field";
+import { Select, FieldHint } from "@/components/ui/Field";
 import { updateOrganizationSettings } from "../../settings/organizationActions";
+import { CollectiveAgreementFields } from "./CollectiveAgreementFields";
 
 export const dynamic = "force-dynamic";
 
-const COMMON_CCN = ["Syntec", "Métallurgie", "Commerce de gros", "Commerce de détail et de gros à prédominance alimentaire", "HCR (Hôtels, cafés, restaurants)", "Bâtiment et travaux publics (BTP)", "Pharmacie d'officine", "Banque", "Assurance", "Transport routier", "Immobilier", "Bureaux d'études techniques", "Cabinets d'avocats", "Cabinets d'experts-comptables", "Coiffure", "Aide à domicile", "Sport", "Animation", "Publicité", "Industrie pharmaceutique", "Automobile (services)", "Bricolage", "Restauration rapide", "Propreté", "Sécurité privée", "Textile", "Notariat", "Optique-lunetterie", "Import-export", "Édition"];
 const LEGAL_CATEGORIES = ["EI", "SARL", "SAS", "SELARL", "SELAS", "association", "autre"] as const;
-
 type OrganisationConfigPageProps = { searchParams?: { saved?: string } };
 
 export default async function OrganisationConfigPage({ searchParams }: OrganisationConfigPageProps) {
@@ -23,6 +22,11 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
   const organization = await prisma.organization.findUnique({
     where: { id: membership.organizationId },
     include: { collectiveAgreement: true },
+  });
+  const collectiveAgreements = await prisma.collectiveAgreement.findMany({
+    where: { status: "ACTIVE" },
+    select: { id: true, idcc: true, name: true },
+    orderBy: { name: "asc" },
   });
   const socialRows = await prisma.$queryRaw<Array<{ legalCategory: string | null; atmpRate: unknown; healthPlanMonthlyAmount: unknown; healthPlanEmployerRate: unknown; companyCreationDate: Date | null; payrollDepartment: string | null }>>`SELECT "legalCategory", "atmpRate", "healthPlanMonthlyAmount", "healthPlanEmployerRate", "companyCreationDate", "payrollDepartment" FROM "organizations" WHERE "id" = ${membership.organizationId} LIMIT 1`;
   const legalCategory = socialRows[0]?.legalCategory ?? "";
@@ -58,21 +62,11 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
           </Card>
           <Card className="mt-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div>
-                <h2 className="text-sm font-semibold text-ink">Convention collective</h2>
-                <p className="mt-1 text-sm text-ink-soft">Associez la convention applicable à l&apos;organisation par son IDCC. C&apos;est cette référence structurée qui servira ensuite aux règles conventionnelles de paie.</p>
-              </div>
+              <div><h2 className="text-sm font-semibold text-ink">Convention collective</h2><p className="mt-1 text-sm text-ink-soft">Associez la convention applicable à l&apos;organisation par son IDCC. C&apos;est cette référence structurée qui servira ensuite aux règles conventionnelles de paie.</p></div>
               <Link href="https://code.travail.gouv.fr/outils/convention-collective/entreprise" target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-brand-primary hover:underline"><ExternalLink size={13} /> Vérifier l&apos;IDCC</Link>
             </div>
-            <div className="mt-4"><Label htmlFor="collectiveAgreementIdcc">IDCC</Label><Input id="collectiveAgreementIdcc" name="collectiveAgreementIdcc" inputMode="numeric" pattern="[0-9]{4}" maxLength={4} defaultValue={organization?.collectiveAgreement?.idcc ?? ""} placeholder="Ex. 1486" /><FieldHint>4 chiffres. Utilisez le service officiel du Code du travail numérique pour identifier l&apos;IDCC à partir de votre entreprise ou de votre SIRET.</FieldHint></div>
-            <div className="mt-4"><Label htmlFor="collectiveAgreementName">Nom de la convention</Label><Input id="collectiveAgreementName" name="collectiveAgreementName" defaultValue={organization?.collectiveAgreement?.name ?? organization?.conventionCollective ?? ""} placeholder="Ex. Bureaux d&apos;études techniques" /><FieldHint>Le nom est enregistré dans le référentiel si l&apos;IDCC n&apos;existe pas encore dans RH Pilot. Les règles conventionnelles seront ensuite versionnées séparément.</FieldHint></div>
-            {organization?.collectiveAgreement ? (
-              <div className="mt-4 rounded-lg border border-accent-teal/20 bg-accent-teal/5 px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-accent-teal">Convention associée</p>
-                <p className="mt-1 font-medium text-ink">{organization.collectiveAgreement.name}</p>
-                <p className="mt-0.5 text-sm text-ink-soft">IDCC {organization.collectiveAgreement.idcc}</p>
-              </div>
-            ) : null}
+            <div className="mt-4"><CollectiveAgreementFields agreements={collectiveAgreements} defaultIdcc={organization?.collectiveAgreement?.idcc ?? ""} defaultName={organization?.collectiveAgreement?.name ?? organization?.conventionCollective ?? ""} /></div>
+            {organization?.collectiveAgreement ? <div className="mt-4 rounded-lg border border-accent-teal/20 bg-accent-teal/5 px-4 py-3"><p className="text-xs font-semibold uppercase tracking-wider text-accent-teal">Convention associée</p><p className="mt-1 font-medium text-ink">{organization.collectiveAgreement.name}</p><p className="mt-0.5 text-sm text-ink-soft">IDCC {organization.collectiveAgreement.idcc}</p></div> : null}
           </Card>
         </>)}
         <div className="mt-6 flex justify-end"><Button type="submit">Enregistrer les modifications</Button></div>
