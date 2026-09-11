@@ -65,7 +65,7 @@ export async function GET(_request: Request, { params }: { params: { periodId: s
   const payslips = await prisma.payslip.findMany({
     where: { organizationId: membership.organizationId, payrollPeriodId: period.id, documentStatus: { in: ["GENERATED", "PUBLISHED"] }, storageKey: { not: null } },
     select: { id: true, employeeId: true, storageKey: true },
-    orderBy: { employee: { lastName: "asc" } },
+    orderBy: { employeeId: "asc" },
   });
   const employees = await prisma.employee.count({ where: { organizationId: membership.organizationId, deletedAt: null } });
   if (payslips.length !== employees || employees === 0) return NextResponse.json({ error: `Les bulletins ne sont pas encore tous générés (${payslips.length}/${employees}). Générez d'abord les bulletins de la période.` }, { status: 409 });
