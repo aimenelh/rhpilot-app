@@ -21,7 +21,18 @@ const GENERAL_CONTRIBUTION_BASE_RULE = "salarié . cotisations . assiette";
 const PRORATED_SOCIAL_SECURITY_CEILING_RULE = "salarié . temps de travail . plafond sécurité sociale";
 const CSG_BASE_RULE = "salarié . cotisations . CSG-CRDS . assiette de base";
 
-const DETAIL_RULES = [
+type DetailRule = {
+  code: string;
+  label: string;
+  rule: string;
+  side: "EMPLOYEE" | "EMPLOYER";
+  flat: boolean;
+  baseRule?: string;
+  baseCapMultiplier?: number;
+  rateRule?: string;
+};
+
+const DETAIL_RULES: readonly DetailRule[] = [
   {
     code: "maladie_salarie",
     label: "Assurance maladie, maternité, invalidité, décès",
@@ -175,7 +186,7 @@ const DETAIL_RULES = [
     side: "EMPLOYER",
     flat: false,
   },
-] as const;
+];
 
 const MODEL_DEFAULT_SITUATION: SocialPayrollSituation = {
   "salarié . cotisations . exonérations . JEI": "non",
@@ -241,10 +252,7 @@ function formatPublicodesDate(value: Date): string {
   return `${day}/${month}/${value.getUTCFullYear()}`;
 }
 
-function evaluateContributionBase(
-  engine: Engine,
-  detail: (typeof DETAIL_RULES)[number],
-): number | null {
+function evaluateContributionBase(engine: Engine, detail: DetailRule): number | null {
   if (!detail.baseRule) return null;
 
   const baseEvaluation = engine.evaluate(detail.baseRule);
@@ -259,10 +267,7 @@ function evaluateContributionBase(
   return Math.min(baseAmount, ceiling * detail.baseCapMultiplier);
 }
 
-function evaluateContributionRate(
-  engine: Engine,
-  detail: (typeof DETAIL_RULES)[number],
-): number | null {
+function evaluateContributionRate(engine: Engine, detail: DetailRule): number | null {
   if (!detail.rateRule) return null;
   const rateEvaluation = engine.evaluate(detail.rateRule);
   assertNoMissingVariables(rateEvaluation, detail.rateRule);
