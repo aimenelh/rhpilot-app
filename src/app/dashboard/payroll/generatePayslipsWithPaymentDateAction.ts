@@ -6,6 +6,8 @@ import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { generatePayrollPayslipsAction, type PayrollPayslipGenerationFormState } from "./generatePayslipsAction";
 
+export type { PayrollPayslipGenerationFormState } from "./generatePayslipsAction";
+
 export async function generatePayslipsWithPaymentDateAction(
   prevState: PayrollPayslipGenerationFormState,
   formData: FormData,
