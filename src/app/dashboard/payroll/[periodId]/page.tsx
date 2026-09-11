@@ -41,8 +41,8 @@ function formatPayrollEuros(value: unknown) {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
 }
 
-function sum(values: unknown[]) {
-  return values.reduce((total, value) => {
+function sum(values: unknown[]): number {
+  return values.reduce<number>((total, value) => {
     const amount = Number(value);
     return Number.isFinite(amount) ? total + amount : total;
   }, 0);
