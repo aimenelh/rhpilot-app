@@ -95,66 +95,26 @@ export default async function EmployeeDetailPage({
         ← Retour aux salariés
       </Link>
 
-      {/* En-tête façon dossier : nom, résumé en une ligne, actions
-          rapides vers les sections existantes plus bas (le formulaire
-          d'édition et la carte d'archivage ne bougent pas, on ajoute
-          juste un raccourci visible immédiatement). */}
-      <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-ink">
-            {employee.firstName} {employee.lastName}
-          </h1>
-          <p className="mt-1 text-sm text-ink-soft">
-            {employee.position || "Poste non renseigné"} · Embauché·e le {formatDate(employee.hireDate)} · Actif
-          </p>
-        </div>
-        <div className="flex items-center gap-4 pt-1 text-sm font-medium">
-          <a href="#informations" className="text-brand-primary hover:underline">Modifier</a>
-          <a href="#archiver" className="text-ink-faint hover:text-ink-soft">Archiver</a>
-        </div>
-      </div>
-
-      {/* Bannière d'accueil juste après création — suppose que la
-          redirection de création pointe vers cette page avec
-          ?welcome=1 dans l'URL. À vérifier/ajuster dans le fichier de
-          création du salarié (actions.ts du dossier employees/new, ou
-          équivalent) si le paramètre porte un autre nom. */}
-      {searchParams.welcome === "1" && (
-        <Card className="mt-4 flex flex-col items-center gap-4 border-accent-teal/25 bg-accent-teal/5 text-center sm:flex-row sm:justify-between sm:text-left">
+      {/* En-tête façon dossier : nom + faits clés d'un coup d'œil, sans
+          dupliquer les mêmes informations dans une carte "Résumé"
+          séparée juste en dessous comme avant. */}
+      <div className="mt-3">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-semibold text-ink">
-              Bienvenue à {employee.firstName} !
-            </p>
+            <h1 className="text-2xl font-semibold text-ink">
+              {employee.firstName} {employee.lastName}
+            </h1>
             <p className="mt-1 text-sm text-ink-soft">
-              La fiche a bien été créée. Vous pouvez déclencher son premier parcours RH
-              ci-dessous.
+              {employee.position || "Poste non renseigné"} · Embauché·e le {formatDate(employee.hireDate)} · Actif
             </p>
           </div>
-          <Mascot pose="newhireHandshake" className="h-28 w-auto shrink-0" />
-        </Card>
-      )}
-
-      {organization?.conventionCollective && (
-        <div className="mt-4">
-          <CcnHint conventionCollective={organization.conventionCollective} context="fiche_salarie" />
+          <div className="flex items-center gap-4 pt-1 text-sm font-medium">
+            <a href="#informations" className="text-brand-primary hover:underline">Modifier</a>
+            <a href="#archiver" className="text-ink-faint hover:text-ink-soft">Archiver</a>
+          </div>
         </div>
-      )}
 
-      {/* Bloc résumé : lecture seule, les informations essentielles
-          d'un coup d'œil -- distinct du formulaire d'édition plus bas
-          (section "Informations du salarié"), qui reste la même
-          édition complète qu'avant. */}
-      <Card className="mt-5">
-        <h2 className="text-sm font-semibold text-ink">Résumé</h2>
-        <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-3">
-          <div>
-            <dt className="text-xs text-ink-faint">Poste</dt>
-            <dd className="mt-0.5 text-sm text-ink">{employee.position || "—"}</dd>
-          </div>
-          <div>
-            <dt className="text-xs text-ink-faint">Date d&apos;embauche</dt>
-            <dd className="mt-0.5 text-sm text-ink">{formatDate(employee.hireDate)}</dd>
-          </div>
+        <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-3 border-t border-surface-border pt-4">
           <div>
             <dt className="text-xs text-ink-faint">Type de contrat</dt>
             <dd className="mt-0.5 text-sm text-ink">{employee.contractType ?? "—"}</dd>
@@ -175,7 +135,33 @@ export default async function EmployeeDetailPage({
             <dd className="mt-0.5 text-sm text-ink">{employee.professionalCategory ?? "—"}</dd>
           </div>
         </dl>
-      </Card>
+      </div>
+
+      {/* Bannière d'accueil juste après création — suppose que la
+          redirection de création pointe vers cette page avec
+          ?welcome=1 dans l'URL. À vérifier/ajuster dans le fichier de
+          création du salarié (actions.ts du dossier employees/new, ou
+          équivalent) si le paramètre porte un autre nom. */}
+      {searchParams.welcome === "1" && (
+        <Card className="mt-4 flex flex-col items-center gap-4 border-brand-primary/25 bg-brand-primary/5 text-center sm:flex-row sm:justify-between sm:text-left">
+          <div>
+            <p className="text-sm font-semibold text-ink">
+              Bienvenue à {employee.firstName} !
+            </p>
+            <p className="mt-1 text-sm text-ink-soft">
+              La fiche a bien été créée. Vous pouvez déclencher son premier parcours RH
+              ci-dessous.
+            </p>
+          </div>
+          <Mascot pose="newhireHandshake" className="h-28 w-auto shrink-0" />
+        </Card>
+      )}
+
+      {organization?.conventionCollective && (
+        <div className="mt-4">
+          <CcnHint conventionCollective={organization.conventionCollective} context="fiche_salarie" />
+        </div>
+      )}
 
       {employee.nextMedicalVisitDate && (
         <Card
@@ -315,13 +301,6 @@ export default async function EmployeeDetailPage({
             })}
           </div>
         )}
-      </div>
-
-      <div className="mt-8">
-        <h2 className="text-sm font-semibold text-ink">Documents</h2>
-        <Card className="mt-3 border-dashed" compact>
-          <p className="text-sm text-ink-faint">Aucun document pour le moment.</p>
-        </Card>
       </div>
 
       <div id="informations" className="mt-8 max-w-xl scroll-mt-6">

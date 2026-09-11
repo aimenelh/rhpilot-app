@@ -49,9 +49,9 @@ export function AlternanceProfileSection({ employeeId, canEdit, embedded = false
     <div className={wrapperClass} id="alternance">
       <div className="flex flex-col gap-1">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-ink">Paramètres de rémunération alternance</h3>
+          <h3 className="text-sm font-semibold text-ink">Alternance : paramètres légaux</h3>
           {preview?.status === "APPLICABLE" && (
-            <span className="rounded-full bg-accent-teal/10 px-2.5 py-1 text-xs font-semibold text-accent-teal">
+            <span className="rounded-full bg-brand-primary/10 px-2.5 py-1 text-xs font-semibold text-brand-primary">
               {preview.percentageOfSmic}% du SMIC minimum
             </span>
           )}
