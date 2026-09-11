@@ -135,7 +135,7 @@ export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGe
 
   const [organization, employees, calculations, profiles, agreements, socialContext] = await Promise.all([
     prisma.organization.findFirst({ where: { id: membership.organizationId, deletedAt: null }, select: { id: true, name: true, siret: true, conventionCollective: true, collectiveAgreementId: true, payrollAddress: true, payrollPostalCode: true, payrollCity: true, payrollNafCode: true, payrollUrssafReference: true } }),
-    prisma.employee.findMany({ where: { organizationId: membership.organizationId, deletedAt: null }, select: { id: true, firstName: true, lastName: true, position: true, hireDate: true, contractType: true, professionalCategory: true }, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] }),
+    prisma.employee.findMany({ where: { organizationId: membership.organizationId, deletedAt: null }, select: { id: true, firstName: true, lastName: true, position: true, hireDate: true, contractType: true, professionalCategory: true, isDemoData: true }, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] }),
     prisma.payrollCalculation.findMany({ where: { organizationId: membership.organizationId, payrollPeriodId: period.id }, select: { id: true, employeeId: true, calculationSnapshot: true, grossAmount: true, employeeContributions: true, employerContributions: true, netBeforeTax: true, withholdingTax: true, netPaid: true, netTaxableAmount: true, netSocialAmount: true } }),
     prisma.payrollProfile.findMany({ where: { organizationId: membership.organizationId }, select: { employeeId: true, monthlyHours: true, classificationCode: true, classificationLabel: true, employeeAddress: true, collectiveAgreementId: true, baseSalaryCents: true }, orderBy: { effectiveFrom: "desc" } }),
     prisma.collectiveAgreement.findMany({ select: { id: true, name: true, idcc: true } }),
@@ -159,7 +159,12 @@ export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGe
       const profile = profileByEmployee.get(employee.id);
       if (!calculation || !profile) return { error: `Données de bulletin incomplètes pour ${employee.firstName} ${employee.lastName}.` };
       const existing = payslipByEmployee.get(employee.id);
-      if (existing?.documentStatus === "GENERATED" && existing.storageKey) {
+      if (!employee.isDemoData && existing?.documentStatus === "GENERATED" && existing.storageKey) {
+        // Un vrai bulletin déjà émis ne doit jamais être régénéré
+        // silencieusement -- c'est le comportement voulu, à ne pas
+        // toucher. Les salariés de démonstration, eux, doivent
+        // toujours repartir du gabarit le plus récent : ils servent à
+        // tester, pas à conserver un document légal figé.
         try { readPayslipDocument(existing.storageKey); continue; } catch { /* Régénération depuis le calcul verrouillé. */ }
       }
       if (!employee.contractType || !employee.professionalCategory) return { error: `Données sociales incomplètes pour ${employee.firstName} ${employee.lastName}.` };
