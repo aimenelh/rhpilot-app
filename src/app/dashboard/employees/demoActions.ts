@@ -65,6 +65,15 @@ function redirectWithFlash(message: string): never {
 
 async function resetDemoPayrollPeriod(organizationId: string, periodId: string) {
   await prisma.$transaction(async (tx) => {
+    const calculations = await tx.payrollCalculation.findMany({
+      where: { organizationId, payrollPeriodId: periodId },
+      select: { id: true },
+    });
+    if (calculations.length > 0) {
+      await tx.payrollContribution.deleteMany({
+        where: { calculationId: { in: calculations.map((calculation) => calculation.id) } },
+      });
+    }
     await tx.payrollCalculation.deleteMany({ where: { organizationId, payrollPeriodId: periodId } });
     await tx.payslip.deleteMany({ where: { organizationId, payrollPeriodId: periodId } });
     await tx.payrollVariable.deleteMany({ where: { organizationId, payrollPeriodId: periodId } });
