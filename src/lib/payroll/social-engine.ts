@@ -94,7 +94,14 @@ function assertLegalCategory(value: string): LegalCategory {
 }
 
 function assertContractType(value: string): SocialContractType {
-  if ((CONTRACT_TYPES as readonly string[]).includes(value)) return value as SocialContractType;
+  const normalized = {
+    CDI: "CDI",
+    CDD: "CDD",
+    APPRENTISSAGE: "apprentissage",
+    PROFESSIONNALISATION: "professionnalisation",
+  }[value.trim().toUpperCase() as "CDI" | "CDD" | "APPRENTISSAGE" | "PROFESSIONNALISATION"];
+
+  if (normalized) return normalized as SocialContractType;
   throw new Error("Le calcul social est bloqué : le type de contrat est absent ou invalide.");
 }
 
