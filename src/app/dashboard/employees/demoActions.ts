@@ -65,17 +65,25 @@ function redirectWithFlash(message: string): never {
 
 async function resetDemoPayrollPeriod(organizationId: string, periodId: string) {
   await prisma.$transaction(async (tx) => {
+    const period = await tx.payrollPeriod.findFirst({
+      where: { id: periodId, organizationId },
+      select: { id: true, status: true },
+    });
+    if (!period) return;
+    if (period.status !== "DRAFT") {
+      throw new Error("La période de paie de démonstration existe déjà et n'est plus en préparation. Elle ne sera pas écrasée.");
+    }
+
     const calculations = await tx.payrollCalculation.findMany({
       where: { organizationId, payrollPeriodId: periodId },
       select: { id: true },
     });
     if (calculations.length > 0) {
-      await tx.payrollContribution.deleteMany({
-        where: { calculationId: { in: calculations.map((calculation) => calculation.id) } },
-      });
+      const calculationIds = calculations.map((calculation) => calculation.id);
+      await tx.payslip.deleteMany({ where: { organizationId, payrollPeriodId: periodId } });
+      await tx.payrollContribution.deleteMany({ where: { calculationId: { in: calculationIds } } });
+      await tx.payrollCalculation.deleteMany({ where: { id: { in: calculationIds } } });
     }
-    await tx.payrollCalculation.deleteMany({ where: { organizationId, payrollPeriodId: periodId } });
-    await tx.payslip.deleteMany({ where: { organizationId, payrollPeriodId: periodId } });
     await tx.payrollVariable.deleteMany({ where: { organizationId, payrollPeriodId: periodId } });
     await tx.payrollPeriod.delete({ where: { id: periodId } });
   });
@@ -149,7 +157,10 @@ export async function generateDemoOrganization() {
 
   const demoOnlyOrganization = allEmployees.length > 0;
 
-  if (demoOnlyOrganization && existingPeriod) {
+  if (demoOnlyOrganization && existingPeriod?.status !== "DRAFT" && existingPeriod) {
+    redirectWithFlash("La période de paie de démonstration existe déjà et n'est plus en préparation. Elle ne sera pas écrasée.");
+  }
+  if (demoOnlyOrganization && existingPeriod?.status === "DRAFT") {
     await resetDemoPayrollPeriod(organizationId, existingPeriod.id);
     existingPeriod = null;
   }
