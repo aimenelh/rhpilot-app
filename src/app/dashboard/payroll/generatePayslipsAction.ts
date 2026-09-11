@@ -197,7 +197,7 @@ export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGe
       const withholdingTaxRate = withholdingTaxProfile.rate;
       const source = asString(snapshot.ruleSource?.sourceName).trim() || `Publicodes modèle social ${SOCIAL_MODEL_VERSION}`;
 
-      const pdf = generatePayslipPdf({
+      const pdf = await generatePayslipPdf({
         employer: { name: organization.name, address: employerAddress, siret: organization.siret ?? "", nafCode: organization.payrollNafCode ?? "", urssafReference: organization.payrollUrssafReference ?? "" },
         employee: { name: `${employee.firstName} ${employee.lastName}`.trim(), address: profile.employeeAddress ?? "", position: employee.position ?? "", classification: profile.classificationLabel || profile.classificationCode || "" },
         period: { year: period.year, month: period.month, paymentDate, hours: asNumber(snapshot.profile?.monthlyHours ?? profile.monthlyHours) },

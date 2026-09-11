@@ -1,3 +1,5 @@
+import PDFDocument from "pdfkit";
+
 export type PayslipPdfContribution = {
   label: string;
   side: "EMPLOYEE" | "EMPLOYER";
@@ -24,13 +26,12 @@ export class PayslipPdfPrerequisiteError extends Error {
   }
 }
 
-function sanitizeText(value: string): string {
-  return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[–—]/g, "-").replace(/€/g, "EUR").replace(/[^\u0000-\u00ff]/g, "?");
+function money(value: number): string {
+  return `${value.toFixed(2).replace(".", ",")} €`;
 }
-function escapePdfText(value: string): string { return sanitizeText(value).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)"); }
-function money(value: number): string { return `${value.toFixed(2).replace(".", ",")} EUR`; }
-function percentage(value: number): string { return `${(value * 100).toFixed(2).replace(".", ",")} %`; }
-function contributionBasis(contribution: PayslipPdfContribution): string { if (contribution.rate === null) return "Forfait"; if (contribution.rate === undefined || contribution.baseAmount === undefined) return "Données manquantes"; if (contribution.baseAmount === null) return "Base indisponible"; return `${money(contribution.baseAmount)} | ${percentage(contribution.rate)}`; }
+function percentage(value: number): string {
+  return `${(value * 100).toFixed(2).replace(".", ",")} %`;
+}
 
 function requiredMissing(input: PayslipPdfInput): string[] {
   const missing: string[] = [];
@@ -55,161 +56,286 @@ function requiredMissing(input: PayslipPdfInput): string[] {
   return missing;
 }
 
-class PdfPageWriter {
-  private pages: string[][] = [[]];
-  private y = 800;
-  get current(): string[] { return this.pages[this.pages.length - 1]; }
-  get allPages(): string[][] { return this.pages; }
-  get currentY(): number { return this.y; }
-  setY(value: number): void { this.y = value; }
-  text(x: number, y: number, text: string, size = 9, gray = 0): void { this.current.push(`BT /F1 ${size} Tf ${gray} g 1 0 0 1 ${x} ${y} Tm (${escapePdfText(text)}) Tj ET`); }
-  rect(x: number, y: number, width: number, height: number, gray = 0.97, stroke = 0.88): void { this.current.push(`${stroke} G ${gray} g ${x} ${y} ${width} ${height} re B`); }
-  fillRect(x: number, y: number, width: number, height: number, gray = 0.12): void { this.current.push(`${gray} g ${x} ${y} ${width} ${height} re f`); }
-  rule(y = this.y, gray = 0.82): void { this.current.push(`0.5 w ${gray} G 40 ${y} m 555 ${y} l S`); }
-  tableHeader(y: number, labels: Array<{ text: string; x: number; width: number }>): void { this.fillRect(40, y - 18, 515, 20, 0.16); for (const label of labels) this.text(label.x, y - 12, label.text, 7.5, 1); }
-  line(text: string, amount?: string, size = 8.5, gap = 13, gray = 0): void { this.ensure(28); this.text(40, this.y, text, size, gray); if (amount !== undefined) this.text(445, this.y, amount, size, gray); this.y -= gap; }
-  ensure(required: number): void { if (this.y - required >= 55) return; this.newPage(); }
-  newPage(): void { this.pages.push([]); this.y = 800; this.text(40, this.y, "BULLETIN DE SALAIRE - SUITE", 12, 0.15); this.y -= 18; this.rule(this.y, 0.8); this.y -= 20; }
+// Une ligne de cotisation "employé" et une ligne "employeur" partagent
+// le même libellé (ex. "Assurance vieillesse plafonnée") -- on les
+// regroupe sur une seule ligne de tableau, comme sur un vrai bulletin,
+// plutôt que deux tableaux séparés.
+type GroupedContribution = {
+  label: string;
+  employee: PayslipPdfContribution | null;
+  employer: PayslipPdfContribution | null;
+};
+
+function groupContributions(contributions: PayslipPdfContribution[]): GroupedContribution[] {
+  const order: string[] = [];
+  const byLabel = new Map<string, GroupedContribution>();
+  for (const contribution of contributions) {
+    if (!byLabel.has(contribution.label)) {
+      byLabel.set(contribution.label, { label: contribution.label, employee: null, employer: null });
+      order.push(contribution.label);
+    }
+    const entry = byLabel.get(contribution.label)!;
+    if (contribution.side === "EMPLOYEE") entry.employee = contribution;
+    else entry.employer = contribution;
+  }
+  return order.map((label) => byLabel.get(label)!);
 }
 
-function buildPages(input: PayslipPdfInput): string[][] {
-  const page = new PdfPageWriter();
+const PAGE_MARGIN = 40;
+const CONTENT_WIDTH = 515;
+const INK = "#14151A";
+const INK_SOFT = "#5B5D66";
+const INK_FAINT = "#8A8C94";
+const BORDER = "#E4E1DD";
+const ROW_ALT = "#FAF8F6";
+
+// Colonnes du tableau des cotisations : libellé large, puis base/taux/
+// montant côté salarial et côté patronal.
+const COLS = {
+  label: { x: PAGE_MARGIN + 4, width: 150 },
+  base: { x: PAGE_MARGIN + 158, width: 62 },
+  employeeRate: { x: PAGE_MARGIN + 224, width: 38 },
+  employeeAmount: { x: PAGE_MARGIN + 266, width: 68 },
+  employerRate: { x: PAGE_MARGIN + 338, width: 38 },
+  employerAmount: { x: PAGE_MARGIN + 380, width: 90 },
+};
+
+class Layout {
+  y = PAGE_MARGIN;
+  constructor(public doc: PDFKit.PDFDocument) {}
+
+  ensure(height: number): void {
+    if (this.y + height <= this.doc.page.height - PAGE_MARGIN) return;
+    this.doc.addPage();
+    this.y = PAGE_MARGIN;
+    this.doc.font("Helvetica-Bold").fontSize(10).fillColor(INK).text("BULLETIN DE SALAIRE — suite", PAGE_MARGIN, this.y);
+    this.y += 24;
+  }
+
+  rule(gray = BORDER): void {
+    this.doc.moveTo(PAGE_MARGIN, this.y).lineTo(PAGE_MARGIN + CONTENT_WIDTH, this.y).lineWidth(0.75).strokeColor(gray).stroke();
+  }
+}
+
+function drawHeader(l: Layout, input: PayslipPdfInput): void {
   const month = input.period.month.toString().padStart(2, "0");
-
-  page.fillRect(40, 770, 515, 52, 0.12);
-  page.text(56, 800, "BULLETIN DE SALAIRE", 17, 1);
-  page.text(56, 784, `${month}/${input.period.year}  |  Paiement : ${input.period.paymentDate}`, 8.5, 0.92);
-  page.text(430, 800, "RH PILOT", 10, 1);
-  page.text(430, 784, "Document de paie", 7.5, 0.82);
-  page.setY(748);
-
-  page.rect(40, 655, 515, 82, 0.98, 0.86);
-  page.text(54, 718, "EMPLOYEUR", 7.5, 0.42);
-  page.text(54, 702, input.employer.name, 10, 0.12);
-  page.text(54, 688, input.employer.address, 8.5, 0.25);
-  page.text(54, 674, `SIRET : ${input.employer.siret}`, 7.5, 0.32);
-  page.text(190, 674, `APE/NAF : ${input.employer.nafCode}`, 7.5, 0.32);
-  if (input.employer.urssafReference.trim()) page.text(54, 661, `Référence organisme social : ${input.employer.urssafReference}`, 7.5, 0.32);
-  page.text(305, 718, "SALARIÉ", 7.5, 0.42);
-  page.text(305, 702, input.employee.name, 10, 0.12);
-  page.text(305, 688, input.employee.address, 8.5, 0.25);
-  page.text(305, 674, `Emploi : ${input.employee.position}`, 7.5, 0.32);
-  page.text(305, 661, `Classification : ${input.employee.classification}`, 7.5, 0.32);
-  page.setY(637);
-
-  page.text(40, page.currentY, "Cadre de paie", 8, 0.42);
-  page.text(122, page.currentY, input.collectiveAgreement, 8.5, 0.14);
-  page.text(420, page.currentY, `Horaire : ${input.period.hours.toFixed(2)} h`, 7.5, 0.32);
-  page.setY(page.currentY - 18);
-  page.rule(page.currentY, 0.82);
-  page.setY(page.currentY - 22);
-
-  page.text(40, page.currentY, "1. RÉMUNÉRATION", 9.5, 0.12);
-  page.setY(page.currentY - 17);
-  page.tableHeader(page.currentY, [{ text: "Élément", x: 50, width: 300 }, { text: "Montant", x: 455, width: 80 }]);
-  page.setY(page.currentY - 30);
-  page.line("Salaire de base", money(input.salary.baseGross), 8.5, 14);
-  for (const variable of input.salary.variables) page.line(variable.label, money(variable.amount), 8.5, 14);
-  page.rect(40, page.currentY - 3, 515, 22, 0.95, 0.88);
-  page.text(50, page.currentY + 5, "Salaire brut total", 9.5, 0.12);
-  page.text(445, page.currentY + 5, money(input.salary.gross), 9.5, 0.12);
-  page.setY(page.currentY - 30);
-
-  page.text(40, page.currentY, "2. COTISATIONS ET CONTRIBUTIONS", 9.5, 0.12);
-  page.setY(page.currentY - 17);
-  page.tableHeader(page.currentY, [{ text: "Libellé", x: 50, width: 245 }, { text: "Assiette / taux", x: 305, width: 135 }, { text: "Part salarié", x: 460, width: 80 }]);
-  page.setY(page.currentY - 30);
-  const employeeContributions = input.contributions.filter((contribution) => contribution.side === "EMPLOYEE");
-  for (const contribution of employeeContributions) {
-    page.ensure(30);
-    page.text(50, page.currentY, contribution.label, 7.7, 0.14);
-    page.text(305, page.currentY, contributionBasis(contribution), 7, 0.32);
-    page.text(460, page.currentY, `-${money(contribution.amount)}`, 7.7, 0.14);
-    page.setY(page.currentY - 13);
-  }
-  page.rect(40, page.currentY - 3, 515, 21, 0.95, 0.88);
-  page.text(50, page.currentY + 5, "Total cotisations salariales", 8.5, 0.12);
-  page.text(460, page.currentY + 5, `-${money(input.salary.employeeContributions)}`, 8.5, 0.12);
-  page.setY(page.currentY - 29);
-
-  page.rect(40, page.currentY - 88, 515, 88, 0.96, 0.84);
-  page.text(54, page.currentY - 17, "NET ET PRÉLÈVEMENT À LA SOURCE", 8, 0.42);
-  page.text(54, page.currentY - 39, "Net avant impôt", 8.5, 0.25);
-  page.text(445, page.currentY - 39, money(input.salary.netBeforeTax), 8.5, 0.12);
-  page.text(54, page.currentY - 55, "Net imposable / base PAS", 8.5, 0.25);
-  page.text(445, page.currentY - 55, money(input.salary.netTaxable), 8.5, 0.12);
-  page.text(54, page.currentY - 71, `Prélèvement à la source (${percentage(input.salary.withholdingTaxRate)})`, 8, 0.25);
-  page.text(445, page.currentY - 71, `-${money(input.salary.withholdingTax)}`, 8, 0.12);
-  page.text(54, page.currentY - 83, "NET PAYÉ", 11, 0.12);
-  page.text(445, page.currentY - 83, money(input.salary.netPaid), 11, 0.12);
-  page.setY(page.currentY - 108);
-
-  page.rect(40, page.currentY - 34, 515, 34, 0.985, 0.9);
-  page.text(54, page.currentY - 15, "Montant net social", 8.5, 0.25);
-  page.text(445, page.currentY - 15, money(input.salary.netSocial), 9, 0.12);
-  page.text(54, page.currentY - 29, "Montant utilisé comme référence pour certaines démarches sociales.", 6.8, 0.42);
-  page.setY(page.currentY - 52);
-
-  page.ensure(90);
-  page.text(40, page.currentY, "3. CHARGES PATRONALES", 9.5, 0.12);
-  page.setY(page.currentY - 17);
-  page.tableHeader(page.currentY, [{ text: "Libellé", x: 50, width: 245 }, { text: "Assiette / taux", x: 305, width: 135 }, { text: "Part employeur", x: 455, width: 85 }]);
-  page.setY(page.currentY - 30);
-  const employerContributions = input.contributions.filter((contribution) => contribution.side === "EMPLOYER");
-  for (const contribution of employerContributions) {
-    page.ensure(30);
-    page.text(50, page.currentY, contribution.label, 7.7, 0.14);
-    page.text(305, page.currentY, contributionBasis(contribution), 7, 0.32);
-    page.text(455, page.currentY, money(contribution.amount), 7.7, 0.14);
-    page.setY(page.currentY - 13);
-  }
-  page.rect(40, page.currentY - 3, 515, 21, 0.95, 0.88);
-  page.text(50, page.currentY + 5, "Total cotisations patronales", 8.5, 0.12);
-  page.text(455, page.currentY + 5, money(input.salary.employerContributions), 8.5, 0.12);
-  page.setY(page.currentY - 31);
-  page.rect(40, page.currentY - 29, 515, 29, 0.92, 0.84);
-  page.text(54, page.currentY - 18, "Coût total employeur", 9.5, 0.12);
-  page.text(445, page.currentY - 18, money(input.salary.totalEmployerCost), 9.5, 0.12);
-  page.setY(page.currentY - 48);
-
-  page.rule(page.currentY, 0.82);
-  page.setY(page.currentY - 17);
-  page.text(40, page.currentY, `Référentiel de calcul : ${input.source}`, 7, 0.35);
-  page.setY(page.currentY - 11);
-  page.text(40, page.currentY, "Conservez ce bulletin de salaire. Les données détaillées du calcul sont conservées dans le dossier de paie RH Pilot.", 6.8, 0.38);
-  page.setY(page.currentY - 10);
-  page.text(40, page.currentY, "Document généré à partir des données de paie verrouillées de la période.", 6.8, 0.45);
-
-  return page.allPages;
+  l.doc.rect(PAGE_MARGIN, l.y, CONTENT_WIDTH, 52).fill(INK);
+  l.doc.fillColor("white").font("Helvetica-Bold").fontSize(16).text("BULLETIN DE SALAIRE", PAGE_MARGIN + 16, l.y + 14);
+  l.doc.font("Helvetica").fontSize(8.5).fillColor("#D8D5D1").text(`${month}/${input.period.year}  ·  Paiement : ${input.period.paymentDate}`, PAGE_MARGIN + 16, l.y + 34);
+  l.doc.font("Helvetica-Bold").fontSize(10).fillColor("white").text("RH PILOT", PAGE_MARGIN, l.y + 14, { width: CONTENT_WIDTH - 16, align: "right" });
+  l.doc.font("Helvetica").fontSize(7.5).fillColor("#D8D5D1").text("Document de paie", PAGE_MARGIN, l.y + 29, { width: CONTENT_WIDTH - 16, align: "right" });
+  l.y += 52 + 16;
 }
 
-function buildPdf(pages: string[][]): Buffer {
-  const objects: string[] = ["<< /Type /Catalog /Pages 2 0 R >>"];
-  const pageCount = pages.length;
-  const firstPageObject = 3;
-  const fontObject = firstPageObject + pageCount * 2;
-  const kids = pages.map((_, index) => `${firstPageObject + index * 2} 0 R`).join(" ");
-  objects.push(`<< /Type /Pages /Kids [${kids}] /Count ${pageCount} >>`);
-  for (let index = 0; index < pageCount; index += 1) {
-    const pageObjectNumber = firstPageObject + index * 2;
-    const contentObjectNumber = pageObjectNumber + 1;
-    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fontObject} 0 R >> >> /Contents ${contentObjectNumber} 0 R >>`);
-    const stream = `q\n${pages[index].join("\n")}\nQ`;
-    objects.push(`<< /Length ${Buffer.byteLength(stream, "latin1")} >>\nstream\n${stream}\nendstream`);
-  }
-  objects.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
-  let pdf = "%PDF-1.4\n%âãÏÓ\n";
-  const offsets: number[] = [0];
-  objects.forEach((object, index) => { offsets[index + 1] = Buffer.byteLength(pdf, "latin1"); pdf += `${index + 1} 0 obj\n${object}\nendobj\n`; });
-  const xrefOffset = Buffer.byteLength(pdf, "latin1");
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  for (let index = 1; index <= objects.length; index += 1) pdf += `${offsets[index].toString().padStart(10, "0")} 00000 n \n`;
-  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
-  return Buffer.from(pdf, "latin1");
+function drawParty(l: Layout, x: number, width: number, title: string, lines: string[]): number {
+  l.doc.font("Helvetica").fontSize(7).fillColor(INK_FAINT).text(title, x, l.y);
+  let cursorY = l.y + 12;
+  lines.forEach((line, index) => {
+    if (!line) return;
+    l.doc.font(index === 0 ? "Helvetica-Bold" : "Helvetica").fontSize(index === 0 ? 10 : 8).fillColor(index === 0 ? INK : INK_SOFT);
+    const h = l.doc.heightOfString(line, { width });
+    l.doc.text(line, x, cursorY, { width });
+    cursorY += h + 4;
+  });
+  return cursorY;
 }
 
-export function generatePayslipPdf(input: PayslipPdfInput): Buffer {
+function drawIdentity(l: Layout, input: PayslipPdfInput): void {
+  const leftX = PAGE_MARGIN + 14;
+  const rightX = PAGE_MARGIN + 265;
+  const colWidth = 236;
+  const boxTop = l.y + 10;
+
+  const employerLines = [input.employer.name, input.employer.address, `SIRET : ${input.employer.siret}    APE/NAF : ${input.employer.nafCode}`];
+  if (input.employer.urssafReference.trim()) employerLines.push(`Référence organisme social : ${input.employer.urssafReference}`);
+  const employeeLines = [input.employee.name, input.employee.address, `Emploi : ${input.employee.position}`, `Classification : ${input.employee.classification}`];
+
+  l.y = boxTop;
+  const leftBottom = drawParty(l, leftX, colWidth, "EMPLOYEUR", employerLines);
+  l.y = boxTop;
+  const rightBottom = drawParty(l, rightX, colWidth, "SALARIÉ", employeeLines);
+
+  const boxBottom = Math.max(leftBottom, rightBottom) + 10;
+  l.doc.roundedRect(PAGE_MARGIN, boxTop - 10, CONTENT_WIDTH, boxBottom - (boxTop - 10), 4).lineWidth(0.75).strokeColor(BORDER).stroke();
+  l.y = boxBottom + 14;
+}
+
+function drawContext(l: Layout, input: PayslipPdfInput): void {
+  const labelWidth = 78;
+  const horaireText = `Horaire : ${input.period.hours.toFixed(2)} h`;
+  const agreementWidth = CONTENT_WIDTH - labelWidth - 110;
+
+  l.doc.font("Helvetica").fontSize(7.5).fillColor(INK_FAINT).text("Cadre de paie", PAGE_MARGIN, l.y);
+  l.doc.font("Helvetica").fontSize(8.5).fillColor(INK).text(input.collectiveAgreement, PAGE_MARGIN + labelWidth, l.y, { width: agreementWidth });
+  l.doc.font("Helvetica").fontSize(7.5).fillColor(INK_FAINT).text(horaireText, PAGE_MARGIN, l.y, { width: CONTENT_WIDTH, align: "right" });
+
+  const agreementHeight = l.doc.heightOfString(input.collectiveAgreement, { width: agreementWidth });
+  l.y += Math.max(agreementHeight, 11) + 12;
+  l.rule();
+  l.y += 16;
+}
+
+function drawSectionTitle(l: Layout, text: string): void {
+  l.ensure(30);
+  l.doc.font("Helvetica-Bold").fontSize(9.5).fillColor(INK).text(text, PAGE_MARGIN, l.y);
+  l.y += 16;
+}
+
+function drawTableHeader(l: Layout, columns: Array<{ x: number; width: number; text: string; align?: "left" | "right" }>): void {
+  l.ensure(24);
+  l.doc.rect(PAGE_MARGIN, l.y, CONTENT_WIDTH, 18).fill(INK);
+  l.doc.font("Helvetica-Bold").fontSize(7);
+  for (const column of columns) {
+    l.doc.fillColor("white").text(column.text, column.x, l.y + 5.5, { width: column.width, align: column.align ?? "left" });
+  }
+  l.y += 18 + 6;
+}
+
+function drawTotalRow(l: Layout, label: string, value: string, tone: "subtotal" | "total" = "subtotal"): void {
+  const height = tone === "total" ? 24 : 20;
+  l.ensure(height + 4);
+  l.doc.rect(PAGE_MARGIN, l.y, CONTENT_WIDTH, height).fill(tone === "total" ? "#F2ECE9" : ROW_ALT);
+  const fontSize = tone === "total" ? 10 : 8.5;
+  l.doc.font("Helvetica-Bold").fontSize(fontSize).fillColor(INK);
+  l.doc.text(label, PAGE_MARGIN + 8, l.y + (height - fontSize) / 2 - 1);
+  l.doc.text(value, PAGE_MARGIN, l.y + (height - fontSize) / 2 - 1, { width: CONTENT_WIDTH - 8, align: "right" });
+  l.y += height + 10;
+}
+
+function drawRemuneration(l: Layout, input: PayslipPdfInput): void {
+  drawSectionTitle(l, "1. RÉMUNÉRATION");
+  drawTableHeader(l, [
+    { x: COLS.label.x, width: 350, text: "ÉLÉMENT" },
+    { x: PAGE_MARGIN, width: CONTENT_WIDTH - 8, text: "MONTANT", align: "right" },
+  ]);
+
+  const rows = [{ label: "Salaire de base", amount: input.salary.baseGross }, ...input.salary.variables];
+  rows.forEach((row, index) => {
+    const rowHeight = Math.max(14, l.doc.heightOfString(row.label, { width: 350 }) + 4);
+    l.ensure(rowHeight + 2);
+    if (index % 2 === 1) l.doc.rect(PAGE_MARGIN, l.y - 2, CONTENT_WIDTH, rowHeight).fill(ROW_ALT);
+    l.doc.font("Helvetica").fontSize(8.5).fillColor(INK);
+    l.doc.text(row.label, COLS.label.x, l.y, { width: 350 });
+    l.doc.text(money(row.amount), PAGE_MARGIN, l.y, { width: CONTENT_WIDTH - 8, align: "right" });
+    l.y += rowHeight;
+  });
+
+  drawTotalRow(l, "Salaire brut total", money(input.salary.gross));
+}
+
+function drawContributionRow(l: Layout, group: GroupedContribution, index: number): void {
+  const reference = group.employee ?? group.employer;
+  const baseText = reference?.baseAmount != null ? money(reference.baseAmount) : reference?.rate === null ? "Forfait" : "—";
+  const employeeRate = group.employee?.rate != null ? percentage(group.employee.rate) : "";
+  const employeeAmount = group.employee ? `-${money(group.employee.amount)}` : "";
+  const employerRate = group.employer?.rate != null ? percentage(group.employer.rate) : "";
+  const employerAmount = group.employer ? money(group.employer.amount) : "";
+
+  const rowHeight = Math.max(14, l.doc.heightOfString(group.label, { width: COLS.label.width }) + 4);
+  l.ensure(rowHeight + 2);
+  if (index % 2 === 1) l.doc.rect(PAGE_MARGIN, l.y - 2, CONTENT_WIDTH, rowHeight).fill(ROW_ALT);
+
+  l.doc.font("Helvetica").fontSize(7.6).fillColor(INK);
+  l.doc.text(group.label, COLS.label.x, l.y, { width: COLS.label.width });
+  l.doc.fillColor(INK_SOFT).text(baseText, COLS.base.x, l.y, { width: COLS.base.width, align: "right" });
+  l.doc.fillColor(INK_SOFT).text(employeeRate, COLS.employeeRate.x, l.y, { width: COLS.employeeRate.width, align: "right" });
+  l.doc.fillColor(INK).text(employeeAmount, COLS.employeeAmount.x, l.y, { width: COLS.employeeAmount.width, align: "right" });
+  l.doc.fillColor(INK_SOFT).text(employerRate, COLS.employerRate.x, l.y, { width: COLS.employerRate.width, align: "right" });
+  l.doc.fillColor(INK).text(employerAmount, COLS.employerAmount.x, l.y, { width: COLS.employerAmount.width, align: "right" });
+  l.y += rowHeight;
+}
+
+function drawContributions(l: Layout, input: PayslipPdfInput): void {
+  drawSectionTitle(l, "2. COTISATIONS ET CONTRIBUTIONS");
+  drawTableHeader(l, [
+    { x: COLS.label.x, width: COLS.label.width, text: "LIBELLÉ" },
+    { x: COLS.base.x, width: COLS.base.width, text: "BASE", align: "right" },
+    { x: COLS.employeeRate.x, width: COLS.employeeRate.width, text: "TAUX", align: "right" },
+    { x: COLS.employeeAmount.x, width: COLS.employeeAmount.width, text: "SALARIALE", align: "right" },
+    { x: COLS.employerRate.x, width: COLS.employerRate.width, text: "TAUX", align: "right" },
+    { x: COLS.employerAmount.x, width: COLS.employerAmount.width, text: "PATRONALE", align: "right" },
+  ]);
+
+  groupContributions(input.contributions).forEach((group, index) => drawContributionRow(l, group, index));
+
+  drawTotalRow(l, "Total cotisations salariales", `-${money(input.salary.employeeContributions)}`);
+}
+
+function drawNetSummary(l: Layout, input: PayslipPdfInput): void {
+  const boxHeight = 100;
+  l.ensure(boxHeight + 10);
+  l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, boxHeight, 4).fill("#FAF7F5");
+  l.doc.font("Helvetica").fontSize(7.5).fillColor(INK_FAINT).text("NET ET PRÉLÈVEMENT À LA SOURCE", PAGE_MARGIN + 14, l.y + 12);
+
+  const rows: Array<[string, string, boolean]> = [
+    ["Net avant impôt", money(input.salary.netBeforeTax), false],
+    ["Net imposable / base PAS", money(input.salary.netTaxable), false],
+    [`Prélèvement à la source (${percentage(input.salary.withholdingTaxRate)})`, `-${money(input.salary.withholdingTax)}`, false],
+    ["NET PAYÉ", money(input.salary.netPaid), true],
+  ];
+  let rowY = l.y + 30;
+  for (const [label, value, emphasis] of rows) {
+    l.doc.font(emphasis ? "Helvetica-Bold" : "Helvetica").fontSize(emphasis ? 12 : 8.5).fillColor(INK);
+    l.doc.text(label, PAGE_MARGIN + 14, rowY);
+    l.doc.text(value, PAGE_MARGIN, rowY, { width: CONTENT_WIDTH - 14, align: "right" });
+    rowY += emphasis ? 20 : 17;
+  }
+  l.y += boxHeight + 14;
+
+  l.ensure(46);
+  l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, 36, 4).lineWidth(0.75).strokeColor(BORDER).stroke();
+  l.doc.font("Helvetica").fontSize(8.5).fillColor(INK_SOFT).text("Montant net social", PAGE_MARGIN + 14, l.y + 10);
+  l.doc.font("Helvetica-Bold").fontSize(9).fillColor(INK).text(money(input.salary.netSocial), PAGE_MARGIN, l.y + 9, { width: CONTENT_WIDTH - 14, align: "right" });
+  l.doc.font("Helvetica").fontSize(6.8).fillColor(INK_FAINT).text("Montant utilisé comme référence pour certaines démarches sociales.", PAGE_MARGIN + 14, l.y + 23);
+  l.y += 36 + 16;
+}
+
+function drawEmployerCost(l: Layout, input: PayslipPdfInput): void {
+  drawSectionTitle(l, "3. CHARGES PATRONALES");
+  drawTotalRow(l, "Total cotisations patronales", money(input.salary.employerContributions));
+  drawTotalRow(l, "Coût total employeur", money(input.salary.totalEmployerCost), "total");
+}
+
+function drawFooter(l: Layout, input: PayslipPdfInput): void {
+  l.ensure(50);
+  l.rule();
+  l.y += 12;
+  l.doc.font("Helvetica").fontSize(7).fillColor(INK_FAINT);
+  l.doc.text(`Référentiel de calcul : ${input.source}`, PAGE_MARGIN, l.y);
+  l.y += 11;
+  l.doc.text("Conservez ce bulletin de salaire. Les données détaillées du calcul sont conservées dans le dossier de paie RH Pilot.", PAGE_MARGIN, l.y);
+  l.y += 10;
+  l.doc.text("Document généré à partir des données de paie verrouillées de la période.", PAGE_MARGIN, l.y);
+}
+
+function drawPayslip(doc: PDFKit.PDFDocument, input: PayslipPdfInput): void {
+  const l = new Layout(doc);
+  drawHeader(l, input);
+  drawIdentity(l, input);
+  drawContext(l, input);
+  drawRemuneration(l, input);
+  l.y += 8;
+  drawContributions(l, input);
+  drawNetSummary(l, input);
+  drawEmployerCost(l, input);
+  drawFooter(l, input);
+}
+
+export function generatePayslipPdf(input: PayslipPdfInput): Promise<Buffer> {
   const missing = requiredMissing(input);
   if (missing.length > 0) throw new PayslipPdfPrerequisiteError(missing);
-  return buildPdf(buildPages(input));
+
+  return new Promise((resolve, reject) => {
+    const doc = new PDFDocument({ size: "A4", margin: PAGE_MARGIN, bufferPages: true, info: { Title: "Bulletin de salaire", Author: "RH Pilot" } });
+    const chunks: Buffer[] = [];
+    doc.on("data", (chunk: Buffer) => chunks.push(chunk));
+    doc.on("end", () => resolve(Buffer.concat(chunks)));
+    doc.on("error", reject);
+    try {
+      drawPayslip(doc, input);
+      doc.end();
+    } catch (error) {
+      reject(error instanceof Error ? error : new Error(String(error)));
+    }
+  });
 }
