@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { addPayrollVariable, deletePayrollVariable, type PayrollVariableFormState } from "./periodActions";
 import PayrollReopenButton from "./PayrollReopenButton";
+import PayrollPayslipGenerateButton from "./PayrollPayslipGenerateButton";
 import MinimumSalaryControlSection from "./MinimumSalaryControlSection";
 
 const VARIABLE_OPTIONS = [
@@ -333,7 +334,10 @@ export default function PayrollVariablesSection({
           )}
 
           {periodStatus === "LOCKED" ? (
-            <PayrollReopenButton periodId={periodId} disabled={false} />
+            <div className="mt-5 space-y-3">
+              <PayrollPayslipGenerateButton periodId={periodId} />
+              <PayrollReopenButton periodId={periodId} disabled={false} />
+            </div>
           ) : null}
         </div>
       </div>
