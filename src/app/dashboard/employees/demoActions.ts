@@ -38,11 +38,11 @@ const DB_CONCURRENCY_LIMIT = 5;
 const DEMO_EMPLOYEES = [
   { firstName: "Antoine", lastName: "Perrot", civility: "M" as const, position: "Technicien de maintenance", hireOffset: -5, contractType: "CDI" as const, probationDuration: 2, probationDurationUnit: "MONTHS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
   { firstName: "Emma", lastName: "Roussel", civility: "MME" as const, position: "Responsable marketing", hireOffset: -900, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: false },
-  { firstName: "Manon", lastName: "Dubreuil", civility: "MME" as const, position: "Responsable RH", hireOffset: -700, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as "DAYS" | "WEEKS" | "MONTHS" | null, hasManager: false },
+  { firstName: "Manon", lastName: "Dubreuil", civility: "MME" as const, position: "Responsable RH", hireOffset: -700, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: false },
   { firstName: "Karim", lastName: "Belhaj", civility: "M" as const, position: "Apprenti technicien", hireOffset: -20, contractType: "APPRENTISSAGE" as const, probationDuration: 45, probationDurationUnit: "DAYS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
   { firstName: "Nicolas", lastName: "Fabre", civility: "M" as const, position: "Analyste financier", hireOffset: -80, contractType: "CDI" as const, probationDuration: 3, probationDurationUnit: "MONTHS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
   { firstName: "Julien", lastName: "Marchand", civility: "M" as const, position: "Développeur", hireOffset: -25, contractType: null as "CDI" | "CDD" | "APPRENTISSAGE" | "PROFESSIONNALISATION" | null, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: false },
-  { firstName: "Léa", lastName: "Fontaine", civility: "MME" as const, position: "Secrétaire médicale", hireOffset: -400, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as "DAYS" | "WEEKS" | "MONTHS" | null, hasManager: false },
+  { firstName: "Léa", lastName: "Fontaine", civility: "MME" as const, position: "Secrétaire médicale", hireOffset: -400, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: false },
   { firstName: "Sarah", lastName: "Benali", civility: "AUTRE" as const, position: "Comptable", hireOffset: -1000, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
   { firstName: "Sophie", lastName: "Lemoine", civility: "MME" as const, position: "Assistante comptable", hireOffset: -60, contractType: "CDD" as const, probationDuration: 4, probationDurationUnit: "MONTHS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
   { firstName: "Thomas", lastName: "Girard", civility: "M" as const, position: "Chargé de projet", hireOffset: -60, contractType: "PROFESSIONNALISATION" as const, probationDuration: 4, probationDurationUnit: "MONTHS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
@@ -103,50 +103,18 @@ async function triggerDemoEmployeeEvents(
   const eventTasks: Array<() => Promise<unknown>> = [];
 
   if (antoine) {
-    eventTasks.push(() => triggerEmployeeEvent({
-      organizationId,
-      employeeId: antoine.id,
-      eventTemplateKey: "embauche",
-      triggerDate: antoine.hireDate,
-      actorUserId: userId,
-    }));
+    eventTasks.push(() => triggerEmployeeEvent({ organizationId, employeeId: antoine.id, eventTemplateKey: "embauche", triggerDate: antoine.hireDate, actorUserId: userId }));
   }
   if (emma) {
-    eventTasks.push(() => triggerEmployeeEvent({
-      organizationId,
-      employeeId: emma.id,
-      eventTemplateKey: "visite_medicale",
-      triggerDate: new Date(),
-      actorUserId: userId,
-    }));
+    eventTasks.push(() => triggerEmployeeEvent({ organizationId, employeeId: emma.id, eventTemplateKey: "visite_medicale", triggerDate: new Date(), actorUserId: userId }));
   }
   if (manon) {
-    eventTasks.push(() => triggerEmployeeEvent({
-      organizationId,
-      employeeId: manon.id,
-      eventTemplateKey: "fin_periode_essai",
-      triggerDate: daysFromNow(-650),
-      actorUserId: userId,
-    }).then((employeeEvent) => prisma.task.updateMany({
-      where: { employeeEventId: employeeEvent.id },
-      data: { status: "DONE" },
-    })));
+    eventTasks.push(() => triggerEmployeeEvent({ organizationId, employeeId: manon.id, eventTemplateKey: "fin_periode_essai", triggerDate: daysFromNow(-650), actorUserId: userId }).then((employeeEvent) => prisma.task.updateMany({ where: { employeeEventId: employeeEvent.id }, data: { status: "DONE" } })));
   }
-
   for (const employee of employees) {
     if (skipOnboarding.has(employee.firstName)) continue;
-    eventTasks.push(() => triggerEmployeeEvent({
-      organizationId,
-      employeeId: employee.id,
-      eventTemplateKey: "embauche",
-      triggerDate: employee.hireDate,
-      actorUserId: userId,
-    }).then((employeeEvent) => prisma.task.updateMany({
-      where: { employeeEventId: employeeEvent.id },
-      data: { status: "DONE" },
-    })));
+    eventTasks.push(() => triggerEmployeeEvent({ organizationId, employeeId: employee.id, eventTemplateKey: "embauche", triggerDate: employee.hireDate, actorUserId: userId }).then((employeeEvent) => prisma.task.updateMany({ where: { employeeEventId: employeeEvent.id }, data: { status: "DONE" } })));
   }
-
   await mapWithConcurrencyLimit(eventTasks, DB_CONCURRENCY_LIMIT, (task) => task());
 }
 
@@ -158,49 +126,28 @@ export async function generateDemoOrganization() {
   const organizationId = membership.organizationId;
   const periodStart = startOfCurrentMonth();
   let existingPeriod = await prisma.payrollPeriod.findUnique({
-    where: {
-      organizationId_year_month: {
-        organizationId,
-        year: periodStart.getFullYear(),
-        month: periodStart.getMonth() + 1,
-      },
-    },
+    where: { organizationId_year_month: { organizationId, year: periodStart.getFullYear(), month: periodStart.getMonth() + 1 } },
     select: { id: true, status: true },
   });
 
   const allEmployees = await prisma.employee.findMany({
     where: { organizationId },
-    select: {
-      id: true,
-      firstName: true,
-      isDemoData: true,
-      deletedAt: true,
-      hireDate: true,
-    },
+    select: { id: true, firstName: true, isDemoData: true, deletedAt: true, hireDate: true },
   });
 
   const hasRealEmployee = allEmployees.some((employee) => !employee.isDemoData);
-  if (hasRealEmployee) {
-    redirectWithFlash("Votre organisation contient déjà des salariés réels. La génération fictive a été annulée pour protéger vos données.");
-  }
+  if (hasRealEmployee) redirectWithFlash("Votre organisation contient déjà des salariés réels. La génération fictive a été annulée pour protéger vos données.");
 
   const demoOnlyOrganization = allEmployees.length > 0;
 
-  // Si le jeu fictif a déjà été utilisé, on repart d'un état propre :
-  // la période du mois est supprimée uniquement parce que l'organisation ne
-  // contient ici que des salariés fictifs.
   if (demoOnlyOrganization && existingPeriod) {
     await resetDemoPayrollPeriod(organizationId, existingPeriod.id);
     existingPeriod = null;
   }
 
-  // Réactive les salariés fictifs attendus et met de côté les éventuels doublons
-  // ou anciens salariés fictifs qui ne font plus partie du jeu de démonstration.
   const employeesByName = new Map<string, (typeof allEmployees)[number]>();
   for (const employee of allEmployees) {
-    if (!employeesByName.has(employee.firstName) && DEMO_EMPLOYEE_NAMES.has(employee.firstName)) {
-      employeesByName.set(employee.firstName, employee);
-    }
+    if (!employeesByName.has(employee.firstName) && DEMO_EMPLOYEE_NAMES.has(employee.firstName)) employeesByName.set(employee.firstName, employee);
   }
 
   const activeDemoEmployees: Array<{ id: string; firstName: string; hireDate: Date }> = [];
@@ -209,51 +156,27 @@ export async function generateDemoOrganization() {
   for (const template of DEMO_EMPLOYEES) {
     const existing = employeesByName.get(template.firstName);
     if (existing) {
-      if (existing.deletedAt) {
-        await prisma.employee.update({
-          where: { id: existing.id },
-          data: { deletedAt: null },
-        });
-      }
-      activeDemoEmployees.push({
-        id: existing.id,
-        firstName: existing.firstName,
-        hireDate: existing.hireDate,
-      });
+      if (existing.deletedAt) await prisma.employee.update({ where: { id: existing.id }, data: { deletedAt: null } });
+      activeDemoEmployees.push({ id: existing.id, firstName: existing.firstName, hireDate: existing.hireDate });
     } else {
       missingTemplates.push(template);
     }
   }
 
   const activeIdsToKeep = new Set(activeDemoEmployees.map((employee) => employee.id));
-  const extraActiveDemoEmployees = allEmployees.filter(
-    (employee) => !employee.deletedAt && !activeIdsToKeep.has(employee.id),
-  );
+  const extraActiveDemoEmployees = allEmployees.filter((employee) => !employee.deletedAt && !activeIdsToKeep.has(employee.id));
   if (extraActiveDemoEmployees.length > 0) {
-    await prisma.employee.updateMany({
-      where: { id: { in: extraActiveDemoEmployees.map((employee) => employee.id) } },
-      data: { deletedAt: new Date() },
-    });
+    await prisma.employee.updateMany({ where: { id: { in: extraActiveDemoEmployees.map((employee) => employee.id) } }, data: { deletedAt: new Date() } });
   }
 
-  const createdEmployees = await mapWithConcurrencyLimit(
-    missingTemplates,
-    DB_CONCURRENCY_LIMIT,
-    (template) => createDemoEmployee(template, organizationId, membership.id),
-  );
+  const createdEmployees = await mapWithConcurrencyLimit(missingTemplates, DB_CONCURRENCY_LIMIT, (template) => createDemoEmployee(template, organizationId, membership.id));
 
   const allDemoEmployees = [
     ...activeDemoEmployees,
-    ...createdEmployees.map((employee) => ({
-      id: employee.id,
-      firstName: employee.firstName,
-      hireDate: employee.hireDate,
-    })),
+    ...createdEmployees.map((employee) => ({ id: employee.id, firstName: employee.firstName, hireDate: employee.hireDate })),
   ];
 
-  if (allDemoEmployees.length !== DEMO_EMPLOYEES.length) {
-    throw new Error("Le jeu de démonstration n'a pas pu être reconstitué avec ses 15 salariés.");
-  }
+  if (allDemoEmployees.length !== DEMO_EMPLOYEES.length) throw new Error("Le jeu de démonstration n'a pas pu être reconstitué avec ses 15 salariés.");
 
   if (createdEmployees.length > 0) {
     await prisma.auditLog.create({
@@ -267,11 +190,7 @@ export async function generateDemoOrganization() {
         metadata: { count: createdEmployees.length, reset: demoOnlyOrganization },
       },
     });
-    await triggerDemoEmployeeEvents(createdEmployees.map((employee) => ({
-      id: employee.id,
-      firstName: employee.firstName,
-      hireDate: employee.hireDate,
-    })), organizationId, user.id);
+    await triggerDemoEmployeeEvents(createdEmployees.map((employee) => ({ id: employee.id, firstName: employee.firstName, hireDate: employee.hireDate })), organizationId, user.id);
   }
 
   await prepareDemoPayrollDataForOrganization(organizationId);
@@ -283,10 +202,7 @@ export async function archiveAllEmployees() {
   const user = await getCurrentUser();
   if (!membership || !user) throw new Error("Non authentifié ou aucune organisation active");
 
-  const result = await prisma.employee.updateMany({
-    where: { organizationId: membership.organizationId, deletedAt: null },
-    data: { deletedAt: new Date() },
-  });
+  const result = await prisma.employee.updateMany({ where: { organizationId: membership.organizationId, deletedAt: null }, data: { deletedAt: new Date() } });
   await prisma.auditLog.create({
     data: {
       id: randomUUID(),
