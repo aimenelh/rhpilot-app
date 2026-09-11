@@ -71,7 +71,8 @@ export async function GET(_request: Request, { params }: { params: { periodId: s
   if (payslips.length !== employees || employees === 0) return NextResponse.json({ error: `Les bulletins ne sont pas encore tous générés (${payslips.length}/${employees}). Générez d'abord les bulletins de la période.` }, { status: 409 });
 
   try {
-    const pages = payslips.flatMap((payslip) => readPayslipDocument(payslip.storageKey!)).flatMap((pdf) => extractPages(pdf));
+    const pdfs = payslips.map((payslip) => readPayslipDocument(payslip.storageKey!));
+    const pages = pdfs.flatMap((pdf) => extractPages(pdf));
     const merged = buildPdf(pages);
     const month = String(period.month).padStart(2, "0");
     return new NextResponse(merged as unknown as BodyInit, {
