@@ -14,6 +14,7 @@ import { reactivateEmployee } from "./actions";
 import { generateDemoOrganization, archiveAllEmployees } from "./demoActions";
 import { DemoOrgSubmitButton } from "./DemoOrgSubmitButton";
 import { ArchiveAllButton } from "@/components/employees/ArchiveAllButton";
+import { FlashToast } from "@/components/ui/FlashToast";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,7 @@ export default async function EmployeesPage({
 
   return (
     <div className="max-w-5xl">
+      <FlashToast />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-ink">Salariés</h1>

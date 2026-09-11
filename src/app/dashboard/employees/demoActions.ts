@@ -176,24 +176,42 @@ export async function generateDemoOrganization() {
     ...createdEmployees.map((employee) => ({ id: employee.id, firstName: employee.firstName, hireDate: employee.hireDate })),
   ];
 
-  if (allDemoEmployees.length !== DEMO_EMPLOYEES.length) throw new Error("Le jeu de démonstration n'a pas pu être reconstitué avec ses 15 salariés.");
-
-  if (createdEmployees.length > 0) {
-    await prisma.auditLog.create({
-      data: {
-        id: randomUUID(),
-        organizationId,
-        actorUserId: user.id,
-        action: "organization.demo_generated",
-        entityType: "Organization",
-        entityId: organizationId,
-        metadata: { count: createdEmployees.length, reset: demoOnlyOrganization },
-      },
-    });
-    await triggerDemoEmployeeEvents(createdEmployees.map((employee) => ({ id: employee.id, firstName: employee.firstName, hireDate: employee.hireDate })), organizationId, user.id);
+  if (allDemoEmployees.length !== DEMO_EMPLOYEES.length) {
+    redirectWithFlash(
+      `Erreur pendant la génération : seuls ${allDemoEmployees.length} salariés sur ${DEMO_EMPLOYEES.length} ont pu être créés. Réessayez, ou contactez le support si ça persiste.`
+    );
   }
 
-  await prepareDemoPayrollDataForOrganization(organizationId);
+  try {
+    if (createdEmployees.length > 0) {
+      await prisma.auditLog.create({
+        data: {
+          id: randomUUID(),
+          organizationId,
+          actorUserId: user.id,
+          action: "organization.demo_generated",
+          entityType: "Organization",
+          entityId: organizationId,
+          metadata: { count: createdEmployees.length, reset: demoOnlyOrganization },
+        },
+      });
+      await triggerDemoEmployeeEvents(createdEmployees.map((employee) => ({ id: employee.id, firstName: employee.firstName, hireDate: employee.hireDate })), organizationId, user.id);
+    }
+
+    await prepareDemoPayrollDataForOrganization(organizationId);
+  } catch (error) {
+    // Les salariés sont déjà créés à ce stade (pas dans la même
+    // transaction que ce qui suit) -- une erreur ici ne doit pas
+    // laisser l'utilisateur sans aucune explication. Le message
+    // d'origine de l'erreur est inclus : les erreurs de ce bloc sont
+    // déjà écrites pour être lisibles par un humain (voir
+    // demoPayrollActions.ts).
+    const detail = error instanceof Error ? error.message : "Erreur inconnue.";
+    redirectWithFlash(
+      `${allDemoEmployees.length} salariés créés, mais la préparation des données de paie a échoué : ${detail}`
+    );
+  }
+
   redirectWithFlash("Entreprise de démonstration générée (15 salariés) avec données de paie prêtes pour le test.");
 }
 

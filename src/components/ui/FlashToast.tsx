@@ -34,7 +34,7 @@ function FlashToastInner() {
       role="status"
       className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-lg border border-surface-border bg-ink px-4 py-3 text-sm font-medium text-white shadow-card"
     >
-      <span className="h-1.5 w-1.5 rounded-full bg-accent-teal" />
+      <span className="h-1.5 w-1.5 rounded-full bg-brand-primary" />
       {message}
     </div>
   );
