@@ -6,7 +6,7 @@ import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Select, FieldHint } from "@/components/ui/Field";
+import { Input, Label, Select, FieldHint } from "@/components/ui/Field";
 import { updateOrganizationSettings } from "../../settings/organizationActions";
 import { CollectiveAgreementFields } from "./CollectiveAgreementFields";
 
@@ -19,15 +19,8 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
   const canEditOrganization = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
-  const organization = await prisma.organization.findUnique({
-    where: { id: membership.organizationId },
-    include: { collectiveAgreement: true },
-  });
-  const collectiveAgreements = await prisma.collectiveAgreement.findMany({
-    where: { status: "ACTIVE" },
-    select: { id: true, idcc: true, name: true },
-    orderBy: { name: "asc" },
-  });
+  const organization = await prisma.organization.findUnique({ where: { id: membership.organizationId }, include: { collectiveAgreement: true } });
+  const collectiveAgreements = await prisma.collectiveAgreement.findMany({ where: { status: "ACTIVE" }, select: { id: true, idcc: true, name: true }, orderBy: { name: "asc" } });
   const socialRows = await prisma.$queryRaw<Array<{ legalCategory: string | null; atmpRate: unknown; healthPlanMonthlyAmount: unknown; healthPlanEmployerRate: unknown; companyCreationDate: Date | null; payrollDepartment: string | null }>>`SELECT "legalCategory", "atmpRate", "healthPlanMonthlyAmount", "healthPlanEmployerRate", "companyCreationDate", "payrollDepartment" FROM "organizations" WHERE "id" = ${membership.organizationId} LIMIT 1`;
   const legalCategory = socialRows[0]?.legalCategory ?? "";
   const atmpRate = socialRows[0]?.atmpRate === null || socialRows[0]?.atmpRate === undefined ? "" : String(socialRows[0].atmpRate);
@@ -61,10 +54,7 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
             <div className="mt-6"><Label htmlFor="healthPlanMonthlyAmount">Montant mensuel de la complémentaire santé (€)</Label><Input id="healthPlanMonthlyAmount" name="healthPlanMonthlyAmount" type="number" min="0.01" max="10000" step="0.01" defaultValue={healthPlanMonthlyAmount} placeholder="Ex. 40" /><FieldHint>Indiquez le montant mensuel prévu par le contrat de complémentaire santé de l&apos;organisation.</FieldHint><Label htmlFor="healthPlanEmployerRate" className="mt-4">Part employeur (%)</Label><Input id="healthPlanEmployerRate" name="healthPlanEmployerRate" type="number" min="50" max="100" step="0.01" defaultValue={healthPlanEmployerRate} placeholder="Ex. 50" /><FieldHint>La part employeur de la complémentaire santé doit être d&apos;au moins 50 %.</FieldHint></div>
           </Card>
           <Card className="mt-4">
-            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-              <div><h2 className="text-sm font-semibold text-ink">Convention collective</h2><p className="mt-1 text-sm text-ink-soft">Associez la convention applicable à l&apos;organisation par son IDCC. C&apos;est cette référence structurée qui servira ensuite aux règles conventionnelles de paie.</p></div>
-              <Link href="https://code.travail.gouv.fr/outils/convention-collective/entreprise" target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-brand-primary hover:underline"><ExternalLink size={13} /> Vérifier l&apos;IDCC</Link>
-            </div>
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="text-sm font-semibold text-ink">Convention collective</h2><p className="mt-1 text-sm text-ink-soft">Associez la convention applicable à l&apos;organisation par son IDCC. C&apos;est cette référence structurée qui servira ensuite aux règles conventionnelles de paie.</p></div><Link href="https://code.travail.gouv.fr/outils/convention-collective/entreprise" target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-brand-primary hover:underline"><ExternalLink size={13} /> Vérifier l&apos;IDCC</Link></div>
             <div className="mt-4"><CollectiveAgreementFields agreements={collectiveAgreements} defaultIdcc={organization?.collectiveAgreement?.idcc ?? ""} defaultName={organization?.collectiveAgreement?.name ?? organization?.conventionCollective ?? ""} /></div>
             {organization?.collectiveAgreement ? <div className="mt-4 rounded-lg border border-accent-teal/20 bg-accent-teal/5 px-4 py-3"><p className="text-xs font-semibold uppercase tracking-wider text-accent-teal">Convention associée</p><p className="mt-1 font-medium text-ink">{organization.collectiveAgreement.name}</p><p className="mt-0.5 text-sm text-ink-soft">IDCC {organization.collectiveAgreement.idcc}</p></div> : null}
           </Card>
