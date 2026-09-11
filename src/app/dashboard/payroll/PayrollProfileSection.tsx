@@ -4,6 +4,7 @@ import { useFormState, useFormStatus } from "react-dom";
 
 import { saveEmployeePayrollProfile, type PayrollProfileFormState } from "./employeeActions";
 import { AlternanceProfileSection } from "../employees/AlternanceProfileSection";
+import { WithholdingTaxSection } from "../employees/WithholdingTaxSection";
 
 type AgreementOption = { id: string; idcc: string; name: string };
 type PayrollProfileView = {
@@ -109,6 +110,7 @@ export function PayrollProfileSection({
 
       <div className="border-t border-surface-border px-5 pb-5">
         <AlternanceProfileSection employeeId={employeeId} canEdit={canEdit} embedded />
+        <WithholdingTaxSection employeeId={employeeId} canEdit={canEdit} />
       </div>
     </section>
   );
