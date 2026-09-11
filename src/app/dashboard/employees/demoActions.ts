@@ -135,7 +135,7 @@ export async function generateDemoOrganization() {
     select: { id: true, firstName: true, isDemoData: true, deletedAt: true, hireDate: true },
   });
 
-  const hasRealEmployee = allEmployees.some((employee) => !employee.isDemoData);
+  const hasRealEmployee = allEmployees.some((employee) => !employee.isDemoData && !employee.deletedAt);
   if (hasRealEmployee) redirectWithFlash("Votre organisation contient déjà des salariés réels. La génération fictive a été annulée pour protéger vos données.");
 
   const demoOnlyOrganization = allEmployees.length > 0;
