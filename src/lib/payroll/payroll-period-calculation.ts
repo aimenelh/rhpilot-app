@@ -193,7 +193,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
       await persistPayrollLedger(tx, calculation.id, ledgerEntries);
     }
     await tx.payrollPeriod.update({ where: { id: period.id }, data: { status: "CALCULATED", calculatedAt: new Date() } });
-  });
+  }, { maxWait: 10000, timeout: 60000 });
 
   return { status: "CALCULATED", periodId: period.id, employeeCount: calculatedEmployees.length, ruleVersionId: rules.ruleVersionId };
 }
