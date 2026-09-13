@@ -34,6 +34,7 @@ type DetailRule = {
 
 const DETAIL_RULES: readonly DetailRule[] = [
   { code: "maladie_salarie", label: "Assurance maladie, maternité, invalidité, décès", rule: "salarié . cotisations . maladie . salarié", side: "EMPLOYEE", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, rateRule: "salarié . cotisations . maladie . salarié . taux" },
+  { code: "maladie_employeur", label: "Assurance maladie, maternité, invalidité, décès — part employeur", rule: "salarié . cotisations . maladie . employeur", side: "EMPLOYER", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, rateRule: "salarié . cotisations . maladie . employeur . taux" },
   { code: "sante_salarie", label: "Complémentaire santé — part salarié", rule: "salarié . cotisations . prévoyances . santé . salarié", side: "EMPLOYEE", flat: true },
   { code: "sante_employeur", label: "Complémentaire santé — part employeur", rule: "salarié . cotisations . prévoyances . santé . employeur", side: "EMPLOYER", flat: true },
   { code: "atmp", label: "Accidents du travail et maladies professionnelles", rule: "salarié . cotisations . ATMP", side: "EMPLOYER", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, baseCapMultiplier: 1, rateRule: "salarié . cotisations . ATMP . taux" },
@@ -44,7 +45,7 @@ const DETAIL_RULES: readonly DetailRule[] = [
   { code: "retraite_complementaire_salarie", label: "Retraite complémentaire — part salarié", rule: "salarié . cotisations . retraite complémentaire-CEG-CET . salarié", side: "EMPLOYEE", flat: false },
   { code: "retraite_complementaire_employeur", label: "Retraite complémentaire — part employeur", rule: "salarié . cotisations . retraite complémentaire-CEG-CET . employeur", side: "EMPLOYER", flat: false },
   { code: "allocations_familiales", label: "Allocations familiales", rule: "salarié . cotisations . allocations familiales", side: "EMPLOYER", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, baseCapMultiplier: 1, rateRule: "salarié . cotisations . allocations familiales . taux" },
-  { code: "assurance_chomage", label: "Assurance chômage", rule: "salarié . cotisations . chômage", side: "EMPLOYER", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, baseCapMultiplier: 4 },
+  { code: "assurance_chomage", label: "Assurance chômage", rule: "salarié . cotisations . assurance chômage", side: "EMPLOYER", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, baseCapMultiplier: 4 },
   { code: "apec_salarie", label: "APEC — part salarié", rule: "salarié . cotisations . APEC . salarié", side: "EMPLOYEE", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, baseCapMultiplier: 4 },
   { code: "apec_employeur", label: "APEC — part employeur", rule: "salarié . cotisations . APEC . employeur", side: "EMPLOYER", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, baseCapMultiplier: 4 },
   { code: "csg_deductible", label: "CSG déductible", rule: "salarié . cotisations . CSG-CRDS . CSG . déductible", side: "EMPLOYEE", flat: false, baseRule: CSG_BASE_RULE, rateRule: "salarié . cotisations . CSG-CRDS . CSG . déductible . taux" },
@@ -52,6 +53,7 @@ const DETAIL_RULES: readonly DetailRule[] = [
   { code: "csg_non_imposable", label: "CSG/CRDS sur revenus non imposables", rule: "salarié . cotisations . CSG-CRDS . sur revenus non imposables", side: "EMPLOYEE", flat: false, baseRule: CSG_BASE_RULE },
   { code: "invalidite_deces_salarie", label: "Prévoyance incapacité, invalidité, décès — part salarié", rule: "salarié . cotisations . prévoyances . incapacité invalidité décès . salarié", side: "EMPLOYEE", flat: false },
   { code: "invalidite_deces_employeur", label: "Prévoyance incapacité, invalidité, décès — part employeur", rule: "salarié . cotisations . prévoyances . incapacité invalidité décès . employeur", side: "EMPLOYER", flat: false },
+  { code: "autres_charges_employeur", label: "Autres charges dues par l'employeur", rule: "salarié . cotisations . autres charges dues par l'employeur", side: "EMPLOYER", flat: true },
 ];
 
 const MODEL_DEFAULT_SITUATION: SocialPayrollSituation = {
