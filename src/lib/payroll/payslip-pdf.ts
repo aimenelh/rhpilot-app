@@ -1,13 +1,10 @@
-import PDFDocument from "pdfkit";
+import PDFDocument, { registerStdFonts } from "pdfkit";
+import Helvetica from "pdfkit/standard-fonts/Helvetica";
+import HelveticaBold from "pdfkit/standard-fonts/HelveticaBold";
 
-// PDFKit 0.20.x uses package import mappings for standard fonts. Explicitly
-// register the two fonts used by RH Pilot so Vercel/Next server tracing does
-// not depend on resolving the internal #standard-fonts mapping at runtime.
-const { registerStdFonts } = require("pdfkit") as {
-  registerStdFonts: (...fonts: unknown[]) => void;
-};
-const Helvetica = require("pdfkit/standard-fonts/Helvetica");
-const HelveticaBold = require("pdfkit/standard-fonts/HelveticaBold");
+// PDFKit 0.20.x requires the standard font metrics to be registered explicitly
+// when the package is bundled by Next.js/Vercel. Use the public PDFKit API
+// rather than reaching into CommonJS exports at runtime.
 registerStdFonts(Helvetica, HelveticaBold);
 
 export type PayslipPdfContribution = {
