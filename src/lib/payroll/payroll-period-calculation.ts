@@ -81,7 +81,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
   const { start, end, calculationDate } = periodBounds(period.year, period.month);
   const monthlyCalendarDays = new Date(Date.UTC(period.year, period.month, 0)).getUTCDate();
   const [employees, profiles, variables, rules, validatedAbsences, socialContext] = await Promise.all([
-    prisma.employee.findMany({ where: { organizationId: input.organizationId, deletedAt: null }, select: { id: true, hireDate: true, contractType: true, professionalCategory: true }, orderBy: { id: "asc" } }),
+    prisma.employee.findMany({ where: { organizationId: input.organizationId, deletedAt: null }, select: { id: true, hireDate: true, contractEndDate: true, contractType: true, professionalCategory: true }, orderBy: { id: "asc" } }),
     prisma.payrollProfile.findMany({ where: { organizationId: input.organizationId, effectiveFrom: { lte: end }, OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: start } }] }, select: { id: true, employeeId: true, baseSalaryCents: true, monthlyHours: true, effectiveFrom: true, effectiveUntil: true, collectiveAgreementId: true, classificationCode: true, classificationLabel: true, level: true, coefficient: true }, orderBy: { effectiveFrom: "desc" } }),
     prisma.payrollVariable.findMany({ where: { organizationId: input.organizationId, payrollPeriodId: period.id }, select: { id: true, employeeId: true, code: true, label: true, amount: true, unit: true, source: true }, orderBy: { createdAt: "asc" } }),
     resolvePayrollRuleSetFromPrisma({ code: input.ruleCode, scope: input.ruleScope, periodDate: calculationDate }),
@@ -118,6 +118,14 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     if (profile.baseSalaryCents === null || !Number.isFinite(Number(profile.baseSalaryCents)) || Number(profile.baseSalaryCents) < 0) throw new Error(`Le salaire brut mensuel est manquant ou invalide pour le salarié ${employee.id}.`);
     if (!employee.contractType) throw new Error(`Le type de contrat est manquant pour le salarié ${employee.id}.`);
     if (!employee.professionalCategory) throw new Error(`La catégorie professionnelle est manquante pour le salarié ${employee.id}.`);
+
+    const hireDate = new Date(employee.hireDate);
+    if (hireDate > start) {
+      throw new Error(`Calcul bloqué pour le salarié ${employee.id} : l'entrée en cours de mois nécessite une règle de proratisation du salaire qui n'est pas encore modélisée.`);
+    }
+    if (employee.contractEndDate && new Date(employee.contractEndDate) < end) {
+      throw new Error(`Calcul bloqué pour le salarié ${employee.id} : la sortie en cours de mois nécessite une règle de proratisation du salaire qui n'est pas encore modélisée.`);
+    }
 
     const monthlyHours = Number(profile.monthlyHours);
     if (!Number.isFinite(monthlyHours) || monthlyHours <= 0 || monthlyHours > 744) {
