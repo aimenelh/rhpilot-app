@@ -34,6 +34,7 @@ type DetailRule = {
 
 const DETAIL_RULES: readonly DetailRule[] = [
   { code: "maladie_salarie", label: "Assurance maladie, maternité, invalidité, décès", rule: "salarié . cotisations . maladie . salarié", side: "EMPLOYEE", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, rateRule: "salarié . cotisations . maladie . salarié . taux" },
+  { code: "sante_salarie", label: "Complémentaire santé — part salarié", rule: "salarié . cotisations . prévoyances . santé . salarié", side: "EMPLOYEE", flat: true },
   { code: "sante_employeur", label: "Complémentaire santé — part employeur", rule: "salarié . cotisations . prévoyances . santé . employeur", side: "EMPLOYER", flat: true },
   { code: "atmp", label: "Accidents du travail et maladies professionnelles", rule: "salarié . cotisations . ATMP", side: "EMPLOYER", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, baseCapMultiplier: 1, rateRule: "salarié . cotisations . ATMP . taux" },
   { code: "vieillesse_plafonnee_salarie", label: "Assurance vieillesse plafonnée", rule: "salarié . cotisations . vieillesse . plafonnée . salarié", side: "EMPLOYEE", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, baseCapMultiplier: 1, rateRule: "salarié . cotisations . vieillesse . salarié . plafonnée . taux" },
