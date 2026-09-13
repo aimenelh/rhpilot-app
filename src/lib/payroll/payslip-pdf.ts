@@ -1,4 +1,11 @@
-import PDFDocument from "pdfkit";
+import PDFDocument, { registerStdFonts } from "pdfkit";
+import Helvetica from "pdfkit/standard-fonts/Helvetica";
+import HelveticaBold from "pdfkit/standard-fonts/HelveticaBold";
+
+// PDFKit 0.20.x requires the standard font metrics to be registered explicitly
+// when the package is bundled by Next.js/Vercel. Use the public PDFKit API
+// rather than reaching into CommonJS exports at runtime.
+registerStdFonts(Helvetica, HelveticaBold);
 
 export type PayslipPdfContribution = {
   label: string;
