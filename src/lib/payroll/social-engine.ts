@@ -53,7 +53,7 @@ const DETAIL_RULES: readonly DetailRule[] = [
   { code: "csg_non_imposable", label: "CSG/CRDS sur revenus non imposables", rule: "salarié . cotisations . CSG-CRDS . sur revenus non imposables", side: "EMPLOYEE", flat: false, baseRule: CSG_BASE_RULE },
   { code: "invalidite_deces_salarie", label: "Prévoyance incapacité, invalidité, décès — part salarié", rule: "salarié . cotisations . prévoyances . incapacité invalidité décès . salarié", side: "EMPLOYEE", flat: false },
   { code: "invalidite_deces_employeur", label: "Prévoyance incapacité, invalidité, décès — part employeur", rule: "salarié . cotisations . prévoyances . incapacité invalidité décès . employeur", side: "EMPLOYER", flat: false },
-  { code: "autres_charges_employeur", label: "Autres charges dues par l'employeur", rule: "salarié . cotisations . autres charges dues par l'employeur", side: "EMPLOYER", flat: true },
+  { code: "autres_charges_employeur", label: "Autres charges dues par l'employeur", rule: "salarié . cotisations . autres employeur", side: "EMPLOYER", flat: true },
 ];
 
 const MODEL_DEFAULT_SITUATION: SocialPayrollSituation = {
