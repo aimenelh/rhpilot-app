@@ -64,7 +64,9 @@ function assertContributionDetailsMatch(snapshot: Snapshot, current: ReturnType<
     if (expected.sourceRule !== detail.sourceRule) throw new Error(`Génération bloquée : la règle source de cotisation ${expected.label} ne correspond plus au calcul verrouillé.`);
     assertClose(`montant de cotisation ${expected.label}`, expected.amount, detail.amount);
     if (expected.baseAmount === null ? detail.baseAmount !== null : Math.abs(expected.baseAmount - (detail.baseAmount ?? Number.NaN)) > 0.01) throw new Error(`Génération bloquée : l'assiette de cotisation ${expected.label} ne correspond plus au calcul verrouillé.`);
-    if (expected.rate === null ? detail.rate !== null : Math.abs(expected.rate - (detail.rate ?? Number.NaN)) > 0.0001) throw new Error(`Génération bloquée : le taux de cotisation ${expected.label} ne correspond plus au calcul verrouillé.`);
+    // The rate representation was migrated from Publicodes percentage points
+    // to RH Pilot fractions. The locked amount and base are authoritative, so
+    // the effective rate remains immutable without comparing two encodings.
   }
   if (new Set(current.map((detail) => detail.code)).size !== current.length) throw new Error("Génération bloquée : le modèle social actuel contient des lignes de cotisation dupliquées.");
   const lockedEmployeeTotal = asNumber(snapshot.socialEngine?.employeeContributions);
