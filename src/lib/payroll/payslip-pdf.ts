@@ -42,7 +42,6 @@ function requiredMissing(input: PayslipPdfInput): string[] {
     ["SIRET employeur", input.employer.siret],
     ["Code APE/NAF", input.employer.nafCode],
     ["Nom salarié", input.employee.name],
-    ["Adresse salarié", input.employee.address],
     ["Emploi salarié", input.employee.position],
     ["Classification salarié", input.employee.classification],
     ["Date de paiement", input.period.paymentDate],
