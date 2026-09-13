@@ -4,6 +4,11 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  experimental: {
+    outputFileTracingIncludes: {
+      "/*": ["./node_modules/pdfkit/js/data/**/*"],
+    },
+  },
 };
 
 export default nextConfig;
