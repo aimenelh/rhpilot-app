@@ -3,53 +3,137 @@ import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { readPayslipDocument } from "@/lib/payroll/payslip-storage";
 
-function extractPages(pdf: Buffer): string[] {
-  const source = pdf.toString("latin1");
-  const objects = new Map<number, string>();
-  const objectPattern = /(\d+) 0 obj\r?\n([\s\S]*?)\r?\nendobj/g;
-  for (const match of source.matchAll(objectPattern)) objects.set(Number(match[1]), match[2]);
+type PdfObject = {
+  body: string;
+  streamPrefix?: string;
+  streamData?: string;
+};
 
-  const pages: string[] = [];
-  for (const body of objects.values()) {
-    if (!/\/Type \/Page\b/.test(body)) continue;
-    const contentRef = body.match(/\/Contents\s+(\d+)\s+0\s+R/);
-    if (!contentRef) throw new Error("Structure PDF invalide : contenu de page introuvable.");
-    const contentObject = objects.get(Number(contentRef[1]));
-    if (!contentObject) throw new Error("Structure PDF invalide : objet de contenu introuvable.");
-    const stream = contentObject.match(/stream\r?\n([\s\S]*?)\r?\nendstream/);
-    if (!stream) throw new Error("Structure PDF invalide : flux de page introuvable.");
-    pages.push(stream[1]);
+function parseObjects(pdf: Buffer): Map<number, PdfObject> {
+  const source = pdf.toString("latin1");
+  const objects = new Map<number, PdfObject>();
+  const objectPattern = /(\d+) 0 obj\r?\n([\s\S]*?)\r?\nendobj/g;
+
+  for (const match of source.matchAll(objectPattern)) {
+    const number = Number(match[1]);
+    const body = match[2];
+    const streamIndex = body.indexOf("\nstream\n");
+    if (streamIndex >= 0) {
+      objects.set(number, {
+        body,
+        streamPrefix: body.slice(0, streamIndex + 1),
+        streamData: body.slice(streamIndex + "\nstream\n".length, -"\nendstream".length),
+      });
+    } else {
+      objects.set(number, { body });
+    }
   }
-  return pages;
+
+  return objects;
 }
 
-function buildPdf(pageStreams: string[]): Buffer {
-  if (pageStreams.length === 0) throw new Error("Aucune page PDF à assembler.");
-  const objects: string[] = ["<< /Type /Catalog /Pages 2 0 R >>"];
-  const firstPageObject = 3;
-  const fontObject = firstPageObject + pageStreams.length * 2;
-  const kids = pageStreams.map((_, index) => `${firstPageObject + index * 2} 0 R`).join(" ");
-  objects.push(`<< /Type /Pages /Kids [${kids}] /Count ${pageStreams.length} >>`);
+function pageObjectNumbers(objects: Map<number, PdfObject>): number[] {
+  return [...objects.entries()]
+    .filter(([, object]) => /\/Type\s*\/Page\b/.test(object.body))
+    .map(([number]) => number);
+}
 
-  for (let index = 0; index < pageStreams.length; index += 1) {
-    const pageObjectNumber = firstPageObject + index * 2;
-    const contentObjectNumber = pageObjectNumber + 1;
-    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 ${fontObject} 0 R >> >> /Contents ${contentObjectNumber} 0 R >>`);
-    const stream = pageStreams[index];
-    objects.push(`<< /Length ${Buffer.byteLength(stream, "latin1")} >>\nstream\n${stream}\nendstream`);
-  }
-  objects.push("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+function referencedObjects(body: string): number[] {
+  return [...body.matchAll(/(\d+)\s+0\s+R/g)].map((match) => Number(match[1]));
+}
 
-  let pdf = "%PDF-1.4\n%âãÏÓ\n";
-  const offsets: number[] = [0];
-  objects.forEach((object, index) => {
-    offsets[index + 1] = Buffer.byteLength(pdf, "latin1");
-    pdf += `${index + 1} 0 obj\n${object}\nendobj\n`;
+function rewriteReferences(body: string, mapping: Map<number, number>): string {
+  return body.replace(/(\d+)\s+0\s+R/g, (full, rawNumber: string) => {
+    const mapped = mapping.get(Number(rawNumber));
+    return mapped ? `${mapped} 0 R` : full;
   });
+}
+
+function rewriteObject(object: PdfObject, mapping: Map<number, number>, pagesObjectNumber: number): string {
+  if (object.streamPrefix !== undefined && object.streamData !== undefined) {
+    const prefix = object.streamPrefix.replace(/\/Parent\s+(\d+)\s+0\s+R/, `/Parent ${pagesObjectNumber} 0 R`);
+    return `${rewriteReferences(prefix, mapping)}stream\n${object.streamData}\nendstream`;
+  }
+
+  const withoutParent = object.body.replace(/\/Parent\s+(\d+)\s+0\s+R/, `/Parent ${pagesObjectNumber} 0 R`);
+  return rewriteReferences(withoutParent, mapping);
+}
+
+function copyPageGraph(
+  sourceObjects: Map<number, PdfObject>,
+  pageObjectNumber: number,
+  targetObjects: Map<number, string>,
+  nextObjectNumber: { value: number },
+  pagesObjectNumber: number,
+): number {
+  const mapping = new Map<number, number>();
+  const queue = [pageObjectNumber];
+
+  while (queue.length > 0) {
+    const sourceNumber = queue.shift()!;
+    if (mapping.has(sourceNumber)) continue;
+    const sourceObject = sourceObjects.get(sourceNumber);
+    if (!sourceObject) throw new Error(`Structure PDF invalide : objet ${sourceNumber} introuvable.`);
+
+    const targetNumber = nextObjectNumber.value++;
+    mapping.set(sourceNumber, targetNumber);
+
+    const refs = referencedObjects(sourceObject.streamPrefix ?? sourceObject.body);
+    for (const ref of refs) {
+      if (sourceNumber === pageObjectNumber && /\/Parent\s+${ref}\s+0\s+R/.test(sourceObject.body)) continue;
+      if (ref !== pageObjectNumber && !mapping.has(ref)) queue.push(ref);
+    }
+  }
+
+  for (const [sourceNumber, targetNumber] of mapping) {
+    const sourceObject = sourceObjects.get(sourceNumber)!;
+    targetObjects.set(targetNumber, rewriteObject(sourceObject, mapping, pagesObjectNumber));
+  }
+
+  return mapping.get(pageObjectNumber)!;
+}
+
+function buildPdf(pageStreams: Buffer[]): Buffer {
+  if (pageStreams.length === 0) throw new Error("Aucune page PDF à assembler.");
+
+  const targetObjects = new Map<number, string>();
+  const catalogObjectNumber = 1;
+  const pagesObjectNumber = 2;
+  const nextObjectNumber = { value: 3 };
+  const pageObjectNumbersOut: number[] = [];
+
+  for (const pdf of pageStreams) {
+    const sourceObjects = parseObjects(pdf);
+    const pages = pageObjectNumbers(sourceObjects);
+    if (pages.length === 0) throw new Error("Structure PDF invalide : aucune page trouvée.");
+
+    for (const pageNumber of pages) {
+      pageObjectNumbersOut.push(copyPageGraph(sourceObjects, pageNumber, targetObjects, nextObjectNumber, pagesObjectNumber));
+    }
+  }
+
+  targetObjects.set(catalogObjectNumber, `<< /Type /Catalog /Pages ${pagesObjectNumber} 0 R >>`);
+  const kids = pageObjectNumbersOut.map((number) => `${number} 0 R`).join(" ");
+  targetObjects.set(pagesObjectNumber, `<< /Type /Pages /Kids [${kids}] /Count ${pageObjectNumbersOut.length} >>`);
+
+  let pdf = "%PDF-1.7\n%âãÏÓ\n";
+  const offsets: number[] = [0];
+  const objectNumbers = [...targetObjects.keys()].sort((a, b) => a - b);
+  const maxObjectNumber = Math.max(...objectNumbers);
+
+  for (const objectNumber of objectNumbers) {
+    offsets[objectNumber] = Buffer.byteLength(pdf, "latin1");
+    pdf += `${objectNumber} 0 obj\n${targetObjects.get(objectNumber)}\nendobj\n`;
+  }
+
   const xrefOffset = Buffer.byteLength(pdf, "latin1");
-  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
-  for (let index = 1; index <= objects.length; index += 1) pdf += `${offsets[index].toString().padStart(10, "0")} 00000 n \n`;
-  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
+  pdf += `xref\n0 ${maxObjectNumber + 1}\n0000000000 65535 f \n`;
+  for (let index = 1; index <= maxObjectNumber; index += 1) {
+    const offset = offsets[index] ?? 0;
+    pdf += `${offset.toString().padStart(10, "0")} 00000 n \n`;
+  }
+  pdf += `trailer\n<< /Size ${maxObjectNumber + 1} /Root ${catalogObjectNumber} 0 R >>\nstartxref\n${xrefOffset}\n%%EOF\n`;
+
   return Buffer.from(pdf, "latin1");
 }
 
@@ -72,8 +156,7 @@ export async function GET(_request: Request, { params }: { params: { periodId: s
 
   try {
     const pdfs = payslips.map((payslip) => readPayslipDocument(payslip.storageKey!));
-    const pages = pdfs.flatMap((pdf) => extractPages(pdf));
-    const merged = buildPdf(pages);
+    const merged = buildPdf(pdfs);
     const month = String(period.month).padStart(2, "0");
     return new NextResponse(merged as unknown as BodyInit, {
       status: 200,
