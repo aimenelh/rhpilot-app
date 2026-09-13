@@ -8,9 +8,14 @@ describe("withholding tax validation", () => {
     expect(calculateEmployeeWithholdingTax(2000, profile, "employee-1")).toBe(0);
   });
 
-  it("calculates the employee-specific rate", () => {
+  it("calculates the employee-specific rate on net taxable income", () => {
     const profile = { rate: 0.1234, validFrom: new Date("2026-09-01"), validUntil: null, source: "DGFiP", sourceReference: "PAS-TEST-1234" };
-    expect(calculateEmployeeWithholdingTax(2500, profile, "employee-1")).toBe(308.5);
+    expect(calculateEmployeeWithholdingTax(2000, profile, "employee-1")).toBe(246.8);
+  });
+
+  it("does not silently use net before tax as the PAS base", () => {
+    const profile = { rate: 0.10, validFrom: new Date("2026-09-01"), validUntil: null, source: "DGFiP", sourceReference: "PAS-TEST-NET-TAXABLE" };
+    expect(calculateEmployeeWithholdingTax(1800, profile, "employee-1")).toBe(180);
   });
 
   it("rejects a missing profile", () => {
