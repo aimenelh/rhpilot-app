@@ -3,9 +3,9 @@
 import { useEffect, useRef } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import {
-  generatePayslipsWithPaymentDateAction,
+  regeneratePayslipsWithPaymentDateAction,
   type PayrollPayslipGenerationFormState,
-} from "./generatePayslipsWithPaymentDateAction";
+} from "./regeneratePayslipsWithPaymentDateAction";
 
 const bundleUrl = (periodId: string) => `/api/payroll/periods/${encodeURIComponent(periodId)}/payslips`;
 
@@ -42,7 +42,7 @@ function DownloadAfterGeneration({ periodId, state }: { periodId: string; state:
 
 export default function PayrollPayslipGenerateButton({ periodId }: { periodId: string }) {
   const [state, formAction] = useFormState<PayrollPayslipGenerationFormState, FormData>(
-    generatePayslipsWithPaymentDateAction,
+    regeneratePayslipsWithPaymentDateAction,
     undefined,
   );
 
