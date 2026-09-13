@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { Logomark, Wordmark } from "@/components/Brand";
+import { AnnouncementBar } from "./AnnouncementBar";
 import { PublicCopilotePreview } from "./PublicCopilotePreview";
 
 const GROUPS = [
@@ -95,6 +96,7 @@ export function MarketingHeader() {
       >
         Aller au contenu
       </a>
+      <AnnouncementBar />
       <header
         ref={root}
         className="sticky top-0 z-40 border-b border-surface-border bg-white"
