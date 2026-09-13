@@ -1,10 +1,9 @@
-import PDFDocument, { registerStdFonts } from "pdfkit";
-import Helvetica from "pdfkit/standard-fonts/Helvetica";
-import HelveticaBold from "pdfkit/standard-fonts/HelveticaBold";
+import PDFDocument from "pdfkit";
 
-// PDFKit 0.20.x uses generated standard-font modules. Register the fonts
-// explicitly so the same font data is available to the server bundle.
-registerStdFonts(Helvetica, HelveticaBold);
+// PDFKit 0.20.x registers its standard fonts through the Node build.
+// Keep the public default import only: the installed @types/pdfkit package
+// does not expose registerStdFonts, and Next.js must not execute a CommonJS
+// require against the generated font modules.
 
 export type PayslipPdfContribution = {
   label: string;
@@ -117,25 +116,10 @@ const COLS = {
 class Layout {
   y = PAGE_MARGIN;
   constructor(public doc: PDFKit.PDFDocument) {}
-
-  bottom(): number {
-    return this.doc.page.height - PAGE_MARGIN - 22;
-  }
-
-  newPage(): void {
-    this.doc.addPage();
-    this.y = PAGE_MARGIN;
-    drawContinuationHeader(this);
-  }
-
-  ensure(height: number): void {
-    if (this.y + height <= this.bottom()) return;
-    this.newPage();
-  }
-
-  rule(gray = BORDER): void {
-    this.doc.moveTo(PAGE_MARGIN, this.y).lineTo(PAGE_MARGIN + CONTENT_WIDTH, this.y).lineWidth(0.6).strokeColor(gray).stroke();
-  }
+  bottom(): number { return this.doc.page.height - PAGE_MARGIN - 22; }
+  newPage(): void { this.doc.addPage(); this.y = PAGE_MARGIN; drawContinuationHeader(this); }
+  ensure(height: number): void { if (this.y + height <= this.bottom()) return; this.newPage(); }
+  rule(gray = BORDER): void { this.doc.moveTo(PAGE_MARGIN, this.y).lineTo(PAGE_MARGIN + CONTENT_WIDTH, this.y).lineWidth(0.6).strokeColor(gray).stroke(); }
 }
 
 function drawContinuationHeader(l: Layout): void {
@@ -177,7 +161,6 @@ function drawIdentity(l: Layout, input: PayslipPdfInput): void {
   const employerLines = [input.employer.name, input.employer.address, `SIRET ${input.employer.siret}  ·  APE/NAF ${input.employer.nafCode}`];
   if (input.employer.urssafReference.trim()) employerLines.push(`Référence organisme social : ${input.employer.urssafReference}`);
   const employeeLines = [input.employee.name, input.employee.address, `Emploi : ${input.employee.position}`, `Classification : ${input.employee.classification}`];
-
   l.y = boxTop + 12;
   const leftBottom = drawParty(l, leftX, colWidth, "EMPLOYEUR", employerLines);
   l.y = boxTop + 12;
@@ -195,9 +178,7 @@ function drawContext(l: Layout, input: PayslipPdfInput): void {
   l.doc.font("Helvetica-Bold").fontSize(7).fillColor(INK_FAINT).text("CADRE DE PAIE", PAGE_MARGIN, l.y + 2);
   l.doc.font("Helvetica").fontSize(8).fillColor(INK).text(input.collectiveAgreement, PAGE_MARGIN + labelWidth, l.y, { width: agreementWidth, lineBreak: false, ellipsis: true });
   l.doc.font("Helvetica-Bold").fontSize(8).fillColor(INK).text(`Horaire ${input.period.hours.toFixed(2)} h`, PAGE_MARGIN, l.y, { width: CONTENT_WIDTH, align: "right" });
-  l.y += 20;
-  l.rule();
-  l.y += 12;
+  l.y += 20; l.rule(); l.y += 12;
 }
 
 function drawSectionTitle(l: Layout, text: string): void {
@@ -211,9 +192,7 @@ function drawTableHeader(l: Layout, columns: Array<{ x: number; width: number; t
   l.ensure(23);
   l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, 18, 2).fill(INK);
   l.doc.font("Helvetica-Bold").fontSize(6.8);
-  for (const column of columns) {
-    l.doc.fillColor("white").text(column.text, column.x, l.y + 5.5, { width: column.width, align: column.align ?? "left", lineBreak: false });
-  }
+  for (const column of columns) l.doc.fillColor("white").text(column.text, column.x, l.y + 5.5, { width: column.width, align: column.align ?? "left", lineBreak: false });
   l.y += 22;
 }
 
@@ -229,11 +208,7 @@ function drawTotalRow(l: Layout, label: string, value: string, tone: "subtotal" 
 
 function drawRemuneration(l: Layout, input: PayslipPdfInput): void {
   drawSectionTitle(l, "1. RÉMUNÉRATION");
-  drawTableHeader(l, [
-    { x: COLS.label.x, width: 360, text: "ÉLÉMENT" },
-    { x: PAGE_MARGIN, width: CONTENT_WIDTH - 9, text: "MONTANT", align: "right" },
-  ]);
-
+  drawTableHeader(l, [{ x: COLS.label.x, width: 360, text: "ÉLÉMENT" }, { x: PAGE_MARGIN, width: CONTENT_WIDTH - 9, text: "MONTANT", align: "right" }]);
   const rows = [{ label: "Salaire de base", amount: input.salary.baseGross }, ...input.salary.variables];
   rows.forEach((row, index) => {
     const rowHeight = Math.max(14, l.doc.heightOfString(row.label, { width: 360 }) + 4);
@@ -258,7 +233,6 @@ function drawContributionRow(l: Layout, group: GroupedContribution, index: numbe
   const rowHeight = Math.max(14, l.doc.heightOfString(group.label, { width: COLS.label.width }) + 4);
   l.ensure(rowHeight + 2);
   if (index % 2 === 1) l.doc.rect(PAGE_MARGIN, l.y - 2, CONTENT_WIDTH, rowHeight).fill(ROW_ALT);
-
   const employeeRate = group.employee?.rate != null ? percentage(group.employee.rate) : "";
   const employerRate = group.employer?.rate != null ? percentage(group.employer.rate) : "";
   l.doc.font("Helvetica").fontSize(7.1).fillColor(INK).text(group.label, COLS.label.x, l.y, { width: COLS.label.width });
@@ -303,7 +277,6 @@ function drawNetSummary(l: Layout, input: PayslipPdfInput): void {
   l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, boxHeight, 5).fill(PANEL);
   l.doc.rect(PAGE_MARGIN, l.y, 4, boxHeight).fill(ACCENT);
   l.doc.font("Helvetica-Bold").fontSize(7).fillColor(INK_FAINT).text("NET ET PRÉLÈVEMENT À LA SOURCE", PAGE_MARGIN + 14, l.y + 11);
-
   const rows: Array<[string, string, boolean]> = [
     ["Net avant impôt", money(input.salary.netBeforeTax), false],
     ["Net imposable / base PAS", money(input.salary.netTaxable), false],
@@ -318,7 +291,6 @@ function drawNetSummary(l: Layout, input: PayslipPdfInput): void {
     rowY += emphasis ? 19 : 16;
   }
   l.y += boxHeight + 9;
-
   l.ensure(40);
   l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, 35, 4).lineWidth(0.7).strokeColor(BORDER).stroke();
   l.doc.font("Helvetica-Bold").fontSize(8).fillColor(INK).text("Montant net social", PAGE_MARGIN + 14, l.y + 8);
@@ -360,7 +332,6 @@ function drawPayslip(doc: PDFKit.PDFDocument, input: PayslipPdfInput): void {
 export function generatePayslipPdf(input: PayslipPdfInput): Promise<Buffer> {
   const missing = requiredMissing(input);
   if (missing.length > 0) throw new PayslipPdfPrerequisiteError(missing);
-
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: "A4", margin: PAGE_MARGIN, bufferPages: true, info: { Title: "Bulletin de salaire", Author: "RH Pilot" } });
     const chunks: Buffer[] = [];
