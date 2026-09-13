@@ -36,6 +36,28 @@ function assertClose(label: string, expected: number, actual: number): void { if
 
 type PayslipContributionDetail = { code: string; label: string; side: "EMPLOYEE" | "EMPLOYER"; amount: number; baseAmount: number | null; rate: number | null; sourceRule: string };
 
+function toDisplayName(value: string): string {
+  return value
+    .trim()
+    .split(/(\s|-)/)
+    .map((part) => (part === " " || part === "-" ? part : part.charAt(0).toLocaleUpperCase("fr-FR") + part.slice(1).toLocaleLowerCase("fr-FR")))
+    .join("");
+}
+
+const CLASSIFICATION_CODE_LABELS: Record<string, string> = {
+  CADRE: "Cadre",
+  AGENT_DE_MAITRISE: "Agent de maîtrise",
+  EMPLOYE: "Employé",
+  OUVRIER: "Ouvrier",
+  AUTRE: "Autre",
+};
+
+function toDisplayClassification(label: string | null, code: string | null): string {
+  if (label && label.trim()) return label.trim();
+  if (!code) return "";
+  return CLASSIFICATION_CODE_LABELS[code] ?? toDisplayName(code.replace(/_/g, " "));
+}
+
 function normalizeContributionDetails(snapshot: Snapshot): PayslipContributionDetail[] {
   if (!Array.isArray(snapshot.socialEngine?.contributionDetails)) return [];
   return snapshot.socialEngine.contributionDetails.flatMap((contribution): PayslipContributionDetail[] => {
@@ -200,7 +222,7 @@ export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGe
 
       const pdf = await generatePayslipPdf({
         employer: { name: organization.name, address: employerAddress, siret: organization.siret ?? "", nafCode: organization.payrollNafCode ?? "", urssafReference: organization.payrollUrssafReference ?? "" },
-        employee: { name: `${employee.firstName} ${employee.lastName}`.trim(), address: profile.employeeAddress ?? "", position: employee.position ?? "", classification: profile.classificationLabel || profile.classificationCode || "" },
+        employee: { name: `${toDisplayName(employee.firstName)} ${toDisplayName(employee.lastName)}`.trim(), address: profile.employeeAddress ?? "", position: employee.position ?? "", classification: toDisplayClassification(profile.classificationLabel, profile.classificationCode) },
         period: { year: period.year, month: period.month, paymentDate, hours: asNumber(snapshot.profile?.monthlyHours ?? profile.monthlyHours) },
         salary: { baseGross: profile.baseSalaryCents === null || profile.baseSalaryCents === undefined ? Number(calculation.grossAmount) : profile.baseSalaryCents / 100, variables: Array.isArray(snapshot.variables) ? snapshot.variables.map((variable) => ({ label: asString(variable.label), amount: asNumber(variable.amount) })) : [], gross: Number(calculation.grossAmount), employeeContributions: Number(calculation.employeeContributions), employerContributions: Number(calculation.employerContributions), netBeforeTax: Number(calculation.netBeforeTax), netTaxable: Number(calculation.netTaxableAmount), withholdingTaxRate, withholdingTax: Number(calculation.withholdingTax), netPaid: Number(calculation.netPaid), netSocial: Number(calculation.netSocialAmount), totalEmployerCost: Number(calculation.grossAmount) + Number(calculation.employerContributions) },
         contributions: contributionDetails,
