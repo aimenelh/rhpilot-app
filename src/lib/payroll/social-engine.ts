@@ -112,9 +112,11 @@ function assertNumber(value: unknown, label: string): number {
 
 function assertRate(value: unknown, label: string): number {
   if (typeof value !== "number" || !Number.isFinite(value)) throw new Error(`Le modèle social n'a pas fourni un taux numérique pour ${label}.`);
-  const normalized = value > 1 && value <= 100 ? value / 100 : value;
-  if (normalized < 0 || normalized > 1) throw new Error(`Le modèle social a fourni un taux invalide pour ${label}.`);
-  return normalized;
+  // Publicodes exposes the value of rules typed as percentages in percentage
+  // points (for example 0.4 means 0.4 %). RH Pilot stores contribution rates
+  // internally as fractions (0.004) so they can be formatted consistently.
+  if (value < 0 || value > 100) throw new Error(`Le modèle social a fourni un taux invalide pour ${label}.`);
+  return Math.round(((value / 100) + Number.EPSILON) * 1000000) / 1000000;
 }
 
 function assertNoMissingVariables(evaluation: ReturnType<Engine["evaluate"]>, label: string): void {

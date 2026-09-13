@@ -5,6 +5,7 @@ const validContext = {
   grossAmount: 2000,
   legalCategory: "SAS",
   calculationDate: new Date("2026-09-01T12:00:00Z"),
+  companyCreationDate: new Date("2020-01-01T12:00:00Z"),
   contractType: "CDI",
   hireDate: new Date("2024-06-01T12:00:00Z"),
   executiveStatus: false,
@@ -93,5 +94,12 @@ describe("calculateSocialPayroll — contexte juridique et contractuel", () => {
     expect(message).not.toContain("le statut cadre est absent ou invalide");
     expect(message).not.toContain("le montant mensuel de la complémentaire santé est absent ou invalide");
     expect(message).not.toContain("la part employeur de la complémentaire santé doit être comprise entre 50 % et 100 %");
+  });
+
+  it("normalise les taux Publicodes en fractions pour le bulletin", () => {
+    const result = calculateSocialPayroll(validContext);
+    const vieillesse = result.contributionDetails.find((detail) => detail.code === "vieillesse_deplafonnee_salarie");
+    expect(vieillesse).toBeDefined();
+    expect(vieillesse?.rate).toBeCloseTo(0.004, 6);
   });
 });
