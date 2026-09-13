@@ -40,13 +40,7 @@ export default function PaidLeaveCalculator({ periodId, employees, readOnly }: {
       </div>
 
       <div className="mt-4 grid gap-3 md:grid-cols-2 lg:grid-cols-5">
-        <label className="text-xs font-medium text-ink-soft">
-          Salarié
-          <select value={employeeId} onChange={(event) => setEmployeeId(event.target.value)} className="mt-1 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink">
-            <option value="">Sélectionner…</option>
-            {employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}
-          </select>
-        </label>
+        <label className="text-xs font-medium text-ink-soft">Salarié<select value={employeeId} onChange={(event) => setEmployeeId(event.target.value)} className="mt-1 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink"><option value="">Sélectionner…</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}</select></label>
         <label className="text-xs font-medium text-ink-soft">Brut période de référence<input value={referenceGross} onChange={(event) => setReferenceGross(event.target.value)} inputMode="decimal" className="mt-1 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink" /></label>
         <label className="text-xs font-medium text-ink-soft">Brut mensuel actuel<input value={currentMonthlyGross} onChange={(event) => setCurrentMonthlyGross(event.target.value)} inputMode="decimal" className="mt-1 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink" /></label>
         <label className="text-xs font-medium text-ink-soft">Jours de congé<input value={daysTaken} onChange={(event) => setDaysTaken(event.target.value)} inputMode="decimal" className="mt-1 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink" /></label>
@@ -61,7 +55,7 @@ export default function PaidLeaveCalculator({ periodId, employees, readOnly }: {
 
       <div className="mt-4 flex flex-col gap-3 rounded-lg border border-accent-teal/20 bg-accent-teal/5 p-4 md:flex-row md:items-center md:justify-between">
         <div><p className="text-xs font-semibold uppercase tracking-[0.12em] text-accent-teal">Montant retenu</p><p className="mt-1 text-lg font-semibold text-ink">{EUR.format(favorable)}</p><p className="mt-1 text-xs text-ink-soft">Méthode la plus favorable : {selectedMethod} · {leaveDays.toFixed(2)} jour{leaveDays > 1 ? "s" : ""}.</p></div>
-        <form action={addPayrollVariable.bind(null, periodId)} className="flex flex-col gap-2 sm:flex-row sm:items-end">
+        <form action={addPayrollVariable.bind(null, periodId, undefined)} className="flex flex-col gap-2 sm:flex-row sm:items-end">
           <input type="hidden" name="employeeId" value={employeeId} />
           <input type="hidden" name="code" value="PAID_LEAVE" />
           <input type="hidden" name="label" value={`Indemnité de congés payés (${leaveDays.toFixed(2)} j)`} />
