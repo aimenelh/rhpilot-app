@@ -1,10 +1,5 @@
 import PDFDocument from "pdfkit";
 
-// PDFKit 0.20.x registers its standard fonts through the Node build.
-// Keep the public default import only: the installed @types/pdfkit package
-// does not expose registerStdFonts, and Next.js must not execute a CommonJS
-// require against the generated font modules.
-
 export type PayslipPdfContribution = {
   label: string;
   side: "EMPLOYEE" | "EMPLOYER";
@@ -12,6 +7,15 @@ export type PayslipPdfContribution = {
   baseAmount?: number | null;
   rate?: number | null;
   sourceRule?: string;
+};
+
+export type PayslipPdfPaidLeave = {
+  leaveDates?: string;
+  daysTaken?: number;
+  indemnity?: number;
+  acquired?: number;
+  taken?: number;
+  remaining?: number;
 };
 
 export type PayslipPdfInput = {
@@ -22,6 +26,7 @@ export type PayslipPdfInput = {
   contributions: PayslipPdfContribution[];
   collectiveAgreement: string;
   source: string;
+  paidLeave?: PayslipPdfPaidLeave;
 };
 
 export class PayslipPdfPrerequisiteError extends Error {
@@ -73,11 +78,7 @@ function requiredMissing(input: PayslipPdfInput): string[] {
   return missing;
 }
 
-type GroupedContribution = {
-  label: string;
-  employee: PayslipPdfContribution | null;
-  employer: PayslipPdfContribution | null;
-};
+type GroupedContribution = { label: string; employee: PayslipPdfContribution | null; employer: PayslipPdfContribution | null };
 
 function groupContributions(contributions: PayslipPdfContribution[]): GroupedContribution[] {
   const order: string[] = [];
@@ -94,8 +95,8 @@ function groupContributions(contributions: PayslipPdfContribution[]): GroupedCon
   return order.map((label) => byLabel.get(label)!);
 }
 
-const PAGE_MARGIN = 32;
-const CONTENT_WIDTH = 531;
+const PAGE_MARGIN = 26;
+const CONTENT_WIDTH = 543;
 const INK = "#17181C";
 const INK_SOFT = "#5E6068";
 const INK_FAINT = "#858891";
@@ -103,122 +104,86 @@ const BORDER = "#DDD9D4";
 const PANEL = "#F7F5F2";
 const ROW_ALT = "#FBFAF8";
 const ACCENT = "#F28A2E";
-
 const COLS = {
-  label: { x: PAGE_MARGIN + 8, width: 210 },
-  base: { x: PAGE_MARGIN + 220, width: 62 },
-  employeeRate: { x: PAGE_MARGIN + 286, width: 48 },
-  employeeAmount: { x: PAGE_MARGIN + 337, width: 68 },
-  employerRate: { x: PAGE_MARGIN + 408, width: 48 },
-  employerAmount: { x: PAGE_MARGIN + 459, width: 64 },
+  label: { x: PAGE_MARGIN + 7, width: 252 },
+  base: { x: PAGE_MARGIN + 262, width: 62 },
+  employeeRate: { x: PAGE_MARGIN + 328, width: 48 },
+  employeeAmount: { x: PAGE_MARGIN + 379, width: 67 },
+  employerRate: { x: PAGE_MARGIN + 449, width: 44 },
+  employerAmount: { x: PAGE_MARGIN + 496, width: 47 },
 };
 
 class Layout {
   y = PAGE_MARGIN;
   constructor(public doc: PDFKit.PDFDocument) {}
-  bottom(): number { return this.doc.page.height - PAGE_MARGIN - 22; }
-  newPage(): void { this.doc.addPage(); this.y = PAGE_MARGIN; drawContinuationHeader(this); }
-  ensure(height: number): void { if (this.y + height <= this.bottom()) return; this.newPage(); }
-  rule(gray = BORDER): void { this.doc.moveTo(PAGE_MARGIN, this.y).lineTo(PAGE_MARGIN + CONTENT_WIDTH, this.y).lineWidth(0.6).strokeColor(gray).stroke(); }
-}
-
-function drawContinuationHeader(l: Layout): void {
-  l.doc.rect(PAGE_MARGIN, l.y, CONTENT_WIDTH, 32).fill(INK);
-  l.doc.font("Helvetica-Bold").fontSize(10).fillColor("white").text("BULLETIN DE SALAIRE", PAGE_MARGIN + 12, l.y + 10);
-  l.doc.font("Helvetica-Bold").fontSize(8).fillColor(ACCENT).text("SUITE", PAGE_MARGIN, l.y + 10, { width: CONTENT_WIDTH - 12, align: "right" });
-  l.y += 44;
+  bottom(): number { return this.doc.page.height - PAGE_MARGIN - 18; }
+  rule(): void { this.doc.moveTo(PAGE_MARGIN, this.y).lineTo(PAGE_MARGIN + CONTENT_WIDTH, this.y).lineWidth(0.5).strokeColor(BORDER).stroke(); }
 }
 
 function drawHeader(l: Layout, input: PayslipPdfInput): void {
   const month = input.period.month.toString().padStart(2, "0");
-  l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, 64, 5).fill(INK);
-  l.doc.rect(PAGE_MARGIN, l.y, 5, 64).fill(ACCENT);
-  l.doc.font("Helvetica-Bold").fontSize(17).fillColor("white").text("BULLETIN DE SALAIRE", PAGE_MARGIN + 18, l.y + 13);
-  l.doc.font("Helvetica").fontSize(8.5).fillColor("#D9D7D3").text(`Période ${month}/${input.period.year}  ·  Paiement le ${input.period.paymentDate}`, PAGE_MARGIN + 18, l.y + 39);
-  l.doc.font("Helvetica-Bold").fontSize(11).fillColor("white").text("RH PILOT", PAGE_MARGIN, l.y + 15, { width: CONTENT_WIDTH - 18, align: "right" });
-  l.doc.font("Helvetica").fontSize(7).fillColor("#D9D7D3").text("DOCUMENT DE PAIE", PAGE_MARGIN, l.y + 34, { width: CONTENT_WIDTH - 18, align: "right" });
-  l.y += 76;
-}
-
-function drawParty(l: Layout, x: number, width: number, title: string, lines: string[]): number {
-  l.doc.font("Helvetica-Bold").fontSize(7).fillColor(ACCENT).text(title, x, l.y);
-  let cursorY = l.y + 13;
-  lines.forEach((line, index) => {
-    if (!line) return;
-    l.doc.font(index === 0 ? "Helvetica-Bold" : "Helvetica").fontSize(index === 0 ? 9.2 : 7.5).fillColor(index === 0 ? INK : INK_SOFT);
-    const h = l.doc.heightOfString(line, { width });
-    l.doc.text(line, x, cursorY, { width });
-    cursorY += h + 3;
-  });
-  return cursorY;
+  l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, 54, 5).fill(INK);
+  l.doc.rect(PAGE_MARGIN, l.y, 5, 54).fill(ACCENT);
+  l.doc.font("Helvetica-Bold").fontSize(15.5).fillColor("white").text("BULLETIN DE SALAIRE", PAGE_MARGIN + 15, l.y + 10);
+  l.doc.font("Helvetica").fontSize(7.4).fillColor("#D9D7D3").text(`Période ${month}/${input.period.year}  ·  Paiement le ${input.period.paymentDate}`, PAGE_MARGIN + 15, l.y + 35);
+  l.doc.font("Helvetica-Bold").fontSize(10).fillColor("white").text(input.employer.name, PAGE_MARGIN, l.y + 11, { width: CONTENT_WIDTH - 15, align: "right" });
+  l.doc.font("Helvetica").fontSize(6.5).fillColor("#D9D7D3").text("DOCUMENT DE PAIE", PAGE_MARGIN, l.y + 30, { width: CONTENT_WIDTH - 15, align: "right" });
+  l.y += 62;
 }
 
 function drawIdentity(l: Layout, input: PayslipPdfInput): void {
-  const leftX = PAGE_MARGIN + 14;
-  const rightX = PAGE_MARGIN + 281;
-  const colWidth = 245;
-  const boxTop = l.y;
-  const employerLines = [input.employer.name, input.employer.address, `SIRET ${input.employer.siret}  ·  APE/NAF ${input.employer.nafCode}`];
-  if (input.employer.urssafReference.trim()) employerLines.push(`Référence organisme social : ${input.employer.urssafReference}`);
-  const employeeLines = [input.employee.name, input.employee.address, `Emploi : ${input.employee.position}`, `Classification : ${input.employee.classification}`];
-  l.y = boxTop + 12;
-  const leftBottom = drawParty(l, leftX, colWidth, "EMPLOYEUR", employerLines);
-  l.y = boxTop + 12;
-  const rightBottom = drawParty(l, rightX, colWidth, "SALARIÉ", employeeLines);
-  const boxBottom = Math.max(leftBottom, rightBottom) + 10;
-  l.doc.roundedRect(PAGE_MARGIN, boxTop, CONTENT_WIDTH, boxBottom - boxTop, 5).lineWidth(0.7).strokeColor(BORDER).stroke();
-  l.y = boxBottom + 11;
+  const top = l.y;
+  const leftX = PAGE_MARGIN + 12;
+  const rightX = PAGE_MARGIN + 286;
+  l.doc.font("Helvetica-Bold").fontSize(6.5).fillColor(ACCENT).text("EMPLOYEUR", leftX, top + 8);
+  l.doc.font("Helvetica-Bold").fontSize(8.2).fillColor(INK).text(input.employer.name, leftX, top + 19);
+  l.doc.font("Helvetica").fontSize(6.8).fillColor(INK_SOFT).text(input.employer.address, leftX, top + 31, { width: 255 });
+  l.doc.text(`SIRET ${input.employer.siret} · APE/NAF ${input.employer.nafCode}`, leftX, top + 41, { width: 255 });
+  l.doc.font("Helvetica-Bold").fontSize(6.5).fillColor(ACCENT).text("SALARIÉ", rightX, top + 8);
+  l.doc.font("Helvetica-Bold").fontSize(8.2).fillColor(INK).text(input.employee.name, rightX, top + 19);
+  l.doc.font("Helvetica").fontSize(6.8).fillColor(INK_SOFT).text(`Emploi : ${input.employee.position}`, rightX, top + 31, { width: 245 });
+  l.doc.text(`Classification : ${input.employee.classification}`, rightX, top + 41, { width: 245 });
+  l.doc.roundedRect(PAGE_MARGIN, top, CONTENT_WIDTH, 58, 4).lineWidth(0.6).strokeColor(BORDER).stroke();
+  l.y = top + 66;
 }
 
 function drawContext(l: Layout, input: PayslipPdfInput): void {
-  const labelWidth = 82;
-  const hoursWidth = 108;
-  const agreementWidth = CONTENT_WIDTH - labelWidth - hoursWidth - 8;
-  l.ensure(36);
-  l.doc.font("Helvetica-Bold").fontSize(7).fillColor(INK_FAINT).text("CADRE DE PAIE", PAGE_MARGIN, l.y + 2);
-  l.doc.font("Helvetica").fontSize(8).fillColor(INK).text(input.collectiveAgreement, PAGE_MARGIN + labelWidth, l.y, { width: agreementWidth, lineBreak: false, ellipsis: true });
-  l.doc.font("Helvetica-Bold").fontSize(8).fillColor(INK).text(`Horaire ${input.period.hours.toFixed(2)} h`, PAGE_MARGIN, l.y, { width: CONTENT_WIDTH, align: "right" });
-  l.y += 20; l.rule(); l.y += 12;
+  l.doc.font("Helvetica-Bold").fontSize(6.5).fillColor(INK_FAINT).text("CADRE DE PAIE", PAGE_MARGIN, l.y);
+  l.doc.font("Helvetica").fontSize(7).fillColor(INK).text(input.collectiveAgreement, PAGE_MARGIN + 76, l.y, { width: 355, lineBreak: false, ellipsis: true });
+  l.doc.font("Helvetica-Bold").fontSize(7).fillColor(INK).text(`Horaire ${input.period.hours.toFixed(2)} h`, PAGE_MARGIN, l.y, { width: CONTENT_WIDTH, align: "right" });
+  l.y += 13;
+  l.rule();
+  l.y += 7;
 }
 
 function drawSectionTitle(l: Layout, text: string): void {
-  l.ensure(24);
-  l.doc.font("Helvetica-Bold").fontSize(9).fillColor(INK).text(text, PAGE_MARGIN, l.y);
-  l.doc.rect(PAGE_MARGIN + 108, l.y + 4, 4, 4).fill(ACCENT);
-  l.y += 15;
+  l.doc.font("Helvetica-Bold").fontSize(8.3).fillColor(INK).text(text, PAGE_MARGIN, l.y);
+  l.doc.rect(PAGE_MARGIN + 105, l.y + 3, 3.5, 3.5).fill(ACCENT);
+  l.y += 12;
 }
 
 function drawTableHeader(l: Layout, columns: Array<{ x: number; width: number; text: string; align?: "left" | "right" }>): void {
-  l.ensure(23);
-  l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, 18, 2).fill(INK);
-  l.doc.font("Helvetica-Bold").fontSize(6.8);
-  for (const column of columns) l.doc.fillColor("white").text(column.text, column.x, l.y + 5.5, { width: column.width, align: column.align ?? "left", lineBreak: false });
-  l.y += 22;
-}
-
-function drawTotalRow(l: Layout, label: string, value: string, tone: "subtotal" | "total" = "subtotal"): void {
-  const height = tone === "total" ? 26 : 21;
-  l.ensure(height + 4);
-  l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, height, 3).fill(tone === "total" ? "#EEE7E1" : PANEL);
-  const fontSize = tone === "total" ? 10 : 8;
-  l.doc.font("Helvetica-Bold").fontSize(fontSize).fillColor(INK).text(label, PAGE_MARGIN + 9, l.y + (height - fontSize) / 2 - 1);
-  l.doc.text(value, PAGE_MARGIN, l.y + (height - fontSize) / 2 - 1, { width: CONTENT_WIDTH - 9, align: "right" });
-  l.y += height + 7;
+  l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, 16, 2).fill(INK);
+  l.doc.font("Helvetica-Bold").fontSize(5.9);
+  for (const column of columns) l.doc.fillColor("white").text(column.text, column.x, l.y + 4.7, { width: column.width, align: column.align ?? "left", lineBreak: false });
+  l.y += 19;
 }
 
 function drawRemuneration(l: Layout, input: PayslipPdfInput): void {
   drawSectionTitle(l, "1. RÉMUNÉRATION");
-  drawTableHeader(l, [{ x: COLS.label.x, width: 360, text: "ÉLÉMENT" }, { x: PAGE_MARGIN, width: CONTENT_WIDTH - 9, text: "MONTANT", align: "right" }]);
+  drawTableHeader(l, [{ x: COLS.label.x, width: 380, text: "ÉLÉMENT" }, { x: PAGE_MARGIN, width: CONTENT_WIDTH - 8, text: "MONTANT", align: "right" }]);
   const rows = [{ label: "Salaire de base", amount: input.salary.baseGross }, ...input.salary.variables];
   rows.forEach((row, index) => {
-    const rowHeight = Math.max(14, l.doc.heightOfString(row.label, { width: 360 }) + 4);
-    l.ensure(rowHeight + 2);
-    if (index % 2 === 1) l.doc.rect(PAGE_MARGIN, l.y - 2, CONTENT_WIDTH, rowHeight).fill(ROW_ALT);
-    l.doc.font("Helvetica").fontSize(8).fillColor(INK).text(row.label, COLS.label.x, l.y, { width: 360 });
-    l.doc.text(money(row.amount), PAGE_MARGIN, l.y, { width: CONTENT_WIDTH - 9, align: "right" });
+    const rowHeight = 12;
+    if (index % 2 === 1) l.doc.rect(PAGE_MARGIN, l.y - 1, CONTENT_WIDTH, rowHeight).fill(ROW_ALT);
+    l.doc.font("Helvetica").fontSize(6.7).fillColor(INK).text(row.label, COLS.label.x, l.y + 1, { width: 380, lineBreak: false, ellipsis: true });
+    l.doc.text(money(row.amount), PAGE_MARGIN, l.y + 1, { width: CONTENT_WIDTH - 8, align: "right", lineBreak: false });
     l.y += rowHeight;
   });
-  drawTotalRow(l, "Salaire brut total", money(input.salary.gross));
+  l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, 19, 3).fill(PANEL);
+  l.doc.font("Helvetica-Bold").fontSize(7.5).fillColor(INK).text("Salaire brut total", PAGE_MARGIN + 8, l.y + 5);
+  l.doc.text(money(input.salary.gross), PAGE_MARGIN, l.y + 5, { width: CONTENT_WIDTH - 8, align: "right" });
+  l.y += 25;
 }
 
 function contributionBase(group: GroupedContribution): string {
@@ -230,21 +195,21 @@ function contributionBase(group: GroupedContribution): string {
 }
 
 function drawContributionRow(l: Layout, group: GroupedContribution, index: number): void {
-  const rowHeight = Math.max(14, l.doc.heightOfString(group.label, { width: COLS.label.width }) + 4);
-  l.ensure(rowHeight + 2);
-  if (index % 2 === 1) l.doc.rect(PAGE_MARGIN, l.y - 2, CONTENT_WIDTH, rowHeight).fill(ROW_ALT);
+  const rowHeight = 11.3;
+  if (index % 2 === 1) l.doc.rect(PAGE_MARGIN, l.y - 1, CONTENT_WIDTH, rowHeight).fill(ROW_ALT);
   const employeeRate = group.employee?.rate != null ? percentage(group.employee.rate) : "";
   const employerRate = group.employer?.rate != null ? percentage(group.employer.rate) : "";
-  l.doc.font("Helvetica").fontSize(7.1).fillColor(INK).text(group.label, COLS.label.x, l.y, { width: COLS.label.width });
-  l.doc.fillColor(INK_SOFT).text(contributionBase(group), COLS.base.x, l.y, { width: COLS.base.width, align: "right" });
-  l.doc.fillColor(INK_SOFT).text(employeeRate, COLS.employeeRate.x, l.y, { width: COLS.employeeRate.width, align: "right" });
-  l.doc.fillColor(INK).text(group.employee ? `-${money(group.employee.amount)}` : "", COLS.employeeAmount.x, l.y, { width: COLS.employeeAmount.width, align: "right" });
-  l.doc.fillColor(INK_SOFT).text(employerRate, COLS.employerRate.x, l.y, { width: COLS.employerRate.width, align: "right" });
-  l.doc.fillColor(INK).text(group.employer ? money(group.employer.amount) : "", COLS.employerAmount.x, l.y, { width: COLS.employerAmount.width, align: "right" });
+  l.doc.font("Helvetica").fontSize(5.9).fillColor(INK).text(group.label, COLS.label.x, l.y + 1, { width: COLS.label.width, lineBreak: false, ellipsis: true });
+  l.doc.fillColor(INK_SOFT).text(contributionBase(group), COLS.base.x, l.y + 1, { width: COLS.base.width, align: "right", lineBreak: false });
+  l.doc.fillColor(INK_SOFT).text(employeeRate, COLS.employeeRate.x, l.y + 1, { width: COLS.employeeRate.width, align: "right", lineBreak: false });
+  l.doc.fillColor(INK).text(group.employee ? `-${money(group.employee.amount)}` : "", COLS.employeeAmount.x, l.y + 1, { width: COLS.employeeAmount.width, align: "right", lineBreak: false });
+  l.doc.fillColor(INK_SOFT).text(employerRate, COLS.employerRate.x, l.y + 1, { width: COLS.employerRate.width, align: "right", lineBreak: false });
+  l.doc.fillColor(INK).text(group.employer ? money(group.employer.amount) : "", COLS.employerAmount.x, l.y + 1, { width: COLS.employerAmount.width, align: "right", lineBreak: false });
   l.y += rowHeight;
 }
 
-function drawContributionTableHeader(l: Layout): void {
+function drawContributions(l: Layout, input: PayslipPdfInput): void {
+  drawSectionTitle(l, "2. COTISATIONS ET CONTRIBUTIONS");
   drawTableHeader(l, [
     { x: COLS.label.x, width: COLS.label.width, text: "LIBELLÉ" },
     { x: COLS.base.x, width: COLS.base.width, text: "BASE", align: "right" },
@@ -253,67 +218,67 @@ function drawContributionTableHeader(l: Layout): void {
     { x: COLS.employerRate.x, width: COLS.employerRate.width, text: "TAUX PAT.", align: "right" },
     { x: COLS.employerAmount.x, width: COLS.employerAmount.width, text: "PART PAT.", align: "right" },
   ]);
+  groupContributions(input.contributions).forEach((group, index) => drawContributionRow(l, group, index));
+  l.doc.roundedRect(PAGE_MARGIN, l.y + 1, CONTENT_WIDTH, 18, 3).fill(PANEL);
+  l.doc.font("Helvetica-Bold").fontSize(7).fillColor(INK).text("Total cotisations salariales", PAGE_MARGIN + 8, l.y + 6);
+  l.doc.text(`-${money(input.salary.employeeContributions)}`, PAGE_MARGIN, l.y + 6, { width: CONTENT_WIDTH - 8, align: "right" });
+  l.y += 25;
 }
 
-function drawContributions(l: Layout, input: PayslipPdfInput): void {
-  drawSectionTitle(l, "2. COTISATIONS ET CONTRIBUTIONS");
-  drawContributionTableHeader(l);
-  groupContributions(input.contributions).forEach((group, index) => {
-    const rowHeight = Math.max(14, l.doc.heightOfString(group.label, { width: COLS.label.width }) + 4);
-    if (l.y + rowHeight + 2 > l.bottom()) {
-      l.newPage();
-      l.doc.font("Helvetica-Bold").fontSize(9).fillColor(INK).text("2. COTISATIONS ET CONTRIBUTIONS — SUITE", PAGE_MARGIN, l.y);
-      l.y += 15;
-      drawContributionTableHeader(l);
-    }
-    drawContributionRow(l, group, index);
-  });
-  drawTotalRow(l, "Total cotisations salariales", `-${money(input.salary.employeeContributions)}`);
-}
-
-function drawNetSummary(l: Layout, input: PayslipPdfInput): void {
-  const boxHeight = 91;
-  l.ensure(boxHeight + 10);
-  l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, boxHeight, 5).fill(PANEL);
-  l.doc.rect(PAGE_MARGIN, l.y, 4, boxHeight).fill(ACCENT);
-  l.doc.font("Helvetica-Bold").fontSize(7).fillColor(INK_FAINT).text("NET ET PRÉLÈVEMENT À LA SOURCE", PAGE_MARGIN + 14, l.y + 11);
+function drawNetAndEmployer(l: Layout, input: PayslipPdfInput): void {
+  const left = PAGE_MARGIN;
+  const right = PAGE_MARGIN + 278;
+  const width = 265;
+  l.doc.roundedRect(left, l.y, width, 84, 4).fill(PANEL);
+  l.doc.rect(left, l.y, 4, 84).fill(ACCENT);
+  l.doc.font("Helvetica-Bold").fontSize(6.5).fillColor(INK_FAINT).text("NET ET PRÉLÈVEMENT À LA SOURCE", left + 11, l.y + 9);
   const rows: Array<[string, string, boolean]> = [
     ["Net avant impôt", money(input.salary.netBeforeTax), false],
     ["Net imposable / base PAS", money(input.salary.netTaxable), false],
-    [`Prélèvement à la source (${percentage(input.salary.withholdingTaxRate)})`, `-${money(input.salary.withholdingTax)}`, false],
+    [`PAS (${percentage(input.salary.withholdingTaxRate)})`, `-${money(input.salary.withholdingTax)}`, false],
     ["NET À PAYER", money(input.salary.netPaid), true],
   ];
-  let rowY = l.y + 28;
+  let rowY = l.y + 24;
   for (const [label, value, emphasis] of rows) {
-    l.doc.font(emphasis ? "Helvetica-Bold" : "Helvetica").fontSize(emphasis ? 11.5 : 8).fillColor(INK);
-    l.doc.text(label, PAGE_MARGIN + 14, rowY);
-    l.doc.text(value, PAGE_MARGIN, rowY, { width: CONTENT_WIDTH - 14, align: "right" });
-    rowY += emphasis ? 19 : 16;
+    l.doc.font(emphasis ? "Helvetica-Bold" : "Helvetica").fontSize(emphasis ? 9.5 : 6.7).fillColor(INK);
+    l.doc.text(label, left + 11, rowY);
+    l.doc.text(value, left, rowY, { width: width - 11, align: "right" });
+    rowY += emphasis ? 17 : 13;
   }
-  l.y += boxHeight + 9;
-  l.ensure(40);
-  l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, 35, 4).lineWidth(0.7).strokeColor(BORDER).stroke();
-  l.doc.font("Helvetica-Bold").fontSize(8).fillColor(INK).text("Montant net social", PAGE_MARGIN + 14, l.y + 8);
-  l.doc.font("Helvetica-Bold").fontSize(9).fillColor(INK).text(money(input.salary.netSocial), PAGE_MARGIN, l.y + 8, { width: CONTENT_WIDTH - 14, align: "right" });
-  l.doc.font("Helvetica").fontSize(6.5).fillColor(INK_FAINT).text("À distinguer du net à payer et du net imposable.", PAGE_MARGIN + 14, l.y + 21);
-  l.y += 43;
+
+  l.doc.roundedRect(right, l.y, width, 84, 4).fill("#EEE7E1");
+  l.doc.font("Helvetica-Bold").fontSize(6.5).fillColor(INK_FAINT).text("CHARGES ET COÛT EMPLOYEUR", right + 11, l.y + 9);
+  l.doc.font("Helvetica").fontSize(6.8).fillColor(INK).text("Cotisations patronales", right + 11, l.y + 27);
+  l.doc.font("Helvetica-Bold").fontSize(7.2).text(money(input.salary.employerContributions), right, l.y + 27, { width: width - 11, align: "right" });
+  l.doc.font("Helvetica-Bold").fontSize(10.5).fillColor(INK).text("COÛT TOTAL EMPLOYEUR", right + 11, l.y + 48);
+  l.doc.text(money(input.salary.totalEmployerCost), right, l.y + 48, { width: width - 11, align: "right" });
+  l.doc.font("Helvetica").fontSize(6.2).fillColor(INK_SOFT).text("Montant net social", right + 11, l.y + 68);
+  l.doc.font("Helvetica-Bold").fontSize(6.8).fillColor(INK).text(money(input.salary.netSocial), right, l.y + 68, { width: width - 11, align: "right" });
+  l.y += 91;
 }
 
-function drawEmployerCost(l: Layout, input: PayslipPdfInput): void {
-  drawSectionTitle(l, "3. CHARGES PATRONALES");
-  drawTotalRow(l, "Total cotisations patronales", money(input.salary.employerContributions));
-  drawTotalRow(l, "COÛT TOTAL EMPLOYEUR", money(input.salary.totalEmployerCost), "total");
+function drawPaidLeave(l: Layout, paidLeave: PayslipPdfPaidLeave | undefined): void {
+  if (!paidLeave) return;
+  const hasValue = [paidLeave.leaveDates, paidLeave.daysTaken, paidLeave.indemnity, paidLeave.acquired, paidLeave.taken, paidLeave.remaining].some((value) => value !== undefined);
+  if (!hasValue) return;
+  l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, 34, 4).lineWidth(0.6).strokeColor(BORDER).stroke();
+  l.doc.font("Helvetica-Bold").fontSize(6.4).fillColor(INK).text("CONGÉS PAYÉS", PAGE_MARGIN + 9, l.y + 7);
+  const detail = [
+    paidLeave.leaveDates ? `Dates : ${paidLeave.leaveDates}` : "",
+    paidLeave.daysTaken != null ? `Pris : ${paidLeave.daysTaken.toFixed(2)} j` : "",
+    paidLeave.indemnity != null ? `Indemnité : ${money(paidLeave.indemnity)}` : "",
+    paidLeave.acquired != null ? `Acquis : ${paidLeave.acquired.toFixed(2)} j` : "",
+    paidLeave.remaining != null ? `Solde : ${paidLeave.remaining.toFixed(2)} j` : "",
+  ].filter(Boolean).join("  ·  ");
+  l.doc.font("Helvetica").fontSize(6.2).fillColor(INK_SOFT).text(detail, PAGE_MARGIN + 9, l.y + 19, { width: CONTENT_WIDTH - 18, lineBreak: false, ellipsis: true });
+  l.y += 41;
 }
 
-function drawFooter(doc: PDFKit.PDFDocument, input: PayslipPdfInput): void {
-  const range = doc.bufferedPageRange();
-  for (let pageIndex = 0; pageIndex < range.count; pageIndex += 1) {
-    doc.switchToPage(range.start + pageIndex);
-    const footerY = doc.page.height - 25;
-    doc.moveTo(PAGE_MARGIN, footerY - 7).lineTo(PAGE_MARGIN + CONTENT_WIDTH, footerY - 7).lineWidth(0.5).strokeColor(BORDER).stroke();
-    doc.font("Helvetica").fontSize(6.2).fillColor(INK_FAINT).text(`RH Pilot · ${input.source}`, PAGE_MARGIN, footerY, { width: CONTENT_WIDTH - 55, ellipsis: true });
-    doc.text(`Page ${pageIndex + 1}/${range.count}`, PAGE_MARGIN, footerY, { width: CONTENT_WIDTH, align: "right" });
-  }
+function drawLegalFooter(doc: PDFKit.PDFDocument): void {
+  const y = doc.page.height - 34;
+  doc.moveTo(PAGE_MARGIN, y - 5).lineTo(PAGE_MARGIN + CONTENT_WIDTH, y - 5).lineWidth(0.5).strokeColor(BORDER).stroke();
+  doc.font("Helvetica").fontSize(5.3).fillColor(INK_FAINT).text("Conservez ce bulletin de paie sans limitation de durée. Retrouvez la rubrique dédiée au bulletin de paie sur service-public.fr.", PAGE_MARGIN, y, { width: CONTENT_WIDTH - 70, lineBreak: false, ellipsis: true });
+  doc.text("Page 1/1", PAGE_MARGIN, y, { width: CONTENT_WIDTH, align: "right" });
 }
 
 function drawPayslip(doc: PDFKit.PDFDocument, input: PayslipPdfInput): void {
@@ -322,11 +287,10 @@ function drawPayslip(doc: PDFKit.PDFDocument, input: PayslipPdfInput): void {
   drawIdentity(l, input);
   drawContext(l, input);
   drawRemuneration(l, input);
-  l.y += 5;
   drawContributions(l, input);
-  drawNetSummary(l, input);
-  drawEmployerCost(l, input);
-  drawFooter(doc, input);
+  drawNetAndEmployer(l, input);
+  drawPaidLeave(l, input.paidLeave);
+  drawLegalFooter(doc);
 }
 
 export function generatePayslipPdf(input: PayslipPdfInput): Promise<Buffer> {
