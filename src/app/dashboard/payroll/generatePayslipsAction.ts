@@ -2,6 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
+import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { calculateSocialPayroll, SOCIAL_MODEL_VERSION } from "@/lib/payroll/social-engine";
 import { resolveOrganizationLegalCategory } from "@/lib/payroll/social-organization-context";
