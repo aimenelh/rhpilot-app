@@ -12,10 +12,15 @@ export function assertWithholdingTaxProfile(profile: WithholdingTaxProfile | nul
   return profile;
 }
 
-export function calculateEmployeeWithholdingTax(netBeforeTax: number, profile: WithholdingTaxProfile, employeeId: string): number {
+/**
+ * Calcule le PAS à partir du net imposable, qui constitue l'assiette fiscale,
+ * et non du net avant impôt. Le taux est celui du profil DGFiP applicable à
+ * la date de la période de paie.
+ */
+export function calculateEmployeeWithholdingTax(netTaxable: number, profile: WithholdingTaxProfile, employeeId: string): number {
   assertWithholdingTaxProfile(profile, employeeId);
-  if (!Number.isFinite(netBeforeTax) || netBeforeTax < 0) {
-    throw new Error(`Le net avant prélèvement est invalide pour le salarié ${employeeId}.`);
+  if (!Number.isFinite(netTaxable) || netTaxable < 0) {
+    throw new Error(`Le net imposable est invalide pour le salarié ${employeeId}.`);
   }
-  return Math.round((netBeforeTax * profile.rate + Number.EPSILON) * 100) / 100;
+  return Math.round((netTaxable * profile.rate + Number.EPSILON) * 100) / 100;
 }

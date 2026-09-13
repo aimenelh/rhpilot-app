@@ -81,7 +81,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
   const { start, end, calculationDate } = periodBounds(period.year, period.month);
   const monthlyCalendarDays = new Date(Date.UTC(period.year, period.month, 0)).getUTCDate();
   const [employees, profiles, variables, rules, validatedAbsences, socialContext] = await Promise.all([
-    prisma.employee.findMany({ where: { organizationId: input.organizationId, deletedAt: null }, select: { id: true, hireDate: true, contractType: true, professionalCategory: true }, orderBy: { id: "asc" } }),
+    prisma.employee.findMany({ where: { organizationId: input.organizationId, deletedAt: null }, select: { id: true, hireDate: true, contractEndDate: true, contractType: true, professionalCategory: true }, orderBy: { id: "asc" } }),
     prisma.payrollProfile.findMany({ where: { organizationId: input.organizationId, effectiveFrom: { lte: end }, OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: start } }] }, select: { id: true, employeeId: true, baseSalaryCents: true, monthlyHours: true, effectiveFrom: true, effectiveUntil: true, collectiveAgreementId: true, classificationCode: true, classificationLabel: true, level: true, coefficient: true }, orderBy: { effectiveFrom: "desc" } }),
     prisma.payrollVariable.findMany({ where: { organizationId: input.organizationId, payrollPeriodId: period.id }, select: { id: true, employeeId: true, code: true, label: true, amount: true, unit: true, source: true }, orderBy: { createdAt: "asc" } }),
     resolvePayrollRuleSetFromPrisma({ code: input.ruleCode, scope: input.ruleScope, periodDate: calculationDate }),
@@ -90,8 +90,20 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
   ]);
   if (rules.status === "UNRESOLVED") throw new Error(rules.message);
 
+  const profilesByEmployee = new Map<string, (typeof profiles)[number][]>();
+  for (const profile of profiles) {
+    const current = profilesByEmployee.get(profile.employeeId) ?? [];
+    current.push(profile);
+    profilesByEmployee.set(profile.employeeId, current);
+  }
+  for (const [employeeId, employeeProfiles] of profilesByEmployee) {
+    if (employeeProfiles.length > 1) {
+      throw new Error(`Plusieurs profils paie se chevauchent pour le salarié ${employeeId} sur la période ${period.month}/${period.year}. Le calcul est bloqué pour éviter une sélection arbitraire.`);
+    }
+  }
+
   const profileByEmployee = new Map<string, (typeof profiles)[number]>();
-  for (const profile of profiles) if (!profileByEmployee.has(profile.employeeId)) profileByEmployee.set(profile.employeeId, profile);
+  for (const profile of profiles) profileByEmployee.set(profile.employeeId, profile);
   const variablesByEmployee = new Map<string, typeof variables>();
   for (const variable of variables) { const current = variablesByEmployee.get(variable.employeeId) ?? []; current.push(variable); variablesByEmployee.set(variable.employeeId, current); }
   const absencesByEmployee = new Map<string, typeof validatedAbsences>();
@@ -103,9 +115,22 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
   for (const employee of employees) {
     const profile = profileByEmployee.get(employee.id);
     if (!profile) throw new Error(`Aucun profil paie applicable pour le salarié ${employee.id}.`);
-    if (profile.baseSalaryCents === null) throw new Error(`Le salaire brut mensuel est manquant pour le salarié ${employee.id}.`);
+    if (profile.baseSalaryCents === null || !Number.isFinite(Number(profile.baseSalaryCents)) || Number(profile.baseSalaryCents) < 0) throw new Error(`Le salaire brut mensuel est manquant ou invalide pour le salarié ${employee.id}.`);
     if (!employee.contractType) throw new Error(`Le type de contrat est manquant pour le salarié ${employee.id}.`);
     if (!employee.professionalCategory) throw new Error(`La catégorie professionnelle est manquante pour le salarié ${employee.id}.`);
+
+    const hireDate = new Date(employee.hireDate);
+    if (hireDate > start) {
+      throw new Error(`Calcul bloqué pour le salarié ${employee.id} : l'entrée en cours de mois nécessite une règle de proratisation du salaire qui n'est pas encore modélisée.`);
+    }
+    if (employee.contractEndDate && new Date(employee.contractEndDate) < end) {
+      throw new Error(`Calcul bloqué pour le salarié ${employee.id} : la sortie en cours de mois nécessite une règle de proratisation du salaire qui n'est pas encore modélisée.`);
+    }
+
+    const monthlyHours = Number(profile.monthlyHours);
+    if (!Number.isFinite(monthlyHours) || monthlyHours <= 0 || monthlyHours > 744) {
+      throw new Error(`Le volume horaire mensuel est manquant ou invalide pour le salarié ${employee.id}.`);
+    }
 
     const baseSalaryAmount = profile.baseSalaryCents / 100;
     const executiveStatus = employee.professionalCategory === "CADRE";
@@ -124,7 +149,13 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     const smicMinimum = await resolveSmicMinimumFromPrisma({ periodDate: calculationDate, scope: socialContext.payrollDepartment === "976" ? "MAYOTTE" : "FRANCE_HORS_MAYOTTE" });
     if (!smicMinimum) throw new Error(`Calcul bloqué pour le salarié ${employee.id} : aucune version validée du SMIC n'est disponible.`);
     const smicScope = socialContext.payrollDepartment === "976" ? "MAYOTTE" as const : "FRANCE_HORS_MAYOTTE" as const;
-    const minimumSalaryControl = buildMinimumSalaryControlSnapshot({ smic: smicMinimum, collectiveMinimum, monthlyHours: Number(profile.monthlyHours), collectiveRuleVersionId: collectiveMinimumResolution.status === "RESOLVED" ? collectiveMinimumResolution.rule.versionId : undefined, monthlyGrossCents: profile.baseSalaryCents });
+    const minimumSalaryControl = buildMinimumSalaryControlSnapshot({ smic: smicMinimum, collectiveMinimum, monthlyHours, collectiveRuleVersionId: collectiveMinimumResolution.status === "RESOLVED" ? collectiveMinimumResolution.rule.versionId : undefined, monthlyGrossCents: profile.baseSalaryCents });
+    if (minimumSalaryControl.status !== "APPLICABLE") {
+      throw new Error(`Calcul bloqué pour le salarié ${employee.id} : contrôle du salaire minimum non résolu. ${minimumSalaryControl.explanation}`);
+    }
+    if (minimumSalaryControl.compliant === false) {
+      throw new Error(`Calcul bloqué pour le salarié ${employee.id} : le salaire brut est inférieur au minimum applicable. ${minimumSalaryControl.explanation}`);
+    }
 
     let alternanceMinimum: AlternanceMinimumSnapshot | null = null;
     if (employee.contractType === "APPRENTISSAGE" || employee.contractType === "PROFESSIONNALISATION") {
@@ -174,7 +205,14 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     const grossTreatments = [...treatments, ...absenceGrossImpacts.map((impact) => ({ code: impact.derivedVariableCode, ruleVersionId: impact.ruleVersionId, grossDelta: impact.grossDelta, kind: "ADD_TO_GROSS" as const }))];
     const grossAmount = composeGrossAmount({ baseSalaryAmount, variableTreatments: grossTreatments });
     const socialResult = calculateSocialPayroll({ grossAmount, legalCategory: socialContext.legalCategory, calculationDate, companyCreationDate: socialContext.companyCreationDate, contractType: employee.contractType, hireDate: employee.hireDate, executiveStatus, healthPlanMonthlyAmount: socialContext.healthPlanMonthlyAmount, healthPlanEmployerRate: socialContext.healthPlanEmployerRate, situation: { "établissement . taux ATMP": `${socialContext.atmpRate}%`, "établissement . commune . nom": `'${socialContext.payrollCity}'`, "établissement . commune . département": `'${socialContext.payrollDepartment}'` } });
-    const withholdingTax = calculateEmployeeWithholdingTax(socialResult.netBeforeTax, withholdingTaxProfile, employee.id);
+    const numericSocialValues = [socialResult.grossAmount, socialResult.employeeContributions, socialResult.employerContributions, socialResult.netBeforeTax, socialResult.netTaxableAmount, socialResult.netSocialAmount, socialResult.employerCost];
+    if (numericSocialValues.some((value) => !Number.isFinite(value) || value < 0)) {
+      throw new Error(`Le moteur social a produit une valeur numérique invalide pour le salarié ${employee.id}.`);
+    }
+    const withholdingTax = calculateEmployeeWithholdingTax(socialResult.netTaxableAmount, withholdingTaxProfile, employee.id);
+    if (withholdingTax > socialResult.netBeforeTax + 0.01) {
+      throw new Error(`Calcul bloqué pour le salarié ${employee.id} : le prélèvement à la source dépasse le net avant impôt.`);
+    }
     calculatedEmployees.push({ employeeId: employee.id, socialResult, profile: { id: profile.id, employeeId: profile.employeeId, baseSalaryCents: profile.baseSalaryCents, monthlyHours: profile.monthlyHours, effectiveFrom: profile.effectiveFrom, effectiveUntil: profile.effectiveUntil, collectiveAgreementId: profile.collectiveAgreementId, classificationCode: profile.classificationCode, classificationLabel: profile.classificationLabel, level: profile.level, coefficient: profile.coefficient }, variables: [...employeeVariables, ...absenceVariableInputs], treatments, validatedAbsences: employeeAbsences, absenceGrossImpacts, collectiveMinimum, minimumSalaryControl, alternanceMinimum, withholdingTax, withholdingTaxRate: withholdingTaxProfile.rate, withholdingTaxProfile });
   }
 

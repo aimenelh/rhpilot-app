@@ -112,8 +112,6 @@ function assertNumber(value: unknown, label: string): number {
 
 function assertRate(value: unknown, label: string): number {
   if (typeof value !== "number" || !Number.isFinite(value)) throw new Error(`Le modèle social n'a pas fourni un taux numérique pour ${label}.`);
-  // Publicodes can expose a percentage as either 0.069 or 6.9 depending on the evaluated rule/unit.
-  // RH Pilot stores rates as ratios, so normalize only the latter representation.
   const normalized = value > 1 && value <= 100 ? value / 100 : value;
   if (normalized < 0 || normalized > 1) throw new Error(`Le modèle social a fourni un taux invalide pour ${label}.`);
   return normalized;
@@ -218,6 +216,14 @@ export function calculateSocialPayroll(input: {
   const employeeContributions = assertNumber(employeeContributionsEvaluation.nodeValue, EMPLOYEE_CONTRIBUTIONS_RULE);
   const employerContributions = assertNumber(employerContributionsEvaluation.nodeValue, EMPLOYER_CONTRIBUTIONS_RULE);
   const contributionDetails = evaluateContributionDetails(engine);
+  const employeeDetailTotal = contributionDetails.filter((contribution) => contribution.side === "EMPLOYEE").reduce((total, contribution) => total + contribution.amount, 0);
+  const employerDetailTotal = contributionDetails.filter((contribution) => contribution.side === "EMPLOYER").reduce((total, contribution) => total + contribution.amount, 0);
+  if (Math.abs(employeeDetailTotal - employeeContributions) > 0.02) {
+    throw new Error(`Le détail des cotisations salariales (${employeeDetailTotal.toFixed(2)} €) ne réconcilie pas le total du modèle social (${employeeContributions.toFixed(2)} €). Le bulletin est bloqué pour éviter un détail incomplet.`);
+  }
+  if (Math.abs(employerDetailTotal - employerContributions) > 0.02) {
+    throw new Error(`Le détail des cotisations patronales (${employerDetailTotal.toFixed(2)} €) ne réconcilie pas le total du modèle social (${employerContributions.toFixed(2)} €). Le bulletin est bloqué pour éviter un détail incomplet.`);
+  }
 
   return {
     modelVersion: SOCIAL_MODEL_VERSION,
