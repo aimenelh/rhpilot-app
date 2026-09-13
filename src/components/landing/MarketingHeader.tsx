@@ -96,10 +96,11 @@ export function MarketingHeader() {
       >
         Aller au contenu
       </a>
-      <AnnouncementBar />
-      <header
-        ref={root}
-        className="sticky top-0 z-40 border-b border-surface-border bg-white"
+      <div className="sticky top-0 z-40">
+        <AnnouncementBar />
+        <header
+          ref={root}
+          className="border-b border-surface-border bg-white"
         onBlur={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget as Node)) {
             setGroup(null);
@@ -284,6 +285,7 @@ export function MarketingHeader() {
           </nav>
         )}
       </header>
+      </div>
       <PublicCopilotePreview />
     </>
   );
