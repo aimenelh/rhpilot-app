@@ -79,13 +79,37 @@ export async function saveWithholdingTaxRate(
 
   try {
     await prisma.$transaction(async (tx) => {
-      // Un seul taux "en vigueur" par salarié pour l'instant -- on
-      // remplace plutôt que de garder un historique de versions, la
-      // même simplification que fait la génération de démonstration.
-      await tx.$executeRaw`
-        DELETE FROM "employee_withholding_tax_profiles"
+      const existing = await tx.$queryRaw<Array<{ id: string; validFrom: Date; validUntil: Date | null }>>`
+        SELECT "id", "validFrom", "validUntil"
+        FROM "employee_withholding_tax_profiles"
         WHERE "organizationId" = ${membership.organizationId} AND "employeeId" = ${employeeId}
+        ORDER BY "validFrom" DESC
       `;
+
+      const sameDate = existing.find((row) => row.validFrom.toISOString().slice(0, 10) === validFromRaw);
+      if (sameDate) {
+        await tx.$executeRaw`
+          UPDATE "employee_withholding_tax_profiles"
+          SET "rate" = ${rate}, "source" = ${sourceLabel}, "sourceReference" = ${sourceReference || null}, "updatedAt" = CURRENT_TIMESTAMP
+          WHERE "id" = ${sameDate.id}
+        `;
+        return;
+      }
+
+      const future = existing.find((row) => row.validFrom > validFrom);
+      if (future) {
+        throw new Error("Une période de taux postérieure existe déjà. Utilisez sa date de prise d'effet ou supprimez d'abord la période future.");
+      }
+
+      const previous = existing[0];
+      if (previous) {
+        await tx.$executeRaw`
+          UPDATE "employee_withholding_tax_profiles"
+          SET "validUntil" = (${validFromRaw}::date - INTERVAL '1 day'), "updatedAt" = CURRENT_TIMESTAMP
+          WHERE "id" = ${previous.id}
+        `;
+      }
+
       await tx.$executeRaw`
         INSERT INTO "employee_withholding_tax_profiles"
           ("id", "organizationId", "employeeId", "rate", "validFrom", "validUntil", "source", "sourceReference", "updatedAt")
