@@ -1,57 +1,301 @@
-import Link from "next/link";
 import Image from "next/image";
-import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
-import { MarketingHeader } from "@/components/landing/MarketingHeader";
-import { MarketingFooter } from "@/components/landing/MarketingFooter";
-import { Reveal } from "@/components/landing/Reveal";
-import { TestimonialsCarousel } from "@/components/landing/TestimonialsCarousel";
-import { AmbientGlow } from "@/components/landing/AmbientGlow";
-import { JourneyFlow } from "@/components/landing/JourneyFlow";
-import { InteractiveDemo } from "@/components/landing/InteractiveDemo";
-import { HumanWorkVideo } from "@/components/landing/HumanWorkVideo";
-
-const BENEFITS = [
-  { title: "Rien ne passe inaperçu", description: "Les tâches en retard et les échéances proches remontent toujours en premier, sans avoir à les chercher.", dot: "bg-accent-rose" },
-  { title: "Des suggestions, pas seulement des données", description: "RH Pilot détecte les oublis probables, comme une période d'essai qui approche ou un parcours jamais créé, et propose l'action en un clic.", dot: "bg-brand-primary-dark" },
-  { title: "Des rappels qui partent tout seuls", description: "Résumés automatiques et rappels manuels, envoyés directement à la bonne personne, pas seulement à vous.", dot: "bg-accent-teal" },
-  { title: "Un vrai parcours, pas une case à cocher", description: "Chaque événement RH devient un plan complet (tâches, échéances, preuves attendues), pas juste un rappel isolé.", dot: "bg-brand-primary" },
-];
+import Link from "next/link";
+import { MarketingHeader } from "./MarketingHeader";
+import { MarketingFooter } from "./MarketingFooter";
+import { ProductTabs } from "./ProductTabs";
+import s from "./MarketingV2.module.css";
 
 export function LandingPage() {
   return (
-    <div className="min-h-screen">
-      <AmbientGlow />
+    <div className={s.site}>
       <MarketingHeader />
-      <section className="relative min-h-[calc(100vh-88px)] overflow-hidden bg-white"><HumanWorkVideo className="inset-0 h-full w-full [&_.human-work-video-frame]:h-full [&_.human-work-video-frame]:w-full [&_.human-work-video-frame]:rotate-0 [&_.human-work-video-frame]:rounded-none [&_.human-work-video-frame]:border-0 [&_.human-work-video-frame]:shadow-none [&_.human-work-video-frame>div:first-child]:h-full [&_.human-work-video-frame>div:first-child]:w-full [&_.human-work-video-frame>div:first-child]:rounded-none [&_.human-work-video-frame>div:first-child]:aspect-auto [&_.human-work-video-frame>div:first-child>video]:object-cover [&_.human-work-video-shape]:hidden [&_.human-work-video-dots]:hidden [&_.human-work-video-note]:hidden" /></section>
-      <section className="relative flex min-h-[70vh] items-center justify-center overflow-hidden border-b border-surface-border bg-white px-6 py-24 sm:min-h-[76vh]"><Reveal><div className="mx-auto max-w-4xl text-center"><h1 className="font-display sr-only">Embauche, période d&apos;essai, visite médicale. Rien n&apos;est oublié.</h1><p className="font-handwriting text-4xl leading-tight text-brand-primary sm:text-6xl lg:text-7xl">Des équipes RH<br />plus sereines</p><p className="mx-auto mt-8 max-w-2xl text-lg leading-relaxed text-ink-soft sm:text-xl">RH Pilot transforme chaque événement RH en plan d&apos;action clair, avec ses échéances et ses responsables.</p></div></Reveal></section>
-      <section className="relative overflow-visible border-b border-surface-border bg-white px-6 pb-24 pt-20 sm:pb-28 sm:pt-24"><Reveal variant="up"><div className="relative mx-auto max-w-6xl"><div className="relative mx-auto max-w-5xl"><div className="overflow-hidden rounded-[1.25rem] border border-surface-border bg-white shadow-[0_30px_90px_rgba(15,23,42,0.12)]"><Image src="/marketing/dashboard.png" alt="Tableau de bord RH Pilot" width={1885} height={1030} className="w-full" priority /></div><Image src="/illustrations/illu-copilote-hero.png" alt="" width={802} height={1274} className="pointer-events-none absolute -top-2 right-[13%] z-40 h-36 w-auto sm:-top-3 sm:right-[15%] sm:h-44 lg:h-48" /></div></div></Reveal></section>
-      <section className="relative py-16"><div className="mx-auto max-w-6xl px-6"><Reveal><div className="text-center"><span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Voir RH Pilot en action</span><h2 className="font-display mt-3 text-2xl font-semibold text-ink sm:text-3xl">Du problème détecté au parcours généré.</h2></div></Reveal><Reveal delay={100} className="mt-10"><InteractiveDemo /></Reveal></div></section>
-      <section className="relative border-y border-surface-border bg-white py-20"><div className="mx-auto max-w-6xl px-6"><Reveal><div className="grid items-center gap-10 lg:grid-cols-[0.7fr_1.3fr]"><div className="max-w-xl"><span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Vos échéances</span><h2 className="font-display mt-3 text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">Les échéances n&apos;attendent pas.</h2><p className="mt-4 text-base leading-relaxed text-ink-soft">Un calendrier clair pour savoir ce qui arrive, ce qui est en retard et qui doit agir.</p></div><div className="min-w-0"><img src="/marketing/calendar-landing.webp" alt="Calendrier RH Pilot avec les échéances et retards à surveiller" width={1200} height={600} className="h-auto w-full" loading="lazy" /></div></div></Reveal></div></section>
-      <section className="relative border-b border-surface-border bg-surface-subtle py-20"><div className="mx-auto max-w-6xl px-6"><Reveal><div className="grid items-center gap-10 lg:grid-cols-[1.3fr_0.7fr]"><div className="order-2 min-w-0 lg:order-1"><img src="/marketing/notifications-landing.webp" alt="Notifications RH Pilot et envoi des résumés" width={1200} height={600} className="h-auto w-full" loading="lazy" /></div><div className="order-1 max-w-xl lg:order-2"><span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Notifications</span><h2 className="font-display mt-3 text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">Une relance ne devrait jamais dépendre de votre mémoire.</h2><p className="mt-4 text-base leading-relaxed text-ink-soft">Les résumés partent au bon moment et l&apos;historique garde la trace de ce qui a déjà été envoyé.</p></div></div></Reveal></div></section>
-      <section id="copilote" className="relative border-b border-surface-border bg-white py-20"><div className="mx-auto max-w-6xl px-6"><Reveal><div className="grid items-center gap-10 lg:grid-cols-[0.7fr_1.3fr]"><div className="max-w-xl"><span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Copilote</span><h2 className="font-display mt-3 text-3xl font-semibold tracking-[-0.02em] text-ink sm:text-4xl">Une question RH ? Demandez, il s&apos;en occupe.</h2><p className="mt-4 text-base leading-relaxed text-ink-soft">RH Pilot regarde vos données et vous répond dans le contexte de votre entreprise, sans vous faire chercher dans cinq écrans.</p></div><div className="min-w-0"><img src="/marketing/copilot-landing.webp" alt="Copilote RH Pilot répond à une question RH à partir des données de l&apos;entreprise" width={1200} height={640} className="h-auto w-full" loading="lazy" /></div></div></Reveal></div></section>
-      <JourneyFlow />
-      <section className="relative overflow-hidden border-y border-surface-border bg-white py-16"><div className="mx-auto grid max-w-6xl gap-10 px-6 md:grid-cols-3">
-        <div>
-          <p className="text-3xl font-bold text-ink">73 %</p>
-          <p className="mt-1 text-sm text-ink-faint">des professionnels RH passent au moins la moitié de leur temps sur des tâches administratives</p>
-          <a href="https://www.editions-tissot.fr/sondage-etude/barometre-2020-les-rh-au-quotidien" target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-medium text-ink-faint underline decoration-surface-border underline-offset-2 hover:text-brand-primary">Source : Éditions Tissot, Baromètre RH 2020</a>
+      <main id="main-content">
+        <section className={s.hero}>
+          <div className={`${s.wrap} ${s.heroGrid}`}>
+            <div>
+              <p className={s.eyebrow}>Le suivi RH des petites entreprises</p>
+              <h1>
+                Vos équipes avancent.
+                <br />
+                <em>Vos RH suivent.</em>
+              </h1>
+              <p className={s.lead}>
+                Salariés, démarches et échéances : retrouvez le fil de vos RH,
+                de l’embauche au suivi quotidien.
+              </p>
+              <div className={s.actions}>
+                <Link href="/sign-up" className={s.primary}>
+                  Essayer gratuitement <span aria-hidden>↗</span>
+                </Link>
+                <Link href="/services#demo" className={s.secondary}>
+                  Voir le logiciel <span aria-hidden>→</span>
+                </Link>
+              </div>
+              <p className={s.note}>
+                RH Pilot est en bêta. Découvrez les fonctionnalités et les
+                offres.
+              </p>
+            </div>
+            <div className={s.heroVisual}>
+              <div className={s.screen}>
+                <div className={s.screenBar}>
+                  <span>RH Pilot / Tableau de bord</span>
+                  <span>Vue de démonstration</span>
+                </div>
+                <Image
+                  src="/marketing/dashboard.png"
+                  alt="Tableau de bord RH Pilot : salariés, parcours et tâches à surveiller"
+                  width={1885}
+                  height={1030}
+                  priority
+                  sizes="(max-width: 700px) 95vw, 820px"
+                />
+              </div>
+              <p className={s.visualCaption}>
+                Les priorités de l’équipe, réunies au même endroit.
+              </p>
+            </div>
+          </div>
+        </section>
+        <div className={s.strip}>
+          <div className={`${s.wrap} ${s.stripInner}`}>
+            <span>Un suivi continu, pour les moments qui comptent.</span>
+            <strong>Embauches</strong>
+            <strong>Périodes d’essai</strong>
+            <strong>Visites médicales</strong>
+            <strong>Fins de contrat</strong>
+          </div>
         </div>
-        <div>
-          <p className="text-3xl font-bold text-ink">142 jours</p>
-          <p className="mt-1 text-sm text-ink-faint">perdus chaque année par une PME dans les tâches administratives</p>
-          <a href="https://www.sage.com/fr-fr/blog/temps-perdu-taches-administratives-142-jours/" target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-medium text-ink-faint underline decoration-surface-border underline-offset-2 hover:text-brand-primary">Source : étude Sage / Plum Consulting</a>
-        </div>
-        <div>
-          <p className="text-3xl font-bold text-ink">19 %</p>
-          <p className="mt-1 text-sm text-ink-faint">des CDI sont rompus pendant la période d&apos;essai</p>
-          <a href="https://dares.travail-emploi.gouv.fr/publication/des-fins-de-periode-dessai-plus-repandues-dans-le-tertiaire-des-departs-en-retraite" target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-medium text-ink-faint underline decoration-surface-border underline-offset-2 hover:text-brand-primary">Source : DARES, ministère du Travail (2019)</a>
-        </div>
-      </div></section>
-      <section className="border-y border-surface-border bg-surface-subtle py-16"><div className="mx-auto max-w-6xl px-6"><Reveal><div className="grid gap-6 md:grid-cols-2"><Card><p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Parcours</p><p className="mt-3 text-lg font-semibold text-ink">Un événement RH, un parcours complet.</p><p className="mt-2 text-sm text-ink-soft">RH Pilot déclenche les bonnes actions au bon moment, dès qu&apos;un événement RH survient.</p></Card><Card><p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Suivi</p><p className="mt-3 text-lg font-semibold text-ink">Rien ne reste dans votre tête.</p><p className="mt-2 text-sm text-ink-soft">Les échéances, responsables et actions restent visibles au même endroit.</p></Card></div></Reveal></div></section>
-      <section className="py-16"><div className="mx-auto max-w-6xl px-6"><Reveal><div className="text-center"><span className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">Ils en parlent</span><h2 className="font-display mt-3 text-2xl font-semibold text-ink sm:text-3xl">Ce que les équipes RH pensent de leur quotidien avec RH Pilot.</h2></div></Reveal><Reveal delay={100} className="mt-10"><TestimonialsCarousel /></Reveal></div></section>
-      <section className="border-t border-surface-border bg-white py-16"><div className="mx-auto max-w-6xl px-6"><Reveal><h2 className="font-display max-w-2xl text-2xl font-semibold text-ink sm:text-3xl">Un cadre clair pour les équipes RH.</h2></Reveal><div className="mt-10 grid gap-6 md:grid-cols-4">{BENEFITS.map((benefit) => (<Card key={benefit.title} compact><span className={`inline-block h-2.5 w-2.5 rounded-full ${benefit.dot}`} /><h3 className="mt-4 text-base font-semibold text-ink">{benefit.title}</h3><p className="mt-2 text-sm leading-relaxed text-ink-soft">{benefit.description}</p></Card>))}</div></div></section>
-      <section className="relative overflow-hidden bg-ink py-20"><div className="mx-auto max-w-6xl px-6"><div className="max-w-2xl"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/60">RH Pilot</p><h2 className="font-display mt-3 text-3xl font-bold tracking-[-0.02em] text-white sm:text-4xl">Vos RH méritent mieux que des rappels éparpillés.</h2><p className="mt-4 text-base leading-relaxed text-white/75">Centralisez les événements, automatisez les actions et gardez une trace claire de ce qui a été fait.</p><Link href="/sign-up" className="mt-7 inline-flex"><Button>Commencer gratuitement →</Button></Link></div></div><Image src="/illustrations/illu-cta-final.png" alt="" width={900} height={600} className="pointer-events-none absolute bottom-0 right-0 hidden w-[34rem] max-w-[42vw] md:block" /></section>
+        <section className={s.section}>
+          <div className={s.wrap}>
+            <div className={s.headingRow}>
+              <div>
+                <p className={s.eyebrow}>Le logiciel</p>
+                <h2 className={s.title}>
+                  Tout commence par
+                  <br />
+                  une vue claire.
+                </h2>
+              </div>
+              <Link href="/services" className={s.secondary}>
+                Explorer RH Pilot →
+              </Link>
+            </div>
+            <ProductTabs />
+          </div>
+        </section>
+        <section className={`${s.section} ${s.case}`}>
+          <div className={`${s.wrap} ${s.caseGrid}`}>
+            <div className={s.caseArt}>
+              <Image
+                src="/illustrations/mascot/newhire-handshake.png"
+                alt="Une nouvelle arrivée dans l’équipe, accompagnée par la mascotte RH Pilot"
+                width={1000}
+                height={750}
+                sizes="(max-width: 700px) 90vw, 45vw"
+              />
+            </div>
+            <div>
+              <p className={s.eyebrow}>Une embauche, concrètement</p>
+              <h2 className={s.title}>
+                L’arrivée est prévue.
+                <br />
+                La suite aussi.
+              </h2>
+              <ol className={s.steps}>
+                <li>
+                  <span>01</span>
+                  <div>
+                    <h3>Préparez le parcours</h3>
+                    <p>
+                      Rattachez les étapes d’embauche à la fiche du nouveau
+                      salarié.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span>02</span>
+                  <div>
+                    <h3>Répartissez les actions</h3>
+                    <p>
+                      Les tâches, leurs responsables et leurs échéances sont
+                      visibles.
+                    </p>
+                  </div>
+                </li>
+                <li>
+                  <span>03</span>
+                  <div>
+                    <h3>Gardez une trace du suivi</h3>
+                    <p>
+                      Retrouvez les étapes réalisées et les documents associés
+                      au parcours.
+                    </p>
+                  </div>
+                </li>
+              </ol>
+              <Link href="/services#demo" className={s.textLink}>
+                Suivre un exemple dans le logiciel →
+              </Link>
+            </div>
+          </div>
+        </section>
+        <section className={s.section}>
+          <div className={`${s.wrap} ${s.calendarGrid}`}>
+            <div>
+              <Image
+                src="/marketing/calendar-landing.webp"
+                alt="Vue du calendrier RH Pilot et des échéances de l’équipe"
+                width={1200}
+                height={600}
+                sizes="(max-width: 700px) 95vw, 55vw"
+              />
+            </div>
+            <div>
+              <p className={s.eyebrow}>Calendrier & rappels</p>
+              <h2 className={s.title}>
+                La prochaine échéance a déjà sa place.
+              </h2>
+              <p className={`${s.copy} mt-6`}>
+                Une période d’essai à suivre, une visite à organiser, un contrat
+                qui se termine. Consultez les dates à venir et retrouvez les
+                actions concernées.
+              </p>
+              <Link href="/services#echeances" className={s.textLink}>
+                Voir le suivi des échéances →
+              </Link>
+            </div>
+          </div>
+        </section>
+        <section className={s.payroll}>
+          <div className={`${s.wrap} ${s.payrollInner}`}>
+            <div>
+              <h2>Et la paie ?</h2>
+              <span className={s.badge}>Module en bêta</span>
+            </div>
+            <p>
+              Profils salariés, variables et calculs : découvrez le périmètre du
+              module paie et son fonctionnement. Son développement et sa
+              validation se poursuivent.
+            </p>
+            <Link href="/gestion-paie" className={s.secondary}>
+              Découvrir le module →
+            </Link>
+          </div>
+        </section>
+        <section className={s.section}>
+          <div className={`${s.wrap} ${s.storyGrid}`}>
+            <div>
+              <video
+                controls
+                playsInline
+                preload="none"
+                poster="/illustrations/illu-cta-final.png"
+                className={s.video}
+                aria-label="Scène de travail en équipe — vidéo de Pavel Danilyuk"
+              >
+                <source
+                  src="https://www.pexels.com/download/video/8343940/?v=8343940"
+                  type="video/mp4"
+                />
+                Votre navigateur ne permet pas la lecture de cette vidéo.
+              </video>
+              <p className={s.note}>
+                Scène d’illustration · Pavel Danilyuk / Pexels
+              </p>
+            </div>
+            <div>
+              <p className={s.eyebrow}>À l’origine de RH Pilot</p>
+              <h2 className={s.title}>
+                Le terrain comme
+                <br />
+                point de départ.
+              </h2>
+              <p className={`${s.copy} mt-6`}>
+                Des tableaux dispersés, des documents à retrouver, des échéances
+                à garder en tête. RH Pilot est né de ces situations et
+                d’échanges avec des professionnels RH sur leur quotidien.
+              </p>
+              <div className={s.signature}>
+                <strong>Aimen El Housseini</strong>Fondateur de RH Pilot ·
+                Montpellier
+              </div>
+              <Link href="/pourquoi" className={s.textLink}>
+                Lire l’histoire du projet →
+              </Link>
+            </div>
+          </div>
+        </section>
+        <section className={`${s.section} ${s.case}`}>
+          <div className={`${s.wrap} ${s.faqGrid}`}>
+            <div>
+              <p className={s.eyebrow}>Avant de commencer</p>
+              <h2 className={s.title}>Quelques repères.</h2>
+              <Link href="/questions" className={s.textLink}>
+                Toutes les questions →
+              </Link>
+            </div>
+            <div className={s.faq}>
+              <details>
+                <summary>À qui s’adresse RH Pilot ?</summary>
+                <p>
+                  Aux petites entreprises et aux personnes qui assurent leur
+                  suivi RH : dirigeant, assistant administratif ou professionnel
+                  RH.
+                </p>
+              </details>
+              <details>
+                <summary>Comment découvrir le logiciel ?</summary>
+                <p>
+                  La démonstration guidée présente un exemple de suivi, sans
+                  création de compte. Vous pouvez ensuite créer votre espace
+                  pour essayer RH Pilot.
+                </p>
+                <Link href="/services#demo" className={s.textLink}>
+                  Ouvrir la démonstration →
+                </Link>
+              </details>
+              <details>
+                <summary>Que comprend l’offre gratuite ?</summary>
+                <p>
+                  Les fonctionnalités et les limites de chaque offre sont
+                  détaillées sur la page Tarifs, pour choisir selon les besoins
+                  de votre équipe.
+                </p>
+                <Link href="/tarifs" className={s.textLink}>
+                  Comparer les offres →
+                </Link>
+              </details>
+              <details>
+                <summary>Où trouver les informations sur mes données ?</summary>
+                <p>
+                  Les pages Sécurité et Confidentialité présentent les
+                  informations sur la protection et le traitement de vos
+                  données.
+                </p>
+                <Link href="/securite" className={s.textLink}>
+                  Consulter la page Sécurité →
+                </Link>
+              </details>
+            </div>
+          </div>
+        </section>
+        <section className={s.cta}>
+          <div className={`${s.wrap} ${s.ctaInner}`}>
+            <div>
+              <h2 className={s.title}>
+                Faites le point sur vos RH.
+                <br />
+                Puis avancez.
+              </h2>
+              <p>Découvrez votre espace et préparez votre premier parcours.</p>
+            </div>
+            <Link href="/sign-up" className={s.primary}>
+              Essayer RH Pilot <span aria-hidden>↗</span>
+            </Link>
+          </div>
+        </section>
+      </main>
       <MarketingFooter />
     </div>
   );

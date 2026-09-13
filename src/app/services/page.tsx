@@ -1,11 +1,19 @@
 import { ServicesExperience } from "@/components/landing/ServicesExperience";
-
+import { SoftwareOverview } from "@/components/landing/SoftwareOverview";
 export const metadata = {
-  title: "Nos services, RH Pilot",
+  title: "Le logiciel RH Pilot — salariés, parcours et échéances",
   description:
-    "Vivez en 60 secondes comment RH Pilot organise une journée RH : tableau de bord, copilote RH, parcours automatisés et personnalisables, rappels d'échéances.",
+    "Découvrez RH Pilot : dossiers salariés, parcours RH, documents, calendrier, rappels et copilote. Explorez le logiciel dans une démonstration guidée.",
+  alternates: { canonical: "/services" },
 };
-
-export default function ServicesPage() {
-  return <ServicesExperience />;
+export default function ServicesPage({
+  searchParams,
+}: {
+  searchParams: { demo?: string };
+}) {
+  return searchParams.demo === "1" ? (
+    <ServicesExperience />
+  ) : (
+    <SoftwareOverview />
+  );
 }
