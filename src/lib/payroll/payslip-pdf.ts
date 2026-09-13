@@ -1,5 +1,15 @@
 import PDFDocument from "pdfkit";
 
+// PDFKit 0.20.x uses package import mappings for standard fonts. Explicitly
+// register the two fonts used by RH Pilot so Vercel/Next server tracing does
+// not depend on resolving the internal #standard-fonts mapping at runtime.
+const { registerStdFonts } = require("pdfkit") as {
+  registerStdFonts: (...fonts: unknown[]) => void;
+};
+const Helvetica = require("pdfkit/standard-fonts/Helvetica");
+const HelveticaBold = require("pdfkit/standard-fonts/HelveticaBold");
+registerStdFonts(Helvetica, HelveticaBold);
+
 export type PayslipPdfContribution = {
   label: string;
   side: "EMPLOYEE" | "EMPLOYER";
