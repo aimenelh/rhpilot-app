@@ -3,7 +3,6 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { calculateSocialPayroll, SOCIAL_MODEL_VERSION } from "@/lib/payroll/social-engine";
 import { resolveOrganizationLegalCategory } from "@/lib/payroll/social-organization-context";
 import { resolveEmployeeWithholdingTaxProfile } from "@/lib/payroll/withholding-tax-profile";
@@ -24,7 +23,7 @@ type Snapshot = {
   ruleSource?: { sourceName?: unknown };
   alternanceMinimum?: { status?: unknown; source?: unknown; code?: unknown; explanation?: unknown; age?: unknown; contractYear?: unknown; hasBaccalaureateOrHigher?: unknown; smicMonthlyCents?: unknown; smicScope?: unknown; legalMinimumCents?: unknown; collectiveMinimumCents?: unknown; applicableMinimumCents?: unknown; percentageOfSmic?: unknown; baseSalaryCents?: unknown; profileValidFrom?: unknown; profileValidUntil?: unknown; profileSource?: unknown; profileSourceReference?: unknown };
   withholdingTax?: { status?: unknown; rate?: unknown; amount?: unknown; validFrom?: unknown; validUntil?: unknown; source?: unknown; sourceReference?: unknown };
-  socialEngine?: { modelVersion?: unknown; contributionDetails?: Array<{ code?: unknown; label?: unknown; sourceRule?: unknown; side?: unknown; amount?: unknown; baseAmount?: unknown; rate?: unknown }> };
+  socialEngine?: { modelVersion?: unknown; grossAmount?: unknown; employeeContributions?: unknown; employerContributions?: unknown; contributionDetails?: Array<{ code?: unknown; label?: unknown; sourceRule?: unknown; side?: unknown; amount?: unknown; baseAmount?: unknown; rate?: unknown }> };
   result?: { netSocialAmount?: unknown };
 };
 
@@ -56,18 +55,23 @@ function normalizeContributionDetails(snapshot: Snapshot): PayslipContributionDe
 
 function assertContributionDetailsMatch(snapshot: Snapshot, current: ReturnType<typeof calculateSocialPayroll>["contributionDetails"]): void {
   const locked = normalizeContributionDetails(snapshot);
-  if (locked.length !== current.length) throw new Error("Génération bloquée : le détail des cotisations du calcul verrouillé ne correspond pas au modèle social actuel.");
-  const byCode = new Map(locked.map((detail) => [detail.code, detail]));
-  for (const detail of current) {
-    const expected = byCode.get(detail.code);
-    if (!expected) throw new Error(`Génération bloquée : la cotisation ${detail.label} n'existe pas dans le calcul verrouillé.`);
-    if (expected.side !== detail.side) throw new Error(`Génération bloquée : le côté de cotisation ${detail.label} ne correspond plus au calcul verrouillé.`);
-    if (expected.label !== detail.label) throw new Error(`Génération bloquée : le libellé de cotisation ${detail.label} ne correspond plus au calcul verrouillé.`);
-    if (expected.sourceRule !== detail.sourceRule) throw new Error(`Génération bloquée : la règle source de cotisation ${detail.label} ne correspond plus au calcul verrouillé.`);
-    assertClose(`montant de cotisation ${detail.label}`, expected.amount, detail.amount);
-    if (expected.baseAmount === null ? detail.baseAmount !== null : Math.abs(expected.baseAmount - (detail.baseAmount ?? Number.NaN)) > 0.01) throw new Error(`Génération bloquée : l'assiette de cotisation ${detail.label} ne correspond plus au calcul verrouillé.`);
-    if (expected.rate === null ? detail.rate !== null : Math.abs(expected.rate - (detail.rate ?? Number.NaN)) > 0.0001) throw new Error(`Génération bloquée : le taux de cotisation ${detail.label} ne correspond plus au calcul verrouillé.`);
+  for (const expected of locked) {
+    const detail = current.find((candidate) => candidate.code === expected.code);
+    if (!detail) throw new Error(`Génération bloquée : la cotisation ${expected.label} du calcul verrouillé n'existe plus dans le modèle social actuel.`);
+    if (expected.side !== detail.side) throw new Error(`Génération bloquée : le côté de cotisation ${expected.label} ne correspond plus au calcul verrouillé.`);
+    if (expected.label !== detail.label) throw new Error(`Génération bloquée : le libellé de cotisation ${expected.label} ne correspond plus au calcul verrouillé.`);
+    if (expected.sourceRule !== detail.sourceRule) throw new Error(`Génération bloquée : la règle source de cotisation ${expected.label} ne correspond plus au calcul verrouillé.`);
+    assertClose(`montant de cotisation ${expected.label}`, expected.amount, detail.amount);
+    if (expected.baseAmount === null ? detail.baseAmount !== null : Math.abs(expected.baseAmount - (detail.baseAmount ?? Number.NaN)) > 0.01) throw new Error(`Génération bloquée : l'assiette de cotisation ${expected.label} ne correspond plus au calcul verrouillé.`);
+    if (expected.rate === null ? detail.rate !== null : Math.abs(expected.rate - (detail.rate ?? Number.NaN)) > 0.0001) throw new Error(`Génération bloquée : le taux de cotisation ${expected.label} ne correspond plus au calcul verrouillé.`);
   }
+  if (new Set(current.map((detail) => detail.code)).size !== current.length) throw new Error("Génération bloquée : le modèle social actuel contient des lignes de cotisation dupliquées.");
+  const lockedEmployeeTotal = asNumber(snapshot.socialEngine?.employeeContributions);
+  const lockedEmployerTotal = asNumber(snapshot.socialEngine?.employerContributions);
+  const currentEmployeeTotal = current.filter((detail) => detail.side === "EMPLOYEE").reduce((total, detail) => total + detail.amount, 0);
+  const currentEmployerTotal = current.filter((detail) => detail.side === "EMPLOYER").reduce((total, detail) => total + detail.amount, 0);
+  assertClose("total des cotisations salariales", lockedEmployeeTotal, currentEmployeeTotal);
+  assertClose("total des cotisations patronales", lockedEmployerTotal, currentEmployerTotal);
 }
 
 async function assertAlternanceSnapshotMatchesCurrent(input: { snapshot: Snapshot; contractType: string; professionalCategory: string; organizationId: string; employeeId: string; periodDate: Date; payrollDepartment: string | null }): Promise<void> {
@@ -80,26 +84,22 @@ async function assertAlternanceSnapshotMatchesCurrent(input: { snapshot: Snapsho
   if (!locked || locked.status !== "APPLICABLE") throw new Error("Génération bloquée : le calcul verrouillé ne contient pas de contrôle alternance applicable.");
   const alternanceProfile = await resolveEmployeeAlternanceProfile({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate });
   if (!alternanceProfile) throw new Error("Génération bloquée : le profil alternance applicable n'est plus disponible.");
-
   const lockedValidFrom = asString(locked.profileValidFrom);
   const lockedValidUntil = locked.profileValidUntil === null ? null : asString(locked.profileValidUntil);
   const currentValidUntil = alternanceProfile.validUntil?.toISOString() ?? null;
   const lockedSourceReference = locked.profileSourceReference === null ? null : asString(locked.profileSourceReference);
   if (lockedValidFrom !== alternanceProfile.validFrom.toISOString() || lockedValidUntil !== currentValidUntil || asString(locked.profileSource) !== alternanceProfile.source || lockedSourceReference !== alternanceProfile.sourceReference) throw new Error("Génération bloquée : le profil alternance applicable a changé depuis le calcul verrouillé.");
-
   const smicScope = input.payrollDepartment?.trim() === "976" ? "MAYOTTE" as const : "FRANCE_HORS_MAYOTTE" as const;
   const smic = await resolveSmicMinimumFromPrisma({ periodDate: input.periodDate, scope: smicScope });
   if (!smic) throw new Error("Génération bloquée : aucune version validée du SMIC n'est disponible pour le contrôle alternance.");
   const lockedSmic = asNumber(locked.smicMonthlyCents);
   if (locked.smicScope !== smicScope || Math.abs(lockedSmic - smic.monthlyGrossCentsAt35Hours) > 0.001) throw new Error("Génération bloquée : le SMIC applicable au contrôle alternance a changé depuis le calcul verrouillé.");
-
   const collectiveResolution = await resolveCollectiveAgreementFromPrisma({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate, ruleCode: "MINIMUM_GROSS_MONTHLY" });
   let collectiveMinimumCents: number | null = null;
   if (collectiveResolution.status === "RESOLVED") {
     const collective = evaluateCollectiveMinimumSalary({ monthlyGrossCents: asNumber(locked.baseSalaryCents), classificationCode: asString(input.snapshot.profile?.classificationCode) || null, professionalCategory: input.professionalCategory, contractType: input.contractType, parameters: collectiveResolution.rule.parameters });
     if (collective.status === "APPLICABLE") collectiveMinimumCents = collective.monthlyMinimumCents;
   }
-
   const age = calculateAgeAtDate(alternanceProfile.birthDate, input.periodDate);
   const result = input.contractType === "APPRENTISSAGE"
     ? alternanceProfile.contractYear === null
@@ -111,7 +111,6 @@ async function assertAlternanceSnapshotMatchesCurrent(input: { snapshot: Snapsho
         ? { status: "UNRESOLVED" as const, code: "MISSING_BACCALAUREATE_LEVEL", source: "PROFESSIONNALISATION_LEGAL" as const, explanation: "Le niveau de qualification est obligatoire pour déterminer le minimum de professionnalisation des moins de 26 ans." }
         : resolveProfessionalisationMinimum({ age, hasBaccalaureateOrHigher: alternanceProfile.hasBaccalaureateOrHigher, smicMonthlyCents: smic.monthlyGrossCentsAt35Hours, collectiveMinimumCents });
   if (result.status === "UNRESOLVED") throw new Error(`Génération bloquée : le contrôle du minimum alternance n'est plus résolu (${result.code}).`);
-
   const lockedContractYear = locked.contractYear === null ? null : asNumber(locked.contractYear);
   const lockedBac = locked.hasBaccalaureateOrHigher === null ? null : locked.hasBaccalaureateOrHigher === true;
   if (asNumber(locked.age) !== age || lockedContractYear !== alternanceProfile.contractYear || lockedBac !== alternanceProfile.hasBaccalaureateOrHigher) throw new Error("Génération bloquée : les données du salarié utilisées pour le contrôle alternance ont changé depuis le calcul verrouillé.");
@@ -160,11 +159,6 @@ export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGe
       if (!calculation || !profile) return { error: `Données de bulletin incomplètes pour ${employee.firstName} ${employee.lastName}.` };
       const existing = payslipByEmployee.get(employee.id);
       if (!employee.isDemoData && existing?.documentStatus === "GENERATED" && existing.storageKey) {
-        // Un vrai bulletin déjà émis ne doit jamais être régénéré
-        // silencieusement -- c'est le comportement voulu, à ne pas
-        // toucher. Les salariés de démonstration, eux, doivent
-        // toujours repartir du gabarit le plus récent : ils servent à
-        // tester, pas à conserver un document légal figé.
         try { readPayslipDocument(existing.storageKey); continue; } catch { /* Régénération depuis le calcul verrouillé. */ }
       }
       if (!employee.contractType || !employee.professionalCategory) return { error: `Données sociales incomplètes pour ${employee.firstName} ${employee.lastName}.` };
@@ -195,8 +189,7 @@ export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGe
 
       const agreementId = asString(snapshot.profile?.collectiveAgreementId) || profile.collectiveAgreementId || organization.collectiveAgreementId || null;
       const agreement = agreementId ? agreementById.get(agreementId) : null;
-      const contributionDetails = normalizeContributionDetails(snapshot);
-      if (contributionDetails.length !== socialResult.contributionDetails.length) return { error: `Génération bloquée pour ${employee.firstName} ${employee.lastName} : le détail des cotisations verrouillé est incomplet.` };
+      const contributionDetails = socialResult.contributionDetails;
       const employerAddress = [organization.payrollAddress, [organization.payrollPostalCode, organization.payrollCity].filter(Boolean).join(" ")].filter(Boolean).join(", ");
       const paymentDate = period.paymentDate ? period.paymentDate.toISOString().slice(0, 10) : "";
       const withholdingTaxRate = withholdingTaxProfile.rate;
