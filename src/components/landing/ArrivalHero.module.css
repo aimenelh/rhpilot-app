@@ -1,0 +1,642 @@
+.hero {
+  background: #faf7f2;
+  color: #14151a;
+  padding: 52px 0 24px;
+  overflow: hidden;
+}
+.wrap {
+  width: min(1200px, calc(100% - 64px));
+  margin: auto;
+}
+.eyebrow {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: #76706b;
+  margin: 0 0 24px;
+}
+.intro {
+  display: grid;
+  grid-template-columns: minmax(0, 2.3fr) minmax(230px, 1fr);
+  gap: 46px;
+  align-items: end;
+}
+.intro h1 {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 500;
+  font-size: clamp(38px, 4.15vw, 59px);
+  line-height: 1.13;
+  letter-spacing: -0.045em;
+  margin: 0;
+}
+.intro h1 em {
+  font-weight: 500;
+  color: #b8321f;
+}
+.introAside {
+  padding-bottom: 8px;
+}
+.introAside p {
+  font-size: 16px;
+  line-height: 1.8;
+  color: #5d5b59;
+  margin: 0;
+}
+.introAside > span {
+  display: block;
+  margin-top: 21px;
+  font-size: 11px;
+  color: #78716b;
+}
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  margin-top: 27px;
+  flex-wrap: wrap;
+}
+.primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 14px 19px;
+  border-radius: 5px;
+  background: #e8432e;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+.primary:hover {
+  background: #b8321f;
+}
+.secondary {
+  display: inline-flex;
+  gap: 16px;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+.sceneLabel {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  font-size: 9px;
+  color: #77716c;
+  letter-spacing: 0.08em;
+  margin: 35px 0 11px;
+}
+.sceneLabel span:last-child {
+  letter-spacing: 0;
+  font-size: 10px;
+}
+.scene {
+  background: #fff;
+  border: 1px solid #dedad6;
+  border-radius: 8px;
+  box-shadow: 0 12px 28px #3b281309;
+  overflow: hidden;
+}
+.toolbar {
+  display: flex;
+  align-items: center;
+  height: 49px;
+  padding: 0 23px;
+  gap: 34px;
+  border-bottom: 1px solid #ece8e5;
+  font-size: 11px;
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+}
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #807974;
+}
+.workspace {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  color: #706a65;
+}
+.workspace > span {
+  background: #eee8e2;
+  border-radius: 50%;
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+}
+.workspaceBody {
+  display: grid;
+  grid-template-columns: 62px minmax(0, 1fr) 285px;
+}
+.rail {
+  border-right: 1px solid #eee9e5;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 25px;
+  padding-top: 27px;
+  color: #9d9690;
+  background: #fdfcfb;
+}
+.railActive {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 5px;
+  color: #c43a27;
+  background: #fff0e9;
+}
+.railLine {
+  width: 20px;
+  height: 1px;
+  background: #ddd5ce;
+}
+.journey {
+  padding: 25px 30px 0;
+  min-width: 0;
+}
+.journeyHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.smallLabel {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: #847971;
+  margin: 0;
+}
+.journeyHeader h2 {
+  font-size: 25px;
+  letter-spacing: -0.04em;
+  font-weight: 500;
+  margin: 6px 0;
+}
+.journeyHeader p {
+  font-size: 11px;
+  color: #847b75;
+  margin: 0;
+}
+.journeyHeader p span {
+  margin: 0 6px;
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  width: 46px;
+  height: 46px;
+  background: #fae8de;
+  color: #a1442e;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: 17px;
+  flex-shrink: 0;
+}
+.progress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 10px;
+  color: #877d76;
+  margin: 20px 0 12px;
+}
+.progress strong {
+  font-weight: 600;
+  color: #55504c;
+}
+.progressTrack {
+  height: 3px;
+  width: 86px;
+  background: #ece6e1;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progressTrack i {
+  display: block;
+  width: 50%;
+  height: 100%;
+  background: #de7660;
+}
+.progress > span:last-child {
+  margin-left: auto;
+}
+.tasks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.tasks li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 15px 0;
+  border-top: 1px solid #eee9e5;
+}
+.tasks h3 {
+  font-size: 12px;
+  font-weight: 500;
+  margin: 0 0 4px;
+}
+.tasks p {
+  font-size: 10px;
+  line-height: 1.6;
+  color: #8a8079;
+  margin: 0;
+}
+.done,
+.todo {
+  height: 20px;
+  width: 20px;
+  border: 1px solid #e3d9d0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.done {
+  background: #f4efe9;
+  color: #78604a;
+  border-color: #e8ded3;
+}
+.todo {
+  width: 18px;
+  height: 18px;
+  margin: 0 1px;
+  background: #fff;
+}
+.complete,
+.pending {
+  margin-left: auto;
+  font-size: 10px;
+  color: #92877d;
+  white-space: nowrap;
+}
+.tasks .currentTask {
+  background: #fff8f3;
+  margin: 0 -12px;
+  padding: 15px 12px;
+  border: 1px solid #f2d8ca;
+  border-radius: 5px;
+}
+.currentTask + .currentTask {
+  border: 0;
+}
+.assignee {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  white-space: nowrap;
+  animation: assign 0.65s ease-out 4.6s both;
+}
+.assignee b {
+  font-size: 8px;
+  font-weight: 500;
+  border-radius: 50%;
+  background: #f4dfd3;
+  color: #865d49;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+}
+.journeyFoot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 15px;
+  border-top: 1px solid #eee9e5;
+  padding: 15px 0;
+  font-size: 9px;
+  color: #958980;
+}
+.journeyFoot a {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #b8321f;
+  font-weight: 500;
+}
+.agenda {
+  background: #fcfaf7;
+  border-left: 1px solid #ece6df;
+  padding: 28px 24px 0;
+  position: relative;
+  overflow: hidden;
+}
+.date {
+  display: flex;
+  flex-direction: column;
+  margin: 18px 0 20px;
+  padding-left: 15px;
+  border-left: 2px solid #e8432e;
+}
+.date span {
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: #8c7c6f;
+}
+.date strong {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 500;
+  font-size: 54px;
+  letter-spacing: -0.05em;
+  line-height: 1.1;
+  margin: 3px 0;
+  color: #3e312a;
+}
+.appointment h3 {
+  font-size: 13px;
+  font-weight: 500;
+  margin: 8px 0 4px;
+}
+.appointment p {
+  font-size: 11px;
+  color: #85786f;
+  margin: 0;
+}
+.time {
+  font-size: 10px;
+  color: #b8321f;
+}
+.linked {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  color: #9a897b;
+  margin-top: 13px;
+}
+.linked > span {
+  width: 4px;
+  height: 4px;
+  background: #c28d70;
+  border-radius: 50%;
+}
+.mascotNote {
+  display: flex;
+  align-items: end;
+  gap: 12px;
+  margin-top: 14px;
+  min-height: 110px;
+}
+.mascot {
+  width: 64px;
+  height: 110px;
+  flex-shrink: 0;
+  transform-origin: bottom;
+  animation: hello 1s ease-in-out 4.5s both;
+}
+.mascot svg {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.mascotNote p {
+  font-family: var(--font-handwriting), cursive;
+  font-size: 17px;
+  color: #a0816d;
+  line-height: 1.2;
+  margin: 0 0 18px;
+}
+.sceneCaption {
+  font-size: 11px;
+  color: #84766b;
+  text-align: center;
+  margin: 15px 0 0;
+}
+.hero a:focus-visible {
+  outline: 2px solid #b8321f;
+  outline-offset: 5px;
+}
+@keyframes assign {
+  from {
+    transform: translateX(10px);
+    opacity: 0.5;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+@keyframes hello {
+  0%,
+  100% {
+    transform: rotate(0);
+  }
+  30% {
+    transform: rotate(-5deg);
+  }
+  65% {
+    transform: rotate(3deg);
+  }
+}
+@media (max-width: 1000px) {
+  .intro {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+  .introAside {
+    display: flex;
+    align-items: center;
+    gap: 30px;
+    padding: 0;
+  }
+  .introAside p {
+    max-width: 550px;
+    font-size: 15px;
+  }
+  .introAside > span {
+    margin: 0;
+    white-space: nowrap;
+  }
+  .workspaceBody {
+    grid-template-columns: 48px minmax(0, 1fr) 235px;
+  }
+  .journey {
+    padding: 22px 20px 0;
+  }
+  .agenda {
+    padding: 25px 18px 0;
+  }
+  .intro h1 {
+    font-size: 49px;
+  }
+  .mascotNote p {
+    font-size: 16px;
+  }
+  .journeyFoot > span {
+    display: none;
+  }
+}
+@media (max-width: 700px) {
+  .hero {
+    padding: 34px 0 22px;
+  }
+  .wrap {
+    width: calc(100% - 36px);
+  }
+  .eyebrow {
+    font-size: 8px;
+    letter-spacing: 0.1em;
+    margin-bottom: 19px;
+  }
+  .intro h1 {
+    font-size: clamp(34px, 7.6vw, 47px);
+    line-height: 1.14;
+  }
+  .introAside {
+    display: block;
+  }
+  .introAside > span {
+    margin-top: 13px;
+    font-size: 10px;
+  }
+  .actions {
+    gap: 21px;
+    margin-top: 24px;
+  }
+  .primary {
+    font-size: 12px;
+    gap: 12px;
+  }
+  .secondary {
+    font-size: 12px;
+    gap: 8px;
+  }
+  .sceneLabel {
+    margin-top: 28px;
+    font-size: 8px;
+    gap: 10px;
+    align-items: end;
+  }
+  .sceneLabel span:last-child {
+    font-size: 8px;
+    max-width: 100px;
+    text-align: right;
+  }
+  .toolbar {
+    height: 44px;
+    padding: 0 15px;
+    gap: 17px;
+  }
+  .breadcrumb {
+    font-size: 9px;
+    gap: 5px;
+  }
+  .workspace {
+    display: none;
+  }
+  .workspaceBody {
+    grid-template-columns: 1fr;
+  }
+  .rail {
+    display: none;
+  }
+  .journey {
+    padding: 22px 17px 0;
+  }
+  .journeyHeader h2 {
+    font-size: 24px;
+  }
+  .journeyHeader p {
+    font-size: 10px;
+    max-width: 220px;
+    line-height: 1.6;
+  }
+  .avatar {
+    height: 38px;
+    width: 38px;
+    font-size: 14px;
+  }
+  .tasks li {
+    gap: 9px;
+  }
+  .tasks p {
+    font-size: 9px;
+  }
+  .complete,
+  .pending {
+    font-size: 9px;
+  }
+  .agenda {
+    border-left: 0;
+    border-top: 1px solid #ece6df;
+    padding: 19px 18px;
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 10px 16px;
+    align-items: center;
+  }
+  .agenda > .smallLabel {
+    grid-column: 1/-1;
+  }
+  .date {
+    margin: 0;
+    padding-left: 9px;
+    grid-row: 2;
+  }
+  .date strong {
+    font-size: 36px;
+  }
+  .date span {
+    font-size: 7px;
+  }
+  .appointment {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .appointment h3 {
+    font-size: 12px;
+    margin-top: 3px;
+  }
+  .appointment p {
+    font-size: 10px;
+  }
+  .linked {
+    font-size: 8px;
+    margin-top: 8px;
+  }
+  .mascotNote {
+    display: none;
+  }
+  .sceneCaption {
+    font-size: 10px;
+    line-height: 1.6;
+    max-width: 280px;
+    margin: 12px auto 0;
+  }
+  .progress {
+    gap: 8px;
+    font-size: 9px;
+  }
+  .progressTrack {
+    width: 55px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mascot,
+  .assignee {
+    animation: none;
+  }
+  .primary {
+    transition: none;
+  }
+}

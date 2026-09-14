@@ -1,3 +1,4 @@
+import { ArrivalHero } from "./ArrivalHero";
 import { BrandIntro } from "./BrandIntro";
 import Image from "next/image";
 import Link from "next/link";
@@ -13,53 +14,7 @@ export function LandingPage() {
       <BrandIntro />
       <MarketingHeader />
       <main id="main-content">
-        <section className={s.hero}>
-          <div className={`${s.wrap} ${s.heroGrid}`}>
-            <div>
-              <p className={s.eyebrow}>Le suivi RH des petites entreprises</p>
-              <h1>
-                Vos équipes avancent.
-                <br />
-                <em>Vos RH suivent.</em>
-              </h1>
-              <p className={s.lead}>
-                Salariés, démarches et échéances : retrouvez le fil de vos RH,
-                de l’embauche au suivi quotidien.
-              </p>
-              <div className={s.actions}>
-                <Link href="/sign-up" className={s.primary}>
-                  Essayer gratuitement <span aria-hidden>↗</span>
-                </Link>
-                <Link href="/services#demo" className={s.secondary}>
-                  Voir le logiciel <span aria-hidden>→</span>
-                </Link>
-              </div>
-              <p className={s.note}>
-                RH Pilot est en bêta. Découvrez les fonctionnalités et les
-                offres.
-              </p>
-            </div>
-            <div className={s.heroVisual}>
-              <div className={s.screen}>
-                <div className={s.screenBar}>
-                  <span>RH Pilot / Tableau de bord</span>
-                  <span>Vue de démonstration</span>
-                </div>
-                <Image
-                  src="/marketing/dashboard.png"
-                  alt="Tableau de bord RH Pilot : salariés, parcours et tâches à surveiller"
-                  width={1885}
-                  height={1030}
-                  priority
-                  sizes="(max-width: 700px) 90vw, (max-width: 1264px) 50vw, 630px"
-                />
-              </div>
-              <p className={s.visualCaption}>
-                Les priorités de l’équipe, réunies au même endroit.
-              </p>
-            </div>
-          </div>
-        </section>
+        <ArrivalHero />
         <div className={s.strip}>
           <div className={`${s.wrap} ${s.stripInner}`}>
             <span>Un suivi continu, pour les moments qui comptent.</span>
