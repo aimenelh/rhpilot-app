@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { Logomark, Wordmark } from "@/components/Brand";
+import { AnnouncementBar } from "./AnnouncementBar";
 import { PublicCopilotePreview } from "./PublicCopilotePreview";
 
 const GROUPS = [
@@ -95,9 +96,11 @@ export function MarketingHeader() {
       >
         Aller au contenu
       </a>
-      <header
-        ref={root}
-        className="sticky top-0 z-40 border-b border-surface-border bg-white"
+      <div className="sticky top-0 z-40">
+        <AnnouncementBar />
+        <header
+          ref={root}
+          className="border-b border-surface-border bg-white"
         onBlur={(event) => {
           if (!event.currentTarget.contains(event.relatedTarget as Node)) {
             setGroup(null);
@@ -282,6 +285,7 @@ export function MarketingHeader() {
           </nav>
         )}
       </header>
+      </div>
       <PublicCopilotePreview />
     </>
   );
