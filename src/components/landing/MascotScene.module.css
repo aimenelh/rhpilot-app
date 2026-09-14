@@ -1,0 +1,119 @@
+.figure {
+  margin: 0;
+  min-width: 0;
+}
+.scene {
+  position: relative;
+  perspective: 1000px;
+  padding: 22px;
+  isolation: isolate;
+}
+.entrance {
+  transform-style: preserve-3d;
+}
+.plane {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.35s ease-out;
+}
+.backplate {
+  position: absolute;
+  inset: 6% 4%;
+  background: #fff0ec;
+  border: 1px solid #f1d6ce;
+  border-radius: 48% 48% 12px 12px;
+  transform: translateZ(-35px) rotate(-4deg);
+}
+.orbit {
+  position: absolute;
+  width: 82%;
+  height: 25%;
+  left: 8%;
+  bottom: 2%;
+  border: 1px solid #e8b9ac;
+  border-radius: 50%;
+  transform: rotateX(65deg) translateZ(-20px);
+}
+.mascot {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 400px;
+  object-fit: contain;
+  transform: translateZ(30px);
+  filter: drop-shadow(0 16px 12px #321d1812);
+}
+.tile {
+  position: absolute;
+  right: 6%;
+  bottom: 10%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: #e8432e;
+  color: #fff;
+  box-shadow:
+    0 9px 0 #b8321f,
+    0 18px 22px #46201520;
+  transform: translateZ(65px) rotate(-9deg);
+}
+.caption {
+  margin-top: 14px;
+  text-align: center;
+  color: #71716e;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.scene[data-entered="true"] .entrance {
+  animation: unfold 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.scene[data-entered="true"] .tile {
+  animation: lift 1.3s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+@keyframes unfold {
+  from {
+    transform: rotateY(-12deg) rotateX(5deg) translateY(14px);
+  }
+  to {
+    transform: rotateY(0) rotateX(0) translateY(0);
+  }
+}
+@keyframes lift {
+  from {
+    transform: translateZ(5px) rotate(0);
+  }
+  to {
+    transform: translateZ(65px) rotate(-9deg);
+  }
+}
+@media (max-width: 700px) {
+  .scene {
+    padding: 16px;
+    max-width: 390px;
+    margin: auto;
+  }
+  .mascot {
+    max-height: 265px;
+  }
+  .tile {
+    width: 40px;
+    height: 40px;
+  }
+  .caption {
+    font-size: 11px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene * {
+    animation: none !important;
+    transition: none !important;
+    transform: none !important;
+  }
+  .orbit {
+    display: none;
+  }
+}

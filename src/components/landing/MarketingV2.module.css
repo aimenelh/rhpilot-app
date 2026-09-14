@@ -372,7 +372,7 @@
   padding-right: 20px;
 }
 .cta {
-  background: #253c32;
+  background: #14151a;
   color: #fff;
   padding: 62px 0;
   overflow: hidden;
@@ -387,13 +387,13 @@
   max-width: 650px;
 }
 .cta p {
-  color: #cfdbd0;
+  color: #dedee2;
   line-height: 1.8;
   margin-top: 16px;
 }
 .cta .primary {
-  background: #fff;
-  color: #253c32;
+  background: #e8432e;
+  color: #fff;
   white-space: nowrap;
 }
 .pageHero {
@@ -613,4 +613,11 @@
     transition: none !important;
     animation: none !important;
   }
+}
+
+.body {
+  font-size: 16px;
+  line-height: 1.8;
+  color: #606168;
+  margin-top: 18px;
 }

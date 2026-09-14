@@ -4,6 +4,7 @@ import { MarketingHeader } from "./MarketingHeader";
 import { MarketingFooter } from "./MarketingFooter";
 import { ProductTabs } from "./ProductTabs";
 import s from "./MarketingV2.module.css";
+import { MascotScene } from "./MascotScene";
 
 export function LandingPage() {
   return (
@@ -87,12 +88,9 @@ export function LandingPage() {
         <section className={`${s.section} ${s.case}`}>
           <div className={`${s.wrap} ${s.caseGrid}`}>
             <div className={s.caseArt}>
-              <Image
+              <MascotScene
                 src="/illustrations/mascot/newhire-handshake.png"
-                alt="Une nouvelle arrivée dans l’équipe, accompagnée par la mascotte RH Pilot"
-                width={1000}
-                height={750}
-                sizes="(max-width: 700px) 90vw, 45vw"
+                alt="Une nouvelle arrivée dans l’équipe, accompagnée par RH Pilot"
               />
             </div>
             <div>

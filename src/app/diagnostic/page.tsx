@@ -1,39 +1,29 @@
-import { MarketingHeader } from "@/components/landing/MarketingHeader";
-import { MarketingFooter } from "@/components/landing/MarketingFooter";
-import { AmbientGlow } from "@/components/landing/AmbientGlow";
-import { Reveal } from "@/components/landing/Reveal";
+import Link from "next/link";
+import {
+  MarketingPage,
+  PageIntro,
+  MarketingCTA,
+} from "@/components/landing/MarketingPage";
+import s from "@/components/landing/MarketingV2.module.css";
+import p from "@/components/landing/InnerPages.module.css";
 import { DiagnosticQuiz } from "@/components/landing/DiagnosticQuiz";
-
 export const metadata = {
   title: "Diagnostic RH, RH Pilot",
-  description:
-    "Testez en 2 minutes la santé RH de votre entreprise : périodes d'essai, visites médicales, entretiens professionnels, charge administrative.",
+  description: "Six questions pour faire le point sur votre organisation RH.",
 };
-
 export default function DiagnosticPage() {
   return (
-    <div className="min-h-screen">
-      <AmbientGlow />
-      <MarketingHeader />
-
-      <section className="mx-auto max-w-2xl px-6 pb-6 pt-16">
-        <Reveal variant="left">
-          <h1 className="font-display max-w-lg text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
-            La santé RH de votre entreprise, en 2 minutes.
-          </h1>
-          <p className="mt-4 max-w-md text-lg text-ink-soft">
-            6 questions. Un diagnostic personnalisé. Aucune inscription requise.
-          </p>
-        </Reveal>
-      </section>
-
-      <section className="px-6 pb-24 pt-10">
-        <Reveal delay={150}>
+    <MarketingPage>
+      <PageIntro
+        eyebrow="Le diagnostic RH"
+        title="Faites le point sur votre organisation."
+        intro="Six questions pour identifier vos points d’attention. Aucune inscription requise."
+      />
+      <section className={p.section}>
+        <div className={s.wrap}>
           <DiagnosticQuiz />
-        </Reveal>
+        </div>
       </section>
-
-      <MarketingFooter />
-    </div>
+    </MarketingPage>
   );
 }

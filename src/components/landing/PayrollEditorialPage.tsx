@@ -1,3 +1,4 @@
+import p from "./InnerPages.module.css";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Check, ExternalLink } from "lucide-react";
@@ -74,7 +75,10 @@ function richText(text: string) {
   const parts = text.split(/\*\*(.+?)\*\*/g);
   return parts.map((part, index) =>
     index % 2 === 1 ? (
-      <strong key={`${part}-${index}`} className="font-semibold text-brand-primary">
+      <strong
+        key={`${part}-${index}`}
+        className="font-semibold text-brand-primary"
+      >
         {part}
       </strong>
     ) : (
@@ -95,23 +99,32 @@ function getVisualKey(eyebrow: string, variant?: string) {
   if (value.includes("conges") || value.includes("absences")) return "absences";
   if (value.includes("arrets")) return "arrets";
   if (value.includes("bulletin") || value.includes("payslip")) return "payslip";
-  if (value.includes("cotisations") || value.includes("contributions")) return "contributions";
-  if (value.includes("net-social") || value.includes("netsocial")) return "netSocial";
-  if (value.includes("complementaire") || value.includes("health")) return "health";
+  if (value.includes("cotisations") || value.includes("contributions"))
+    return "contributions";
+  if (value.includes("net-social") || value.includes("netsocial"))
+    return "netSocial";
+  if (value.includes("complementaire") || value.includes("health"))
+    return "health";
   if (value.includes("profil") || value.includes("profile")) return "profile";
-  if (value.includes("referentiel") || value.includes("agreement")) return "agreement";
-  if (value.includes("employeur") || value.includes("employer")) return "employer";
-  if (value.includes("tracabilite") || value.includes("traceability")) return "traceability";
+  if (value.includes("referentiel") || value.includes("agreement"))
+    return "agreement";
+  if (value.includes("employeur") || value.includes("employer"))
+    return "employer";
+  if (value.includes("tracabilite") || value.includes("traceability"))
+    return "traceability";
   return "production";
 }
 
 function AccentTitle({ title, phrase }: { title: string; phrase: string }) {
-  if (!phrase || !title.toLowerCase().includes(phrase.toLowerCase())) return <>{title}</>;
+  if (!phrase || !title.toLowerCase().includes(phrase.toLowerCase()))
+    return <>{title}</>;
   const index = title.toLowerCase().indexOf(phrase.toLowerCase());
   return (
     <>
       {title.slice(0, index)}
-      <span className="text-brand-primary">{title.slice(index, index + phrase.length)}</span>
+      <span className="text-brand-primary">
+        {title.slice(index, index + phrase.length)}
+      </span>
       {title.slice(index + phrase.length)}
     </>
   );
@@ -158,7 +171,7 @@ function IllustrationPanel({ keyName }: { keyName: string }) {
 function PrimaryButton({ children }: { children: React.ReactNode }) {
   return (
     <Link
-      href="/contact"
+      href="mailto:aimenoffi@gmail.com"
       className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-primary-dark active:scale-[0.97]"
     >
       {children}
@@ -166,7 +179,13 @@ function PrimaryButton({ children }: { children: React.ReactNode }) {
   );
 }
 
-function HeroCopy({ eyebrow, title, intro, sources, keyName }: {
+function HeroCopy({
+  eyebrow,
+  title,
+  intro,
+  sources,
+  keyName,
+}: {
   eyebrow: string;
   title: string;
   intro: string;
@@ -175,11 +194,15 @@ function HeroCopy({ eyebrow, title, intro, sources, keyName }: {
 }) {
   return (
     <div className="max-w-2xl">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">{eyebrow}</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">
+        {eyebrow}
+      </p>
       <h1 className="font-display mt-4 text-4xl font-semibold leading-[1.02] tracking-[-0.045em] text-ink sm:text-5xl lg:text-[3.75rem]">
         <AccentTitle title={title} phrase={ACCENT_PHRASES[keyName] ?? ""} />
       </h1>
-      <p className="mt-6 max-w-xl text-base leading-7 text-ink-soft sm:text-lg sm:leading-8">{richText(intro)}</p>
+      <p className="mt-6 max-w-xl text-base leading-7 text-ink-soft sm:text-lg sm:leading-8">
+        {richText(intro)}
+      </p>
       <div className="mt-8">
         <PrimaryButton>
           Découvrir RH Pilot
@@ -198,19 +221,35 @@ function FeatureHero({ feature }: { feature: PayrollEditorialFeature }) {
   return (
     <section className="border-b border-surface-border bg-white">
       <div className="mx-auto grid max-w-7xl items-center gap-8 px-6 py-12 sm:px-8 lg:grid-cols-[0.78fr_1.22fr] lg:gap-10 lg:px-10 lg:py-16">
-        <HeroCopy eyebrow={feature.eyebrow} title={feature.title} intro={feature.intro} sources={feature.sources} keyName={keyName} />
+        <HeroCopy
+          eyebrow={feature.eyebrow}
+          title={feature.title}
+          intro={feature.intro}
+          sources={feature.sources}
+          keyName={keyName}
+        />
         <IllustrationPanel keyName={keyName} />
       </div>
     </section>
   );
 }
 
-function CapabilityHero({ capability }: { capability: PayrollEditorialCapability }) {
+function CapabilityHero({
+  capability,
+}: {
+  capability: PayrollEditorialCapability;
+}) {
   const keyName = getVisualKey(capability.eyebrow, capability.variant);
   return (
     <section className="border-b border-surface-border bg-white">
       <div className="mx-auto grid max-w-7xl items-center gap-8 px-6 py-12 sm:px-8 lg:grid-cols-[0.78fr_1.22fr] lg:gap-10 lg:px-10 lg:py-16">
-        <HeroCopy eyebrow={capability.eyebrow} title={capability.title} intro={capability.intro} sources={capability.sources} keyName={keyName} />
+        <HeroCopy
+          eyebrow={capability.eyebrow}
+          title={capability.title}
+          intro={capability.intro}
+          sources={capability.sources}
+          keyName={keyName}
+        />
         <IllustrationPanel keyName={keyName} />
       </div>
     </section>
@@ -222,28 +261,51 @@ function FeatureContent({ feature }: { feature: PayrollEditorialFeature }) {
     <>
       <section className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
         <div className="max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">À prendre en compte</p>
-          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">{feature.workflowTitle}</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
+            À prendre en compte
+          </p>
+          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">
+            {feature.workflowTitle}
+          </h2>
         </div>
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {feature.points.map((point) => (
-            <Reveal key={point.title} className="rounded-xl border border-surface-border bg-white p-6 shadow-card">
-              <Check className="h-5 w-5 text-brand-primary" aria-hidden="true" />
-              <h3 className="mt-4 text-base font-semibold text-ink">{point.title}</h3>
-              <p className="mt-2 text-sm leading-6 text-ink-soft">{richText(point.text)}</p>
+            <Reveal
+              key={point.title}
+              className="rounded-xl border border-surface-border bg-white p-6 shadow-card"
+            >
+              <Check
+                className="h-5 w-5 text-brand-primary"
+                aria-hidden="true"
+              />
+              <h3 className="mt-4 text-base font-semibold text-ink">
+                {point.title}
+              </h3>
+              <p className="mt-2 text-sm leading-6 text-ink-soft">
+                {richText(point.text)}
+              </p>
             </Reveal>
           ))}
         </div>
       </section>
       <section className="border-y border-surface-border bg-surface-subtle">
         <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
-          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">Du contexte au résultat</h2>
+          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">
+            Du contexte au résultat
+          </h2>
           <div className="mt-8 grid gap-4 lg:grid-cols-4">
             {feature.workflow.map((step) => (
-              <div key={step.label} className="rounded-xl border border-surface-border bg-white p-5">
+              <div
+                key={step.label}
+                className="rounded-xl border border-surface-border bg-white p-5"
+              >
                 <div className="h-1 w-8 bg-brand-primary" aria-hidden="true" />
-                <h3 className="mt-4 text-base font-semibold text-ink">{step.label}</h3>
-                <p className="mt-2 text-sm leading-6 text-ink-soft">{richText(step.text)}</p>
+                <h3 className="mt-4 text-base font-semibold text-ink">
+                  {step.label}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-ink-soft">
+                  {richText(step.text)}
+                </p>
               </div>
             ))}
           </div>
@@ -252,15 +314,29 @@ function FeatureContent({ feature }: { feature: PayrollEditorialFeature }) {
       <section className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
         <div className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr]">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Références</p>
-            <h2 className="mt-3 text-2xl font-semibold text-ink sm:text-3xl">{feature.detailsTitle}</h2>
-            <p className="mt-4 text-sm leading-6 text-ink-soft">{richText(feature.note)}</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
+              Références
+            </p>
+            <h2 className="mt-3 text-2xl font-semibold text-ink sm:text-3xl">
+              {feature.detailsTitle}
+            </h2>
+            <p className="mt-4 text-sm leading-6 text-ink-soft">
+              {richText(feature.note)}
+            </p>
           </div>
           <div className="space-y-2">
             {feature.details.map((detail) => (
-              <div key={detail} className="flex gap-3 rounded-xl border border-surface-border bg-white p-4">
-                <Check className="mt-0.5 h-4 w-4 shrink-0 text-brand-primary" aria-hidden="true" />
-                <p className="text-sm leading-6 text-ink-soft">{richText(detail)}</p>
+              <div
+                key={detail}
+                className="flex gap-3 rounded-xl border border-surface-border bg-white p-4"
+              >
+                <Check
+                  className="mt-0.5 h-4 w-4 shrink-0 text-brand-primary"
+                  aria-hidden="true"
+                />
+                <p className="text-sm leading-6 text-ink-soft">
+                  {richText(detail)}
+                </p>
               </div>
             ))}
             <div className="pt-4">
@@ -273,20 +349,35 @@ function FeatureContent({ feature }: { feature: PayrollEditorialFeature }) {
   );
 }
 
-function CapabilityContent({ capability }: { capability: PayrollEditorialCapability }) {
+function CapabilityContent({
+  capability,
+}: {
+  capability: PayrollEditorialCapability;
+}) {
   return (
     <>
       <section className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
         <div className="max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Le fonctionnement</p>
-          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">{richText(capability.summary)}</h2>
+          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
+            Le fonctionnement
+          </p>
+          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">
+            {richText(capability.summary)}
+          </h2>
         </div>
         <div className="mt-8 grid gap-4 lg:grid-cols-3">
           {capability.moments.map((moment) => (
-            <div key={moment.heading} className="rounded-xl border border-surface-border bg-white p-6 shadow-card">
+            <div
+              key={moment.heading}
+              className="rounded-xl border border-surface-border bg-white p-6 shadow-card"
+            >
               <div className="h-1 w-10 bg-brand-primary" aria-hidden="true" />
-              <h3 className="mt-4 text-base font-semibold text-ink">{moment.heading}</h3>
-              <p className="mt-3 text-sm leading-6 text-ink-soft">{richText(moment.body)}</p>
+              <h3 className="mt-4 text-base font-semibold text-ink">
+                {moment.heading}
+              </h3>
+              <p className="mt-3 text-sm leading-6 text-ink-soft">
+                {richText(moment.body)}
+              </p>
             </div>
           ))}
         </div>
@@ -295,8 +386,12 @@ function CapabilityContent({ capability }: { capability: PayrollEditorialCapabil
         <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
           <div className="flex flex-col gap-6 rounded-xl border border-surface-border bg-white p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">Références</p>
-              <p className="mt-2 text-base font-semibold text-ink">Les règles restent rattachées à des sources identifiables.</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
+                Références
+              </p>
+              <p className="mt-2 text-base font-semibold text-ink">
+                Les règles restent rattachées à des sources identifiables.
+              </p>
             </div>
             <PrimaryButton>
               Échanger avec l’équipe
@@ -312,11 +407,15 @@ function CapabilityContent({ capability }: { capability: PayrollEditorialCapabil
   );
 }
 
-export function PayrollFeatureEditorial({ feature }: { feature: PayrollEditorialFeature }) {
+export function PayrollFeatureEditorial({
+  feature,
+}: {
+  feature: PayrollEditorialFeature;
+}) {
   return (
-    <div className="min-h-screen bg-white text-ink">
+    <div className={p.editorial}>
       <MarketingHeader />
-      <main>
+      <main id="main-content">
         <FeatureHero feature={feature} />
         <FeatureContent feature={feature} />
       </main>
@@ -325,11 +424,15 @@ export function PayrollFeatureEditorial({ feature }: { feature: PayrollEditorial
   );
 }
 
-export function PayrollCapabilityEditorial({ capability }: { capability: PayrollEditorialCapability }) {
+export function PayrollCapabilityEditorial({
+  capability,
+}: {
+  capability: PayrollEditorialCapability;
+}) {
   return (
-    <div className="min-h-screen bg-white text-ink">
+    <div className={p.editorial}>
       <MarketingHeader />
-      <main>
+      <main id="main-content">
         <CapabilityHero capability={capability} />
         <CapabilityContent capability={capability} />
       </main>
