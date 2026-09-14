@@ -168,10 +168,16 @@ function IllustrationPanel({ keyName }: { keyName: string }) {
   );
 }
 
-function PrimaryButton({ children }: { children: React.ReactNode }) {
+function PrimaryButton({
+  children,
+  href = "/services",
+}: {
+  children: React.ReactNode;
+  href?: string;
+}) {
   return (
     <Link
-      href="mailto:aimenoffi@gmail.com"
+      href={href}
       className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-primary-dark active:scale-[0.97]"
     >
       {children}
@@ -393,7 +399,7 @@ function CapabilityContent({
                 Les règles restent rattachées à des sources identifiables.
               </p>
             </div>
-            <PrimaryButton>
+            <PrimaryButton href="mailto:aimenoffi@gmail.com">
               Échanger avec l’équipe
               <ArrowRight className="h-4 w-4" aria-hidden="true" />
             </PrimaryButton>
