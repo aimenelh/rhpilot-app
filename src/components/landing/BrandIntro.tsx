@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { Logomark } from "@/components/Brand";
 import s from "./BrandIntro.module.css";
 
-const VISIT_KEY = "rhpilot-brand-intro-v1";
+const VISIT_KEY = "rhpilot-brand-intro-v2";
 
 export function BrandIntro() {
   const [visible, setVisible] = useState(false);
@@ -13,19 +13,36 @@ export function BrandIntro() {
     if (motion.matches) return;
     try {
       if (sessionStorage.getItem(VISIT_KEY)) return;
-      sessionStorage.setItem(VISIT_KEY, "seen");
     } catch {
       /* Storage is optional; the animation still ends automatically. */
     }
-    setVisible(true);
+    let started = false;
+    let timer: number;
+    const sprite = new window.Image();
+    const start = () => {
+      if (started) return;
+      started = true;
+      try {
+        sessionStorage.setItem(VISIT_KEY, "seen");
+      } catch {}
+      setVisible(true);
+      timer = window.setTimeout(finish, 4450);
+    };
     const finish = () => setVisible(false);
     const key = (event: KeyboardEvent) => {
       if (event.key === "Escape" || event.key === "Tab") finish();
     };
-    const timer = window.setTimeout(finish, 2100);
+    sprite.onload = start;
+    sprite.onerror = start;
+    sprite.src = "/illustrations/mascot/intro-push-wave.png";
+    const loadDeadline = window.setTimeout(start, 900);
     window.addEventListener("keydown", key);
     motion.addEventListener("change", finish);
     return () => {
+      started = true;
+      sprite.onload = null;
+      sprite.onerror = null;
+      window.clearTimeout(loadDeadline);
       window.clearTimeout(timer);
       window.removeEventListener("keydown", key);
       motion.removeEventListener("change", finish);
@@ -44,8 +61,29 @@ export function BrandIntro() {
           <circle cx="220" cy="220" r="180" />
           <circle cx="220" cy="220" r="208" />
         </svg>
-        <div className={s.logo}>
-          <Logomark size={104} />
+        <div className={s.vignette}>
+          <div className={s.mascot}>
+            <svg className={s.pushPose} viewBox="0 140 700 970" fill="none">
+              <image
+                href="/illustrations/mascot/intro-push-wave.png"
+                width="1254"
+                height="1254"
+              />
+            </svg>
+            <svg className={s.wavePose} viewBox="680 140 574 970" fill="none">
+              <image
+                href="/illustrations/mascot/intro-push-wave.png"
+                width="1254"
+                height="1254"
+              />
+            </svg>
+          </div>
+          <div className={s.logo}>
+            <Logomark size={96} />
+          </div>
+          <span className={s.effort}>… hop !</span>
+          <span className={s.spark}>✦</span>
+          <div className={s.ground} />
         </div>
         <div className={s.name}>
           <span>

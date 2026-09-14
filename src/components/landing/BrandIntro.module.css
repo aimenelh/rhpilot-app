@@ -8,7 +8,7 @@
   place-items: center;
   overflow: hidden;
   font-family: var(--font-dm-sans), sans-serif;
-  animation: open 420ms cubic-bezier(0.76, 0, 0.24, 1) 1.65s both;
+  animation: open 420ms cubic-bezier(0.76, 0, 0.24, 1) 4s both;
 }
 .topline {
   position: absolute;
@@ -27,7 +27,7 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  min-height: 440px;
+  min-height: 520px;
   width: min(540px, 100%);
   perspective: 850px;
 }
@@ -56,12 +56,14 @@
   opacity: 0.65;
 }
 .logo {
-  position: relative;
-  border-radius: 26px;
+  position: absolute;
+  left: calc(50% - 46px);
+  top: 80px;
+  border-radius: 24px;
   box-shadow:
     7px 9px 0 #b8321f,
     18px 28px 45px #6c2a1924;
-  animation: logo 1.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: pushed 2.1s cubic-bezier(0.2, 0.7, 0.3, 1) both;
   transform-style: preserve-3d;
 }
 .logo svg {
@@ -70,7 +72,7 @@
 .name {
   position: relative;
   overflow: hidden;
-  margin-top: 34px;
+  margin-top: 8px;
   font-size: clamp(44px, 8vw, 64px);
   line-height: 1.2;
   font-weight: 600;
@@ -78,7 +80,7 @@
 }
 .name > span {
   display: block;
-  animation: rise 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.23s both;
+  animation: rise 0.75s cubic-bezier(0.16, 1, 0.3, 1) 1.6s both;
 }
 .name em {
   font-style: normal;
@@ -95,7 +97,7 @@
   color: #6a6461;
   text-align: center;
   padding: 0 24px;
-  animation: appear 0.65s 0.5s both;
+  animation: appear 0.65s 2s both;
 }
 .stroke {
   height: 2px;
@@ -103,7 +105,7 @@
   background: #e8432e;
   margin-top: 27px;
   transform-origin: left;
-  animation: stroke 0.7s 0.55s both;
+  animation: stroke 0.7s 2.2s both;
 }
 .skip {
   position: absolute;
@@ -204,5 +206,171 @@
   }
   .intro * {
     animation: none !important;
+  }
+}
+
+.vignette {
+  position: relative;
+  width: min(360px, 100%);
+  height: 230px;
+}
+.mascot {
+  position: absolute;
+  left: calc(50% - 198px);
+  top: 5px;
+  width: 155px;
+  height: 220px;
+  animation: shuffle 2.1s cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+.mascot svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.pushPose {
+  animation: pushPose 4.4s steps(1, end) both;
+}
+.wavePose {
+  animation: wavePose 4.4s steps(1, end) both;
+  transform-origin: 50% 100%;
+}
+.effort {
+  position: absolute;
+  left: calc(50% - 175px);
+  top: 0;
+  font-family: var(--font-handwriting), cursive;
+  color: #b8321f;
+  font-size: 22px;
+  animation: effort 4.4s both;
+}
+.spark {
+  position: absolute;
+  left: calc(50% + 66px);
+  top: 58px;
+  font-size: 29px;
+  color: #e8432e;
+  animation: spark 4.4s both;
+}
+.ground {
+  position: absolute;
+  bottom: 5px;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  background: #dcd4cf;
+  animation: appear 0.5s both;
+}
+@keyframes pushed {
+  0% {
+    transform: translateX(-65px) rotate(-9deg);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  35% {
+    transform: translateX(-42px) rotate(-6deg);
+  }
+  60% {
+    transform: translateX(-25px) rotate(-10deg);
+  }
+  85% {
+    transform: translateX(3px) rotate(3deg);
+  }
+  100% {
+    transform: translateX(0) rotate(0);
+  }
+}
+@keyframes shuffle {
+  0% {
+    transform: translateX(-65px);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  35% {
+    transform: translate(-42px, -3px);
+  }
+  60% {
+    transform: translate(-25px, 0);
+  }
+  85% {
+    transform: translate(3px, -2px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+@keyframes pushPose {
+  0%,
+  46% {
+    opacity: 1;
+  }
+  47%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes wavePose {
+  0%,
+  46% {
+    opacity: 0;
+  }
+  47%,
+  100% {
+    opacity: 1;
+  }
+}
+@keyframes effort {
+  0%,
+  12% {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  25%,
+  39% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  48%,
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes spark {
+  0%,
+  47% {
+    opacity: 0;
+    transform: scale(0.2) rotate(-30deg);
+  }
+  54%,
+  73% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+  85%,
+  100% {
+    opacity: 0;
+    transform: scale(0.7) rotate(20deg);
+  }
+}
+@media (max-width: 600px) {
+  .vignette {
+    width: 320px;
+    transform: scale(0.9);
+    transform-origin: center bottom;
+  }
+  .mascot {
+    left: calc(50% - 188px);
+  }
+  .stage {
+    min-height: 470px;
+  }
+  .logo svg {
+    width: 96px;
+    height: 96px;
   }
 }
