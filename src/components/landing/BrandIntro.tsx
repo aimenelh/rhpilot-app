@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { Logomark } from "@/components/Brand";
 import s from "./BrandIntro.module.css";
 
 const VISIT_KEY = "rhpilot-brand-intro-v2";
 
 export function BrandIntro() {
+  const waveClipId = useId();
   const [visible, setVisible] = useState(false);
   useEffect(() => {
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -57,10 +58,6 @@ export function BrandIntro() {
         <span>LE FIL DE VOS RH</span>
       </div>
       <div className={s.stage} aria-hidden="true">
-        <svg className={s.orbit} viewBox="0 0 440 440" fill="none">
-          <circle cx="220" cy="220" r="180" />
-          <circle cx="220" cy="220" r="208" />
-        </svg>
         <div className={s.vignette}>
           <div className={s.mascot}>
             <svg className={s.pushPose} viewBox="0 140 700 970" fill="none">
@@ -70,8 +67,14 @@ export function BrandIntro() {
                 height="1254"
               />
             </svg>
-            <svg className={s.wavePose} viewBox="680 140 574 970" fill="none">
+            <svg className={s.wavePose} viewBox="700 140 554 970" fill="none">
+              <defs>
+                <clipPath id={waveClipId}>
+                  <rect x="700" y="140" width="554" height="970" />
+                </clipPath>
+              </defs>
               <image
+                clipPath={`url(#${waveClipId})`}
                 href="/illustrations/mascot/intro-push-wave.png"
                 width="1254"
                 height="1254"
@@ -82,7 +85,7 @@ export function BrandIntro() {
             <Logomark size={96} />
           </div>
           <span className={s.effort}>… hop !</span>
-          <span className={s.spark}>✦</span>
+
           <div className={s.ground} />
         </div>
         <div className={s.name}>
