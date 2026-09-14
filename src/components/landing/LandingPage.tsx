@@ -1,3 +1,4 @@
+import { BrandIntro } from "./BrandIntro";
 import Image from "next/image";
 import Link from "next/link";
 import { MarketingHeader } from "./MarketingHeader";
@@ -9,6 +10,7 @@ import { MascotScene } from "./MascotScene";
 export function LandingPage() {
   return (
     <div className={s.site}>
+      <BrandIntro />
       <MarketingHeader />
       <main id="main-content">
         <section className={s.hero}>
@@ -49,7 +51,7 @@ export function LandingPage() {
                   width={1885}
                   height={1030}
                   priority
-                  sizes="(max-width: 700px) 95vw, 820px"
+                  sizes="(max-width: 700px) 90vw, (max-width: 1264px) 50vw, 630px"
                 />
               </div>
               <p className={s.visualCaption}>

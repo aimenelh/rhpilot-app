@@ -143,7 +143,7 @@ export default function SecurityPage() {
   return (
     <div className={p.editorial}>
       <MarketingHeader />
-      <main id="main-content" className={p.legal}>
+      <main id="main-content">
         {/* Hero */}
         <section className="mx-auto max-w-2xl px-6 py-20">
           <Reveal variant="left">

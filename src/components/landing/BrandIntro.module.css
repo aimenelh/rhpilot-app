@@ -1,0 +1,208 @@
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: #faf7f5;
+  color: #14151a;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  font-family: var(--font-dm-sans), sans-serif;
+  animation: open 420ms cubic-bezier(0.76, 0, 0.24, 1) 1.65s both;
+}
+.topline {
+  position: absolute;
+  inset: 32px 40px auto;
+  display: flex;
+  justify-content: space-between;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.17em;
+  color: #77716d;
+  animation: appear 0.5s both;
+}
+.stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 440px;
+  width: min(540px, 100%);
+  perspective: 850px;
+}
+.orbit {
+  position: absolute;
+  width: min(440px, 90vw);
+  height: auto;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-100deg);
+  pointer-events: none;
+}
+.orbit circle {
+  stroke: #e8432e;
+  stroke-width: 0.8;
+  stroke-dasharray: 1132;
+  stroke-dashoffset: 1132;
+  opacity: 0.3;
+  animation: draw 1.5s cubic-bezier(0.3, 0, 0.2, 1) both;
+}
+.orbit circle + circle {
+  stroke: #dbd2cb;
+  stroke-dasharray: 1307;
+  stroke-dashoffset: 1307;
+  animation-delay: 0.15s;
+  opacity: 0.65;
+}
+.logo {
+  position: relative;
+  border-radius: 26px;
+  box-shadow:
+    7px 9px 0 #b8321f,
+    18px 28px 45px #6c2a1924;
+  animation: logo 1.15s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-style: preserve-3d;
+}
+.logo svg {
+  display: block;
+}
+.name {
+  position: relative;
+  overflow: hidden;
+  margin-top: 34px;
+  font-size: clamp(44px, 8vw, 64px);
+  line-height: 1.2;
+  font-weight: 600;
+  letter-spacing: -0.055em;
+}
+.name > span {
+  display: block;
+  animation: rise 0.75s cubic-bezier(0.16, 1, 0.3, 1) 0.23s both;
+}
+.name em {
+  font-style: normal;
+  font-weight: 500;
+}
+.dot {
+  color: #e8432e;
+}
+.caption {
+  position: relative;
+  margin-top: 14px;
+  font-size: 13px;
+  letter-spacing: 0.01em;
+  color: #6a6461;
+  text-align: center;
+  padding: 0 24px;
+  animation: appear 0.65s 0.5s both;
+}
+.stroke {
+  height: 2px;
+  width: 60px;
+  background: #e8432e;
+  margin-top: 27px;
+  transform-origin: left;
+  animation: stroke 0.7s 0.55s both;
+}
+.skip {
+  position: absolute;
+  right: 40px;
+  bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  background: transparent;
+  border: 0;
+  padding: 12px 0;
+  color: #68615d;
+  font-size: 12px;
+  cursor: pointer;
+}
+.skip:hover {
+  color: #b8321f;
+}
+.skip:focus-visible {
+  outline: 2px solid #e8432e;
+  outline-offset: 6px;
+}
+@keyframes logo {
+  from {
+    opacity: 0;
+    transform: translateY(36px) rotateX(34deg) rotateY(-35deg) rotateZ(-12deg)
+      scale(0.82);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) rotateX(0) rotateY(0) rotateZ(0) scale(1);
+  }
+}
+@keyframes rise {
+  from {
+    transform: translateY(110%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes appear {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes stroke {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes open {
+  from {
+    clip-path: inset(0 0 0 0);
+    visibility: visible;
+  }
+  to {
+    clip-path: inset(0 0 100% 0);
+    visibility: hidden;
+  }
+}
+@media (max-width: 600px) {
+  .topline {
+    inset: 24px 24px auto;
+    font-size: 9px;
+  }
+  .skip {
+    right: 24px;
+    bottom: 20px;
+  }
+  .logo svg {
+    width: 88px;
+    height: 88px;
+  }
+  .logo {
+    border-radius: 22px;
+  }
+  .stage {
+    min-height: 380px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro {
+    display: none;
+  }
+  .intro * {
+    animation: none !important;
+  }
+}
