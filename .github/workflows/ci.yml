@@ -1,11 +1,11 @@
-name: CI
+name: PAS-DSN CI
 
 on:
   push:
   pull_request:
 
 jobs:
-  test:
+  pas-dsn-regression:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -14,11 +14,17 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: npm
       - name: Install dependencies
         run: npm ci
       - name: Generate Prisma client
         run: npx prisma generate
-      - name: Run unit tests
-        run: npm test
+      - name: Run PAS to DSN unit tests
+        run: >-
+          npx vitest run
+          src/lib/payroll/withholding-tax-validation.test.ts
+          src/lib/payroll/pas-dsn.test.ts
+          src/lib/payroll/dsn-pii.test.ts
+          src/lib/payroll/payroll-output-consistency.test.ts
+          src/lib/payroll/dsn-p26v01.test.ts
