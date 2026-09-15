@@ -4,10 +4,10 @@ import { buildAlternanceMinimumSnapshot } from "./alternance-minimum-snapshot";
 
 describe("buildAlternanceMinimumSnapshot", () => {
   it("conserve toutes les données déterminantes du contrôle", () => {
-    const result = resolveApprenticeshipMinimum({ age: 20, contractYear: 2, smicMonthlyCents: 186702, collectiveMinimumCents: 200000 });
+    const result = resolveApprenticeshipMinimum({ age: 23, contractYear: 2, smicMonthlyCents: 186702, collectiveMinimumCents: 200000 });
     const snapshot = buildAlternanceMinimumSnapshot({
       result,
-      age: 20,
+      age: 23,
       contractYear: 2,
       hasBaccalaureateOrHigher: null,
       smicMonthlyCents: 186702,
@@ -18,20 +18,20 @@ describe("buildAlternanceMinimumSnapshot", () => {
       profileValidUntil: null,
       profileSource: "CONTRACT",
       profileSourceReference: "contrat-001",
-      legalMinimumCents: 95218,
+      legalMinimumCents: Math.round(186702 * 0.61),
     });
 
     expect(snapshot).toEqual(expect.objectContaining({
       status: "APPLICABLE",
       source: "APPRENTISSAGE_LEGAL",
-      age: 20,
+      age: 23,
       contractYear: 2,
       smicMonthlyCents: 186702,
       smicScope: "FRANCE_HORS_MAYOTTE",
-      legalMinimumCents: 95218,
+      legalMinimumCents: Math.round(186702 * 0.61),
       collectiveMinimumCents: 200000,
-      applicableMinimumCents: 200000,
-      percentageOfSmic: 0.51,
+      applicableMinimumCents: Math.round(200000 * 0.61),
+      percentageOfSmic: 0.61,
       baseSalaryCents: 200000,
       profileSource: "CONTRACT",
       profileSourceReference: "contrat-001",
