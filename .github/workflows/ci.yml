@@ -24,6 +24,9 @@ jobs:
         run: >-
           npx vitest run
           src/lib/payroll/variable-treatment.test.ts
+          src/lib/payroll/working-time-pay.test.ts
+          src/lib/payroll/benefits-expenses-2026.test.ts
+          src/lib/payroll/ijss-2026.test.ts
           src/lib/payroll/advanced-payroll-calculators.test.ts
           src/lib/payroll/absence-payroll-impact.test.ts
           src/lib/payroll/absence-payroll-gross-impact.test.ts
@@ -38,3 +41,5 @@ jobs:
           src/lib/payroll/dsn-pii.test.ts
           src/lib/payroll/payroll-output-consistency.test.ts
           src/lib/payroll/dsn-p26v01.test.ts
+      - name: Build application
+        run: npm run build
