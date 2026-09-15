@@ -15,8 +15,10 @@ function input() {
       contactName: "Aimen Test",
       contactEmail: "dsn@example.test",
       contactPhone: "0400000000",
+      declaredContactType: "04",
+      enterpriseApenCode: "6201Z",
     },
-    establishment: { nafCode: "6201Z" },
+    establishment: { nafCode: "6201Z", collectiveAgreementCode: "1486" },
     period: {
       year: 2026,
       month: 8,
@@ -27,10 +29,12 @@ function input() {
         nir: "1860875123456",
         lastName: "DUPONT",
         firstName: "Maxime",
-        sexCode: "01" as const,
+        sexCode: null,
         birthDate: new Date("1986-08-10T00:00:00.000Z"),
         birthPlace: "Montpellier",
         birthDepartment: "34",
+        birthCountryCode: "FR",
+        euClassificationCode: "01",
         addressLine: "2 rue du Salarié",
         postalCode: "34000",
         city: "Montpellier",
@@ -49,9 +53,18 @@ function input() {
           referenceWorkQuota: 151.67,
           contractWorkQuota: 151.67,
           workModalityCode: "10",
-          collectiveAgreementCode: "9999",
+          baseSchemeSupplementCode: "99",
+          collectiveAgreementCode: "1486",
           sicknessRegimeCode: "200",
+          workLocationId: "12345678900017",
           oldAgeRegimeCode: "200",
+          foreignWorkerCode: "99",
+          employmentStatusCode: "99",
+          multipleJobsCode: "01",
+          multipleEmployersCode: "01",
+          workAccidentRegimeCode: "200",
+          workAccidentRiskCode: "602MD",
+          workAccidentRate: 1.5,
         },
         payroll: {
           baseSalary: 2500,
@@ -74,11 +87,27 @@ function input() {
 }
 
 describe("DSN P26V01 builder", () => {
-  it("builds a monthly test declaration with PAS, mandatory remuneration, MNS and gross base", () => {
+  it("builds the mandatory identity, contract, PAS, activity, MNS and gross-base perimeter", () => {
     const content = buildDsnP26V01Monthly(input());
     expect(content).toContain("S10.G00.00.005,'01'\r\n");
     expect(content).toContain("S10.G00.00.006,'P26V01'\r\n");
     expect(content).toContain("S20.G00.05.003,'11'\r\n");
+    expect(content).toContain("S20.G00.07.004,'04'\r\n");
+    expect(content).toContain("S21.G00.06.003,'6201Z'\r\n");
+    expect(content).toContain("S21.G00.11.022,'1486'\r\n");
+    expect(content).toContain("S21.G00.30.013,'01'\r\n");
+    expect(content).toContain("S21.G00.30.014,'34'\r\n");
+    expect(content).toContain("S21.G00.30.015,'FR'\r\n");
+    expect(content).not.toContain("S21.G00.30.005,");
+    expect(content).toContain("S21.G00.40.016,'99'\r\n");
+    expect(content).toContain("S21.G00.40.019,'12345678900017'\r\n");
+    expect(content).toContain("S21.G00.40.024,'99'\r\n");
+    expect(content).toContain("S21.G00.40.026,'99'\r\n");
+    expect(content).toContain("S21.G00.40.036,'01'\r\n");
+    expect(content).toContain("S21.G00.40.037,'01'\r\n");
+    expect(content).toContain("S21.G00.40.039,'200'\r\n");
+    expect(content).toContain("S21.G00.40.040,'602MD'\r\n");
+    expect(content).toContain("S21.G00.40.043,'1.50'\r\n");
     expect(content).toContain("S21.G00.50.007,'01'\r\n");
     expect(content).toContain("S21.G00.50.008,'123456789'\r\n");
     expect(content).toContain("S21.G00.50.013,'2050.00'\r\n");
@@ -86,6 +115,9 @@ describe("DSN P26V01 builder", () => {
     expect(content).toContain("S21.G00.51.011,'002'\r\n");
     expect(content).toContain("S21.G00.51.011,'003'\r\n");
     expect(content).toContain("S21.G00.51.011,'010'\r\n");
+    expect(content).toContain("S21.G00.53.001,'01'\r\n");
+    expect(content).toContain("S21.G00.53.002,'151.67'\r\n");
+    expect(content).toContain("S21.G00.53.003,'10'\r\n");
     expect(content).toContain("S21.G00.58.003,'03'\r\n");
     expect(content).toContain("S21.G00.78.001,'03'\r\n");
     expect(content.endsWith("\r\n")).toBe(true);
@@ -122,5 +154,11 @@ describe("DSN P26V01 builder", () => {
     const invalid = input();
     invalid.emitter.siret = "123";
     expect(() => buildDsnP26V01Monthly(invalid)).toThrow(/SIRET/i);
+  });
+
+  it("requires an AT/MP rate when the risk code is known", () => {
+    const invalid = input();
+    invalid.employees[0].contract.workAccidentRate = null;
+    expect(() => buildDsnP26V01Monthly(invalid)).toThrow(/taux AT\/MP/i);
   });
 });
