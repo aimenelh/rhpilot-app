@@ -5,6 +5,7 @@ import {
 } from "./payroll-ledger";
 import type { SocialPayrollResult } from "./social-engine";
 import type { MinimumSalaryControlSnapshot } from "./minimum-salary-control";
+import { getPayrollElementDefinition } from "./payroll-element-catalog";
 
 export { persistPayrollLedger } from "./payroll-ledger";
 
@@ -13,6 +14,7 @@ export type PayrollLedgerVariable = {
   label: string;
   amount: number;
   grossDelta: number;
+  netAdjustment: number;
   kind: PayrollLedgerEntry["kind"];
   ruleVersionId: string;
 };
@@ -37,9 +39,10 @@ function contributionKind(side: "EMPLOYEE" | "EMPLOYER"): PayrollLedgerSide {
 /**
  * Construit les lignes du bulletin à partir de données déjà résolues.
  *
- * Les éléments de brut ne reçoivent volontairement aucun effet fiscal/social
- * implicite : ces effets doivent être fournis par une future règle versionnée.
- * Les cotisations, elles, reprennent directement les montants du moteur social.
+ * Les cotisations reprennent directement les montants du moteur social. Les
+ * remboursements, retenues nettes et avantages non monétaires n'altèrent pas
+ * silencieusement le brut : leurs effets sont ceux de la règle versionnée qui
+ * a produit `grossDelta` et `netAdjustment`.
  */
 export function buildPayrollLedger(input: {
   baseSalaryAmount: number;
@@ -75,22 +78,28 @@ export function buildPayrollLedger(input: {
   );
 
   for (const variable of input.variables) {
+    const definition = getPayrollElementDefinition(variable.code);
     entries.push(
       createPayrollLedgerEntry({
         code: variable.code,
         label: variable.label,
-        category: "BONUS_AND_ALLOWANCES",
+        category: definition?.category ?? "BONUS_AND_ALLOWANCES",
         kind: variable.kind,
         side: "EMPLOYEE",
         amount: Math.abs(variable.amount),
         grossDelta: variable.grossDelta,
         taxableDelta: 0,
         socialDelta: 0,
-        netDelta: 0,
-        cashImpact: 0,
+        netDelta: variable.netAdjustment,
+        cashImpact: variable.netAdjustment,
         ruleVersionId: variable.ruleVersionId,
         sourceName: input.sourceName,
         sourceUrl: input.sourceUrl,
+        metadata: {
+          variableTreatment: true,
+          grossDelta: variable.grossDelta,
+          netAdjustment: variable.netAdjustment,
+        },
       }),
     );
   }
@@ -191,7 +200,7 @@ export function buildPayrollLedger(input: {
   entries.push(
     createPayrollLedgerEntry({
       code: "NET_BEFORE_TAX_TOTAL",
-      label: "Net à payer avant impôt",
+      label: "Net à payer avant impôt — moteur social",
       category: "TAX_AND_WITHHOLDING",
       kind: "INFORMATIONAL",
       side: "NEUTRAL",
@@ -206,8 +215,9 @@ export function buildPayrollLedger(input: {
       sourceUrl: "https://mon-entreprise.urssaf.fr/documentation/salari%C3%A9/cotisations",
       sourceReference: "salarié . rémunération . net . à payer avant impôt",
       metadata: {
-        authoritativeAmount: true,
+        authoritativeSocialAmount: true,
         value: input.socialResult.netBeforeTax,
+        excludesPostSocialAdjustments: true,
       },
     }),
   );
@@ -248,7 +258,7 @@ export function buildPayrollLedger(input: {
       taxableDelta: 0,
       socialDelta: 0,
       netDelta: input.withholdingTaxRateProvided ? -Math.abs(input.withholdingTax) : 0,
-      cashImpact: 0,
+      cashImpact: input.withholdingTaxRateProvided ? -Math.abs(input.withholdingTax) : 0,
       ruleVersionId: input.ruleVersionId,
       sourceName: "DGFiP",
       sourceUrl: "https://www.impots.gouv.fr/particulier/prelevement-la-source",
