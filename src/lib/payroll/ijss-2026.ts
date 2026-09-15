@@ -99,34 +99,39 @@ export function calculateWorkAccidentIjss2026(input: {
   daysAlreadyCompensatedBeforePeriod?: number;
   firstPeriodDailyCap?: number;
   secondPeriodDailyCap?: number;
-}): IjssResult & { firstPeriodDays: number; secondPeriodDays: number } {
+  netSalaryReferenceRate?: number;
+}): IjssResult & { firstPeriodDays: number; secondPeriodDays: number; dailyNetSalaryCap: number } {
   assertNonNegative(input.previousMonthGrossSalary, "Le salaire brut du mois précédant l'AT/MP");
   assertDays(input.compensatedCalendarDays, "La durée indemnisée AT/MP");
   const before = input.daysAlreadyCompensatedBeforePeriod ?? 0;
   assertDays(before, "Le nombre de jours déjà indemnisés");
   const cap60 = input.firstPeriodDailyCap ?? 240.49;
   const cap80 = input.secondPeriodDailyCap ?? 320.66;
+  const netSalaryReferenceRate = input.netSalaryReferenceRate ?? 0.79;
   assertNonNegative(cap60, "Le plafond AT/MP des 28 premiers jours");
   assertNonNegative(cap80, "Le plafond AT/MP à compter du 29e jour");
+  if (!Number.isFinite(netSalaryReferenceRate) || netSalaryReferenceRate <= 0 || netSalaryReferenceRate > 1) throw new Error("Le coefficient de salaire journalier net AT/MP est invalide.");
 
   const dailyReferenceSalary = roundMoney(input.previousMonthGrossSalary / 30.42);
+  const dailyNetSalaryCap = roundMoney(dailyReferenceSalary * netSalaryReferenceRate);
   const firstPeriodRemaining = Math.max(0, 28 - before);
   const firstPeriodDays = Math.min(input.compensatedCalendarDays, firstPeriodRemaining);
   const secondPeriodDays = Math.max(0, input.compensatedCalendarDays - firstPeriodDays);
-  const daily60 = roundMoney(Math.min(dailyReferenceSalary * 0.6, cap60));
-  const daily80 = roundMoney(Math.min(dailyReferenceSalary * 0.8, cap80));
+  const daily60 = roundMoney(Math.min(dailyReferenceSalary * 0.6, cap60, dailyNetSalaryCap));
+  const daily80 = roundMoney(Math.min(dailyReferenceSalary * 0.8, cap80, dailyNetSalaryCap));
   const grossBenefitTotal = roundMoney(firstPeriodDays * daily60 + secondPeriodDays * daily80);
 
   return {
     dailyReferenceSalary,
     dailyBenefit: firstPeriodDays > 0 ? daily60 : daily80,
+    dailyNetSalaryCap,
     compensatedDays: input.compensatedCalendarDays,
     waitingDays: 0,
     firstPeriodDays,
     secondPeriodDays,
     grossBenefitTotal,
     ruleVersionId: IJSS_2026_RULE_VERSION,
-    sourceReference: "Assurance Maladie — AT/MP 2026 : salaire précédent / 30,42 ; 60 % pendant 28 jours puis 80 %, sans carence",
+    sourceReference: "Assurance Maladie — AT/MP 2026 : salaire précédent / 30,42 ; 60 % pendant 28 jours puis 80 %, sans carence et sans dépasser le salaire journalier net",
   };
 }
 
