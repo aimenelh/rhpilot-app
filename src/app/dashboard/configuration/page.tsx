@@ -1,6 +1,17 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { User, Waypoints, Bell, Database, Shield, Info, ChevronRight, Download, TriangleAlert } from "lucide-react";
+import {
+  User,
+  Waypoints,
+  Bell,
+  Database,
+  Shield,
+  Info,
+  ChevronRight,
+  Download,
+  Upload,
+  TriangleAlert,
+} from "lucide-react";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
@@ -32,8 +43,6 @@ export default async function ConfigurationPage() {
         parcours, vos notifications et vos données.
       </p>
 
-      {/* Organisation mise en avant à part, uniquement quand elle
-          nécessite une action, pas d'effet "6 tuiles identiques". */}
       {organizationSectionIncomplete && (
         <Link href="/dashboard/configuration/organisation" className="mt-6 block">
           <Card className="flex items-center gap-3.5 border-accent-amber/30 bg-accent-amber/5 transition-colors hover:border-accent-amber/50">
@@ -91,10 +100,9 @@ export default async function ConfigurationPage() {
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-ink">Notifications</h2>
             <p className="mt-0.5 text-sm text-ink-soft">
-              Résumés quotidien/hebdomadaire
-              {reminderRuleCount > 0
-                ? ` · ${reminderRuleCount} règle${reminderRuleCount > 1 ? "s" : ""} de relance active${reminderRuleCount > 1 ? "s" : ""}`
-                : " · Relances automatiques"}
+              Résumés quotidien/hebdomadaire · {reminderRuleCount > 0
+                ? `${reminderRuleCount} règle${reminderRuleCount > 1 ? "s" : ""} de relance active${reminderRuleCount > 1 ? "s" : ""}`
+                : "aucune relance automatique active"}
             </p>
           </div>
           <ChevronRight size={16} className="mt-0.5 shrink-0 text-ink-faint" />
@@ -105,7 +113,7 @@ export default async function ConfigurationPage() {
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-ink">Données</h2>
             <p className="mt-0.5 text-sm text-ink-soft">
-              Exportez ou importez les données de votre organisation.
+              Exportez les données de votre organisation ou importez une liste de salariés au format CSV.
             </p>
             <div className="mt-2.5 flex flex-wrap gap-2">
               <a href="/api/export/employees">
@@ -120,9 +128,12 @@ export default async function ConfigurationPage() {
                   Tout exporter
                 </Button>
               </a>
-              <Button variant="secondary" className="text-xs opacity-60" disabled>
-                Importer (bientôt)
-              </Button>
+              <Link href="/dashboard/employees/import">
+                <Button variant="secondary" className="text-xs">
+                  <Upload size={13} />
+                  Importer un CSV
+                </Button>
+              </Link>
             </div>
           </div>
         </div>
@@ -131,7 +142,7 @@ export default async function ConfigurationPage() {
           <Shield size={18} className="mt-0.5 shrink-0 text-ink-faint" />
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-ink">Sécurité</h2>
-            <p className="mt-0.5 text-sm text-ink-soft">Bientôt disponible.</p>
+            <p className="mt-0.5 text-sm text-ink-soft">Paramètres avancés à venir.</p>
           </div>
         </div>
 
