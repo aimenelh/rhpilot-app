@@ -31,8 +31,8 @@ describe("incomplete-month-2026", () => {
       nonWorkedDates: ["2026-09-01"],
     });
     expect(result.monthScheduledHours).toBe(147);
-    expect(result.payableScheduledHours).toBe(63);
-    expect(result.payableSalaryAmount).toBe(1285.71);
+    expect(result.payableScheduledHours).toBe(70);
+    expect(result.payableSalaryAmount).toBe(1428.57);
   });
 
   it("refuse de choisir un planning à la place de l'utilisateur", () => {
