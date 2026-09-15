@@ -57,7 +57,7 @@ export default function PaidLeaveCalculator({ periodId, employees, readOnly }: {
         <div><p className="text-xs font-semibold uppercase tracking-[0.12em] text-accent-teal">Montant retenu</p><p className="mt-1 text-lg font-semibold text-ink">{EUR.format(favorable)}</p><p className="mt-1 text-xs text-ink-soft">Méthode la plus favorable : {selectedMethod} · {leaveDays.toFixed(2)} jour{leaveDays > 1 ? "s" : ""}.</p></div>
         <form action={addPayrollVariable.bind(null, periodId, undefined)} className="flex flex-col gap-2 sm:flex-row sm:items-end">
           <input type="hidden" name="employeeId" value={employeeId} />
-          <input type="hidden" name="code" value="PAID_LEAVE" />
+          <input type="hidden" name="code" value="PAID_LEAVE_INDEMNITY" />
           <input type="hidden" name="label" value={`Indemnité de congés payés (${leaveDays.toFixed(2)} j)`} />
           <input type="hidden" name="amount" value={favorable.toFixed(2)} />
           <input type="hidden" name="unit" value="EUR" />
