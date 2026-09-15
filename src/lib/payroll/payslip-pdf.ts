@@ -18,15 +18,33 @@ export type PayslipPdfPaidLeave = {
   remaining?: number;
 };
 
+export type PayslipPdfAnnualCumuls = {
+  gross: number;
+  netTaxable: number;
+  netSocial: number;
+  withholdingTax: number;
+  netPaid: number;
+};
+
 export type PayslipPdfInput = {
   employer: { name: string; address: string; siret: string; nafCode: string; urssafReference: string };
-  employee: { name: string; address: string; position: string; classification: string };
+  employee: {
+    name: string;
+    address: string;
+    position: string;
+    classification: string;
+    employeeNumber?: string;
+    coefficient?: string;
+    hireDate?: string;
+    seniority?: string;
+  };
   period: { year: number; month: number; paymentDate: string; hours: number };
   salary: { baseGross: number; variables: Array<{ label: string; amount: number }>; gross: number; employeeContributions: number; employerContributions: number; netBeforeTax: number; netTaxable: number; withholdingTaxRate: number; withholdingTax: number; netPaid: number; netSocial: number; totalEmployerCost: number };
   contributions: PayslipPdfContribution[];
   collectiveAgreement: string;
   source: string;
   paidLeave?: PayslipPdfPaidLeave;
+  annualCumuls?: PayslipPdfAnnualCumuls;
 };
 
 export class PayslipPdfPrerequisiteError extends Error {
@@ -52,6 +70,7 @@ function requiredMissing(input: PayslipPdfInput): string[] {
     ["SIRET employeur", input.employer.siret],
     ["Code APE/NAF", input.employer.nafCode],
     ["Nom salarié", input.employee.name],
+    ["Adresse salarié", input.employee.address],
     ["Emploi salarié", input.employee.position],
     ["Classification salarié", input.employee.classification],
     ["Date de paiement", input.period.paymentDate],
@@ -75,7 +94,10 @@ function requiredMissing(input: PayslipPdfInput): string[] {
     if (contribution.rate !== null && contribution.rate !== undefined && (!Number.isFinite(contribution.rate) || contribution.rate < 0 || contribution.rate > 1)) missing.push(`Taux cotisation : ${contribution.label}`);
     if (contribution.baseAmount !== null && contribution.baseAmount !== undefined && (!Number.isFinite(contribution.baseAmount) || contribution.baseAmount < 0)) missing.push(`Assiette cotisation : ${contribution.label}`);
   }
-  return missing;
+  if (input.annualCumuls) {
+    for (const [label, value] of Object.entries(input.annualCumuls)) if (!Number.isFinite(value) || value < 0) missing.push(`Cumul annuel ${label}`);
+  }
+  return [...new Set(missing)];
 }
 
 type GroupedContribution = { label: string; employee: PayslipPdfContribution | null; employer: PayslipPdfContribution | null };
@@ -116,8 +138,15 @@ const COLS = {
 class Layout {
   y = PAGE_MARGIN;
   constructor(public doc: PDFKit.PDFDocument) {}
-  bottom(): number { return this.doc.page.height - PAGE_MARGIN - 18; }
+  bottom(): number { return this.doc.page.height - PAGE_MARGIN - 26; }
   rule(): void { this.doc.moveTo(PAGE_MARGIN, this.y).lineTo(PAGE_MARGIN + CONTENT_WIDTH, this.y).lineWidth(0.5).strokeColor(BORDER).stroke(); }
+}
+
+function ensureSpace(l: Layout, height: number): boolean {
+  if (l.y + height <= l.bottom()) return false;
+  l.doc.addPage();
+  l.y = PAGE_MARGIN;
+  return true;
 }
 
 function drawHeader(l: Layout, input: PayslipPdfInput): void {
@@ -137,14 +166,20 @@ function drawIdentity(l: Layout, input: PayslipPdfInput): void {
   const rightX = PAGE_MARGIN + 286;
   l.doc.font("Helvetica-Bold").fontSize(6.5).fillColor(ACCENT).text("EMPLOYEUR", leftX, top + 8);
   l.doc.font("Helvetica-Bold").fontSize(8.2).fillColor(INK).text(input.employer.name, leftX, top + 19);
-  l.doc.font("Helvetica").fontSize(6.8).fillColor(INK_SOFT).text(input.employer.address, leftX, top + 31, { width: 255 });
-  l.doc.text(`SIRET ${input.employer.siret} · APE/NAF ${input.employer.nafCode}`, leftX, top + 41, { width: 255 });
+  l.doc.font("Helvetica").fontSize(6.8).fillColor(INK_SOFT).text(input.employer.address, leftX, top + 31, { width: 255, lineBreak: false, ellipsis: true });
+  l.doc.text(`SIRET ${input.employer.siret} · APE/NAF ${input.employer.nafCode}`, leftX, top + 42, { width: 255, lineBreak: false, ellipsis: true });
+  if (input.employer.urssafReference.trim()) l.doc.text(`Réf. Urssaf : ${input.employer.urssafReference}`, leftX, top + 53, { width: 255, lineBreak: false, ellipsis: true });
+
   l.doc.font("Helvetica-Bold").fontSize(6.5).fillColor(ACCENT).text("SALARIÉ", rightX, top + 8);
   l.doc.font("Helvetica-Bold").fontSize(8.2).fillColor(INK).text(input.employee.name, rightX, top + 19);
-  l.doc.font("Helvetica").fontSize(6.8).fillColor(INK_SOFT).text(`Emploi : ${input.employee.position}`, rightX, top + 31, { width: 245 });
-  l.doc.text(`Classification : ${input.employee.classification}`, rightX, top + 41, { width: 245 });
-  l.doc.roundedRect(PAGE_MARGIN, top, CONTENT_WIDTH, 58, 4).lineWidth(0.6).strokeColor(BORDER).stroke();
-  l.y = top + 66;
+  l.doc.font("Helvetica").fontSize(6.8).fillColor(INK_SOFT).text(input.employee.address, rightX, top + 30, { width: 245, lineBreak: false, ellipsis: true });
+  l.doc.text(`Emploi : ${input.employee.position}`, rightX, top + 41, { width: 245, lineBreak: false, ellipsis: true });
+  const classification = [input.employee.classification, input.employee.coefficient ? `coef. ${input.employee.coefficient}` : ""].filter(Boolean).join(" · ");
+  l.doc.text(`Classification : ${classification}`, rightX, top + 52, { width: 245, lineBreak: false, ellipsis: true });
+  const employeeMeta = [input.employee.employeeNumber ? `Matricule ${input.employee.employeeNumber}` : "", input.employee.hireDate ? `Entrée ${input.employee.hireDate}` : "", input.employee.seniority ? `Ancienneté ${input.employee.seniority}` : ""].filter(Boolean).join(" · ");
+  if (employeeMeta) l.doc.text(employeeMeta, rightX, top + 63, { width: 245, lineBreak: false, ellipsis: true });
+  l.doc.roundedRect(PAGE_MARGIN, top, CONTENT_WIDTH, 78, 4).lineWidth(0.6).strokeColor(BORDER).stroke();
+  l.y = top + 86;
 }
 
 function drawContext(l: Layout, input: PayslipPdfInput): void {
@@ -169,17 +204,24 @@ function drawTableHeader(l: Layout, columns: Array<{ x: number; width: number; t
   l.y += 19;
 }
 
+const REMUNERATION_COLUMNS = [{ x: COLS.label.x, width: 380, text: "ÉLÉMENT" }, { x: PAGE_MARGIN, width: CONTENT_WIDTH - 8, text: "MONTANT", align: "right" as const }];
+
 function drawRemuneration(l: Layout, input: PayslipPdfInput): void {
   drawSectionTitle(l, "1. RÉMUNÉRATION");
-  drawTableHeader(l, [{ x: COLS.label.x, width: 380, text: "ÉLÉMENT" }, { x: PAGE_MARGIN, width: CONTENT_WIDTH - 8, text: "MONTANT", align: "right" }]);
+  drawTableHeader(l, REMUNERATION_COLUMNS);
   const rows = [{ label: "Salaire de base", amount: input.salary.baseGross }, ...input.salary.variables];
   rows.forEach((row, index) => {
     const rowHeight = 12;
+    if (ensureSpace(l, rowHeight + 22)) {
+      drawSectionTitle(l, "1. RÉMUNÉRATION — SUITE");
+      drawTableHeader(l, REMUNERATION_COLUMNS);
+    }
     if (index % 2 === 1) l.doc.rect(PAGE_MARGIN, l.y - 1, CONTENT_WIDTH, rowHeight).fill(ROW_ALT);
     l.doc.font("Helvetica").fontSize(6.7).fillColor(INK).text(row.label, COLS.label.x, l.y + 1, { width: 380, lineBreak: false, ellipsis: true });
     l.doc.text(money(row.amount), PAGE_MARGIN, l.y + 1, { width: CONTENT_WIDTH - 8, align: "right", lineBreak: false });
     l.y += rowHeight;
   });
+  ensureSpace(l, 26);
   l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, 19, 3).fill(PANEL);
   l.doc.font("Helvetica-Bold").fontSize(7.5).fillColor(INK).text("Salaire brut total", PAGE_MARGIN + 8, l.y + 5);
   l.doc.text(money(input.salary.gross), PAGE_MARGIN, l.y + 5, { width: CONTENT_WIDTH - 8, align: "right" });
@@ -208,17 +250,27 @@ function drawContributionRow(l: Layout, group: GroupedContribution, index: numbe
   l.y += rowHeight;
 }
 
+const CONTRIBUTION_COLUMNS = [
+  { x: COLS.label.x, width: COLS.label.width, text: "LIBELLÉ" },
+  { x: COLS.base.x, width: COLS.base.width, text: "BASE", align: "right" as const },
+  { x: COLS.employeeRate.x, width: COLS.employeeRate.width, text: "TAUX SAL.", align: "right" as const },
+  { x: COLS.employeeAmount.x, width: COLS.employeeAmount.width, text: "PART SAL.", align: "right" as const },
+  { x: COLS.employerRate.x, width: COLS.employerRate.width, text: "TAUX PAT.", align: "right" as const },
+  { x: COLS.employerAmount.x, width: COLS.employerAmount.width, text: "PART PAT.", align: "right" as const },
+];
+
 function drawContributions(l: Layout, input: PayslipPdfInput): void {
-  drawSectionTitle(l, "2. COTISATIONS ET CONTRIBUTIONS");
-  drawTableHeader(l, [
-    { x: COLS.label.x, width: COLS.label.width, text: "LIBELLÉ" },
-    { x: COLS.base.x, width: COLS.base.width, text: "BASE", align: "right" },
-    { x: COLS.employeeRate.x, width: COLS.employeeRate.width, text: "TAUX SAL.", align: "right" },
-    { x: COLS.employeeAmount.x, width: COLS.employeeAmount.width, text: "PART SAL.", align: "right" },
-    { x: COLS.employerRate.x, width: COLS.employerRate.width, text: "TAUX PAT.", align: "right" },
-    { x: COLS.employerAmount.x, width: COLS.employerAmount.width, text: "PART PAT.", align: "right" },
-  ]);
-  groupContributions(input.contributions).forEach((group, index) => drawContributionRow(l, group, index));
+  if (ensureSpace(l, 50)) drawSectionTitle(l, "2. COTISATIONS ET CONTRIBUTIONS");
+  else drawSectionTitle(l, "2. COTISATIONS ET CONTRIBUTIONS");
+  drawTableHeader(l, CONTRIBUTION_COLUMNS);
+  groupContributions(input.contributions).forEach((group, index) => {
+    if (ensureSpace(l, 36)) {
+      drawSectionTitle(l, "2. COTISATIONS ET CONTRIBUTIONS — SUITE");
+      drawTableHeader(l, CONTRIBUTION_COLUMNS);
+    }
+    drawContributionRow(l, group, index);
+  });
+  ensureSpace(l, 25);
   l.doc.roundedRect(PAGE_MARGIN, l.y + 1, CONTENT_WIDTH, 18, 3).fill(PANEL);
   l.doc.font("Helvetica-Bold").fontSize(7).fillColor(INK).text("Total cotisations salariales", PAGE_MARGIN + 8, l.y + 6);
   l.doc.text(`-${money(input.salary.employeeContributions)}`, PAGE_MARGIN, l.y + 6, { width: CONTENT_WIDTH - 8, align: "right" });
@@ -226,6 +278,7 @@ function drawContributions(l: Layout, input: PayslipPdfInput): void {
 }
 
 function drawNetAndEmployer(l: Layout, input: PayslipPdfInput): void {
+  ensureSpace(l, 95);
   const left = PAGE_MARGIN;
   const right = PAGE_MARGIN + 278;
   const width = 265;
@@ -261,6 +314,7 @@ function drawPaidLeave(l: Layout, paidLeave: PayslipPdfPaidLeave | undefined): v
   if (!paidLeave) return;
   const hasValue = [paidLeave.leaveDates, paidLeave.daysTaken, paidLeave.indemnity, paidLeave.acquired, paidLeave.taken, paidLeave.remaining].some((value) => value !== undefined);
   if (!hasValue) return;
+  ensureSpace(l, 45);
   l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, 34, 4).lineWidth(0.6).strokeColor(BORDER).stroke();
   l.doc.font("Helvetica-Bold").fontSize(6.4).fillColor(INK).text("CONGÉS PAYÉS", PAGE_MARGIN + 9, l.y + 7);
   const detail = [
@@ -268,17 +322,39 @@ function drawPaidLeave(l: Layout, paidLeave: PayslipPdfPaidLeave | undefined): v
     paidLeave.daysTaken != null ? `Pris : ${paidLeave.daysTaken.toFixed(2)} j` : "",
     paidLeave.indemnity != null ? `Indemnité : ${money(paidLeave.indemnity)}` : "",
     paidLeave.acquired != null ? `Acquis : ${paidLeave.acquired.toFixed(2)} j` : "",
+    paidLeave.taken != null ? `Cumul pris : ${paidLeave.taken.toFixed(2)} j` : "",
     paidLeave.remaining != null ? `Solde : ${paidLeave.remaining.toFixed(2)} j` : "",
   ].filter(Boolean).join("  ·  ");
   l.doc.font("Helvetica").fontSize(6.2).fillColor(INK_SOFT).text(detail, PAGE_MARGIN + 9, l.y + 19, { width: CONTENT_WIDTH - 18, lineBreak: false, ellipsis: true });
   l.y += 41;
 }
 
-function drawLegalFooter(doc: PDFKit.PDFDocument): void {
+function drawAnnualCumuls(l: Layout, cumuls: PayslipPdfAnnualCumuls | undefined, year: number): void {
+  if (!cumuls) return;
+  ensureSpace(l, 50);
+  l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, 39, 4).lineWidth(0.6).strokeColor(BORDER).stroke();
+  l.doc.font("Helvetica-Bold").fontSize(6.4).fillColor(INK).text(`CUMULS ANNUELS ${year}`, PAGE_MARGIN + 9, l.y + 7);
+  const labels = [
+    ["Brut", cumuls.gross],
+    ["Net imposable", cumuls.netTaxable],
+    ["Net social", cumuls.netSocial],
+    ["PAS", cumuls.withholdingTax],
+    ["Net payé", cumuls.netPaid],
+  ] as const;
+  const cellWidth = (CONTENT_WIDTH - 18) / labels.length;
+  labels.forEach(([label, value], index) => {
+    const x = PAGE_MARGIN + 9 + index * cellWidth;
+    l.doc.font("Helvetica").fontSize(5.6).fillColor(INK_FAINT).text(label, x, l.y + 19, { width: cellWidth - 4, lineBreak: false });
+    l.doc.font("Helvetica-Bold").fontSize(6.5).fillColor(INK).text(money(value), x, l.y + 28, { width: cellWidth - 4, lineBreak: false });
+  });
+  l.y += 46;
+}
+
+function drawLegalFooter(doc: PDFKit.PDFDocument, pageNumber: number, pageCount: number): void {
   const y = doc.page.height - 34;
   doc.moveTo(PAGE_MARGIN, y - 5).lineTo(PAGE_MARGIN + CONTENT_WIDTH, y - 5).lineWidth(0.5).strokeColor(BORDER).stroke();
   doc.font("Helvetica").fontSize(5.3).fillColor(INK_FAINT).text("Conservez ce bulletin de paie sans limitation de durée. Retrouvez la rubrique dédiée au bulletin de paie sur service-public.fr.", PAGE_MARGIN, y, { width: CONTENT_WIDTH - 70, lineBreak: false, ellipsis: true });
-  doc.text("Page 1/1", PAGE_MARGIN, y, { width: CONTENT_WIDTH, align: "right" });
+  doc.text(`Page ${pageNumber}/${pageCount}`, PAGE_MARGIN, y, { width: CONTENT_WIDTH, align: "right" });
 }
 
 function drawPayslip(doc: PDFKit.PDFDocument, input: PayslipPdfInput): void {
@@ -290,7 +366,7 @@ function drawPayslip(doc: PDFKit.PDFDocument, input: PayslipPdfInput): void {
   drawContributions(l, input);
   drawNetAndEmployer(l, input);
   drawPaidLeave(l, input.paidLeave);
-  drawLegalFooter(doc);
+  drawAnnualCumuls(l, input.annualCumuls, input.period.year);
 }
 
 export function generatePayslipPdf(input: PayslipPdfInput): Promise<Buffer> {
@@ -304,6 +380,11 @@ export function generatePayslipPdf(input: PayslipPdfInput): Promise<Buffer> {
     doc.on("error", reject);
     try {
       drawPayslip(doc, input);
+      const range = doc.bufferedPageRange();
+      for (let index = 0; index < range.count; index += 1) {
+        doc.switchToPage(range.start + index);
+        drawLegalFooter(doc, index + 1, range.count);
+      }
       doc.end();
     } catch (error) {
       reject(error instanceof Error ? error : new Error(String(error)));
