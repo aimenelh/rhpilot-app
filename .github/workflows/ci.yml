@@ -1,11 +1,11 @@
-name: PAS-DSN CI
+name: Payroll Core CI
 
 on:
   push:
   pull_request:
 
 jobs:
-  pas-dsn-regression:
+  payroll-core-regression:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -20,9 +20,18 @@ jobs:
         run: npm ci
       - name: Generate Prisma client
         run: npx prisma generate
-      - name: Run PAS to DSN unit tests
+      - name: Run deterministic payroll unit tests
         run: >-
           npx vitest run
+          src/lib/payroll/variable-treatment.test.ts
+          src/lib/payroll/absence-payroll-impact.test.ts
+          src/lib/payroll/absence-payroll-gross-impact.test.ts
+          src/lib/payroll/absence-payroll-treatment.test.ts
+          src/lib/payroll/alternance-minimum.test.ts
+          src/lib/payroll/alternance-minimum-snapshot.test.ts
+          src/lib/payroll/payroll-ledger.test.ts
+          src/lib/payroll/payroll-ledger-builder.test.ts
+          src/lib/payroll/payslip-pdf.test.ts
           src/lib/payroll/withholding-tax-validation.test.ts
           src/lib/payroll/pas-dsn.test.ts
           src/lib/payroll/dsn-pii.test.ts
