@@ -13,7 +13,7 @@ export type PayrollVariableTreatmentRule = {
    * restitution en net d'un avantage en nature déjà intégré au brut.
    */
   netEffect?: PayrollVariableNetEffect;
-  supportedUnits: readonly Array<"EUR">;
+  supportedUnits: readonly "EUR"[];
   kind?: PayrollElementKind;
 };
 
