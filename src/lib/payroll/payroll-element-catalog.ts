@@ -75,6 +75,7 @@ export const PAYROLL_ELEMENT_CATALOG: readonly PayrollElementDefinition[] = [
 
   // Congés et absences
   { code: "PAID_LEAVE_ABSENCE", label: "Congés payés", category: "PAID_LEAVE_AND_ABSENCE", allowedKinds: ["ADD_TO_GROSS", "DEDUCT_FROM_GROSS"], supportedUnits: EUR_DAYS, requiresValidatedRule: true, requiresSourceTraceability: true, description: "Impact des congés payés selon la méthode applicable." },
+  { code: "PAID_LEAVE_INDEMNITY", label: "Indemnité de congés payés", category: "PAID_LEAVE_AND_ABSENCE", allowedKinds: ["ADD_TO_GROSS"], supportedUnits: EUR, requiresValidatedRule: true, requiresSourceTraceability: true, description: "Indemnité de congés payés déterminée après comparaison des méthodes applicables." },
   { code: "RTT_ABSENCE", label: "RTT", category: "PAID_LEAVE_AND_ABSENCE", allowedKinds: ["ADD_TO_GROSS", "DEDUCT_FROM_GROSS"], supportedUnits: EUR_DAYS, requiresValidatedRule: true, requiresSourceTraceability: true, description: "Impact d'un jour ou d'une période de RTT." },
   { code: "SICK_LEAVE", label: "Maladie non professionnelle", category: "PAID_LEAVE_AND_ABSENCE", allowedKinds: ["DEDUCT_FROM_GROSS"], supportedUnits: EUR_DAYS, requiresValidatedRule: true, requiresSourceTraceability: true, description: "Absence pour maladie avec traitement employeur/IJSS/subrogation à déterminer séparément." },
   { code: "WORK_ACCIDENT_ABSENCE", label: "Accident du travail / maladie professionnelle", category: "PAID_LEAVE_AND_ABSENCE", allowedKinds: ["DEDUCT_FROM_GROSS"], supportedUnits: EUR_DAYS, requiresValidatedRule: true, requiresSourceTraceability: true, description: "Absence AT/MP et traitements associés." },
@@ -84,7 +85,7 @@ export const PAYROLL_ELEMENT_CATALOG: readonly PayrollElementDefinition[] = [
   { code: "ADOPTION_LEAVE", label: "Congé d'adoption", category: "PAID_LEAVE_AND_ABSENCE", allowedKinds: ["DEDUCT_FROM_GROSS"], supportedUnits: EUR_DAYS, requiresValidatedRule: true, requiresSourceTraceability: true, description: "Traitement du congé d'adoption." },
   { code: "FAMILY_EVENT_LEAVE", label: "Congé pour événement familial", category: "PAID_LEAVE_AND_ABSENCE", allowedKinds: ["ADD_TO_GROSS", "DEDUCT_FROM_GROSS"], supportedUnits: EUR_DAYS, requiresValidatedRule: true, requiresSourceTraceability: true, description: "Absence pour événement familial selon la règle légale ou conventionnelle applicable." },
   { code: "SICK_PAY_MAINTENANCE", label: "Maintien employeur maladie", category: "PAID_LEAVE_AND_ABSENCE", allowedKinds: ["ADD_TO_GROSS"], supportedUnits: EUR, requiresValidatedRule: true, requiresSourceTraceability: true, description: "Complément employeur à distinguer des IJSS et de leur subrogation." },
-  { code: "IJSS_SUBROGATED", label: "IJSS subrogées", category: "PAID_LEAVE_AND_ABSENCE", allowedKinds: ["INFORMATIONAL", "DEDUCT_FROM_NET"], supportedUnits: EUR, requiresValidatedRule: true, requiresSourceTraceability: true, description: "Flux IJSS liés à une subrogation ; ne doit pas être confondu avec un salaire brut." },
+  { code: "IJSS_SUBROGATED", label: "IJSS subrogées", category: "PAID_LEAVE_AND_ABSENCE", allowedKinds: ["REIMBURSEMENT", "INFORMATIONAL"], supportedUnits: EUR, requiresValidatedRule: true, requiresSourceTraceability: true, description: "Réintégration nette d'IJSS en cas de subrogation, ou information lorsque le flux est hors net employeur." },
 
   // Protection sociale
   { code: "HEALTH_PLAN_EMPLOYEE", label: "Mutuelle — part salarié", category: "SOCIAL_PROTECTION", allowedKinds: ["DEDUCT_FROM_NET"], supportedUnits: EUR, requiresValidatedRule: true, requiresSourceTraceability: true, description: "Part salariale de complémentaire santé." },
@@ -108,7 +109,7 @@ export const PAYROLL_ELEMENT_CATALOG: readonly PayrollElementDefinition[] = [
   { code: "SPECIFIC_DEDUCTION", label: "Déduction forfaitaire spécifique", category: "PROFESSIONAL_EXPENSES", allowedKinds: ["DEDUCT_FROM_GROSS"], supportedUnits: EUR, requiresValidatedRule: true, requiresSourceTraceability: true, description: "Dispositif réservé aux professions et situations éligibles." },
 
   // Titres-restaurant
-  { code: "MEAL_VOUCHER_EMPLOYER", label: "Titres-restaurant — part employeur", category: "MEAL_VOUCHERS", allowedKinds: ["REIMBURSEMENT", "NON_CASH"], supportedUnits: EUR, requiresValidatedRule: true, requiresSourceTraceability: true, description: "Part employeur des titres-restaurant et traitement social associé." },
+  { code: "MEAL_VOUCHER_EMPLOYER", label: "Titres-restaurant — part employeur", category: "MEAL_VOUCHERS", allowedKinds: ["INFORMATIONAL", "REIMBURSEMENT", "NON_CASH"], supportedUnits: EUR, requiresValidatedRule: true, requiresSourceTraceability: true, description: "Part employeur des titres-restaurant et traitement social associé." },
   { code: "MEAL_VOUCHER_EMPLOYEE", label: "Titres-restaurant — part salarié", category: "MEAL_VOUCHERS", allowedKinds: ["DEDUCT_FROM_NET"], supportedUnits: EUR, requiresValidatedRule: true, requiresSourceTraceability: true, description: "Participation du salarié aux titres-restaurant." },
 
   // Transport domicile-travail
