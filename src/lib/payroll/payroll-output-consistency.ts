@@ -36,15 +36,18 @@ export function assertPayrollOutputConsistency(input: PayrollOutputTotals): Payr
   assertMoney(input.netPaid, "le net payé");
   if (input.employerCost !== undefined) assertMoney(input.employerCost, "le coût employeur");
 
+  // Contrôle métier prioritaire : un PAS supérieur au net avant impôt est
+  // impossible. On le signale avant le contrôle de réconciliation du net payé
+  // afin de remonter la cause, et non sa conséquence arithmétique.
+  if (input.withholdingTax > input.netBeforeTax + 0.01) {
+    throw new Error("Contrôle paie bloquant : le prélèvement à la source dépasse le net avant impôt.");
+  }
+
   const expectedNetPaid = rounded(input.netBeforeTax - input.withholdingTax);
-  if (expectedNetPaid < 0 || Math.abs(expectedNetPaid - rounded(input.netPaid)) > 0.01) {
+  if (Math.abs(expectedNetPaid - rounded(input.netPaid)) > 0.01) {
     throw new Error(
       `Contrôle paie bloquant : le net payé (${input.netPaid.toFixed(2)} €) ne se réconcilie pas avec le net avant impôt et le PAS (${expectedNetPaid.toFixed(2)} € attendu).`,
     );
-  }
-
-  if (input.withholdingTax > input.netBeforeTax + 0.01) {
-    throw new Error("Contrôle paie bloquant : le prélèvement à la source dépasse le net avant impôt.");
   }
 
   if (input.employerCost !== undefined && input.employerCost + 0.01 < input.grossAmount) {
