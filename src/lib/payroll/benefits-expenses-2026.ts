@@ -193,7 +193,8 @@ export function calculateMealVouchers2026(input: {
   if (input.employerContributionPerVoucher > input.faceValue) throw new Error("La participation employeur ne peut pas dépasser la valeur faciale du titre-restaurant.");
 
   const employerShareRate = input.faceValue === 0 ? 0 : input.employerContributionPerVoucher / input.faceValue;
-  const exemptionConditionsMet = employerShareRate >= 0.5 && employerShareRate <= 0.6;
+  const rateTolerance = 1e-9;
+  const exemptionConditionsMet = employerShareRate + rateTolerance >= 0.5 && employerShareRate <= 0.6 + rateTolerance;
   const exemptPerVoucher = exemptionConditionsMet ? Math.min(input.employerContributionPerVoucher, 7.32) : 0;
   const employerExemptAmount = roundMoney(exemptPerVoucher * input.count);
   const totalEmployer = roundMoney(input.employerContributionPerVoucher * input.count);
