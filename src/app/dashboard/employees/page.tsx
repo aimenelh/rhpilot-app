@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArchiveRestore } from "lucide-react";
+import { ArchiveRestore, Plus, Upload } from "lucide-react";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Button } from "@/components/ui/Button";
@@ -42,17 +42,15 @@ export default async function EmployeesPage({
           }
         : {}),
     },
-    include: {
-      managerMembership: { include: { user: true } },
-    },
+    include: { managerMembership: { include: { user: true } } },
     orderBy: status === "archived" ? { deletedAt: "desc" } : { lastName: "asc" },
   });
 
   return (
-    <div className="max-w-5xl">
+    <div className="max-w-6xl">
       <FlashToast />
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold text-ink">Salariés</h1>
           <p className="mt-1 text-sm text-ink-soft">
             {employees.length === 0
@@ -62,58 +60,82 @@ export default async function EmployeesPage({
                   ? "Aucun salarié archivé."
                   : "Aucun salarié enregistré pour l'instant."
               : `${employees.length} salarié${employees.length > 1 ? "s" : ""} ${
-                  status === "archived" ? "archivé" + (employees.length > 1 ? "s" : "") : "actif" + (employees.length > 1 ? "s" : "")
+                  status === "archived"
+                    ? `archivé${employees.length > 1 ? "s" : ""}`
+                    : `actif${employees.length > 1 ? "s" : ""}`
                 }.`}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           {status === "active" && employees.length > 0 && !query && (
             <ArchiveAllButton action={archiveAllEmployees} count={employees.length} />
           )}
           <Link href="/dashboard/employees/import">
-            <Button variant="secondary">Importer</Button>
+            <Button variant="secondary">
+              <span className="inline-flex items-center gap-1.5">
+                <Upload size={14} /> Importer
+              </span>
+            </Button>
           </Link>
           <Link href="/dashboard/employees/new">
-            <Button data-tour="add-employee">Ajouter un salarié</Button>
+            <Button data-tour="add-employee">
+              <span className="inline-flex items-center gap-1.5">
+                <Plus size={15} /> Ajouter un salarié
+              </span>
+            </Button>
           </Link>
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-2 rounded-lg border border-surface-border bg-white p-1.5">
-        <div className="flex gap-1 rounded-md bg-surface-subtle p-1 text-xs font-medium w-fit">
+      <div className="mt-5 flex flex-col gap-2 rounded-xl border border-surface-border bg-white p-2 sm:flex-row sm:items-center">
+        <div className="flex w-fit gap-1 rounded-lg bg-surface-subtle p-1 text-xs font-medium">
           <Link
             href={`/dashboard/employees?status=active${query ? `&q=${encodeURIComponent(query)}` : ""}`}
-            className={`rounded px-3 py-1.5 ${status === "active" ? "bg-white text-ink shadow-sm" : "text-ink-faint"}`}
+            aria-current={status === "active" ? "page" : undefined}
+            className={`rounded-md px-3 py-1.5 ${status === "active" ? "bg-white text-ink shadow-sm" : "text-ink-faint"}`}
           >
             Actifs
           </Link>
           <Link
             href={`/dashboard/employees?status=archived${query ? `&q=${encodeURIComponent(query)}` : ""}`}
-            className={`rounded px-3 py-1.5 ${status === "archived" ? "bg-white text-ink shadow-sm" : "text-ink-faint"}`}
+            aria-current={status === "archived" ? "page" : undefined}
+            className={`rounded-md px-3 py-1.5 ${status === "archived" ? "bg-white text-ink shadow-sm" : "text-ink-faint"}`}
           >
             Archivés
           </Link>
         </div>
 
-        <form method="get" className="max-w-xs flex-1">
+        <form method="get" className="min-w-0 flex-1 sm:max-w-sm">
           <input type="hidden" name="status" value={status} />
-          <Input type="search" name="q" defaultValue={query} placeholder="Rechercher un nom..." />
+          <Input
+            type="search"
+            name="q"
+            aria-label="Rechercher un salarié"
+            defaultValue={query}
+            placeholder="Rechercher un nom..."
+          />
         </form>
       </div>
 
       <div className="mt-6">
         {employees.length === 0 ? (
-          query ? null : status === "archived" ? (
+          query ? (
+            <Card className="text-center">
+              <p className="text-sm font-medium text-ink">Aucun résultat</p>
+              <p className="mt-1 text-sm text-ink-soft">Essayez un autre nom ou effacez la recherche.</p>
+            </Card>
+          ) : status === "archived" ? (
             <EmptyState
               title="Aucun salarié archivé"
-              description="Les salariés archivés depuis leur fiche apparaîtront ici, rien n'est jamais supprimé définitivement."
+              description="Les salariés archivés depuis leur fiche apparaîtront ici, rien n'est supprimé définitivement."
             />
           ) : (
             <div className="flex flex-col items-center gap-4">
               <Mascot pose="hire" className="h-32 w-auto" />
               <EmptyState
                 title="Aucun salarié pour l'instant"
-                description="Les salariés que vous ajoutez apparaîtront ici. Chaque fiche pourra ensuite déclencher automatiquement des plans d'action (embauche, fin de période d'essai...)."
+                description="Les salariés que vous ajoutez apparaîtront ici. Chaque fiche pourra ensuite déclencher des parcours RH et leurs échéances."
                 action={
                   <div className="flex flex-wrap items-center justify-center gap-3">
                     <Link href="/dashboard/employees/new">
@@ -132,8 +154,8 @@ export default async function EmployeesPage({
           )
         ) : (
           <Card className="overflow-hidden p-0">
-            <div className="overflow-x-auto">
-              <table className="min-w-[760px] w-full text-left text-sm">
+            <div className="overflow-x-auto" tabIndex={0} aria-label="Liste des salariés, défilement horizontal possible">
+              <table className="w-full min-w-[760px] text-left text-sm">
                 <thead className="border-b border-surface-border bg-surface-subtle text-xs uppercase tracking-wide text-ink-faint">
                   <tr>
                     <th className="px-5 py-3.5 font-medium">Nom</th>
@@ -147,7 +169,7 @@ export default async function EmployeesPage({
                 </thead>
                 <tbody className="divide-y divide-surface-border">
                   {employees.map((employee) => (
-                    <tr key={employee.id} className="hover:bg-surface-subtle">
+                    <tr key={employee.id} className="transition-colors hover:bg-surface-subtle">
                       <td className="px-5 py-4">
                         {status === "archived" ? (
                           <span className="font-medium text-ink-soft">
@@ -162,21 +184,15 @@ export default async function EmployeesPage({
                           </Link>
                         )}
                       </td>
-                      <td className="px-5 py-4 text-ink-soft">
-                        {employee.position || "—"}
-                      </td>
+                      <td className="px-5 py-4 text-ink-soft">{employee.position || "—"}</td>
                       <td className="px-5 py-4 text-ink-soft">
                         {formatDate(status === "archived" ? employee.deletedAt! : employee.hireDate)}
                       </td>
                       <td className="px-5 py-4">
                         {employee.managerMembership ? (
                           <div className="leading-tight">
-                            <p className="text-ink">
-                              {getUserDisplayName(employee.managerMembership.user)}
-                            </p>
-                            <p className="text-xs text-ink-faint">
-                              {employee.managerMembership.user.email}
-                            </p>
+                            <p className="text-ink">{getUserDisplayName(employee.managerMembership.user)}</p>
+                            <p className="text-xs text-ink-faint">{employee.managerMembership.user.email}</p>
                           </div>
                         ) : (
                           <span className="text-ink-faint">Non défini</span>
@@ -189,8 +205,7 @@ export default async function EmployeesPage({
                               type="submit"
                               className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-primary hover:underline"
                             >
-                              <ArchiveRestore size={13} />
-                              Réactiver
+                              <ArchiveRestore size={13} /> Réactiver
                             </button>
                           </form>
                         </td>
