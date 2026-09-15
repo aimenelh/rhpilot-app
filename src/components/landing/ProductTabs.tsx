@@ -85,6 +85,7 @@ export function ProductTabs() {
         ))}
       </div>
       <div
+        key={item.id}
         id={`panel-${item.id}`}
         role="tabpanel"
         aria-labelledby={`tab-${item.id}`}

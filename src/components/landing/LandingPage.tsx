@@ -1,3 +1,4 @@
+import { LandingMotion } from "./LandingMotion";
 import { ArrivalHero } from "./ArrivalHero";
 import { BrandIntro } from "./BrandIntro";
 import Image from "next/image";
@@ -10,7 +11,8 @@ import { MascotScene } from "./MascotScene";
 
 export function LandingPage() {
   return (
-    <div className={s.site}>
+    <div className={s.site} data-landing-motion>
+      <LandingMotion />
       <BrandIntro />
       <MarketingHeader />
       <main id="main-content">

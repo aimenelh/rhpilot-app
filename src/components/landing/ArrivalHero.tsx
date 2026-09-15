@@ -1,181 +1,96 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import {
-  ArrowUpRight,
-  Check,
-  CalendarDays,
-  FileText,
-  Users,
-  ChevronRight,
-} from "lucide-react";
-import { Logomark } from "@/components/Brand";
+import Image from "next/image";
+import { ArrowDown, ArrowUpRight } from "lucide-react";
 import s from "./ArrivalHero.module.css";
 
+const chapters = [
+  { label: "Tout retrouver", title: "Votre équipe. Une vue d’ensemble.", text: "Salariés, parcours et échéances se retrouvent dans un même espace." },
+  { label: "Voir les priorités", title: "Ce qui attend n’est plus invisible.", text: "Retards, tâches à attribuer, échéances de la semaine : repérez les actions qui demandent votre attention." },
+  { label: "Comprendre la suite", title: "Une question. Le contexte sous les yeux.", text: "Le Copilote s’appuie sur votre suivi RH pour expliquer les échéances et les actions à examiner." },
+];
+
 export function ArrivalHero() {
+  const root = useRef<HTMLElement>(null);
+  const story = useRef<HTMLDivElement>(null);
+  const [active, setActive] = useState(0);
+  useEffect(() => {
+    const el = story.current;
+    if (!el) return;
+    const query = window.matchMedia("(min-width: 901px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)");
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      if (!query.matches) return;
+      const rect = el.getBoundingClientRect();
+      const progress = Math.min(1, Math.max(0, (100 - rect.top) / (rect.height - window.innerHeight)));
+      el.style.setProperty("--progress", String(progress));
+      setActive(Math.min(2, Math.floor(progress * 3)));
+    };
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { window.addEventListener("scroll", schedule, { passive: true }); schedule(); }
+      else window.removeEventListener("scroll", schedule);
+    });
+    observer.observe(el);
+    window.addEventListener("resize", schedule);
+    query.addEventListener("change", schedule);
+    // Wait for the existing brand introduction before revealing the headline.
+    const introObserver = new MutationObserver(() => {
+      root.current?.setAttribute("data-ready", document.querySelector("[data-brand-intro]") ? "false" : "true");
+    });
+    introObserver.observe(root.current?.closest("[data-landing-motion]") ?? document.body, { childList: true });
+    root.current?.setAttribute("data-ready", "true");
+    return () => {
+      observer.disconnect(); introObserver.disconnect(); cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", schedule); window.removeEventListener("resize", schedule);
+      query.removeEventListener("change", schedule);
+    };
+  }, []);
+
+  function selectChapter(index: number) {
+    setActive(index);
+    const el = story.current;
+    if (el && window.matchMedia("(min-width: 901px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)").matches) {
+      const top = window.scrollY + el.getBoundingClientRect().top - 100;
+      window.scrollTo({ top: top + ((index + 0.15) / 3) * (el.offsetHeight - window.innerHeight), behavior: "instant" as ScrollBehavior });
+    }
+  }
+
   return (
-    <section className={s.hero} aria-labelledby="arrival-title">
-      <div className={s.wrap}>
-        <p className={s.eyebrow}>RH PILOT · LE SUIVI RH DES PETITES ÉQUIPES</p>
-        <div className={s.intro}>
-          <div>
-            <h1 id="arrival-title">
-              Une équipe à accompagner.
-              <br />
-              <em>La suite, sous les yeux.</em>
-            </h1>
-            <div className={s.actions}>
-              <Link href="/sign-up" className={s.primary}>
-                Essayer gratuitement <ArrowUpRight size={17} />
-              </Link>
-              <Link href="/services#demo" className={s.secondary}>
-                Voir le logiciel <span aria-hidden="true">→</span>
-              </Link>
+    <section ref={root} className={s.hero} aria-labelledby="arrival-title">
+      <div className={s.intro}>
+        <p className={s.eyebrow}>RH PILOT · LE FIL DE VOS RH</p>
+        <h1 id="arrival-title"><span>Vos RH avancent.</span><em>Vous gardez le fil.</em></h1>
+        <div className={s.introBottom}>
+          <p>Salariés, parcours, échéances : retrouvez les actions à mener et suivez leur avancement dans un même espace.</p>
+          <div><Link href="/sign-up" className={s.primary}>Essayer gratuitement <ArrowUpRight size={18} /></Link><span className={s.offer}>En bêta · Gratuit jusqu’à 3 salariés</span></div>
+        </div>
+        <a className={s.scrollHint} href="#product-story">Le logiciel, sous vos yeux <ArrowDown size={15} /></a>
+        <svg className={s.thread} viewBox="0 0 1200 220" fill="none" aria-hidden="true"><path pathLength="1" d="M1200 5C1050 0 1120 90 920 75S640 60 670 115 850 180 700 195 450 150 220 210" /></svg>
+      </div>
+      <div ref={story} className={s.story} id="product-story">
+        <div className={s.sticky}>
+          <div className={s.storyTop}><span>À L’INTÉRIEUR DE RH PILOT</span><span>Captures de l’application · version bêta</span></div>
+          <div className={s.composition}>
+            <div className={s.editorial}>
+              <span className={s.chapterNumber} aria-hidden="true">0{active + 1}<small>/ 03</small></span>
+              <div className={s.chapterCopy} key={active}><h2>{chapters[active].title}</h2><p>{chapters[active].text}</p></div>
+              <div className={s.controls} aria-label="Choisir une vue du logiciel">{chapters.map((chapter, index) => <button key={chapter.label} type="button" aria-pressed={active === index} aria-controls="real-product-view" onClick={() => selectChapter(index)}><span aria-hidden="true">0{index + 1}</span>{chapter.label}<ArrowUpRight size={15} aria-hidden="true" /></button>)}</div>
+              <Link href="/services#demo" className={s.demoLink}>Explorer la démonstration <ArrowUpRight size={16} /></Link>
             </div>
-          </div>
-          <div className={s.introAside}>
-            <p>
-              Salariés, démarches et échéances : retrouvez ce qui demande votre
-              attention, et avancez.
-            </p>
-            <span>En bêta · Gratuit jusqu’à 3 salariés</span>
-          </div>
-        </div>
-        <div className={s.sceneLabel}>
-          <span>UNE ARRIVÉE, UN FIL CONDUCTEUR.</span>
-          <span>Exemple illustratif · données fictives</span>
-        </div>
-        <div className={s.scene}>
-          <div className={s.toolbar}>
-            <span className={s.brand}>
-              <Logomark size={23} /> RH Pilot
-            </span>
-            <span className={s.breadcrumb}>
-              Parcours <ChevronRight size={12} /> Embauche
-            </span>
-            <span className={s.workspace}>
-              Mon équipe <span>ML</span>
-            </span>
-          </div>
-          <div className={s.workspaceBody}>
-            <aside className={s.rail} aria-label="Repères du logiciel">
-              <Users size={19} />
-              <span className={s.railActive}>
-                <FileText size={19} />
-              </span>
-              <CalendarDays size={19} />
-              <span className={s.railLine} />
-            </aside>
-            <div className={s.journey}>
-              <div className={s.journeyHeader}>
-                <div>
-                  <span className={s.smallLabel}>PARCOURS D’EMBAUCHE</span>
-                  <h2>Bienvenue, Camille.</h2>
-                  <p>
-                    Chargée de clientèle <span>·</span> Arrivée lundi 21
-                    septembre
-                  </p>
-                </div>
-                <span className={s.avatar}>CM</span>
+            <figure id="real-product-view" className={s.product} data-view={active}>
+              <div className={s.productBar}><span>RH Pilot</span><span>{chapters[active].label}</span></div>
+              <div className={s.viewport}>
+                <div className={s.dashboard} aria-hidden={active === 2}><Image src="/marketing/dashboard-real.png" alt="Tableau de bord RH Pilot avec les priorités du jour et le Copilote" width={1887} height={1031} sizes="(max-width: 900px) 160vw, 85vw" priority /></div>
+                <div className={s.copilot} aria-hidden={active !== 2}><Image src="/marketing/copilot-real.png" alt="Échange avec le Copilote à propos des échéances de la semaine" width={1887} height={1030} sizes="(max-width: 900px) 160vw, 85vw" /></div>
               </div>
-              <div className={s.progress}>
-                <span>
-                  <strong>2 sur 4</strong> étapes réalisées
-                </span>
-                <span className={s.progressTrack}>
-                  <i />
-                </span>
-                <span>En préparation</span>
-              </div>
-              <ol className={s.tasks}>
-                <li>
-                  <span className={s.done}>
-                    <Check size={13} />
-                  </span>
-                  <div>
-                    <h3>Créer la fiche de Camille</h3>
-                    <p>Ses informations, réunies au même endroit.</p>
-                  </div>
-                  <span className={s.complete}>Terminé</span>
-                </li>
-                <li>
-                  <span className={s.done}>
-                    <Check size={13} />
-                  </span>
-                  <div>
-                    <h3>Préparer les documents</h3>
-                    <p>Les pièces utiles sont rattachées au parcours.</p>
-                  </div>
-                  <span className={s.complete}>Terminé</span>
-                </li>
-                <li className={s.currentTask}>
-                  <span className={s.todo} />
-                  <div>
-                    <h3>Organiser son premier jour</h3>
-                    <p>Accueil, matériel et présentation de l’équipe.</p>
-                  </div>
-                  <span className={s.assignee}>
-                    <b>LD</b> Léa
-                  </span>
-                </li>
-                <li>
-                  <span className={s.todo} />
-                  <div>
-                    <h3>Faire le point après l’arrivée</h3>
-                    <p>Un échange à préparer avec Camille.</p>
-                  </div>
-                  <span className={s.pending}>À venir</span>
-                </li>
-              </ol>
-              <div className={s.journeyFoot}>
-                <span>Une étape, un responsable, une date.</span>
-                <Link href="/services#demo">
-                  Explorer un parcours <ArrowUpRight size={14} />
-                </Link>
-              </div>
-            </div>
-            <aside className={s.agenda} aria-label="Échéance du parcours">
-              <p className={s.smallLabel}>LE PROCHAIN RENDEZ-VOUS</p>
-              <div className={s.date}>
-                <span>LUNDI</span>
-                <strong>21</strong>
-                <span>SEPTEMBRE</span>
-              </div>
-              <div className={s.appointment}>
-                <span className={s.time}>09:00</span>
-                <h3>Premier jour de Camille</h3>
-                <p>Léa prépare son accueil.</p>
-                <span className={s.linked}>
-                  <span /> Lié au parcours d’embauche
-                </span>
-              </div>
-              <div className={s.mascotNote}>
-                <div className={s.mascot} aria-hidden="true">
-                  <svg viewBox="700 140 554 970" fill="none">
-                    <defs>
-                      <clipPath id="hero-mascot-crop">
-                        <rect x="700" y="140" width="554" height="970" />
-                      </clipPath>
-                    </defs>
-                    <image
-                      href="/illustrations/mascot/intro-push-wave.png"
-                      width="1254"
-                      height="1254"
-                      clipPath="url(#hero-mascot-crop)"
-                    />
-                  </svg>
-                </div>
-                <p>
-                  Une place pour chacun.
-                  <br />
-                  Et pour chaque étape.
-                </p>
-              </div>
-            </aside>
+              <figcaption><span className={s.progressLine} aria-hidden="true"><i /></span>Vos informations. Les actions à suivre.</figcaption>
+            </figure>
           </div>
         </div>
-        <p className={s.sceneCaption}>
-          Du premier document au premier jour : gardez le fil de ce qui reste à
-          faire.
-        </p>
       </div>
     </section>
   );
