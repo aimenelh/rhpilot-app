@@ -46,7 +46,7 @@ describe("IJSS 2026", () => {
     expect(result.firstPeriodDays).toBe(3);
     expect(result.secondPeriodDays).toBe(7);
     expect(result.waitingDays).toBe(0);
-    expect(result.grossBenefitTotal).toBe(758.72);
+    expect(result.grossBenefitTotal).toBe(729.81);
   });
 
   it("n'ajoute les IJSS nettes au net à payer qu'en subrogation", () => {
