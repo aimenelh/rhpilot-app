@@ -91,6 +91,7 @@ export default async function PayrollPage() {
   const demoOnly = employees.length > 0 && employees.every((employee) => employee.isDemoData);
   const now = new Date();
   const currentPeriod = periods.find((period) => period.year === now.getFullYear() && period.month === now.getMonth() + 1);
+  const canPrepareDsn = ["OWNER", "ADMIN"].includes(membership.accessRole);
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -101,6 +102,7 @@ export default async function PayrollPage() {
           <p className="mt-1 max-w-2xl text-sm text-ink-soft">Configurez les profils salariés, préparez une période, puis contrôlez le calcul social avant la génération des bulletins.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {canPrepareDsn ? <Link href="/dashboard/payroll/dsn" className="rounded-lg border border-surface-border bg-white px-3 py-2 text-sm font-semibold text-ink shadow-sm hover:bg-surface-subtle">Préparer la DSN</Link> : null}
           {demoOnly && (
             <form action={prepareDemoPayrollData}>
               <DemoPayrollSetupButton />
