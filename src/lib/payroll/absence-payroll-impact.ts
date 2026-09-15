@@ -32,8 +32,11 @@ function clampToPeriod(date: Date, start: Date, end: Date): Date {
 export function getCalendarOverlapDays(startDate: Date, endDate: Date, periodStart: Date, periodEnd: Date): number {
   if (endDate < startDate || periodEnd < periodStart) return 0;
 
-  const overlapStart = clampToPeriod(startDate, periodStart, periodEnd);
-  const overlapEnd = clampToPeriod(endDate, periodStart, periodEnd);
+  // Vérifier l'intersection avant tout clamp. Clamper séparément deux plages
+  // disjointes peut sinon créer artificiellement une journée commune à la
+  // borne du mois.
+  const overlapStart = startDate > periodStart ? startDate : periodStart;
+  const overlapEnd = endDate < periodEnd ? endDate : periodEnd;
   if (overlapEnd < overlapStart) return 0;
 
   const startMs = Date.UTC(overlapStart.getUTCFullYear(), overlapStart.getUTCMonth(), overlapStart.getUTCDate());
