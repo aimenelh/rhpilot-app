@@ -15,6 +15,31 @@ const VARIABLE_OPTIONS = [
   ["OBJECTIVE_BONUS", "Prime sur objectifs"],
   ["EXCEPTIONAL_BONUS", "Prime exceptionnelle"],
   ["SUJETION_BONUS", "Prime de sujétion"],
+  ["OVERTIME_HOURS", "Heures supplémentaires — montant brut calculé"],
+  ["ADDITIONAL_HOURS", "Heures complémentaires — montant brut calculé"],
+  ["INCOMPLETE_MONTH", "Entrée / sortie en cours de mois — retenue calculée"],
+  ["PAID_LEAVE_INDEMNITY", "Indemnité de congés payés"],
+  ["SICK_PAY_MAINTENANCE", "Maintien employeur maladie"],
+  ["IJSS_SUBROGATED", "IJSS subrogées nettes à réintégrer"],
+  ["BENEFIT_MEAL", "Avantage en nature nourriture"],
+  ["BENEFIT_HOUSING", "Avantage en nature logement"],
+  ["BENEFIT_VEHICLE", "Avantage en nature véhicule"],
+  ["BENEFIT_TECHNOLOGY", "Avantage en nature NTIC"],
+  ["BENEFIT_OTHER", "Autre avantage en nature"],
+  ["EXPENSE_REAL", "Frais professionnels au réel"],
+  ["EXPENSE_MEAL", "Frais de repas"],
+  ["EXPENSE_KILOMETRIC", "Indemnités kilométriques"],
+  ["EXPENSE_TRAVEL", "Frais de grand déplacement"],
+  ["EXPENSE_HOTEL", "Hébergement professionnel"],
+  ["PUBLIC_TRANSPORT", "Transport public domicile-travail"],
+  ["SUSTAINABLE_MOBILITY", "Forfait mobilités durables"],
+  ["TRANSPORT_ALLOWANCE", "Prime / prise en charge de transport"],
+  ["MEAL_VOUCHER_EMPLOYEE", "Titres-restaurant — part salarié"],
+  ["MEAL_VOUCHER_EMPLOYER", "Titres-restaurant — part employeur"],
+  ["CDD_END_ALLOWANCE", "Indemnité de fin de CDD"],
+  ["PAID_LEAVE_COMPENSATION", "Indemnité compensatrice de congés payés"],
+  ["NOTICE_COMPENSATION", "Indemnité compensatrice de préavis"],
+  ["OTHER_NET_DEDUCTION", "Autre retenue sur net"],
 ] as const;
 
 const SOURCE_LABELS: Record<string, string> = { MANUAL: "Saisie manuelle", IMPORT: "Import", SYSTEM: "Système" };
@@ -77,12 +102,12 @@ export default function PayrollVariablesSection({ periodId, employees, variables
 
   return (
     <section className="mt-7 rounded-xl border border-surface-border bg-white">
-      <div className="border-b border-surface-border px-5 py-4"><h2 className="font-semibold text-ink">Variables de paie</h2><p className="mt-1 text-xs text-ink-faint">Sélectionnez un élément reconnu par RH Pilot et saisissez son montant brut en euros. Le traitement réglementaire reste porté par la règle de paie validée.</p></div>
+      <div className="border-b border-surface-border px-5 py-4"><h2 className="font-semibold text-ink">Variables de paie</h2><p className="mt-1 text-xs text-ink-faint">Sélectionnez un élément reconnu par RH Pilot et saisissez son montant en euros déjà déterminé. Les heures, proratas, avantages, frais, IJSS et indemnités doivent être calculés avec leur règle applicable avant saisie ; RH Pilot applique ensuite le traitement brut/net versionné sans inventer de barème.</p></div>
       {canEdit && <form action={formAction} className="grid gap-3 border-b border-surface-border bg-surface-subtle/30 p-5 lg:grid-cols-[1.2fr_1.4fr_1fr_auto]">
         <label className="text-xs font-medium text-ink-soft">Salarié<select name="employeeId" required className="mt-1 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink"><option value="">Sélectionner…</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}</select></label>
-        <label className="text-xs font-medium text-ink-soft">Type de variable<select name="code" value={selectedVariable} onChange={(event) => setSelectedVariable(event.target.value)} required className="mt-1 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink">{VARIABLE_OPTIONS.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></label>
+        <label className="text-xs font-medium text-ink-soft">Élément de paie<select name="code" value={selectedVariable} onChange={(event) => setSelectedVariable(event.target.value)} required className="mt-1 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink">{VARIABLE_OPTIONS.map(([code, label]) => <option key={code} value={code}>{label}</option>)}</select></label>
         <input type="hidden" name="label" value={selectedLabel} />
-        <label className="text-xs font-medium text-ink-soft">Montant brut<input name="amount" required inputMode="decimal" placeholder="200,00" className="mt-1 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink" /><input type="hidden" name="unit" value="EUR" /></label>
+        <label className="text-xs font-medium text-ink-soft">Montant déterminé<input name="amount" required inputMode="decimal" placeholder="200,00" className="mt-1 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink" /><input type="hidden" name="unit" value="EUR" /></label>
         <div className="flex items-end"><SubmitButton /></div>
       </form>}
       {state?.error && <div className="border-b border-surface-border bg-accent-amber/10 px-5 py-3 text-sm text-ink">{state.error}</div>}
