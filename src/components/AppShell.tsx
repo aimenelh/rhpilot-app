@@ -116,7 +116,7 @@ export function AppShell({
         <Wordmark />
       </div>
 
-      <nav className="mt-8 flex flex-col gap-1">
+      <nav className="mt-7 flex flex-col gap-1" aria-label="Navigation principale">
         {NAV_ITEMS.map((item) => {
           const isActive =
             item.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.href);
@@ -131,6 +131,7 @@ export function AppShell({
               <Link
                 href={item.href}
                 onClick={() => setMobileNavOpen(false)}
+                aria-current={isActive ? "page" : undefined}
                 className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
                   isActive
                     ? "bg-brand-primary/10 text-brand-primary"
@@ -149,6 +150,7 @@ export function AppShell({
         <Link
           href={HELP_ITEM.href}
           onClick={() => setMobileNavOpen(false)}
+          aria-current={pathname.startsWith(HELP_ITEM.href) ? "page" : undefined}
           className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
             pathname.startsWith(HELP_ITEM.href)
               ? "bg-brand-primary/10 text-brand-primary"
@@ -159,7 +161,7 @@ export function AppShell({
           {HELP_ITEM.label}
         </Link>
         <a
-          href="mailto:aimenoffi@gmail.com?subject=Retour%20b%C3%AAta%20RH%20Pilot"
+          href="mailto:aimenoffi@gmail.com?subject=Retour%20RH%20Pilot"
           className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-faint transition-colors hover:bg-surface-subtle hover:text-ink-soft"
         >
           <Mail size={15} />
@@ -177,7 +179,12 @@ export function AppShell({
       </aside>
 
       {mobileNavOpen && (
-        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-label="Menu de navigation">
+        <div
+          className="fixed inset-0 z-50 md:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu de navigation"
+        >
           <div
             className="absolute inset-0 bg-ink/30"
             onClick={() => setMobileNavOpen(false)}
@@ -207,7 +214,7 @@ export function AppShell({
           </div>
         )}
 
-        <header className="flex h-16 items-center gap-3 border-b border-surface-border bg-white px-4 md:gap-6 md:px-8">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-surface-border bg-white/95 px-4 backdrop-blur md:gap-6 md:px-8">
           <button
             type="button"
             onClick={() => setMobileNavOpen(true)}
