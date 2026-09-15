@@ -1,4 +1,4 @@
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { buildDsnP26V01Monthly, type DsnP26MonthlyInput } from "./dsn-p26v01";
 import { decryptDsnSensitiveValue, assertNirFormat } from "./dsn-pii";
