@@ -99,20 +99,33 @@ function decimal(value: number): string {
   return String(Math.round((value + Number.EPSILON) * 100) / 100);
 }
 
-function text(value: string, label: string): string {
-  const normalized = value.trim().replace(/\s+/g, " ");
-  if (!normalized) throw new Error(`DSN bloquée : ${label} est absent.`);
-  if (/['\r\n]/.test(normalized)) {
-    throw new Error(`DSN bloquée : ${label} contient un caractère incompatible avec le format DSN.`);
+function assertLatin1(value: string, label: string): void {
+  for (const character of value) {
+    if (character.charCodeAt(0) > 255) {
+      throw new Error(`DSN bloquée : ${label} contient un caractère hors ISO-8859-1 (${JSON.stringify(character)}).`);
+    }
   }
+}
+
+function normalizeText(value: string, label: string, optional = false): string | null {
+  if (/[\r\n\0]/.test(value)) {
+    throw new Error(`DSN bloquée : ${label} contient un caractère de contrôle incompatible avec le format DSN.`);
+  }
+  const normalized = value.trim().replace(/[\t\f\v ]+/g, " ");
+  if (!normalized) {
+    if (optional) return null;
+    throw new Error(`DSN bloquée : ${label} est absent.`);
+  }
+  assertLatin1(normalized, label);
   return normalized;
 }
 
+function text(value: string, label: string): string {
+  return normalizeText(value, label) as string;
+}
+
 function optionalText(value: string | null | undefined): string | null {
-  const normalized = value?.trim().replace(/\s+/g, " ") ?? "";
-  if (!normalized) return null;
-  if (/['\r\n]/.test(normalized)) throw new Error("DSN bloquée : une donnée contient un caractère incompatible avec le format DSN.");
-  return normalized;
+  return normalizeText(value ?? "", "une donnée facultative", true);
 }
 
 function assertDigits(value: string, length: number, label: string): string {
@@ -133,11 +146,26 @@ function assertCode(value: string, label: string, min = 1, max = 20): string {
 
 function add(lines: DsnLine[], code: string, value: string | number | null | undefined): void {
   if (value === null || value === undefined || value === "") return;
-  lines.push({ code, value: String(value) });
+  if (!/^[A-Z0-9]+(?:\.[A-Z0-9]+)+$/.test(code)) {
+    throw new Error(`DSN bloquée : code de rubrique invalide (${code}).`);
+  }
+  const rendered = String(value);
+  assertLatin1(rendered, `la rubrique ${code}`);
+  if (/[\r\n\0]/.test(rendered)) {
+    throw new Error(`DSN bloquée : la rubrique ${code} contient un caractère de contrôle.`);
+  }
+  lines.push({ code, value: rendered });
 }
 
 function serialize(lines: DsnLine[]): string {
-  return `${lines.map((line) => `${line.code},'${line.value}'`).join("\r\n")}\r\n`;
+  const rendered = lines.map((line) => {
+    const value = `${line.code},'${line.value}'`;
+    if (Buffer.byteLength(value, "latin1") > 256) {
+      throw new Error(`DSN bloquée : la rubrique ${line.code} dépasse la longueur physique maximale de 256 caractères.`);
+    }
+    return value;
+  });
+  return `${rendered.join("\r\n")}\r\n`;
 }
 
 function siretParts(siretValue: string): { siren: string; nic: string; siret: string } {
@@ -150,7 +178,7 @@ function addRemuneration(
   periodStart: Date,
   periodEnd: Date,
   contractNumber: string,
-  type: "001" | "002" | "010",
+  type: "001" | "002" | "003" | "010",
   amount: number,
 ): void {
   add(lines, "S21.G00.51.001", dsnDate(periodStart));
@@ -263,9 +291,12 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
     add(lines, "S21.G00.50.009", money(employee.payroll.pas.withholdingAmount));
     add(lines, "S21.G00.50.013", money(employee.payroll.pas.amountSubjectToPas));
 
-    // Rémunérations minimales du périmètre simple supporté.
+    // Sur le périmètre volontairement simple (aucune variable ni absence), le
+    // salaire rétabli correspond au salaire de base qu'aurait perçu le salarié
+    // s'il avait travaillé normalement pendant tout le mois.
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "001", employee.payroll.grossAmount);
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "002", employee.payroll.grossAmount);
+    addRemuneration(lines, periodStart, periodEnd, contractNumber, "003", employee.payroll.baseSalary);
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "010", employee.payroll.baseSalary);
 
     // Montant net social.
