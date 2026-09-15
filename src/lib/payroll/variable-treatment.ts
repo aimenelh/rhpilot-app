@@ -21,15 +21,31 @@ function roundMoney(value: number): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
+function inferKindFromGrossEffect(
+  effect: PayrollVariableGrossEffect,
+  allowedKinds: readonly PayrollElementKind[] | undefined,
+): PayrollElementKind {
+  const preferred: PayrollElementKind =
+    effect === "ADD_TO_GROSS"
+      ? "ADD_TO_GROSS"
+      : effect === "SUBTRACT_FROM_GROSS"
+        ? "DEDUCT_FROM_GROSS"
+        : "INFORMATIONAL";
+
+  if (!allowedKinds || allowedKinds.includes(preferred)) return preferred;
+  if (effect === "EXCLUDE_FROM_GROSS") return allowedKinds[0] ?? "INFORMATIONAL";
+  throw new Error(`Le traitement ${effect} n'est pas compatible avec la nature de l'élément de paie.`);
+}
+
 /**
  * Détermine l'impact d'une variable sur le brut uniquement à partir
  * d'une règle explicitement versionnée.
  *
- * Le catalogue métier distingue désormais les éléments de brut, retenues,
- * remboursements et éléments non monétaires. Tant que le ledger final de
- * bulletin n'existe pas, seuls les éléments réellement applicables au brut
- * peuvent traverser cette fonction ; les autres doivent être bloqués au lieu
- * d'être implicitement transformés en salaire.
+ * Le catalogue métier distingue les éléments de brut, retenues,
+ * remboursements et éléments non monétaires. Tant que le traitement complet
+ * n'est pas résolu, seuls les éléments réellement applicables au brut peuvent
+ * traverser cette fonction ; les autres sont bloqués au lieu d'être
+ * implicitement transformés en salaire.
  */
 export function resolvePayrollVariableTreatment(input: {
   code: string;
@@ -58,7 +74,9 @@ export function resolvePayrollVariableTreatment(input: {
   }
 
   const definition = getPayrollElementDefinition(input.code);
-  const kind = input.rule.kind ?? definition?.allowedKinds[0] ?? "ADD_TO_GROSS";
+  const kind =
+    input.rule.kind ??
+    inferKindFromGrossEffect(input.rule.grossEffect, definition?.allowedKinds);
 
   if (definition && !definition.allowedKinds.includes(kind)) {
     throw new Error(`Le type de traitement ${kind} n'est pas autorisé pour l'élément ${input.code}.`);
@@ -73,13 +91,11 @@ export function resolvePayrollVariableTreatment(input: {
   }
 
   const grossDelta =
-    kind === "ADD_TO_GROSS"
+    input.rule.grossEffect === "ADD_TO_GROSS"
       ? input.amount
       : input.rule.grossEffect === "SUBTRACT_FROM_GROSS"
         ? -input.amount
-        : input.rule.grossEffect === "ADD_TO_GROSS"
-          ? input.amount
-          : 0;
+        : 0;
 
   return {
     code: input.code,
