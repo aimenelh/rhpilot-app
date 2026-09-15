@@ -2,6 +2,8 @@ const TONE_CLASSES = {
   neutral: "bg-surface-subtle text-ink-soft",
   brand: "bg-brand-primary/10 text-brand-primary",
   teal: "bg-accent-teal/10 text-accent-teal",
+  amber: "bg-accent-amber/10 text-accent-amber",
+  rose: "bg-accent-rose/10 text-accent-rose",
 } as const;
 
 export function Badge({
