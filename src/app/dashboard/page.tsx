@@ -10,21 +10,24 @@ import {
   ClipboardCheck,
   ShieldCheck,
   Plus,
-  Play,
+  Route,
 } from "lucide-react";
 import { getCurrentMemberships } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CreateOrganizationForm } from "./CreateOrganizationForm";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Mascot, isPoseAvailable, type MascotPose } from "@/components/Mascot";
+import { Mascot, type MascotPose } from "@/components/Mascot";
 import { formatRelativeDueDate, isOverdue } from "@/lib/urgency";
 import { getUserDisplayName } from "@/lib/displayName";
 import { DidYouKnowCard } from "@/components/DidYouKnowCard";
 import { AskAboutOrganization } from "@/components/AskAboutOrganization";
+
 export const dynamic = "force-dynamic";
+
 type AttentionReason = "overdue" | "unassigned" | "soon";
 type OpenTask = Awaited<ReturnType<typeof getOpenTasks>>[number];
+
 async function getOpenTasks(organizationId: string) {
   return prisma.task.findMany({
     where: {
@@ -35,6 +38,7 @@ async function getOpenTasks(organizationId: string) {
     include: { employeeEvent: { include: { employee: true } } },
   });
 }
+
 function getReason(task: OpenTask): AttentionReason | null {
   if (isOverdue(task.dueDate, task.status)) return "overdue";
   if (!task.assignedMembershipId) return "unassigned";
@@ -44,7 +48,9 @@ function getReason(task: OpenTask): AttentionReason | null {
   if (diff >= 0 && diff <= 7) return "soon";
   return null;
 }
+
 const REASON_PRIORITY: Record<AttentionReason, number> = { overdue: 0, unassigned: 1, soon: 2 };
+
 const AUDIT_LABELS: Record<string, (metadata: unknown) => string> = {
   "organization.created": () => "Organisation créée",
   "organization.demo_generated": () => "Entreprise de démonstration générée",
@@ -65,15 +71,8 @@ const AUDIT_LABELS: Record<string, (metadata: unknown) => string> = {
   "invitation.accepted": () => "Invitation acceptée",
   "invitation.accepted_via_code": () => "Invitation acceptée (via lien)",
   "membership.left_for_another_org": () => "A quitté cette organisation",
-  "payroll.variable.created": () => "Variable de paie ajoutée",
-  "payroll.variable.deleted": () => "Variable de paie supprimée",
-  "payroll.period.review.started": () => "Contrôle de paie ouvert",
-  "payroll.period.validated": () => "Période de paie validée",
-  "payroll.period.locked": () => "Période de paie verrouillée",
-  "payroll.period.reopened": () => "Période de paie rouverte",
-  "payroll.payslips.prepared": () => "Bulletins préparés",
-  "payroll.payslips.generated": () => "Bulletins générés",
 };
+
 function timeAgo(date: Date): string {
   const diffMs = Date.now() - date.getTime();
   const minutes = Math.round(diffMs / 60000);
@@ -86,60 +85,69 @@ function timeAgo(date: Date): string {
   if (days < 7) return `il y a ${days} jours`;
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(date);
 }
+
 export default async function DashboardPage({
   searchParams,
 }: {
   searchParams: { view?: string };
 }) {
   const { user, memberships } = await getCurrentMemberships();
-  if (memberships.length === 0) {
-    return <CreateOrganizationForm />;
-  }
+  if (memberships.length === 0) return <CreateOrganizationForm />;
+
   const organizationId = memberships[0].organizationId;
   const organization = memberships[0].organization;
   const view = searchParams.view === "tasks" ? "tasks" : "employee";
   const aiEnabled = Boolean(process.env.ANTHROPIC_API_KEY);
-  const [
-    employeeCount,
-    eventCount,
-    doneCount,
-    openTasks,
-    membersInOrgCount,
-    recentActivity,
-  ] = await Promise.all([
-    prisma.employee.count({ where: { organizationId, deletedAt: null } }),
-    prisma.employeeEvent.count({ where: { organizationId, employee: { deletedAt: null }, deletedAt: null } }),
-    prisma.task.count({
-      where: { organizationId, status: "DONE", employeeEvent: { employee: { deletedAt: null } } },
-    }),
-    getOpenTasks(organizationId),
-    prisma.membership.count({ where: { organizationId, deletedAt: null } }),
-    prisma.auditLog.findMany({
-      where: { organizationId },
-      include: { actor: true },
-      orderBy: { createdAt: "desc" },
-      take: 6,
-    }),
-  ]);
+
+  const [employeeCount, eventCount, doneCount, openTasks, membersInOrgCount, recentActivity] =
+    await Promise.all([
+      prisma.employee.count({ where: { organizationId, deletedAt: null } }),
+      prisma.employeeEvent.count({
+        where: { organizationId, employee: { deletedAt: null }, deletedAt: null },
+      }),
+      prisma.task.count({
+        where: { organizationId, status: "DONE", employeeEvent: { employee: { deletedAt: null } } },
+      }),
+      getOpenTasks(organizationId),
+      prisma.membership.count({ where: { organizationId, deletedAt: null } }),
+      prisma.auditLog.findMany({
+        where: { organizationId },
+        include: { actor: true },
+        orderBy: { createdAt: "desc" },
+        take: 6,
+      }),
+    ]);
+
   const flagged = openTasks
     .map((task) => ({ task, reason: getReason(task) }))
     .filter((entry): entry is { task: OpenTask; reason: AttentionReason } => entry.reason !== null);
-  const overdueCount = flagged.filter((e) => e.reason === "overdue").length;
-  const soonCount = flagged.filter((e) => e.reason === "soon").length;
+
+  const overdueCount = flagged.filter((entry) => entry.reason === "overdue").length;
+  const soonCount = flagged.filter((entry) => entry.reason === "soon").length;
+  const unassignedCount = flagged.filter((entry) => entry.reason === "unassigned").length;
+
   const attentionTasks = [...flagged]
     .sort((a, b) => {
       if (a.reason !== b.reason) return REASON_PRIORITY[a.reason] - REASON_PRIORITY[b.reason];
       return a.task.dueDate.getTime() - b.task.dueDate.getTime();
     })
     .slice(0, 10);
+
   const groupsByEmployee = new Map<
     string,
-    { employeeId: string; employeeName: string; overdueCount: number; unassignedCount: number; soonCount: number; earliestDue: Date }
+    {
+      employeeId: string;
+      employeeName: string;
+      overdueCount: number;
+      unassignedCount: number;
+      soonCount: number;
+      earliestDue: Date;
+    }
   >();
+
   for (const { task, reason } of flagged) {
     const employee = task.employeeEvent.employee;
-    const existing = groupsByEmployee.get(employee.id);
-    const group = existing ?? {
+    const group = groupsByEmployee.get(employee.id) ?? {
       employeeId: employee.id,
       employeeName: `${employee.firstName} ${employee.lastName}`,
       overdueCount: 0,
@@ -153,138 +161,127 @@ export default async function DashboardPage({
     if (task.dueDate < group.earliestDue) group.earliestDue = task.dueDate;
     groupsByEmployee.set(employee.id, group);
   }
+
   const employeeGroups = Array.from(groupsByEmployee.values()).sort((a, b) => {
-    const severity = (g: typeof a) => (g.overdueCount > 0 ? 0 : g.unassignedCount > 0 ? 1 : 2);
-    const sa = severity(a);
-    const sb = severity(b);
-    if (sa !== sb) return sa - sb;
-    return a.earliestDue.getTime() - b.earliestDue.getTime();
+    const severity = (group: typeof a) =>
+      group.overdueCount > 0 ? 0 : group.unassignedCount > 0 ? 1 : 2;
+    const severityDifference = severity(a) - severity(b);
+    return severityDifference !== 0
+      ? severityDifference
+      : a.earliestDue.getTime() - b.earliestDue.getTime();
   });
-  const EMPLOYEE_GROUPS_LIMIT = 8;
-  const visibleEmployeeGroups = employeeGroups.slice(0, EMPLOYEE_GROUPS_LIMIT);
+
+  const visibleEmployeeGroups = employeeGroups.slice(0, 8);
   const hiddenEmployeeGroupsCount = employeeGroups.length - visibleEmployeeGroups.length;
-  const overdueEmployeeEventIds = new Set(
-    flagged.filter((f) => f.reason === "overdue").map((f) => f.task.employeeEventId)
+  const overdueEventIds = new Set(
+    flagged.filter((entry) => entry.reason === "overdue").map((entry) => entry.task.employeeEventId)
   );
   const percentUpToDate =
-    eventCount > 0 ? Math.round(((eventCount - overdueEmployeeEventIds.size) / eventCount) * 100) : 100;
+    eventCount > 0 ? Math.round(((eventCount - overdueEventIds.size) / eventCount) * 100) : null;
+
   const isEmpty = employeeCount === 0;
   const onboardingSteps = [
     { label: "Créer votre organisation", done: true },
-    { label: "Définir votre convention collective", done: !!organization.conventionCollective },
+    { label: "Définir votre convention collective", done: Boolean(organization.conventionCollective) },
     { label: "Ajouter votre premier salarié", done: employeeCount > 0 },
     { label: "Déclencher un premier parcours", done: eventCount > 0 },
     { label: "Inviter un collègue", done: membersInOrgCount > 1 },
   ];
-  const doneStepsCount = onboardingSteps.filter((s) => s.done).length;
-  const allStepsDone = doneStepsCount === onboardingSteps.length;
+  const allStepsDone = onboardingSteps.every((step) => step.done);
+
   let tip: { heading: string; description: string; ctaLabel: string; ctaHref: string } | null = null;
   if (!organization.conventionCollective) {
     tip = {
       heading: "Renseignez votre convention collective",
-      description:
-        "Cela permet à RH Pilot de vous orienter vers les bonnes sources officielles lors des embauches, périodes d'essai et visites médicales.",
-      ctaLabel: "Configurer maintenant",
+      description: "Elle permet de mieux contextualiser les parcours et les échéances RH.",
+      ctaLabel: "Configurer",
       ctaHref: "/dashboard/configuration/organisation",
-    };
-  } else if (membersInOrgCount === 1) {
-    tip = {
-      heading: "Invitez votre équipe",
-      description: "Ajoutez un collègue afin de pouvoir lui assigner automatiquement des tâches.",
-      ctaLabel: "Inviter un collègue",
-      ctaHref: "/dashboard/team",
     };
   } else if (employeeCount > 0 && eventCount === 0) {
     tip = {
       heading: "Lancez votre premier parcours",
-      description: "Déclenchez un parcours RH depuis la fiche d'un salarié pour voir RH Pilot en action.",
-      ctaLabel: "Voir mes salariés",
+      description: "Déclenchez un parcours RH depuis la fiche d’un salarié pour commencer le suivi.",
+      ctaLabel: "Voir les salariés",
       ctaHref: "/dashboard/employees",
     };
+  } else if (membersInOrgCount === 1) {
+    tip = {
+      heading: "Invitez votre équipe",
+      description: "Ajoutez un collègue pour répartir les responsabilités dans les parcours.",
+      ctaLabel: "Inviter un collègue",
+      ctaHref: "/dashboard/team",
+    };
   }
+
   let synthesis: string;
   if (isEmpty) {
-    synthesis =
-      "Ajoutez votre premier salarié pour commencer à suivre ses échéances RH.";
+    synthesis = "Ajoutez votre premier salarié pour commencer à suivre les échéances RH.";
   } else if (overdueCount > 0) {
     synthesis = `${overdueCount} tâche${overdueCount > 1 ? "s" : ""} en retard nécessite${overdueCount > 1 ? "nt" : ""} votre attention.`;
-  } else if (soonCount > 0) {
-    synthesis = `${soonCount} échéance${soonCount > 1 ? "s" : ""} arrive${soonCount > 1 ? "nt" : ""} cette semaine.`;
+  } else if (soonCount > 0 || unassignedCount > 0) {
+    synthesis = `${soonCount + unassignedCount} point${soonCount + unassignedCount > 1 ? "s" : ""} à traiter dans les parcours enregistrés.`;
+  } else if (eventCount === 0) {
+    synthesis = "Aucun parcours actif : le suivi des échéances n’a pas encore commencé.";
   } else {
-    synthesis = "Aucune échéance critique aujourd'hui. Tout est sous contrôle.";
+    synthesis = "Aucune échéance urgente détectée dans les parcours enregistrés aujourd’hui.";
   }
+
   let mascotPose: MascotPose = "dashboard";
-  if (!isEmpty) {
-    if (overdueCount > 0) mascotPose = "urgent";
-    else if (soonCount > 0) mascotPose = "deadline";
-    else if (flagged.length === 0) mascotPose = "calm";
-  }
+  if (overdueCount > 0) mascotPose = "urgent";
+  else if (soonCount > 0) mascotPose = "deadline";
+  else if (!isEmpty) mascotPose = "calm";
+
   const firstName = user!.firstName || user!.email.split("@")[0];
+
   return (
-    <div className="max-w-5xl">
-      <div className="flex flex-wrap items-start justify-between gap-6">
+    <div className="max-w-6xl">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <h1 data-tour="dashboard-attention" className="text-2xl font-semibold text-ink">
             Bonjour {firstName} 👋
           </h1>
-          <p className="mt-1 max-w-xl text-sm text-ink-soft">{synthesis}</p>
-          <div className="mt-4 flex flex-wrap gap-3">
-            {employeeCount === 0 && (
-              <Link href="/dashboard/employees/new">
-                <Button data-tour="add-employee">
-                  <span className="inline-flex items-center gap-1.5">
-                    <Plus size={16} /> Ajouter un salarié
-                  </span>
-                </Button>
-              </Link>
-            )}
-            {isEmpty && (
-              <Link href="/dashboard/employees">
-                <Button variant="secondary">
-                  <span className="inline-flex items-center gap-1.5">
-                    <Play size={14} /> Découvrir RH Pilot
-                  </span>
-                </Button>
-              </Link>
-            )}
+          <p className="mt-1 max-w-2xl text-sm text-ink-soft">{synthesis}</p>
+          <div className="mt-4 flex flex-wrap gap-2.5">
+            <Link href="/dashboard/employees/new">
+              <Button data-tour="add-employee">
+                <span className="inline-flex items-center gap-1.5">
+                  <Plus size={16} /> Ajouter un salarié
+                </span>
+              </Button>
+            </Link>
+            <Link href="/dashboard/events">
+              <Button variant="secondary">
+                <span className="inline-flex items-center gap-1.5">
+                  <Route size={15} /> Lancer un parcours
+                </span>
+              </Button>
+            </Link>
           </div>
         </div>
-        <Mascot pose={mascotPose} className="hidden shrink-0 md:block" />
+        <Mascot pose={mascotPose} className="hidden shrink-0 lg:block" />
       </div>
 
-      {/* Niveau 2 : "Votre attention est requise" — remonté en tout
-          premier après l'en-tête, avant les statistiques. C'est le
-          bloc le plus important de la page (voir Phase 3.5, brief
-          Design & Identité), il ne doit jamais être concurrencé par
-          des chiffres agrégés. */}
-      {flagged.length === 0 ? (
-        <Card className="mt-5">
-          <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-start gap-3">
-              <CircleCheck size={22} className="mt-0.5 shrink-0 text-accent-teal" />
-              <div>
-                <h2 className="text-base font-semibold text-ink">Tout est sous contrôle</h2>
-                <p className="mt-1 text-sm text-ink-soft">
-                  {isEmpty ? "Aucun événement RH en cours." : "Aucune action urgente aujourd'hui."}
-                </p>
-                <p className="mt-2 max-w-sm text-sm text-ink-faint">
-                  Lorsque vous ajouterez un salarié ou déclencherez un parcours, RH Pilot centralisera
-                  automatiquement toutes les échéances ici.
-                </p>
-              </div>
-            </div>
-            {isPoseAvailable("calm") && (
-              <Mascot pose="calm" className="hidden h-28 w-auto shrink-0 sm:block" />
-            )}
-          </div>
-        </Card>
-      ) : (
-        <Card className="mt-5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
+      <Card className={`mt-5 ${flagged.length === 0 ? "border-accent-teal/20" : "border-accent-amber/25"}`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            {flagged.length === 0 ? (
+              <CircleCheck size={18} className="text-accent-teal" />
+            ) : (
               <TriangleAlert size={18} className="text-accent-amber" />
-              <h2 className="text-sm font-semibold text-ink">Priorités du jour</h2>
+            )}
+            <div>
+              <h2 className="text-sm font-semibold text-ink">
+                {flagged.length === 0 ? "Aucune priorité urgente détectée" : "Priorités du jour"}
+              </h2>
+              {flagged.length === 0 && (
+                <p className="mt-0.5 text-xs text-ink-faint">
+                  État basé uniquement sur les parcours et échéances actuellement enregistrés dans RH Pilot.
+                </p>
+              )}
             </div>
+          </div>
+
+          {flagged.length > 0 && (
             <div className="flex gap-1 rounded-lg bg-surface-subtle p-1 text-xs font-medium">
               <Link
                 href="/dashboard?view=employee"
@@ -299,130 +296,103 @@ export default async function DashboardPage({
                 Toutes les tâches
               </Link>
             </div>
-          </div>
-          {view === "employee" ? (
-            <>
-              <ul className="mt-4 flex flex-col divide-y divide-surface-border">
-                {visibleEmployeeGroups.map((group) => (
-                  <li key={group.employeeId} className="flex items-center justify-between gap-4 py-3">
-                    <Link href={`/dashboard/employees/${group.employeeId}`} className="flex-1 hover:text-brand-primary">
-                      <p className="text-sm font-medium text-ink">{group.employeeName}</p>
-                      <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-faint">
-                        {group.overdueCount > 0 && (
-                          <span className="flex items-center gap-1 text-accent-rose">
-                            <TriangleAlert size={12} /> {group.overdueCount} en retard
-                          </span>
-                        )}
-                        {group.unassignedCount > 0 && (
-                          <span className="flex items-center gap-1 text-brand-primary">
-                            <UserRoundX size={12} /> {group.unassignedCount} à assigner
-                          </span>
-                        )}
-                        {group.soonCount > 0 && (
-                          <span className="flex items-center gap-1 text-accent-amber">
-                            <Clock size={12} /> {group.soonCount} cette semaine
-                          </span>
-                        )}
-                      </p>
-                    </Link>
-                    <Link href={`/dashboard/employees/${group.employeeId}`} className="shrink-0 text-xs font-medium text-brand-primary hover:underline">
-                      Voir le parcours →
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              {hiddenEmployeeGroupsCount > 0 && (
-                <p className="mt-3 text-xs text-ink-faint">
-                  + {hiddenEmployeeGroupsCount} autre{hiddenEmployeeGroupsCount > 1 ? "s" : ""}{" "}
-                  salarié{hiddenEmployeeGroupsCount > 1 ? "s" : ""} nécessitant votre attention, affinez via{" "}
-                  <Link href="/dashboard?view=tasks" className="text-brand-primary hover:underline">
-                    Toutes les tâches
+          )}
+        </div>
+
+        {flagged.length > 0 && view === "employee" && (
+          <>
+            <ul className="mt-3 flex flex-col divide-y divide-surface-border">
+              {visibleEmployeeGroups.map((group) => (
+                <li key={group.employeeId} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
+                  <Link href={`/dashboard/employees/${group.employeeId}`} className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-ink hover:text-brand-primary">{group.employeeName}</p>
+                    <p className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-ink-faint">
+                      {group.overdueCount > 0 && <span className="text-accent-rose">{group.overdueCount} en retard</span>}
+                      {group.unassignedCount > 0 && <span>{group.unassignedCount} à assigner</span>}
+                      {group.soonCount > 0 && <span>{group.soonCount} cette semaine</span>}
+                    </p>
                   </Link>
-                  .
-                </p>
-              )}
-            </>
-          ) : (
-            <ul className="mt-4 flex flex-col divide-y divide-surface-border">
-              {attentionTasks.map(({ task, reason }) => (
-                <li key={task.id} className="flex items-center justify-between gap-4 py-3">
-                  <Link href={`/dashboard/events/${task.employeeEventId}`} className="flex items-center gap-3">
-                    {reason === "overdue" && <TriangleAlert size={16} className="shrink-0 text-accent-rose" />}
-                    {reason === "unassigned" && <UserRoundX size={16} className="shrink-0 text-brand-primary" />}
-                    {reason === "soon" && <Clock size={16} className="shrink-0 text-accent-amber" />}
-                    <div>
-                      <p className="text-sm font-medium text-ink hover:text-brand-primary">
-                        {task.label} ({task.employeeEvent.employee.firstName} {task.employeeEvent.employee.lastName})
-                      </p>
-                      <p className="mt-0.5 text-xs text-ink-faint">
-                        {reason === "unassigned" ? "À assigner" : formatRelativeDueDate(task.dueDate)}
-                      </p>
-                    </div>
+                  <Link href={`/dashboard/employees/${group.employeeId}`} className="text-xs font-medium text-brand-primary hover:underline">
+                    Ouvrir →
                   </Link>
                 </li>
               ))}
             </ul>
-          )}
-        </Card>
-      )}
+            {hiddenEmployeeGroupsCount > 0 && (
+              <p className="mt-3 text-xs text-ink-faint">
+                + {hiddenEmployeeGroupsCount} autre{hiddenEmployeeGroupsCount > 1 ? "s" : ""} salarié
+                {hiddenEmployeeGroupsCount > 1 ? "s" : ""} à consulter.
+              </p>
+            )}
+          </>
+        )}
 
-      {/* Le Copilote est désormais le seul bloc de conseil sur le
-          dashboard. Les anciennes suggestions/anomalies ont été
-          retirées : elles faisaient doublon avec les priorités du jour
-          et le Copilote, tout en ajoutant un second niveau d'information. */}
-      <div className="mt-5">
-        <AskAboutOrganization aiEnabled={aiEnabled} />
-      </div>
+        {flagged.length > 0 && view === "tasks" && (
+          <ul className="mt-3 flex flex-col divide-y divide-surface-border">
+            {attentionTasks.map(({ task, reason }) => (
+              <li key={task.id} className="py-3">
+                <Link href={`/dashboard/events/${task.employeeEventId}`} className="flex items-start gap-3">
+                  {reason === "overdue" && <TriangleAlert size={16} className="mt-0.5 shrink-0 text-accent-rose" />}
+                  {reason === "unassigned" && <UserRoundX size={16} className="mt-0.5 shrink-0 text-brand-primary" />}
+                  {reason === "soon" && <Clock size={16} className="mt-0.5 shrink-0 text-accent-amber" />}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-ink hover:text-brand-primary">
+                      {task.label} · {task.employeeEvent.employee.firstName} {task.employeeEvent.employee.lastName}
+                    </p>
+                    <p className="mt-0.5 text-xs text-ink-faint">
+                      {reason === "unassigned" ? "Responsable à assigner" : formatRelativeDueDate(task.dueDate)}
+                    </p>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
 
-      {/* Niveau 4 : statistiques secondaires — une seule barre
-          consolidée. Utile pour une vue d'ensemble, jamais en
-          concurrence avec les priorités du jour. */}
       {!isEmpty && (
         <Card className="mt-5 p-0">
           <div className="grid grid-cols-2 divide-x divide-y divide-surface-border sm:grid-cols-4 sm:divide-y-0">
-            <Link
-              href="/dashboard/employees"
-              className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
-            >
-              <Users size={20} className="shrink-0 text-brand-primary-dark" />
+            <Link href="/dashboard/employees" className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface-subtle sm:px-5">
+              <Users size={18} className="shrink-0 text-brand-primary-dark" />
               <div>
-                <p className="text-2xl font-semibold text-ink">{employeeCount}</p>
+                <p className="text-xl font-semibold text-ink">{employeeCount}</p>
                 <p className="text-xs text-ink-faint">Salariés</p>
               </div>
             </Link>
-            <Link
-              href="/dashboard/events"
-              className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
-            >
-              <ClipboardCheck size={20} className="shrink-0 text-accent-teal" />
+            <Link href="/dashboard/events" className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface-subtle sm:px-5">
+              <ClipboardCheck size={18} className="shrink-0 text-accent-teal" />
               <div>
-                <p className="text-2xl font-semibold text-ink">{eventCount}</p>
+                <p className="text-xl font-semibold text-ink">{eventCount}</p>
                 <p className="text-xs text-ink-faint">Parcours actifs</p>
               </div>
             </Link>
-            <div className="flex items-center gap-3 px-5 py-4">
-              <CircleCheck size={20} className="shrink-0 text-accent-teal" />
+            <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
+              <CircleCheck size={18} className="shrink-0 text-accent-teal" />
               <div>
-                <p className="text-2xl font-semibold text-ink">{doneCount}</p>
+                <p className="text-xl font-semibold text-ink">{doneCount}</p>
                 <p className="text-xs text-ink-faint">Tâches terminées</p>
               </div>
             </div>
-            <div className="flex items-center gap-3 px-5 py-4">
+            <div className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
               <ShieldCheck
-                size={20}
+                size={18}
                 className={`shrink-0 ${percentUpToDate === 100 ? "text-accent-teal" : "text-accent-amber"}`}
               />
               <div>
-                <p className="text-2xl font-semibold text-ink">{percentUpToDate}%</p>
+                <p className="text-xl font-semibold text-ink">{percentUpToDate === null ? "—" : `${percentUpToDate}%`}</p>
                 <p className="text-xs text-ink-faint">
-                  Parcours à jour
-                  {percentUpToDate < 100 && <span className="text-accent-amber"> · à surveiller</span>}
+                  {percentUpToDate === null ? "Suivi à démarrer" : "Parcours sans retard"}
                 </p>
               </div>
             </div>
           </div>
         </Card>
       )}
+
+      <div className="mt-5">
+        <AskAboutOrganization aiEnabled={aiEnabled} />
+      </div>
 
       <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
         {!allStepsDone && (
@@ -442,6 +412,7 @@ export default async function DashboardPage({
             </ul>
           </Card>
         )}
+
         <Card>
           <h2 className="text-sm font-semibold text-ink">À faire ensuite</h2>
           {tip ? (
@@ -449,15 +420,16 @@ export default async function DashboardPage({
               <p className="text-sm font-medium text-ink">{tip.heading}</p>
               <p className="mt-1 text-sm text-ink-soft">{tip.description}</p>
               <Link href={tip.ctaHref} className="mt-3 inline-block">
-                <Button variant="secondary" className="text-xs">
-                  {tip.ctaLabel}
-                </Button>
+                <Button variant="secondary" className="text-xs">{tip.ctaLabel}</Button>
               </Link>
             </div>
           ) : (
-            <p className="mt-3 text-sm text-ink-soft">Rien à signaler. Votre organisation est bien configurée.</p>
+            <p className="mt-3 text-sm text-ink-soft">
+              Aucun paramètre prioritaire n’est signalé dans les données actuellement enregistrées.
+            </p>
           )}
         </Card>
+
         {recentActivity.length > 0 && (
           <Card>
             <div className="flex items-center gap-2">
@@ -486,6 +458,7 @@ export default async function DashboardPage({
           </Card>
         )}
       </div>
+
       <DidYouKnowCard />
     </div>
   );
