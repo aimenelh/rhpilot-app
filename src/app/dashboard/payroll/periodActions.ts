@@ -16,8 +16,25 @@ export type PayrollLockFormState = { error: string } | undefined;
 export type PayrollReopenFormState = { error: string } | undefined;
 export type PayrollPayslipPreparationFormState = { error: string } | undefined;
 
-type EditablePayrollPeriod = { id: string; status: string };
+type EditablePayrollPeriod = { id: string; status: string; year: number; month: number };
 type EditablePayrollPeriodResult = { period: EditablePayrollPeriod } | { error: string };
+
+function periodBounds(year: number, month: number): { start: Date; end: Date } {
+  return {
+    start: new Date(year, month - 1, 1, 0, 0, 0, 0),
+    end: new Date(year, month, 0, 23, 59, 59, 999),
+  };
+}
+
+function activeEmployeeWhere(organizationId: string, year: number, month: number) {
+  const { start, end } = periodBounds(year, month);
+  return {
+    organizationId,
+    deletedAt: null,
+    hireDate: { lte: end },
+    OR: [{ contractEndDate: null }, { contractEndDate: { gte: start } }],
+  };
+}
 
 function parseUnit(value: FormDataEntryValue | null): VariableUnit | null {
   if (typeof value !== "string") return null;
@@ -31,7 +48,7 @@ function parseNumber(value: FormDataEntryValue | null): number | null {
 }
 
 async function getEditablePayrollPeriod(periodId: string, organizationId: string): Promise<EditablePayrollPeriodResult> {
-  const period = await prisma.payrollPeriod.findFirst({ where: { id: periodId, organizationId }, select: { id: true, status: true } });
+  const period = await prisma.payrollPeriod.findFirst({ where: { id: periodId, organizationId }, select: { id: true, status: true, year: true, month: true } });
   if (!period) return { error: "Période de paie introuvable." };
   if (period.status !== "DRAFT") return { error: "Les variables ne peuvent être modifiées que sur une période en brouillon." };
   return { period };
@@ -53,11 +70,11 @@ export async function addPayrollVariable(periodId: string, _prevState: PayrollVa
   if (!employeeId) return { error: "Le salarié est obligatoire." };
   if (!code || code.length > 80 || !/^[A-Z0-9][A-Z0-9_.-]*$/.test(code)) return { error: "Le code de variable est invalide." };
   if (!label || label.length > 160) return { error: "Le libellé de variable est invalide." };
-  if (amount === null) return { error: "Le montant de la variable est invalide." };
+  if (amount === null || amount < 0) return { error: "Le montant de la variable doit être positif ou nul." };
   if (Math.abs(amount) > 100000000) return { error: "La valeur de la variable est trop élevée." };
   if (!unit) return { error: "L'unité de la variable est invalide." };
-  const employee = await prisma.employee.findFirst({ where: { id: employeeId, organizationId: membership.organizationId, deletedAt: null }, select: { id: true } });
-  if (!employee) return { error: "Salarié introuvable dans cette organisation." };
+  const employee = await prisma.employee.findFirst({ where: { id: employeeId, ...activeEmployeeWhere(membership.organizationId, period.year, period.month) }, select: { id: true } });
+  if (!employee) return { error: "Salarié introuvable ou hors de cette période de paie." };
   await prisma.$transaction(async (tx) => {
     await tx.payrollVariable.create({ data: { id: randomUUID(), organizationId: membership.organizationId, payrollPeriodId: period.id, employeeId: employee.id, code, label, amount, unit, source: "MANUAL" } });
     await tx.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.variable.created", entityType: "PayrollVariable", entityId: period.id, metadata: { employeeId, code, unit } } });
@@ -111,11 +128,11 @@ export async function movePayrollPeriodToReviewAction(_prevState: PayrollReviewF
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent ouvrir le contrôle de paie." };
   const periodId = String(formData.get("periodId") ?? "").trim();
   if (!periodId) return { error: "La période de paie est obligatoire." };
-  const period = await prisma.payrollPeriod.findFirst({ where: { id: periodId, organizationId: membership.organizationId }, select: { id: true, status: true } });
+  const period = await prisma.payrollPeriod.findFirst({ where: { id: periodId, organizationId: membership.organizationId }, select: { id: true, year: true, month: true, status: true } });
   if (!period) return { error: "Période de paie introuvable." };
   if (period.status !== "CALCULATED") return { error: "La période doit être calculée avant de passer au contrôle." };
   const [employeeCount, calculationCount] = await Promise.all([
-    prisma.employee.count({ where: { organizationId: membership.organizationId, deletedAt: null } }),
+    prisma.employee.count({ where: activeEmployeeWhere(membership.organizationId, period.year, period.month) }),
     prisma.payrollCalculation.count({ where: { organizationId: membership.organizationId, payrollPeriodId: period.id } }),
   ]);
   if (employeeCount === 0) return { error: "Aucun salarié actif n'est disponible pour cette période." };
@@ -136,10 +153,10 @@ export async function validatePayrollPeriodAction(_prevState: PayrollValidationF
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent valider la paie." };
   const periodId = String(formData.get("periodId") ?? "").trim();
   if (!periodId) return { error: "La période de paie est obligatoire." };
-  const period = await prisma.payrollPeriod.findFirst({ where: { id: periodId, organizationId: membership.organizationId }, select: { id: true, status: true } });
+  const period = await prisma.payrollPeriod.findFirst({ where: { id: periodId, organizationId: membership.organizationId }, select: { id: true, year: true, month: true, status: true } });
   if (!period) return { error: "Période de paie introuvable." };
   if (period.status !== "REVIEW") return { error: "La période doit être en contrôle avant d'être validée." };
-  const employeeCount = await prisma.employee.count({ where: { organizationId: membership.organizationId, deletedAt: null } });
+  const employeeCount = await prisma.employee.count({ where: activeEmployeeWhere(membership.organizationId, period.year, period.month) });
   if (employeeCount === 0) return { error: "Aucun salarié actif n'est disponible pour cette période." };
   const calculations = await prisma.payrollCalculation.findMany({ where: { organizationId: membership.organizationId, payrollPeriodId: period.id }, select: { employeeId: true, grossAmount: true, employeeContributions: true, employerContributions: true, netBeforeTax: true, withholdingTax: true, netPaid: true, ruleSetVersion: true, calculationSnapshot: true } });
   if (calculations.length !== employeeCount) return { error: `Validation impossible : ${calculations.length}/${employeeCount} calcul${employeeCount > 1 ? "s" : ""} disponible${employeeCount > 1 ? "s" : ""}.` };
@@ -162,10 +179,10 @@ export async function lockPayrollPeriodAction(_prevState: PayrollLockFormState, 
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent verrouiller la paie." };
   const periodId = String(formData.get("periodId") ?? "").trim();
   if (!periodId) return { error: "La période de paie est obligatoire." };
-  const period = await prisma.payrollPeriod.findFirst({ where: { id: periodId, organizationId: membership.organizationId }, select: { id: true, status: true } });
+  const period = await prisma.payrollPeriod.findFirst({ where: { id: periodId, organizationId: membership.organizationId }, select: { id: true, year: true, month: true, status: true } });
   if (!period) return { error: "Période de paie introuvable." };
   if (period.status !== "VALIDATED") return { error: "La période doit être validée avant d'être verrouillée." };
-  const employeeCount = await prisma.employee.count({ where: { organizationId: membership.organizationId, deletedAt: null } });
+  const employeeCount = await prisma.employee.count({ where: activeEmployeeWhere(membership.organizationId, period.year, period.month) });
   const calculationCount = await prisma.payrollCalculation.count({ where: { organizationId: membership.organizationId, payrollPeriodId: period.id } });
   if (employeeCount === 0) return { error: "Aucun salarié actif n'est disponible pour cette période." };
   if (calculationCount !== employeeCount) return { error: `Verrouillage impossible : ${calculationCount}/${employeeCount} calcul${employeeCount > 1 ? "s" : ""} disponible${employeeCount > 1 ? "s" : ""}.` };
@@ -243,20 +260,20 @@ export async function preparePayrollPayslipsAction(_prevState: PayrollPayslipPre
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent préparer les bulletins de paie." };
   const periodId = String(formData.get("periodId") ?? "").trim();
-  if (!periodId) return { error: "La période de paie est obligatoire." }
+  if (!periodId) return { error: "La période de paie est obligatoire." };
 
   const period = await prisma.payrollPeriod.findFirst({
     where: { id: periodId, organizationId: membership.organizationId },
     select: { id: true, year: true, month: true, status: true },
   });
   if (!period) return { error: "Période de paie introuvable." };
-  if (period.status !== "LOCKED") return { error: "Les bulletins ne peuvent être préparés qu'après verrouillage de la période." }
+  if (period.status !== "LOCKED") return { error: "Les bulletins ne peuvent être préparés qu'après verrouillage de la période." };
 
   const employees = await prisma.employee.findMany({
-    where: { organizationId: membership.organizationId, deletedAt: null },
+    where: activeEmployeeWhere(membership.organizationId, period.year, period.month),
     select: { id: true },
   });
-  if (employees.length === 0) return { error: "Aucun salarié actif n'est disponible pour cette période." }
+  if (employees.length === 0) return { error: "Aucun salarié actif n'est disponible pour cette période." };
 
   const calculations = await prisma.payrollCalculation.findMany({
     where: { organizationId: membership.organizationId, payrollPeriodId: period.id },
@@ -271,7 +288,7 @@ export async function preparePayrollPayslipsAction(_prevState: PayrollPayslipPre
 
   const employeeIds = new Set(employees.map((employee) => employee.id));
   if (calculations.some((calculation) => !employeeIds.has(calculation.employeeId))) {
-    return { error: "Préparation impossible : un calcul référence un salarié hors périmètre." };
+    return { error: "Préparation impossible : un calcul référence un salarié hors périmètre de la période." };
   }
 
   const preparedAt = new Date();
