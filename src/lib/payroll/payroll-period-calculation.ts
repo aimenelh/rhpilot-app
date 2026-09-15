@@ -89,7 +89,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
   const { start, end, calculationDate } = periodBounds(period.year, period.month);
   const monthlyCalendarDays = new Date(Date.UTC(period.year, period.month, 0)).getUTCDate();
   const [employees, profiles, variables, rules, validatedAbsences, socialContext] = await Promise.all([
-    prisma.employee.findMany({ where: { organizationId: input.organizationId, deletedAt: null }, select: { id: true, hireDate: true, contractEndDate: true, contractType: true, professionalCategory: true }, orderBy: { id: "asc" } }),
+    prisma.employee.findMany({ where: { organizationId: input.organizationId, deletedAt: null, hireDate: { lte: end }, OR: [{ contractEndDate: null }, { contractEndDate: { gte: start } }] }, select: { id: true, hireDate: true, contractEndDate: true, contractType: true, professionalCategory: true }, orderBy: { id: "asc" } }),
     prisma.payrollProfile.findMany({ where: { organizationId: input.organizationId, effectiveFrom: { lte: end }, OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: start } }] }, select: { id: true, employeeId: true, baseSalaryCents: true, monthlyHours: true, effectiveFrom: true, effectiveUntil: true, collectiveAgreementId: true, classificationCode: true, classificationLabel: true, level: true, coefficient: true }, orderBy: { effectiveFrom: "desc" } }),
     prisma.payrollVariable.findMany({ where: { organizationId: input.organizationId, payrollPeriodId: period.id }, select: { id: true, employeeId: true, code: true, label: true, amount: true, unit: true, source: true }, orderBy: { createdAt: "asc" } }),
     resolvePayrollRuleSetFromPrisma({ code: input.ruleCode, scope: input.ruleScope, periodDate: calculationDate }),
@@ -97,9 +97,15 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     resolveOrganizationLegalCategory(input.organizationId),
   ]);
   if (rules.status === "UNRESOLVED") throw new Error(rules.message);
+  if (employees.length === 0) throw new Error("Aucun salarié n'est actif sur cette période de paie.");
+
+  const activeEmployeeIds = new Set(employees.map((employee) => employee.id));
+  const orphanVariables = variables.filter((variable) => !activeEmployeeIds.has(variable.employeeId));
+  if (orphanVariables.length > 0) throw new Error("Des variables de paie existent pour un salarié hors de la période active. Supprimez-les ou rattachez-les à la période correcte avant de calculer.");
 
   const profilesByEmployee = new Map<string, (typeof profiles)[number][]>();
   for (const profile of profiles) {
+    if (!activeEmployeeIds.has(profile.employeeId)) continue;
     const current = profilesByEmployee.get(profile.employeeId) ?? [];
     current.push(profile);
     profilesByEmployee.set(profile.employeeId, current);
@@ -111,11 +117,11 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
   }
 
   const profileByEmployee = new Map<string, (typeof profiles)[number]>();
-  for (const profile of profiles) profileByEmployee.set(profile.employeeId, profile);
+  for (const profile of profiles) if (activeEmployeeIds.has(profile.employeeId)) profileByEmployee.set(profile.employeeId, profile);
   const variablesByEmployee = new Map<string, typeof variables>();
   for (const variable of variables) { const current = variablesByEmployee.get(variable.employeeId) ?? []; current.push(variable); variablesByEmployee.set(variable.employeeId, current); }
   const absencesByEmployee = new Map<string, typeof validatedAbsences>();
-  for (const absence of validatedAbsences) { const current = absencesByEmployee.get(absence.employeeId) ?? []; current.push(absence); absencesByEmployee.set(absence.employeeId, current); }
+  for (const absence of validatedAbsences) { if (!activeEmployeeIds.has(absence.employeeId)) continue; const current = absencesByEmployee.get(absence.employeeId) ?? []; current.push(absence); absencesByEmployee.set(absence.employeeId, current); }
 
   type CalculatedProfile = { id: string; employeeId: string; baseSalaryCents: number; monthlyHours: (typeof profiles)[number]["monthlyHours"]; effectiveFrom: Date; effectiveUntil: Date | null; collectiveAgreementId: string | null; classificationCode: string | null; classificationLabel: string | null; level: string | null; coefficient: string | null };
   const calculatedEmployees: Array<{ employeeId: string; socialResult: ReturnType<typeof calculateSocialPayroll>; profile: CalculatedProfile; variables: PayrollVariableInput[]; treatments: ReturnType<typeof resolvePayrollVariableTreatment>[]; validatedAbsences: typeof validatedAbsences; absenceGrossImpacts: Array<{ absenceId: string; absenceType: string; ruleVersionId: string; basis: string; effect: string; absenceDays: number; grossDelta: number; derivedVariableCode: string; derivedVariableLabel: string }>; collectiveMinimum: ReturnType<typeof evaluateCollectiveMinimumSalary>; minimumSalaryControl: ReturnType<typeof buildMinimumSalaryControlSnapshot>; alternanceMinimum: AlternanceMinimumSnapshot | null; withholdingTax: number; withholdingTaxRate: number; withholdingTaxProfile: NonNullable<Awaited<ReturnType<typeof resolveEmployeeWithholdingTaxProfile>>>; postSocialAdjustment: number; netBeforeTax: number; netPaid: number }> = [];
@@ -128,12 +134,9 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     if (!employee.professionalCategory) throw new Error(`La catégorie professionnelle est manquante pour le salarié ${employee.id}.`);
 
     const hireDate = new Date(employee.hireDate);
-    if (hireDate > start) {
-      throw new Error(`Calcul bloqué pour le salarié ${employee.id} : l'entrée en cours de mois nécessite une règle de proratisation du salaire qui n'est pas encore modélisée.`);
-    }
-    if (employee.contractEndDate && new Date(employee.contractEndDate) < end) {
-      throw new Error(`Calcul bloqué pour le salarié ${employee.id} : la sortie en cours de mois nécessite une règle de proratisation du salaire qui n'est pas encore modélisée.`);
-    }
+    const contractEndDate = employee.contractEndDate ? new Date(employee.contractEndDate) : null;
+    const incompleteEntry = hireDate > start && hireDate <= end;
+    const incompleteExit = Boolean(contractEndDate && contractEndDate >= start && contractEndDate < end);
 
     const monthlyHours = Number(profile.monthlyHours);
     if (!Number.isFinite(monthlyHours) || monthlyHours <= 0 || monthlyHours > 744) {
@@ -143,6 +146,18 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     const baseSalaryAmount = profile.baseSalaryCents / 100;
     const executiveStatus = employee.professionalCategory === "CADRE";
     const employeeVariables = (variablesByEmployee.get(employee.id) ?? []).map(toVariableInput);
+    const incompleteMonthVariables = employeeVariables.filter((variable) => variable.code === "INCOMPLETE_MONTH");
+    if (incompleteEntry || incompleteExit) {
+      if (incompleteMonthVariables.length !== 1) {
+        throw new Error(`Calcul bloqué pour le salarié ${employee.id} : une entrée ou sortie en cours de mois exige exactement un prorata INCOMPLETE_MONTH en euros, calculé selon l'horaire réel applicable.`);
+      }
+      if (incompleteMonthVariables[0].unit !== "EUR") {
+        throw new Error(`Calcul bloqué pour le salarié ${employee.id} : le prorata INCOMPLETE_MONTH doit être fourni en euros après calcul sur l'horaire réel.`);
+      }
+    } else if (incompleteMonthVariables.length > 0) {
+      throw new Error(`Calcul bloqué pour le salarié ${employee.id} : un prorata INCOMPLETE_MONTH est présent alors que le contrat couvre le mois complet.`);
+    }
+
     const withholdingTaxProfile = await resolveEmployeeWithholdingTaxProfile({ organizationId: input.organizationId, employeeId: employee.id, periodDate: calculationDate });
     if (!withholdingTaxProfile) throw new Error(`Aucun taux de prélèvement à la source valide n'est enregistré pour le salarié ${employee.id}.`);
 
@@ -230,6 +245,8 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
   }
 
   await prisma.$transaction(async (tx) => {
+    const activeIds = calculatedEmployees.map((employee) => employee.employeeId);
+    await tx.payrollCalculation.deleteMany({ where: { organizationId: input.organizationId, payrollPeriodId: period.id, ...(activeIds.length > 0 ? { employeeId: { notIn: activeIds } } : {}) } });
     for (const calculated of calculatedEmployees) {
       const withholdingTaxRate = calculated.withholdingTaxRate;
       const withholdingTaxStatus = "RATE_PROVIDED" as const;
