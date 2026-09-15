@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import type { PayrollContributionRule, PayrollRuleSet } from "./domain";
 import type { AbsencePayrollTreatmentRule } from "./absence-payroll-treatment";
+import { PAYROLL_ELEMENT_KINDS, type PayrollElementKind } from "./payroll-element-catalog";
+import type { PayrollVariableNetEffect } from "./variable-treatment";
 
 type PersistedPayrollRuleSetParameters = {
   withholdingTaxRate?: unknown;
@@ -9,10 +11,12 @@ type PersistedPayrollRuleSetParameters = {
   absenceTreatments?: unknown;
 };
 
-type PersistedVariableTreatment = {
+export type PersistedVariableTreatment = {
   code: string;
   grossEffect: "ADD_TO_GROSS" | "SUBTRACT_FROM_GROSS" | "EXCLUDE_FROM_GROSS";
+  netEffect: PayrollVariableNetEffect;
   supportedUnits: Array<"EUR">;
+  kind?: PayrollElementKind;
 };
 
 export type PayrollRuleSetResolution =
@@ -38,6 +42,10 @@ export type PayrollRuleSetResolution =
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isPayrollElementKind(value: unknown): value is PayrollElementKind {
+  return typeof value === "string" && (PAYROLL_ELEMENT_KINDS as readonly string[]).includes(value);
 }
 
 function parseParameters(parameters: unknown, ruleVersionId: string): {
@@ -77,11 +85,15 @@ function parseParameters(parameters: unknown, ruleVersionId: string): {
       const grossEffect = candidate.grossEffect === "ADD_TO_GROSS" || candidate.grossEffect === "SUBTRACT_FROM_GROSS" || candidate.grossEffect === "EXCLUDE_FROM_GROSS"
         ? candidate.grossEffect
         : null;
+      const netEffect: PayrollVariableNetEffect = candidate.netEffect === "ADD_TO_NET" || candidate.netEffect === "SUBTRACT_FROM_NET" || candidate.netEffect === "NONE"
+        ? candidate.netEffect
+        : "NONE";
       const supportedUnits = Array.isArray(candidate.supportedUnits)
         ? candidate.supportedUnits.filter((unit): unit is "EUR" => unit === "EUR")
         : [];
-      if (!code || !grossEffect || supportedUnits.length === 0) return null;
-      variableTreatments.push({ code, grossEffect, supportedUnits });
+      const kind = candidate.kind === undefined ? undefined : isPayrollElementKind(candidate.kind) ? candidate.kind : null;
+      if (!code || !grossEffect || supportedUnits.length === 0 || kind === null) return null;
+      variableTreatments.push({ code, grossEffect, netEffect, supportedUnits, ...(kind ? { kind } : {}) });
     }
   }
 
