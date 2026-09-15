@@ -24,6 +24,7 @@ jobs:
         run: >-
           npx vitest run
           src/lib/payroll/variable-treatment.test.ts
+          src/lib/payroll/advanced-payroll-calculators.test.ts
           src/lib/payroll/absence-payroll-impact.test.ts
           src/lib/payroll/absence-payroll-gross-impact.test.ts
           src/lib/payroll/absence-payroll-treatment.test.ts
