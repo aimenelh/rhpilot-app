@@ -45,10 +45,6 @@ export function TaskStatusForm({
   action: (formData: FormData) => Promise<void>;
   currentStatus: TaskStatus;
 }) {
-  // Confirmation directement sur le bouton, plutôt qu'une notification
-  // à part (toast) : si on modifie plusieurs étapes d'affilée, chaque
-  // bouton affiche sa propre confirmation indépendamment, rien ne
-  // s'empile ni ne devient envahissant ailleurs à l'écran.
   const [justSaved, setJustSaved] = useState(false);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
@@ -66,20 +62,26 @@ export function TaskStatusForm({
   }
 
   return (
-    <form action={handleAction} className="flex shrink-0 items-center gap-2">
-      <Select
-        name="status"
-        defaultValue={currentStatus}
-        className="w-44"
-        onChange={() => setJustSaved(false)}
-      >
-        {Object.entries(STATUS_LABELS).map(([value, label]) => (
-          <option key={value} value={value}>
-            {label}
-          </option>
-        ))}
-      </Select>
-      <SubmitButton justSaved={justSaved} />
-    </form>
+    <div className="min-w-0">
+      <form action={handleAction} className="flex flex-wrap items-center gap-2 sm:flex-nowrap">
+        <Select
+          name="status"
+          aria-label="Statut de l’action"
+          defaultValue={currentStatus}
+          className="w-44 max-w-full"
+          onChange={() => setJustSaved(false)}
+        >
+          {Object.entries(STATUS_LABELS).map(([value, label]) => (
+            <option key={value} value={value}>
+              {label}
+            </option>
+          ))}
+        </Select>
+        <SubmitButton justSaved={justSaved} />
+      </form>
+      <p className="mt-1.5 max-w-xs text-[11px] leading-4 text-ink-faint">
+        « Fait » confirme l’action réalisée. La présence d’un justificatif reste un contrôle distinct.
+      </p>
+    </div>
   );
 }
