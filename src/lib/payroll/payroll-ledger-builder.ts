@@ -14,7 +14,8 @@ export type PayrollLedgerVariable = {
   label: string;
   amount: number;
   grossDelta: number;
-  netAdjustment: number;
+  /** Anciennes lignes brutes n'avaient aucun ajustement post-social. */
+  netAdjustment?: number;
   kind: PayrollLedgerEntry["kind"];
   ruleVersionId: string;
 };
@@ -79,6 +80,7 @@ export function buildPayrollLedger(input: {
 
   for (const variable of input.variables) {
     const definition = getPayrollElementDefinition(variable.code);
+    const netAdjustment = variable.netAdjustment ?? 0;
     entries.push(
       createPayrollLedgerEntry({
         code: variable.code,
@@ -90,15 +92,15 @@ export function buildPayrollLedger(input: {
         grossDelta: variable.grossDelta,
         taxableDelta: 0,
         socialDelta: 0,
-        netDelta: variable.netAdjustment,
-        cashImpact: variable.netAdjustment,
+        netDelta: netAdjustment,
+        cashImpact: netAdjustment,
         ruleVersionId: variable.ruleVersionId,
         sourceName: input.sourceName,
         sourceUrl: input.sourceUrl,
         metadata: {
           variableTreatment: true,
           grossDelta: variable.grossDelta,
-          netAdjustment: variable.netAdjustment,
+          netAdjustment,
         },
       }),
     );
