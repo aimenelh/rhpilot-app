@@ -37,7 +37,7 @@ describe("IJSS 2026", () => {
     expect(result.dailyBenefit).toBeLessThanOrEqual(104.02);
   });
 
-  it("calcule AT/MP à 60 % jusqu'au 28e jour puis 80 %", () => {
+  it("calcule AT/MP à 60 % puis 80 % sans dépasser le salaire journalier net", () => {
     const result = calculateWorkAccidentIjss2026({
       previousMonthGrossSalary: 3000,
       compensatedCalendarDays: 10,
@@ -46,7 +46,8 @@ describe("IJSS 2026", () => {
     expect(result.firstPeriodDays).toBe(3);
     expect(result.secondPeriodDays).toBe(7);
     expect(result.waitingDays).toBe(0);
-    expect(result.grossBenefitTotal).toBe(729.81);
+    expect(result.dailyNetSalaryCap).toBe(77.91);
+    expect(result.grossBenefitTotal).toBe(722.88);
   });
 
   it("n'ajoute les IJSS nettes au net à payer qu'en subrogation", () => {
