@@ -74,7 +74,7 @@ function input() {
 }
 
 describe("DSN P26V01 builder", () => {
-  it("builds a monthly test declaration with PAS, remuneration, MNS and gross base", () => {
+  it("builds a monthly test declaration with PAS, mandatory remuneration, MNS and gross base", () => {
     const content = buildDsnP26V01Monthly(input());
     expect(content).toContain("S10.G00.00.005,'01'\r\n");
     expect(content).toContain("S10.G00.00.006,'P26V01'\r\n");
@@ -84,6 +84,7 @@ describe("DSN P26V01 builder", () => {
     expect(content).toContain("S21.G00.50.013,'2050.00'\r\n");
     expect(content).toContain("S21.G00.51.011,'001'\r\n");
     expect(content).toContain("S21.G00.51.011,'002'\r\n");
+    expect(content).toContain("S21.G00.51.011,'003'\r\n");
     expect(content).toContain("S21.G00.51.011,'010'\r\n");
     expect(content).toContain("S21.G00.58.003,'03'\r\n");
     expect(content).toContain("S21.G00.78.001,'03'\r\n");
@@ -96,6 +97,25 @@ describe("DSN P26V01 builder", () => {
     const totalLine = rows.find((line) => line.startsWith("S90.G00.90.001,"));
     expect(totalLine).toBe(`S90.G00.90.001,'${rows.length}'`);
     expect(rows.at(-1)).toBe("S90.G00.90.002,'1'");
+  });
+
+  it("accepts apostrophes inside Latin-1 identity data", () => {
+    const data = input();
+    data.employees[0].lastName = "O'CONNOR";
+    const content = buildDsnP26V01Monthly(data);
+    expect(content).toContain("S21.G00.30.002,'O'CONNOR'\r\n");
+  });
+
+  it("rejects characters outside ISO-8859-1 instead of silently corrupting the physical file", () => {
+    const data = input();
+    data.employees[0].lastName = "DUPONT🙂";
+    expect(() => buildDsnP26V01Monthly(data)).toThrow(/ISO-8859-1/i);
+  });
+
+  it("rejects physical lines over 256 characters", () => {
+    const data = input();
+    data.employees[0].addressLine = "A".repeat(250);
+    expect(() => buildDsnP26V01Monthly(data)).toThrow(/256 caractères/i);
   });
 
   it("rejects a non 14-digit SIRET", () => {
