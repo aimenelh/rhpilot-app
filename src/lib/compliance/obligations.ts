@@ -348,10 +348,12 @@ function duerpItem(
   employeeCount: number,
   now: Date,
   lastUpdatedAt: string | null,
+  thresholdAtLeast11Declared: boolean,
 ): LegalObligationItem {
   const lastUpdate = parseTrackedDate(lastUpdatedAt);
+  const annualUpdateApplies = employeeCount >= 11 || thresholdAtLeast11Declared;
 
-  if (employeeCount >= 11 && lastUpdate) {
+  if (annualUpdateApplies && lastUpdate) {
     const due = addYears(lastUpdate, 1);
     const remainingDays = daysBetween(now, due);
     const overdue = due.getTime() < now.getTime();
@@ -373,13 +375,15 @@ function duerpItem(
           ? "Prochaine mise à jour annuelle à anticiper"
           : "Dernière mise à jour enregistrée",
       why:
-        `RH Pilot compte actuellement ${employeeCount} salariés actifs. À partir de 11 salariés, la date renseignée permet de suivre l'échéance annuelle, sans exclure les mises à jour qui peuvent être déclenchées plus tôt par un changement important ou une nouvelle information sur les risques.`,
+        thresholdAtLeast11Declared && employeeCount < 11
+          ? "Le suivi d'effectif renseigne un seuil d'au moins 11 salariés atteint sans interruption, même si tous les salariés ne sont pas encore enregistrés dans RH Pilot. L'échéance annuelle du DUERP est donc suivie à partir de la date renseignée."
+          : `RH Pilot compte actuellement ${employeeCount} salariés actifs. À partir de 11 salariés, la date renseignée permet de suivre l'échéance annuelle, sans exclure les mises à jour qui peuvent être déclenchées plus tôt par un changement important ou une nouvelle information sur les risques.`,
       missingData: [],
       source: SOURCES.duerp,
     };
   }
 
-  if (employeeCount >= 11) {
+  if (annualUpdateApplies) {
     return {
       id: "duerp-organization",
       ruleKey: "FR.DUERP.UPDATE",
@@ -393,7 +397,9 @@ function duerpItem(
       dueDate: null,
       summary: "Dernière mise à jour à renseigner",
       why:
-        `RH Pilot compte actuellement ${employeeCount} salariés actifs. À partir de 11 salariés, une mise à jour au moins annuelle s'ajoute aux mises à jour déclenchées par certains changements ou nouvelles informations sur les risques.`,
+        thresholdAtLeast11Declared && employeeCount < 11
+          ? "Le suivi d'effectif renseigne un seuil d'au moins 11 salariés atteint sans interruption. La date de la dernière mise à jour du DUERP est nécessaire pour suivre l'échéance annuelle."
+          : `RH Pilot compte actuellement ${employeeCount} salariés actifs. À partir de 11 salariés, une mise à jour au moins annuelle s'ajoute aux mises à jour déclenchées par certains changements ou nouvelles informations sur les risques.`,
       missingData: ["Date de la dernière mise à jour du DUERP"],
       source: SOURCES.duerp,
     };
@@ -427,7 +433,7 @@ function cseItem(
   const thresholdReachedAt = parseTrackedDate(tracking.cseThresholdReachedAt);
   const lastElectionAt = parseTrackedDate(tracking.cseLastElectionAt);
 
-  if (employeeCount < 11) {
+  if (employeeCount < 11 && !thresholdReachedAt) {
     return {
       id: "cse-organization",
       ruleKey: "FR.CSE.ELECTION",
@@ -441,7 +447,7 @@ function cseItem(
       dueDate: null,
       summary: tracking.cseStatus === "IN_PLACE" ? "CSE déclaré en place, seuil actuel inférieur à 11" : "Seuil actuel inférieur à 11 salariés",
       why:
-        "Le seuil de 11 salariés n'est pas atteint dans les données actives enregistrées. RH Pilot conserve cette obligation en surveillance et mémorise la situation déclarée sans en déduire automatiquement les conséquences d'une baisse d'effectif.",
+        "Le seuil de 11 salariés n'est pas atteint dans les données actives enregistrées et aucune date de seuil continu n'est renseignée. RH Pilot conserve cette obligation en surveillance.",
       missingData: [],
       source: SOURCES.cse,
     };
@@ -526,7 +532,9 @@ function cseItem(
       dueDate: toDateOnly(thresholdDue),
       summary: "Seuil de 11 salariés en cours de suivi",
       why:
-        "La date de franchissement du seuil est renseignée. RH Pilot suit l'atteinte des 12 mois consécutifs avant de conclure qu'une action de mise en place doit être engagée.",
+        employeeCount < 11
+          ? "La date renseignée indique que le seuil d'au moins 11 salariés est atteint sans interruption depuis cette date. RH Pilot utilise cette déclaration même si tous les salariés ne sont pas encore enregistrés dans le module Salariés."
+          : "La date de franchissement du seuil est renseignée. RH Pilot suit l'atteinte des 12 mois consécutifs avant de conclure qu'une action de mise en place doit être engagée.",
       missingData: [],
       source: SOURCES.cse,
     };
@@ -546,7 +554,9 @@ function cseItem(
       dueDate: toDateOnly(thresholdDue),
       summary: "Seuil de 12 mois atteint, CSE déclaré non mis en place",
       why:
-        "La date de franchissement renseignée indique que le seuil de 11 salariés est atteint depuis au moins 12 mois consécutifs et le CSE est déclaré non mis en place dans RH Pilot.",
+        employeeCount < 11
+          ? "La date saisie déclare un effectif d'au moins 11 salariés atteint sans interruption depuis au moins 12 mois, tandis que le CSE est déclaré non mis en place. RH Pilot traite cette déclaration comme la donnée de référence même si tous les salariés ne sont pas encore enregistrés dans le logiciel."
+          : "La date de franchissement renseignée indique que le seuil de 11 salariés est atteint depuis au moins 12 mois consécutifs et le CSE est déclaré non mis en place dans RH Pilot.",
       missingData: [],
       source: SOURCES.cse,
     };
@@ -578,8 +588,15 @@ export function buildComplianceSnapshot({
   now = new Date(),
 }: SnapshotInput): ComplianceSnapshot {
   const activeEmployees = employees;
+  const thresholdAtLeast11Declared = Boolean(parseTrackedDate(tracking.organization.cseThresholdReachedAt));
   const items: LegalObligationItem[] = [
-    duerpItem(organizationId, activeEmployees.length, now, tracking.organization.duerpLastUpdatedAt),
+    duerpItem(
+      organizationId,
+      activeEmployees.length,
+      now,
+      tracking.organization.duerpLastUpdatedAt,
+      thresholdAtLeast11Declared,
+    ),
     cseItem(organizationId, activeEmployees.length, now, tracking.organization),
     ...activeEmployees.map((employee) =>
       careerInterviewItem(employee, now, tracking.employees[employee.id]?.lastCareerInterviewAt ?? null),
