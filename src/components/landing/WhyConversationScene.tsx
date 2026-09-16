@@ -48,17 +48,6 @@ export function WhyConversationScene() {
       <div className={styles.glow} aria-hidden="true" />
       <div className={styles.deskShadow} aria-hidden="true" />
 
-      <div className={styles.handLeft} aria-hidden="true">
-        <span className={styles.sleeveLeft} />
-        <span className={styles.palmLeft} />
-        <span className={styles.thumbLeft} />
-      </div>
-      <div className={styles.handRight} aria-hidden="true">
-        <span className={styles.sleeveRight} />
-        <span className={styles.palmRight} />
-        <span className={styles.thumbRight} />
-      </div>
-
       <div className={styles.phoneWrap}>
         <div className={styles.phone} key={replayKey}>
           <div className={styles.phoneTop} aria-hidden="true">
