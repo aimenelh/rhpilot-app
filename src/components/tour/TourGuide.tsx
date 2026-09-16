@@ -4,106 +4,113 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ArrowLeft, ArrowRight, CheckCircle2, X } from "lucide-react";
-import type { MascotPose } from "@/components/Mascot";
-import { AnimatedTourMascot } from "./AnimatedTourMascot";
+import { AnimatedTourMascot, type TourMascotPose } from "./AnimatedTourMascot";
 import {
   TOUR_STORAGE_KEY,
   TOUR_DONE_VALUE,
   WELCOME_SEEN_KEY,
 } from "@/lib/tourStorage";
 
-const PRODUCT_TOUR_STORAGE_KEY = "rhpilot_product_tour_v3";
+const PRODUCT_TOUR_STORAGE_KEY = "rhpilot_product_tour_v4";
 
 type TourStep = {
   route: string;
   selector: string | null;
+  eyebrow: string;
   title: string;
   text: string;
-  pose: MascotPose;
-  eyebrow: string;
+  pose: TourMascotPose;
   checklist?: string[];
 };
 
 const STEPS: TourStep[] = [
   {
     route: "/dashboard",
+    selector: null,
+    eyebrow: "Bienvenue",
+    title: "Bienvenue dans RH Pilot",
+    text: "Je vais vous montrer les principaux espaces du logiciel pour vous aider à prendre vos repères. La visite prend moins de deux minutes.",
+    pose: "welcome",
+  },
+  {
+    route: "/dashboard",
     selector: '[data-tour="dashboard-attention"], #workspace-main h1',
-    eyebrow: "Votre point de départ",
-    title: "Le tableau de bord garde l’essentiel sous les yeux",
-    text: "Priorités, échéances et points à traiter : c’est ici que vous voyez rapidement ce qui mérite votre attention aujourd’hui.",
-    pose: "dashboard",
+    eyebrow: "Tableau de bord",
+    title: "Gardez l’essentiel sous les yeux",
+    text: "Priorités, échéances et points à traiter : le tableau de bord vous montre ce qui mérite votre attention en premier.",
+    pose: "present",
   },
   {
     route: "/dashboard/employees",
     selector: '[data-tour="add-employee"], #workspace-main h1',
-    eyebrow: "Vos collaborateurs",
+    eyebrow: "Salariés",
     title: "Chaque salarié a son espace de suivi",
-    text: "Retrouvez les informations utiles, l’historique et les actions liées à chaque salarié sans disperser le suivi entre plusieurs fichiers.",
-    pose: "hire",
+    text: "Retrouvez les informations utiles, l’historique et les éléments liés à chaque salarié sans disperser votre suivi.",
+    pose: "point",
   },
   {
     route: "/dashboard/events",
     selector: "#workspace-main h1",
-    eyebrow: "Le cœur de RH Pilot",
-    title: "Les parcours transforment un événement RH en plan d’action",
-    text: "Embauche, période d’essai, visite médicale, fin de contrat… RH Pilot structure les tâches, responsables et échéances à suivre.",
-    pose: "createJourney",
+    eyebrow: "Parcours",
+    title: "Transformez un événement RH en plan d’action",
+    text: "Embauche, période d’essai, visite médicale ou fin de contrat : RH Pilot structure les actions, responsables et échéances à suivre.",
+    pose: "present",
   },
   {
     route: "/dashboard/absences",
     selector: "#workspace-main h1",
     eyebrow: "Absences",
-    title: "Demandes, justificatifs et planning restent au même endroit",
-    text: "Vous gardez une vue claire sur les absences de l’équipe, leur statut et les documents associés, sans perdre le contexte.",
-    pose: "calm",
+    title: "Demandes, justificatifs et planning restent réunis",
+    text: "Le module Absences centralise les demandes, leur statut, les justificatifs et la visibilité équipe dans un même espace.",
+    pose: "point",
   },
   {
     route: "/dashboard/obligations",
     selector: "#workspace-main h1",
     eyebrow: "Obligations RH",
-    title: "Les obligations à anticiper deviennent visibles",
-    text: "Entretiens de parcours professionnel, DUERP, CSE et autres échéances sont regroupés pour vous aider à identifier ce qui approche.",
-    pose: "reminder",
+    title: "Anticipez ce qui doit l’être",
+    text: "Entretiens de parcours, DUERP, CSE et autres échéances sont regroupés pour vous aider à repérer rapidement ce qui approche.",
+    pose: "tip",
   },
   {
     route: "/dashboard/calendar",
     selector: "#workspace-main h1",
     eyebrow: "Calendrier",
-    title: "Toutes les échéances se retrouvent dans une même vue",
-    text: "Le calendrier replace les tâches et événements RH dans le temps pour vous aider à anticiper plutôt que réagir au dernier moment.",
-    pose: "reminder",
+    title: "Replacez vos sujets RH dans le temps",
+    text: "Le calendrier rassemble les tâches et événements à venir pour vous aider à anticiper plutôt que réagir au dernier moment.",
+    pose: "present",
   },
   {
     route: "/dashboard/notifications",
     selector: "#workspace-main h1",
     eyebrow: "Notifications",
-    title: "RH Pilot vous signale ce qui demande votre attention",
-    text: "Les rappels font remonter les sujets utiles au bon moment, sans vous obliger à parcourir chaque module pour vérifier.",
-    pose: "urgent",
+    title: "Les rappels font remonter ce qui compte",
+    text: "RH Pilot vous signale les sujets utiles au bon moment, sans vous obliger à parcourir chaque module pour vérifier.",
+    pose: "tip",
   },
   {
     route: "/dashboard/team",
     selector: "#workspace-main h1",
-    eyebrow: "Votre espace",
-    title: "L’équipe travaille dans le même environnement",
-    text: "Gérez les membres de votre espace RH Pilot et retrouvez les réglages de l’organisation dans Configuration.",
-    pose: "calm",
+    eyebrow: "Équipe",
+    title: "Travaillez dans le même environnement",
+    text: "Gérez ici les membres de votre espace RH Pilot et répartissez plus facilement le suivi entre les personnes concernées.",
+    pose: "present",
   },
   {
-    route: "/dashboard/employees",
+    route: "/dashboard",
     selector: 'button[aria-label="Ouvrir le Copilote RH Pilot"], button[aria-label="Fermer le Copilote"]',
-    eyebrow: "Copilote RH Pilot",
+    eyebrow: "Copilote",
     title: "Besoin d’un repère ? Le Copilote reste à portée de main",
-    text: "Il vous aide à retrouver l’essentiel, comprendre ce qui se passe dans votre espace et mieux prioriser vos prochaines actions.",
-    pose: "copilot",
+    text: "Il vous aide à retrouver l’essentiel, comprendre votre espace et mieux prioriser vos prochaines actions.",
+    pose: "point",
   },
   {
     route: "/dashboard",
     selector: null,
-    eyebrow: "Vous avez fait le tour",
-    title: "Vous pouvez maintenant prendre RH Pilot en main",
-    text: "Commencez par une première action concrète. Vous pourrez relancer cette visite à tout moment depuis la page Aide.",
-    pose: "completedJourney",
+    eyebrow: "C’est parti",
+    title: "Vous avez vu l’essentiel",
+    text: "Vous pouvez maintenant commencer votre suivi dans RH Pilot. Vous pourrez relancer cette visite à tout moment depuis la page Aide.",
+    pose: "success",
     checklist: [
       "Ajouter un premier salarié",
       "Créer ou déclencher un premier parcours",
@@ -115,6 +122,7 @@ const STEPS: TourStep[] = [
 ];
 
 type Rect = { top: number; left: number; width: number; height: number };
+type Viewport = { width: number; height: number };
 
 function visibleTarget(selector: string): HTMLElement | null {
   const candidates = Array.from(document.querySelectorAll<HTMLElement>(selector));
@@ -132,12 +140,20 @@ export function TourGuide() {
   const router = useRouter();
   const [stepIndex, setStepIndex] = useState<number | null>(null);
   const [rect, setRect] = useState<Rect | null>(null);
+  const [viewport, setViewport] = useState<Viewport>({ width: 1440, height: 900 });
 
   const readRect = useCallback((selector: string) => {
     const element = visibleTarget(selector);
     if (!element) return null;
     const box = element.getBoundingClientRect();
     return { top: box.top, left: box.left, width: box.width, height: box.height };
+  }, []);
+
+  useEffect(() => {
+    const updateViewport = () => setViewport({ width: window.innerWidth, height: window.innerHeight });
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
   }, []);
 
   useEffect(() => {
@@ -174,7 +190,7 @@ export function TourGuide() {
 
       const welcomeSeen = Boolean(localStorage.getItem(WELCOME_SEEN_KEY));
       const legacyTourState = localStorage.getItem(TOUR_STORAGE_KEY);
-      if (welcomeSeen && legacyTourState !== TOUR_DONE_VALUE && pathname !== "/dashboard") {
+      if (welcomeSeen && legacyTourState !== TOUR_DONE_VALUE) {
         localStorage.setItem(PRODUCT_TOUR_STORAGE_KEY, "0");
         setStepIndex(0);
       }
@@ -199,12 +215,7 @@ export function TourGuide() {
     }
 
     const step = STEPS[stepIndex];
-    if (pathname !== step.route) {
-      setRect(null);
-      return;
-    }
-
-    if (!step.selector) {
+    if (pathname !== step.route || !step.selector) {
       setRect(null);
       return;
     }
@@ -226,7 +237,7 @@ export function TourGuide() {
         return;
       }
 
-      if (attempts < 16) {
+      if (attempts < 18) {
         attempts += 1;
         timeout = setTimeout(measure, 120);
       } else {
@@ -242,13 +253,13 @@ export function TourGuide() {
       if (nextRect) setRect(nextRect);
     };
 
-    window.addEventListener("resize", onViewportChange);
     window.addEventListener("scroll", onViewportChange, true);
+    window.addEventListener("resize", onViewportChange);
     return () => {
       cancelled = true;
       if (timeout) clearTimeout(timeout);
-      window.removeEventListener("resize", onViewportChange);
       window.removeEventListener("scroll", onViewportChange, true);
+      window.removeEventListener("resize", onViewportChange);
     };
   }, [pathname, readRect, stepIndex]);
 
@@ -301,36 +312,37 @@ export function TourGuide() {
   if (stepIndex === null) return null;
 
   const step = STEPS[stepIndex];
+  const isFirstStep = stepIndex === 0;
   const isLastStep = stepIndex === STEPS.length - 1;
+  const isChangingPage = pathname !== step.route;
   const progress = ((stepIndex + 1) / STEPS.length) * 100;
   const padding = 10;
   const spotlight = rect
     ? {
         top: Math.max(0, rect.top - padding),
         left: Math.max(0, rect.left - padding),
-        right: Math.min(window.innerWidth, rect.left + rect.width + padding),
-        bottom: Math.min(window.innerHeight, rect.top + rect.height + padding),
+        right: Math.min(viewport.width, rect.left + rect.width + padding),
+        bottom: Math.min(viewport.height, rect.top + rect.height + padding),
       }
     : null;
-  const cardOnLeft = rect ? rect.left > window.innerWidth / 2 : false;
-  const isChangingPage = pathname !== step.route;
+  const cardOnLeft = rect ? rect.left + rect.width / 2 > viewport.width / 2 : false;
 
   return (
     <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-label="Visite guidée RH Pilot">
       {spotlight ? (
         <>
-          <div className="fixed left-0 right-0 top-0 bg-black/40" style={{ height: spotlight.top }} />
-          <div className="fixed bottom-0 left-0 right-0 bg-black/40" style={{ top: spotlight.bottom }} />
+          <div className="fixed left-0 right-0 top-0 bg-black/38" style={{ height: spotlight.top }} />
+          <div className="fixed bottom-0 left-0 right-0 bg-black/38" style={{ top: spotlight.bottom }} />
           <div
-            className="fixed left-0 bg-black/40"
+            className="fixed left-0 bg-black/38"
             style={{ top: spotlight.top, width: spotlight.left, height: spotlight.bottom - spotlight.top }}
           />
           <div
-            className="fixed right-0 bg-black/40"
+            className="fixed right-0 bg-black/38"
             style={{ top: spotlight.top, left: spotlight.right, height: spotlight.bottom - spotlight.top }}
           />
           <div
-            className="pointer-events-none fixed z-[72] rounded-xl ring-2 ring-brand-primary/80 ring-offset-4 ring-offset-white/70 transition-all duration-300"
+            className="pointer-events-none fixed z-[72] rounded-xl ring-2 ring-brand-primary/75 ring-offset-4 ring-offset-white/70 transition-all duration-300"
             style={{
               top: spotlight.top,
               left: spotlight.left,
@@ -340,98 +352,105 @@ export function TourGuide() {
           />
         </>
       ) : (
-        <div className="fixed inset-0 bg-black/40" />
+        <div className="fixed inset-0 bg-black/38" />
       )}
 
       <div
-        className={`tour-fade-in fixed z-[75] w-[min(25rem,calc(100vw-2rem))] overflow-visible rounded-2xl border border-surface-border bg-white shadow-elevated ${
+        className={`tour-fade-in fixed z-[75] w-[min(31rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-surface-border bg-white shadow-elevated ${
           rect ? (cardOnLeft ? "bottom-6 left-6" : "bottom-6 right-6") : "left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
         } max-md:bottom-4 max-md:left-4 max-md:right-4 max-md:top-auto max-md:w-auto max-md:translate-x-0 max-md:translate-y-0`}
       >
-        <div className="absolute -top-20 left-4 z-10 max-sm:-top-14">
-          <AnimatedTourMascot pose={step.pose} stepKey={stepIndex} />
+        <div className="h-1 bg-surface-subtle">
+          <div className="h-full bg-brand-primary transition-[width] duration-300" style={{ width: `${progress}%` }} />
         </div>
 
-        <div className="overflow-hidden rounded-2xl">
-          <div className="h-1 bg-surface-subtle">
-            <div className="h-full bg-brand-primary transition-[width] duration-300" style={{ width: `${progress}%` }} />
+        <div className="relative p-5">
+          <button
+            type="button"
+            onClick={finishTour}
+            aria-label="Quitter la visite guidée"
+            className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-surface-subtle hover:text-ink"
+          >
+            <X size={16} />
+          </button>
+
+          <div className="grid grid-cols-[9rem_1fr] items-end gap-4 pr-7 max-sm:grid-cols-[6rem_1fr] max-sm:gap-3">
+            <AnimatedTourMascot pose={step.pose} stepKey={stepIndex} />
+            <div className="min-w-0 self-center pb-1">
+              <div className="flex items-center gap-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-primary">{step.eyebrow}</p>
+                <span className="text-[11px] tabular-nums text-ink-faint">{stepIndex + 1}/{STEPS.length}</span>
+              </div>
+              <h2 className="mt-1.5 text-base font-semibold leading-snug text-ink">{step.title}</h2>
+              <p className="mt-2.5 text-sm leading-relaxed text-ink-soft">{step.text}</p>
+              {isChangingPage && <p className="mt-2 text-xs font-medium text-ink-faint">Ouverture de la page…</p>}
+            </div>
           </div>
 
-          <div className="relative px-5 pb-5 pt-14 max-sm:pt-12">
-            <button
-              type="button"
-              onClick={finishTour}
-              aria-label="Quitter la visite guidée"
-              className="absolute right-3 top-3 flex h-8 w-8 items-center justify-center rounded-full text-ink-faint transition-colors hover:bg-surface-subtle hover:text-ink"
-            >
-              <X size={16} />
-            </button>
-
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-brand-primary">{step.eyebrow}</p>
-            <h2 className="mt-1.5 max-w-[20rem] text-base font-semibold leading-snug text-ink">{step.title}</h2>
-            <p className="mt-3 text-sm leading-relaxed text-ink-soft">{step.text}</p>
-
-            {isChangingPage && (
-              <p className="mt-3 text-xs font-medium text-ink-faint">Ouverture de la page…</p>
-            )}
-
-            {step.checklist && (
-              <div className="mt-4 rounded-xl border border-surface-border bg-surface-subtle/60 p-3.5">
-                <p className="mb-2.5 text-xs font-semibold text-ink">Pour bien démarrer</p>
-                <div className="space-y-2">
-                  {step.checklist.map((item) => (
-                    <div key={item} className="flex items-start gap-2 text-sm text-ink-soft">
-                      <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-brand-primary" />
-                      <span>{item}</span>
-                    </div>
-                  ))}
-                </div>
+          {step.checklist && (
+            <div className="mt-4 rounded-xl border border-surface-border bg-surface-subtle/55 p-3.5">
+              <p className="mb-2.5 text-xs font-semibold text-ink">Pour bien démarrer</p>
+              <div className="space-y-2">
+                {step.checklist.map((item) => (
+                  <div key={item} className="flex items-start gap-2 text-sm text-ink-soft">
+                    <CheckCircle2 size={15} className="mt-0.5 shrink-0 text-brand-primary" />
+                    <span>{item}</span>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
+          )}
 
-            <div className="mt-5 flex items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
+          <div className="mt-5 flex items-center justify-between gap-3 border-t border-surface-border pt-4">
+            <div className="flex items-center gap-2">
+              {isFirstStep ? (
+                <button
+                  type="button"
+                  onClick={finishTour}
+                  className="h-9 rounded-lg px-2 text-xs font-medium text-ink-faint transition-colors hover:text-ink"
+                >
+                  Passer la visite
+                </button>
+              ) : (
                 <button
                   type="button"
                   onClick={goBack}
-                  disabled={stepIndex === 0 || isChangingPage}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-surface-border px-3 text-xs font-medium text-ink-soft transition-colors hover:bg-surface-subtle disabled:cursor-not-allowed disabled:opacity-35"
+                  className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-surface-border px-3 text-xs font-medium text-ink-soft transition-colors hover:bg-surface-subtle"
                 >
                   <ArrowLeft size={14} />
                   Précédent
                 </button>
-                <span className="text-[11px] tabular-nums text-ink-faint">{stepIndex + 1}/{STEPS.length}</span>
-              </div>
-
-              {isLastStep ? (
-                <div className="flex items-center gap-2">
-                  <Link
-                    href="/dashboard/employees/new"
-                    onClick={finishTour}
-                    className="hidden rounded-lg border border-brand-primary/25 px-3 py-2 text-xs font-semibold text-brand-primary transition-colors hover:bg-brand-primary/5 sm:inline-flex"
-                  >
-                    Ajouter un salarié
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={finishTour}
-                    className="inline-flex h-9 items-center rounded-lg bg-brand-primary px-4 text-xs font-semibold text-white transition-opacity hover:opacity-90"
-                  >
-                    Terminer
-                  </button>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={goNext}
-                  disabled={isChangingPage}
-                  className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-primary px-4 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-55"
-                >
-                  Suivant
-                  <ArrowRight size={14} />
-                </button>
               )}
             </div>
+
+            {isLastStep ? (
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/dashboard/employees/new"
+                  onClick={finishTour}
+                  className="hidden rounded-lg border border-brand-primary/25 px-3 py-2 text-xs font-semibold text-brand-primary transition-colors hover:bg-brand-primary/5 sm:inline-flex"
+                >
+                  Ajouter un salarié
+                </Link>
+                <button
+                  type="button"
+                  onClick={finishTour}
+                  className="inline-flex h-9 items-center rounded-lg bg-brand-primary px-4 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+                >
+                  Terminer
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={goNext}
+                disabled={isChangingPage}
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-brand-primary px-4 text-xs font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-wait disabled:opacity-55"
+              >
+                {isFirstStep ? "Commencer" : "Suivant"}
+                <ArrowRight size={14} />
+              </button>
+            )}
           </div>
         </div>
       </div>
