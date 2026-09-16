@@ -1,24 +1,44 @@
 import { redirect } from "next/navigation";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { buildComplianceSnapshot } from "@/lib/compliance/obligations";
+import {
+  buildComplianceSnapshot,
+  buildComplianceTrackingFromAuditLogs,
+} from "@/lib/compliance/obligations";
 import ObligationsWorkspace from "./ObligationsWorkspace";
 
 export const dynamic = "force-dynamic";
+
+function isAdmin(role: string) {
+  return role === "OWNER" || role === "ADMIN";
+}
 
 export default async function ObligationsPage() {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
 
-  const employees = await prisma.employee.findMany({
-    where: { organizationId: membership.organizationId, deletedAt: null },
-    select: { id: true, firstName: true, lastName: true, hireDate: true },
-    orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
-  });
+  const [employees, trackingLogs] = await Promise.all([
+    prisma.employee.findMany({
+      where: { organizationId: membership.organizationId, deletedAt: null },
+      select: { id: true, firstName: true, lastName: true, hireDate: true },
+      orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
+    }),
+    prisma.auditLog.findMany({
+      where: {
+        organizationId: membership.organizationId,
+        action: "compliance.tracking.updated",
+      },
+      select: { entityId: true, metadata: true },
+      orderBy: { createdAt: "desc" },
+      take: 1000,
+    }),
+  ]);
 
+  const tracking = buildComplianceTrackingFromAuditLogs(trackingLogs);
   const snapshot = buildComplianceSnapshot({
     organizationId: membership.organizationId,
     employees,
+    tracking,
   });
 
   return (
@@ -36,7 +56,7 @@ export default async function ObligationsPage() {
         </p>
       </div>
 
-      <ObligationsWorkspace snapshot={snapshot} />
+      <ObligationsWorkspace snapshot={snapshot} canEdit={isAdmin(membership.accessRole)} />
     </div>
   );
 }

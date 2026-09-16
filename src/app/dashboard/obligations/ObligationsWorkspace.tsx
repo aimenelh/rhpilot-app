@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
   BookOpenCheck,
@@ -10,21 +11,26 @@ import {
   ChevronRight,
   CircleHelp,
   ExternalLink,
-  ShieldCheck,
+  Eye,
+  Save,
   UserRound,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import type {
   ComplianceSnapshot,
+  ComplianceTracking,
+  CseTrackingStatus,
   LegalObligationItem,
   ObligationStatus,
 } from "@/lib/compliance/obligations";
+import { saveComplianceTracking } from "./actions";
 
 type Tab = "overview" | "timeline" | "reference";
 
 const STATUS_META: Record<
   ObligationStatus,
-  { label: string; classes: string; icon: typeof AlertTriangle }
+  { label: string; classes: string; icon: LucideIcon }
 > = {
   TO_DO: {
     label: "À traiter",
@@ -49,9 +55,12 @@ const STATUS_META: Record<
   MONITOR: {
     label: "À surveiller",
     classes: "bg-slate-100 text-slate-600 ring-slate-200",
-    icon: ShieldCheck,
+    icon: Eye,
   },
 };
+
+const INPUT_CLASSES =
+  "mt-1.5 w-full rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm text-ink outline-none transition focus:border-brand-primary/50 focus:ring-2 focus:ring-brand-primary/10";
 
 function formatDate(value: string | null) {
   if (!value) return null;
@@ -109,7 +118,193 @@ function ObligationCard({ item, onOpen }: { item: LegalObligationItem; onOpen: (
   );
 }
 
-function DetailDrawer({ item, onClose }: { item: LegalObligationItem; onClose: () => void }) {
+function TrackingForm({
+  item,
+  tracking,
+  canEdit,
+}: {
+  item: LegalObligationItem;
+  tracking: ComplianceTracking;
+  canEdit: boolean;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [feedback, setFeedback] = useState<{ type: "success" | "error"; message: string } | null>(null);
+
+  if (!canEdit) {
+    return (
+      <section className="rounded-xl border border-surface-border bg-surface-subtle/30 p-4">
+        <p className="text-sm font-semibold text-ink">Données de suivi</p>
+        <p className="mt-1 text-xs leading-5 text-ink-faint">
+          Ces informations peuvent être modifiées par un propriétaire ou un administrateur de l'espace.
+        </p>
+      </section>
+    );
+  }
+
+  const onSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    setFeedback(null);
+    startTransition(async () => {
+      const result = await saveComplianceTracking(formData);
+      if (result.error) {
+        setFeedback({ type: "error", message: result.error });
+        return;
+      }
+      setFeedback({ type: "success", message: result.success ?? "Suivi mis à jour." });
+      router.refresh();
+    });
+  };
+
+  if (item.ruleKey === "FR.CAREER_INTERVIEW") {
+    const current = tracking.employees[item.subjectId]?.lastCareerInterviewAt ?? "";
+    return (
+      <section className="rounded-xl border border-surface-border p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-ink">Données de suivi</p>
+            <p className="mt-1 text-xs leading-5 text-ink-faint">Renseignez uniquement une date dont vous disposez réellement.</p>
+          </div>
+        </div>
+        <form onSubmit={onSubmit} className="mt-4 space-y-4">
+          <input type="hidden" name="ruleKey" value={item.ruleKey} />
+          <input type="hidden" name="employeeId" value={item.subjectId} />
+          <label className="block text-xs font-medium text-ink-soft">
+            Date du dernier entretien de parcours professionnel
+            <input className={INPUT_CLASSES} type="date" name="lastCareerInterviewAt" defaultValue={current} />
+          </label>
+          <TrackingSubmit pending={pending} feedback={feedback} />
+        </form>
+      </section>
+    );
+  }
+
+  if (item.ruleKey === "FR.DUERP.UPDATE") {
+    return (
+      <section className="rounded-xl border border-surface-border p-4">
+        <p className="text-sm font-semibold text-ink">Données de suivi</p>
+        <p className="mt-1 text-xs leading-5 text-ink-faint">
+          La date enregistrée sert au suivi de l'échéance annuelle lorsqu'elle s'applique. Elle ne remplace pas le document DUERP lui-même.
+        </p>
+        <form onSubmit={onSubmit} className="mt-4 space-y-4">
+          <input type="hidden" name="ruleKey" value={item.ruleKey} />
+          <label className="block text-xs font-medium text-ink-soft">
+            Dernière mise à jour du DUERP
+            <input
+              className={INPUT_CLASSES}
+              type="date"
+              name="duerpLastUpdatedAt"
+              defaultValue={tracking.organization.duerpLastUpdatedAt ?? ""}
+            />
+          </label>
+          <TrackingSubmit pending={pending} feedback={feedback} />
+        </form>
+      </section>
+    );
+  }
+
+  if (item.ruleKey === "FR.CSE.ELECTION") {
+    const cseStatus: CseTrackingStatus = tracking.organization.cseStatus;
+    return (
+      <section className="rounded-xl border border-surface-border p-4">
+        <p className="text-sm font-semibold text-ink">Données de suivi</p>
+        <p className="mt-1 text-xs leading-5 text-ink-faint">
+          Ces informations permettent de distinguer un simple franchissement d'effectif d'une obligation déjà déclenchée ou d'un CSE existant.
+        </p>
+        <form onSubmit={onSubmit} className="mt-4 space-y-4">
+          <input type="hidden" name="ruleKey" value={item.ruleKey} />
+          <label className="block text-xs font-medium text-ink-soft">
+            Effectif d'au moins 11 salariés depuis le
+            <input
+              className={INPUT_CLASSES}
+              type="date"
+              name="cseThresholdReachedAt"
+              defaultValue={tracking.organization.cseThresholdReachedAt ?? ""}
+            />
+          </label>
+          <label className="block text-xs font-medium text-ink-soft">
+            Situation actuelle du CSE
+            <select className={INPUT_CLASSES} name="cseStatus" defaultValue={cseStatus}>
+              <option value="UNKNOWN">À confirmer</option>
+              <option value="IN_PLACE">CSE en place</option>
+              <option value="NOT_IN_PLACE">CSE non mis en place</option>
+            </select>
+          </label>
+          <label className="block text-xs font-medium text-ink-soft">
+            Date de la dernière élection CSE
+            <input
+              className={INPUT_CLASSES}
+              type="date"
+              name="cseLastElectionAt"
+              defaultValue={tracking.organization.cseLastElectionAt ?? ""}
+            />
+            <span className="mt-1.5 block text-[11px] leading-4 text-ink-faint">
+              À renseigner si un CSE est déjà en place. RH Pilot l'utilise pour suivre le renouvellement de principe, sans présumer d'un éventuel accord sur la durée du mandat.
+            </span>
+          </label>
+          <TrackingSubmit pending={pending} feedback={feedback} />
+        </form>
+      </section>
+    );
+  }
+
+  return null;
+}
+
+function TrackingSubmit({
+  pending,
+  feedback,
+}: {
+  pending: boolean;
+  feedback: { type: "success" | "error"; message: string } | null;
+}) {
+  return (
+    <div className="space-y-2">
+      <button
+        type="submit"
+        disabled={pending}
+        className="inline-flex items-center gap-2 rounded-lg bg-brand-primary px-3.5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-primary/90 disabled:cursor-wait disabled:opacity-60"
+      >
+        <Save size={15} />
+        {pending ? "Enregistrement..." : "Enregistrer le suivi"}
+      </button>
+      {feedback ? (
+        <p className={`text-xs ${feedback.type === "error" ? "text-red-600" : "text-emerald-700"}`}>{feedback.message}</p>
+      ) : null}
+    </div>
+  );
+}
+
+function trackingKey(item: LegalObligationItem, tracking: ComplianceTracking) {
+  if (item.ruleKey === "FR.CAREER_INTERVIEW") {
+    return `${item.id}:${tracking.employees[item.subjectId]?.lastCareerInterviewAt ?? ""}`;
+  }
+  if (item.ruleKey === "FR.DUERP.UPDATE") {
+    return `${item.id}:${tracking.organization.duerpLastUpdatedAt ?? ""}`;
+  }
+  if (item.ruleKey === "FR.CSE.ELECTION") {
+    return [
+      item.id,
+      tracking.organization.cseThresholdReachedAt ?? "",
+      tracking.organization.cseStatus,
+      tracking.organization.cseLastElectionAt ?? "",
+    ].join(":");
+  }
+  return item.id;
+}
+
+function DetailDrawer({
+  item,
+  tracking,
+  canEdit,
+  onClose,
+}: {
+  item: LegalObligationItem;
+  tracking: ComplianceTracking;
+  canEdit: boolean;
+  onClose: () => void;
+}) {
   return (
     <div className="fixed inset-0 z-[70] flex justify-end" role="dialog" aria-modal="true" aria-label={item.title}>
       <button
@@ -164,6 +359,8 @@ function DetailDrawer({ item, onClose }: { item: LegalObligationItem; onClose: (
             </section>
           ) : null}
 
+          <TrackingForm key={trackingKey(item, tracking)} item={item} tracking={tracking} canEdit={canEdit} />
+
           <section className="rounded-xl border border-surface-border p-4">
             <div className="flex items-start gap-3">
               <BookOpenCheck size={18} className="mt-0.5 shrink-0 text-brand-primary" />
@@ -189,10 +386,21 @@ function DetailDrawer({ item, onClose }: { item: LegalObligationItem; onClose: (
   );
 }
 
-export default function ObligationsWorkspace({ snapshot }: { snapshot: ComplianceSnapshot }) {
+export default function ObligationsWorkspace({
+  snapshot,
+  canEdit,
+}: {
+  snapshot: ComplianceSnapshot;
+  canEdit: boolean;
+}) {
   const [tab, setTab] = useState<Tab>("overview");
-  const [selected, setSelected] = useState<LegalObligationItem | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<ObligationStatus | "ALL">("ALL");
+
+  const selected = useMemo(
+    () => snapshot.items.find((item) => item.id === selectedId) ?? null,
+    [selectedId, snapshot.items],
+  );
 
   const filtered = useMemo(
     () => snapshot.items.filter((item) => statusFilter === "ALL" || item.status === statusFilter),
@@ -290,7 +498,7 @@ export default function ObligationsWorkspace({ snapshot }: { snapshot: Complianc
             <span className="text-xs text-ink-faint">{ordered.length} dossier{ordered.length > 1 ? "s" : ""}</span>
           </div>
           <div className="grid gap-3 xl:grid-cols-2">
-            {ordered.map((item) => <ObligationCard key={item.id} item={item} onOpen={() => setSelected(item)} />)}
+            {ordered.map((item) => <ObligationCard key={item.id} item={item} onOpen={() => setSelectedId(item.id)} />)}
           </div>
           {ordered.length === 0 ? (
             <div className="rounded-xl border border-dashed border-surface-border px-5 py-10 text-center text-sm text-ink-faint">Aucune obligation ne correspond à ce filtre.</div>
@@ -306,7 +514,7 @@ export default function ObligationsWorkspace({ snapshot }: { snapshot: Complianc
           </div>
           <div className="divide-y divide-surface-border">
             {timeline.map((item) => (
-              <button key={item.id} type="button" onClick={() => setSelected(item)} className="flex w-full items-center gap-4 px-5 py-4 text-left hover:bg-surface-subtle/50">
+              <button key={item.id} type="button" onClick={() => setSelectedId(item.id)} className="flex w-full items-center gap-4 px-5 py-4 text-left hover:bg-surface-subtle/50">
                 <div className="w-24 shrink-0 text-sm font-semibold text-ink">{formatDate(item.dueDate)}</div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-ink">{item.title}</p>
@@ -349,7 +557,9 @@ export default function ObligationsWorkspace({ snapshot }: { snapshot: Complianc
         RH Pilot organise les informations et échéances connues à partir des données de l'entreprise et de sources officielles. Une information absente reste signalée comme telle : le module ne remplace pas une analyse juridique adaptée à une situation particulière.
       </p>
 
-      {selected ? <DetailDrawer item={selected} onClose={() => setSelected(null)} /> : null}
+      {selected ? (
+        <DetailDrawer item={selected} tracking={snapshot.tracking} canEdit={canEdit} onClose={() => setSelectedId(null)} />
+      ) : null}
     </>
   );
 }
