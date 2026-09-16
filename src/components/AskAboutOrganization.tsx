@@ -61,11 +61,14 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
     }
   }, [state]);
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    });
   }, [messages]);
   return (
-    <Card className="border-brand-primary-dark/25 bg-gradient-to-br from-brand-primary-dark/[0.04] to-brand-primary/[0.04]">
-      <div className="flex items-center justify-between">
+    <Card className="flex h-[22rem] min-h-0 flex-col overflow-hidden border-brand-primary-dark/25 bg-gradient-to-br from-brand-primary-dark/[0.04] to-brand-primary/[0.04]">
+      <div className="flex shrink-0 items-center justify-between">
         <div className="flex items-center gap-2.5">
           <div className="relative shrink-0">
             <Logomark size={30} />
@@ -84,44 +87,51 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
           />
         </div>
       </div>
-      {messages.length === 0 ? (
-        <p className="mt-2 text-xs text-ink-faint">
-          Posez une question sur votre organisation. Recevez des réponses basées sur vos données RH.
-        </p>
-      ) : (
-        <div ref={scrollRef} className="mt-3 flex max-h-80 flex-col gap-3 overflow-y-auto pr-1">
-          {messages.map((m, i) =>
-            m.role === "user" ? (
-              <div key={i} className="flex flex-col items-end gap-1">
-                <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-brand-primary px-3.5 py-2 text-sm text-white">
-                  {m.text}
-                </div>
-                <span className="flex items-center gap-1 pr-1 text-[10px] text-ink-faint">
-                  {m.time} <CheckCheck size={12} className="text-brand-primary" aria-hidden />
-                </span>
-              </div>
-            ) : (
-              <div key={i} className="flex items-end gap-2">
-                <span className="mb-4 shrink-0">
-                  <Logomark size={20} />
-                </span>
-                <div className="flex max-w-[80%] flex-col gap-1">
-                  <div className="whitespace-pre-wrap rounded-2xl rounded-tl-sm bg-white px-3.5 py-2 text-sm text-ink shadow-sm">
-                    {renderFormattedText(m.text)}
+
+      <div className="mt-2 min-h-0 flex-1">
+        {messages.length === 0 ? (
+          <p className="text-xs text-ink-faint">
+            Posez une question sur votre organisation. Recevez des réponses basées sur vos données RH.
+          </p>
+        ) : (
+          <div
+            ref={scrollRef}
+            className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain pr-1"
+          >
+            {messages.map((m, i) =>
+              m.role === "user" ? (
+                <div key={i} className="flex flex-col items-end gap-1">
+                  <div className="max-w-[80%] rounded-2xl rounded-tr-sm bg-brand-primary px-3.5 py-2 text-sm text-white">
+                    {m.text}
                   </div>
-                  <span className="pl-1 text-[10px] text-ink-faint">{m.time}</span>
+                  <span className="flex items-center gap-1 pr-1 text-[10px] text-ink-faint">
+                    {m.time} <CheckCheck size={12} className="text-brand-primary" aria-hidden />
+                  </span>
                 </div>
-              </div>
-            )
-          )}
-        </div>
-      )}
+              ) : (
+                <div key={i} className="flex items-end gap-2">
+                  <span className="mb-4 shrink-0">
+                    <Logomark size={20} />
+                  </span>
+                  <div className="flex max-w-[80%] flex-col gap-1">
+                    <div className="whitespace-pre-wrap rounded-2xl rounded-tl-sm bg-white px-3.5 py-2 text-sm text-ink shadow-sm">
+                      {renderFormattedText(m.text)}
+                    </div>
+                    <span className="pl-1 text-[10px] text-ink-faint">{m.time}</span>
+                  </div>
+                </div>
+              )
+            )}
+          </div>
+        )}
+      </div>
+
       {state?.error && (
-        <p role="alert" className="mt-3 text-sm text-accent-rose">
+        <p role="alert" className="mt-2 shrink-0 text-sm text-accent-rose">
           {state.error}
         </p>
       )}
-      <form action={formAction} className="mt-3 flex flex-wrap gap-2">
+      <form action={formAction} className="mt-3 flex shrink-0 flex-wrap gap-2 border-t border-surface-border/70 pt-3">
         <Input
           aria-label="Votre question au Copilote"
           name="question"
