@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Search, Mail, ArrowLeft, Compass } from "lucide-react";
+import { Search, Mail, ArrowLeft } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Field";
 import { FAQ_ENTRIES } from "@/lib/faq";
@@ -27,23 +27,18 @@ export default function HelpPage({
       <h1 className="text-2xl font-semibold text-ink">Besoin d&apos;aide ?</h1>
       <p className="mt-1 text-sm text-ink-soft">Cherchez une réponse, ou parcourez par catégorie.</p>
 
-      <div className="mt-5 flex items-center justify-between gap-4 rounded-xl border border-brand-primary/15 bg-brand-primary/[0.035] p-4">
-        <div className="flex min-w-0 items-start gap-3">
-          <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-primary/10 text-brand-primary">
-            <Compass size={17} />
-          </div>
-          <div>
-            <h2 className="text-sm font-semibold text-ink">Revoir la visite guidée</h2>
-            <p className="mt-0.5 text-sm text-ink-soft">
-              La mascotte vous refait découvrir les principaux espaces de RH Pilot.
-            </p>
-          </div>
+      <div className="mt-5 flex items-center justify-between gap-5 border-y border-surface-border py-4">
+        <div className="min-w-0">
+          <h2 className="text-sm font-semibold text-ink">Visite guidée</h2>
+          <p className="mt-0.5 text-sm text-ink-soft">
+            Reprenez le parcours de découverte des principaux espaces de RH Pilot.
+          </p>
         </div>
         <Link
-          href="/dashboard/employees?tour=1"
-          className="shrink-0 rounded-lg border border-brand-primary/25 bg-white px-3.5 py-2 text-sm font-medium text-brand-primary transition-colors hover:bg-brand-primary/5"
+          href="/dashboard?tour=1"
+          className="shrink-0 rounded-lg border border-surface-border bg-white px-3.5 py-2 text-sm font-medium text-ink-soft transition-colors hover:border-ink-faint hover:text-ink"
         >
-          Relancer
+          Revoir la visite
         </Link>
       </div>
 
