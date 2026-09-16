@@ -53,6 +53,11 @@ export function WhyConversationScene() {
 
       <div className={styles.mockupStage} aria-hidden="true">
         <div className={styles.screen} key={replayKey}>
+          <div className={styles.statusBar}>
+            <span>9:41</span>
+            <span>5G</span>
+          </div>
+
           <div className={styles.chatHeader}>
             <span className={styles.backArrow}>‹</span>
             <span className={styles.groupAvatar}>R</span>
@@ -92,6 +97,12 @@ export function WhyConversationScene() {
             <span className={styles.mic}>⌁</span>
           </div>
         </div>
+
+        <img
+          className={styles.phoneFrame}
+          src="/illustrations/why/phone-hands-frame.webp"
+          alt=""
+        />
       </div>
 
       <div className={styles.contextCard}>
