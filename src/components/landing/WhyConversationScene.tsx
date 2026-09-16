@@ -3,32 +3,15 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import styles from "./WhyConversationScene.module.css";
 
+const PHONE_MOCKUP_SRC =
+  "https://static.vecteezy.com/system/resources/previews/041/306/517/non_2x/ai-generated-hand-holding-phone-mockup-with-blank-screen-free-png.png";
+
 const messages = [
-  {
-    author: "Sophie",
-    tone: "incoming",
-    text: "Le nouveau collaborateur vient d’arriver. Qui s’occupe de l’accueil ?",
-  },
-  {
-    author: "Lucas",
-    tone: "outgoing",
-    text: "Je pensais que c’était déjà prévu côté RH.",
-  },
-  {
-    author: "Nina",
-    tone: "incoming",
-    text: "De mon côté, je n’ai rien reçu.",
-  },
-  {
-    author: "Thomas",
-    tone: "outgoing",
-    text: "Le matériel est prêt au moins ?",
-  },
-  {
-    author: "Sophie",
-    tone: "incoming",
-    text: "Et la visite médicale, quelqu’un l’a planifiée ?",
-  },
+  { author: "Sophie", tone: "incoming", text: "Le nouveau collaborateur vient d’arriver. Qui s’occupe de l’accueil ?" },
+  { author: "Lucas", tone: "outgoing", text: "Je pensais que c’était déjà prévu côté RH." },
+  { author: "Nina", tone: "incoming", text: "De mon côté, je n’ai rien reçu." },
+  { author: "Thomas", tone: "outgoing", text: "Le matériel est prêt au moins ?" },
+  { author: "Sophie", tone: "incoming", text: "Et la visite médicale, quelqu’un l’a planifiée ?" },
 ] as const;
 
 export function WhyConversationScene() {
@@ -44,14 +27,13 @@ export function WhyConversationScene() {
   }, []);
 
   return (
-    <div
-      className={styles.scene}
-      aria-label="Conversation d’équipe illustrant un manque de coordination lors de l’arrivée d’un nouveau collaborateur"
-    >
+    <div className={styles.scene} aria-label="Conversation d’équipe illustrant un manque de coordination RH">
       <div className={styles.glow} aria-hidden="true" />
       <div className={styles.deskShadow} aria-hidden="true" />
 
       <div className={styles.mockupStage} aria-hidden="true">
+        <img className={styles.phoneFrame} src={PHONE_MOCKUP_SRC} alt="" />
+
         <div className={styles.screen} key={replayKey}>
           <div className={styles.statusBar}>
             <span>9:41</span>
@@ -83,11 +65,7 @@ export function WhyConversationScene() {
                   </div>
                 </div>
               ))}
-              <div className={styles.typing}>
-                <span />
-                <span />
-                <span />
-              </div>
+              <div className={styles.typing}><span /><span /><span /></div>
             </div>
           </div>
 
@@ -97,12 +75,6 @@ export function WhyConversationScene() {
             <span className={styles.mic}>⌁</span>
           </div>
         </div>
-
-        <img
-          className={styles.phoneFrame}
-          src="/illustrations/why/phone-hands-frame.webp"
-          alt=""
-        />
       </div>
 
       <div className={styles.contextCard}>
@@ -111,22 +83,12 @@ export function WhyConversationScene() {
       </div>
 
       {!isReducedMotion ? (
-        <button
-          type="button"
-          className={styles.replay}
-          onClick={() => setReplayKey((value) => value + 1)}
-          aria-label="Rejouer la conversation"
-        >
+        <button type="button" className={styles.replay} onClick={() => setReplayKey((value) => value + 1)}>
           Rejouer
         </button>
       ) : null}
 
-      <a
-        className={styles.attribution}
-        href="https://www.vecteezy.com/free-png/holding-phone"
-        target="_blank"
-        rel="noreferrer"
-      >
+      <a className={styles.attribution} href="https://www.vecteezy.com/free-png/holding-phone" target="_blank" rel="noreferrer">
         Mockup : Vecteezy
       </a>
     </div>
