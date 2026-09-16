@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
@@ -29,7 +29,7 @@ import { GlobalSearch } from "./GlobalSearch";
 import { RhNewsToast } from "./RhNewsToast";
 import type { RhNewsItem } from "@/lib/rhNews";
 import { IosInstallHint } from "./IosInstallHint";
-import { AmbientGlow } from "@/components/landing/AmbientGlow";
+import "./AppWorkspace.css";
 
 type NavItem = {
   href: string;
@@ -107,6 +107,26 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const panel = menuRef.current;
+    panel?.querySelector<HTMLButtonElement>("button")?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileNavOpen(false);
+      if (event.key !== "Tab" || !panel) return;
+      const focusable = [...panel.querySelectorAll<HTMLElement>('a[href], button:not([disabled])')];
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+      else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => { document.body.style.overflow = previousOverflow; document.removeEventListener("keydown", onKey); menuButtonRef.current?.focus(); };
+  }, [mobileNavOpen]);
+  const roleLabel = ({ OWNER: "Propriétaire", ADMIN: "Administrateur", MEMBER: "Membre" } as Record<string, string>)[accessRole] ?? accessRole;
   const demoCountdownLabel = useDemoCountdownLabel(demoExpiresAt);
 
   const navContent = (
@@ -116,7 +136,7 @@ export function AppShell({
         <Wordmark />
       </div>
 
-      <nav className="mt-7 flex flex-col gap-1" aria-label="Navigation principale">
+      <nav aria-label="Navigation principale" className="workspace-nav mt-6 flex flex-col gap-1">
         {NAV_ITEMS.map((item) => {
           const isActive =
             item.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.href);
@@ -130,8 +150,8 @@ export function AppShell({
               )}
               <Link
                 href={item.href}
-                onClick={() => setMobileNavOpen(false)}
                 aria-current={isActive ? "page" : undefined}
+                onClick={() => setMobileNavOpen(false)}
                 className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
                   isActive
                     ? "bg-brand-primary/10 text-brand-primary"
@@ -149,8 +169,8 @@ export function AppShell({
       <div className="mt-auto flex flex-col gap-1 pt-4">
         <Link
           href={HELP_ITEM.href}
-          onClick={() => setMobileNavOpen(false)}
           aria-current={pathname.startsWith(HELP_ITEM.href) ? "page" : undefined}
+          onClick={() => setMobileNavOpen(false)}
           className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
             pathname.startsWith(HELP_ITEM.href)
               ? "bg-brand-primary/10 text-brand-primary"
@@ -172,26 +192,21 @@ export function AppShell({
   );
 
   return (
-    <div className="flex min-h-screen">
-      <AmbientGlow animated={false} />
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-surface-border bg-white px-4 py-5 md:flex">
+    <div className="app-workspace flex min-h-screen">
+      <a href="#workspace-main" className="workspace-skip">Aller au contenu</a>
+      <aside className="workspace-sidebar hidden w-60 shrink-0 flex-col border-r border-surface-border bg-white px-4 py-5 md:flex">
         {navContent}
       </aside>
 
       {mobileNavOpen && (
-        <div
-          className="fixed inset-0 z-50 md:hidden"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Menu de navigation"
-        >
+        <div ref={menuRef} id="mobile-navigation" className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Menu de navigation">
           <div
             className="absolute inset-0 bg-ink/30"
             onClick={() => setMobileNavOpen(false)}
             aria-hidden="true"
           />
           <aside
-            className="relative flex h-full w-72 max-w-[80vw] flex-col bg-white px-4 py-5 shadow-xl"
+            className="relative flex h-full overflow-y-auto w-72 max-w-[80vw] flex-col bg-white px-4 py-5 shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
             <button
@@ -214,10 +229,13 @@ export function AppShell({
           </div>
         )}
 
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-surface-border bg-white/95 px-4 backdrop-blur md:gap-6 md:px-8">
+        <header className="workspace-header flex min-h-16 items-center gap-3 border-b border-surface-border bg-white px-4 md:gap-6 md:px-8">
           <button
             type="button"
             onClick={() => setMobileNavOpen(true)}
+            ref={menuButtonRef}
+            aria-expanded={mobileNavOpen}
+            aria-controls="mobile-navigation"
             aria-label="Ouvrir le menu"
             className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-surface-border text-ink-soft md:hidden"
           >
@@ -226,7 +244,7 @@ export function AppShell({
 
           <div className="min-w-0 flex-1 sm:flex-none">
             <p className="truncate text-sm font-semibold text-ink">{organizationName}</p>
-            <p className="truncate text-xs text-ink-faint">Rôle d&apos;accès : {accessRole}</p>
+            <p className="truncate text-xs text-ink-faint">{roleLabel}</p>
           </div>
 
           <div className="hidden flex-1 sm:block">
@@ -238,7 +256,8 @@ export function AppShell({
           </div>
         </header>
 
-        <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
+        <main id="workspace-main" tabIndex={-1} className="workspace-main flex-1 px-4 py-6 md:px-8 md:py-8">
+          <div className="mb-4 sm:hidden"><GlobalSearch /></div>
           <div key={pathname} className="page-fade-in">
             {children}
           </div>

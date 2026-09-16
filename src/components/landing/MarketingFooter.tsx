@@ -142,7 +142,7 @@ export function MarketingFooter() {
 
       <div className="border-t border-surface-border px-6 py-6">
         <p className="mx-auto max-w-6xl text-center text-xs text-ink-faint">
-          © {year} RH Pilot, version bêta. Conçu et développé à Montpellier.
+          © {year} RH Pilot. Conçu et développé à Montpellier.
         </p>
       </div>
     </footer>

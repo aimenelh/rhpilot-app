@@ -234,8 +234,8 @@ export default async function DashboardPage({
   const firstName = user!.firstName || user!.email.split("@")[0];
 
   return (
-    <div className="max-w-6xl">
-      <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+    <div className="dashboard-overview">
+      <div className="dashboard-heading flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <h1 data-tour="dashboard-attention" className="text-2xl font-semibold text-ink">
             Bonjour {firstName} 👋
@@ -261,7 +261,7 @@ export default async function DashboardPage({
         <Mascot pose={mascotPose} className="hidden shrink-0 lg:block" />
       </div>
 
-      <Card className={`mt-5 ${flagged.length === 0 ? "border-accent-teal/20" : "border-accent-amber/25"}`}>
+      <Card className={`dashboard-priorities mt-5 ${flagged.length === 0 ? "border-accent-teal/20" : "border-accent-amber/25"}`}>
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2">
             {flagged.length === 0 ? (
@@ -351,7 +351,7 @@ export default async function DashboardPage({
       </Card>
 
       {!isEmpty && (
-        <Card className="mt-5 p-0">
+        <Card className="dashboard-stats mt-5 !p-0">
           <div className="grid grid-cols-2 divide-x divide-y divide-surface-border sm:grid-cols-4 sm:divide-y-0">
             <Link href="/dashboard/employees" className="flex items-center gap-3 px-4 py-3.5 hover:bg-surface-subtle sm:px-5">
               <Users size={18} className="shrink-0 text-brand-primary-dark" />
@@ -390,11 +390,11 @@ export default async function DashboardPage({
         </Card>
       )}
 
-      <div className="mt-5">
+      <div className="dashboard-copilot mt-5">
         <AskAboutOrganization aiEnabled={aiEnabled} />
       </div>
 
-      <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="dashboard-tools mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
         {!allStepsDone && (
           <Card>
             <h2 className="text-sm font-semibold text-ink">Premiers pas</h2>
@@ -438,7 +438,7 @@ export default async function DashboardPage({
             </div>
             <ul className="mt-3 flex flex-col">
               {recentActivity.map((entry, index) => {
-                const label = AUDIT_LABELS[entry.action]?.(entry.metadata) ?? entry.action;
+                const label = AUDIT_LABELS[entry.action]?.(entry.metadata) ?? "Dossier mis à jour";
                 const isLast = index === recentActivity.length - 1;
                 return (
                   <li key={entry.id} className="relative flex gap-3 pb-4 last:pb-0">

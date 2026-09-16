@@ -113,4 +113,17 @@ describe("contrôle de préparation d'une période de paie", () => {
     expect(result.ready).toBe(false);
     expect(result.issues).toHaveLength(2);
   });
+  it("signale l’entrée et la sortie partielles avant le calcul", () => {
+    const result = checkPayrollPeriodReadiness([{ employeeId: "emp-1", firstName: "Alice", lastName: "Martin", baseSalaryCents: 200000, monthlyHours: 151.67, hireDate: new Date("2026-09-15"), contractEndDate: new Date("2026-09-25") }], { year: 2026, month: 9 });
+    expect(result.ready).toBe(false);
+    expect(result.issues.map(issue => issue.code)).toEqual(["PARTIAL_MONTH_ENTRY", "PARTIAL_MONTH_EXIT"]);
+    expect(result.issues.every(issue => issue.message.includes("Alice Martin"))).toBe(true);
+    expect(checkPayrollPeriodReadiness([{ employeeId: "emp-1", firstName: "Alice", lastName: "Martin", baseSalaryCents: 200000, monthlyHours: 151.67, hireDate: new Date("2026-09-15"), hasIncompleteMonthAdjustment: true }], {year:2026,month:9}).ready).toBe(true);
+  });
+  it("accepte les bornes d’un mois complet et signale les profils superposés", () => {
+    const employee = { employeeId: "emp-1", firstName: "Alice", lastName: "Martin", baseSalaryCents: 200000, monthlyHours: 151.67, hireDate: new Date("2026-09-01"), contractEndDate: new Date("2026-09-30"), profileCount: 1 };
+    expect(checkPayrollPeriodReadiness([employee], {year: 2026, month: 9}).ready).toBe(true);
+    expect(checkPayrollPeriodReadiness([{...employee, profileCount: 2}], {year: 2026, month: 9}).issues[0].code).toBe("OVERLAPPING_PROFILES");
+  });
+
 });

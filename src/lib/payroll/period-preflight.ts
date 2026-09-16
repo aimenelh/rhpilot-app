@@ -1,6 +1,9 @@
 export type PayrollPreflightSeverity = "BLOCKING" | "WARNING";
 
 export type PayrollPreflightCode =
+  | "PARTIAL_MONTH_ENTRY"
+  | "PARTIAL_MONTH_EXIT"
+  | "OVERLAPPING_PROFILES"
   | "NO_EMPLOYEES"
   | "MISSING_PAYROLL_PROFILE"
   | "MISSING_BASE_SALARY"
@@ -12,6 +15,10 @@ export interface PayrollPreflightEmployeeInput {
   lastName: string;
   baseSalaryCents?: number | null;
   monthlyHours?: number | null;
+  hireDate?: Date;
+  contractEndDate?: Date | null;
+  profileCount?: number;
+  hasIncompleteMonthAdjustment?: boolean;
 }
 
 export interface PayrollPreflightIssue {
@@ -33,6 +40,7 @@ export interface PayrollPreflightResult {
  */
 export function checkPayrollPeriodReadiness(
   employees: PayrollPreflightEmployeeInput[],
+  period?: { year: number; month: number },
 ): PayrollPreflightResult {
   if (employees.length === 0) {
     return {
@@ -51,6 +59,16 @@ export function checkPayrollPeriodReadiness(
 
   for (const employee of employees) {
     const displayName = `${employee.firstName} ${employee.lastName}`.trim();
+
+    if (period) {
+      const start = `${period.year}-${String(period.month).padStart(2, "0")}-01`;
+      const end = new Date(Date.UTC(period.year, period.month, 0)).toISOString().slice(0, 10);
+      const hire = employee.hireDate?.toISOString().slice(0, 10);
+      const exit = employee.contractEndDate?.toISOString().slice(0, 10);
+      if (hire && hire > start && hire <= end && !employee.hasIncompleteMonthAdjustment) issues.push({ code: "PARTIAL_MONTH_ENTRY", severity: "BLOCKING", employeeId: employee.employeeId, message: `${displayName} : entrée en cours de mois. Renseignez un unique prorata INCOMPLETE_MONTH en euros, établi sur l’horaire réel.` });
+      if (exit && exit >= start && exit < end && !employee.hasIncompleteMonthAdjustment) issues.push({ code: "PARTIAL_MONTH_EXIT", severity: "BLOCKING", employeeId: employee.employeeId, message: `${displayName} : sortie en cours de mois. Renseignez un unique prorata INCOMPLETE_MONTH en euros, établi sur l’horaire réel.` });
+    }
+    if ((employee.profileCount ?? 0) > 1) issues.push({ code: "OVERLAPPING_PROFILES", severity: "BLOCKING", employeeId: employee.employeeId, message: `${displayName} : plusieurs profils paie couvrent cette période. Vérifiez leurs dates d’effet.` });
 
     if (employee.baseSalaryCents == null) {
       issues.push({

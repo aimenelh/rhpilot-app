@@ -112,18 +112,16 @@ export default function WelcomePage({
             </div>
           </div>
 
-          <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold uppercase tracking-[0.15em] text-brand-primary-dark">
-            Bêta
-          </span>
+
 
           <h1 className="font-display mt-5 max-w-2xl text-center text-4xl font-bold leading-tight text-ink sm:text-5xl">
-            Bienvenue sur la bêta de{" "}
+            Bienvenue dans{" "}
             <span className="bg-brand-primary bg-clip-text text-transparent">RH Pilot</span>
           </h1>
 
           <p className="mt-4 max-w-xl text-center text-base leading-relaxed text-ink-soft">
-            Nous sommes ravis de vous compter parmi les premiers à tester RH Pilot. Votre
-            retour nous aidera à construire le meilleur copilote RH.
+            Retrouvez vos salariés, vos parcours et vos échéances dans un espace de travail
+            partagé avec votre équipe.
           </p>
 
           <Button type="submit" className="mt-8 px-8 py-3.5 text-base">

@@ -43,7 +43,7 @@ const GROUPS = [
       [
         "Le module paie est-il disponible ?",
         <>
-          Le module paie est en bêta. Son périmètre est présenté sur la page{" "}
+          Le module paie prend en charge un périmètre défini. Son périmètre est présenté sur la page{" "}
           <Link href="/gestion-paie">Gestion de la paie</Link>.
         </>,
       ],

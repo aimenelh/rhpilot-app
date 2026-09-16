@@ -79,7 +79,7 @@ async function buildContext(organizationId: string): Promise<string> {
     `SUGGESTIONS / SIGNAUX À VÉRIFIER (${anomalies.length}) :`,
     anomalyLines.join("\n") || "Aucune suggestion active.",
     "",
-    `FAITS ENREGISTRÉS — TÂCHES À ÉCHÉANCE DANS LES 30 PROCHAINS JOURS (${upcomingTasks.length}) :`,
+    `FAITS ENREGISTRÉS — TÂCHES OUVERTES : RETARDS ET 30 PROCHAINS JOURS (${upcomingTasks.length}) :`,
     taskLines.join("\n") || "Aucune tâche à échéance proche.",
   ].join("\n");
 }

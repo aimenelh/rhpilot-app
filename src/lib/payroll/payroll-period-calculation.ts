@@ -89,7 +89,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
   const { start, end, calculationDate } = periodBounds(period.year, period.month);
   const monthlyCalendarDays = new Date(Date.UTC(period.year, period.month, 0)).getUTCDate();
   const [employees, profiles, variables, rules, validatedAbsences, socialContext] = await Promise.all([
-    prisma.employee.findMany({ where: { organizationId: input.organizationId, deletedAt: null, hireDate: { lte: end }, OR: [{ contractEndDate: null }, { contractEndDate: { gte: start } }] }, select: { id: true, hireDate: true, contractEndDate: true, contractType: true, professionalCategory: true }, orderBy: { id: "asc" } }),
+    prisma.employee.findMany({ where: { organizationId: input.organizationId, deletedAt: null, hireDate: { lte: end }, OR: [{ contractEndDate: null }, { contractEndDate: { gte: start } }] }, select: { id: true, firstName: true, lastName: true, hireDate: true, contractEndDate: true, contractType: true, professionalCategory: true }, orderBy: { id: "asc" } }),
     prisma.payrollProfile.findMany({ where: { organizationId: input.organizationId, effectiveFrom: { lte: end }, OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: start } }] }, select: { id: true, employeeId: true, baseSalaryCents: true, monthlyHours: true, effectiveFrom: true, effectiveUntil: true, collectiveAgreementId: true, classificationCode: true, classificationLabel: true, level: true, coefficient: true }, orderBy: { effectiveFrom: "desc" } }),
     prisma.payrollVariable.findMany({ where: { organizationId: input.organizationId, payrollPeriodId: period.id }, select: { id: true, employeeId: true, code: true, label: true, amount: true, unit: true, source: true }, orderBy: { createdAt: "asc" } }),
     resolvePayrollRuleSetFromPrisma({ code: input.ruleCode, scope: input.ruleScope, periodDate: calculationDate }),
@@ -127,11 +127,12 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
   const calculatedEmployees: Array<{ employeeId: string; socialResult: ReturnType<typeof calculateSocialPayroll>; profile: CalculatedProfile; variables: PayrollVariableInput[]; treatments: ReturnType<typeof resolvePayrollVariableTreatment>[]; validatedAbsences: typeof validatedAbsences; absenceGrossImpacts: Array<{ absenceId: string; absenceType: string; ruleVersionId: string; basis: string; effect: string; absenceDays: number; grossDelta: number; derivedVariableCode: string; derivedVariableLabel: string }>; collectiveMinimum: ReturnType<typeof evaluateCollectiveMinimumSalary>; minimumSalaryControl: ReturnType<typeof buildMinimumSalaryControlSnapshot>; alternanceMinimum: AlternanceMinimumSnapshot | null; withholdingTax: number; withholdingTaxRate: number; withholdingTaxProfile: NonNullable<Awaited<ReturnType<typeof resolveEmployeeWithholdingTaxProfile>>>; postSocialAdjustment: number; netBeforeTax: number; netPaid: number }> = [];
 
   for (const employee of employees) {
+    const displayName = [employee.firstName, employee.lastName].filter(Boolean).join(" ") || employee.id;
     const profile = profileByEmployee.get(employee.id);
-    if (!profile) throw new Error(`Aucun profil paie applicable pour le salarié ${employee.id}.`);
-    if (profile.baseSalaryCents === null || !Number.isFinite(Number(profile.baseSalaryCents)) || Number(profile.baseSalaryCents) < 0) throw new Error(`Le salaire brut mensuel est manquant ou invalide pour le salarié ${employee.id}.`);
-    if (!employee.contractType) throw new Error(`Le type de contrat est manquant pour le salarié ${employee.id}.`);
-    if (!employee.professionalCategory) throw new Error(`La catégorie professionnelle est manquante pour le salarié ${employee.id}.`);
+    if (!profile) throw new Error(`Aucun profil paie applicable pour ${displayName}.`);
+    if (profile.baseSalaryCents === null || !Number.isFinite(Number(profile.baseSalaryCents)) || Number(profile.baseSalaryCents) < 0) throw new Error(`Le salaire brut mensuel est manquant ou invalide pour ${displayName}.`);
+    if (!employee.contractType) throw new Error(`Le type de contrat est manquant pour ${displayName}.`);
+    if (!employee.professionalCategory) throw new Error(`La catégorie professionnelle est manquante pour ${displayName}.`);
 
     const hireDate = new Date(employee.hireDate);
     const contractEndDate = employee.contractEndDate ? new Date(employee.contractEndDate) : null;
@@ -140,7 +141,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
 
     const monthlyHours = Number(profile.monthlyHours);
     if (!Number.isFinite(monthlyHours) || monthlyHours <= 0 || monthlyHours > 744) {
-      throw new Error(`Le volume horaire mensuel est manquant ou invalide pour le salarié ${employee.id}.`);
+      throw new Error(`Le volume horaire mensuel est manquant ou invalide pour ${displayName}.`);
     }
 
     const baseSalaryAmount = profile.baseSalaryCents / 100;
@@ -149,17 +150,17 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     const incompleteMonthVariables = employeeVariables.filter((variable) => variable.code === "INCOMPLETE_MONTH");
     if (incompleteEntry || incompleteExit) {
       if (incompleteMonthVariables.length !== 1) {
-        throw new Error(`Calcul bloqué pour le salarié ${employee.id} : une entrée ou sortie en cours de mois exige exactement un prorata INCOMPLETE_MONTH en euros, calculé selon l'horaire réel applicable.`);
+        throw new Error(`Calcul bloqué pour ${displayName} : une entrée ou sortie en cours de mois exige exactement un prorata INCOMPLETE_MONTH en euros, calculé selon l'horaire réel applicable.`);
       }
       if (incompleteMonthVariables[0].unit !== "EUR") {
-        throw new Error(`Calcul bloqué pour le salarié ${employee.id} : le prorata INCOMPLETE_MONTH doit être fourni en euros après calcul sur l'horaire réel.`);
+        throw new Error(`Calcul bloqué pour ${displayName} : le prorata INCOMPLETE_MONTH doit être fourni en euros après calcul sur l'horaire réel.`);
       }
     } else if (incompleteMonthVariables.length > 0) {
-      throw new Error(`Calcul bloqué pour le salarié ${employee.id} : un prorata INCOMPLETE_MONTH est présent alors que le contrat couvre le mois complet.`);
+      throw new Error(`Calcul bloqué pour ${displayName} : un prorata INCOMPLETE_MONTH est présent alors que le contrat couvre le mois complet.`);
     }
 
     const withholdingTaxProfile = await resolveEmployeeWithholdingTaxProfile({ organizationId: input.organizationId, employeeId: employee.id, periodDate: calculationDate });
-    if (!withholdingTaxProfile) throw new Error(`Aucun taux de prélèvement à la source valide n'est enregistré pour le salarié ${employee.id}.`);
+    if (!withholdingTaxProfile) throw new Error(`Aucun taux de prélèvement à la source valide n'est enregistré pour ${displayName}.`);
 
     const collectiveMinimumResolution = await resolveCollectiveAgreementFromPrisma({ organizationId: input.organizationId, employeeId: employee.id, periodDate: calculationDate, ruleCode: "MINIMUM_GROSS_MONTHLY" });
     let collectiveMinimum: ReturnType<typeof evaluateCollectiveMinimumSalary> = { status: "UNRESOLVED", code: "INVALID_PARAMETERS", message: "Aucune règle de minimum conventionnel exploitable n'a été résolue." };
@@ -170,20 +171,20 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     }
 
     const smicMinimum = await resolveSmicMinimumFromPrisma({ periodDate: calculationDate, scope: socialContext.payrollDepartment === "976" ? "MAYOTTE" : "FRANCE_HORS_MAYOTTE" });
-    if (!smicMinimum) throw new Error(`Calcul bloqué pour le salarié ${employee.id} : aucune version validée du SMIC n'est disponible.`);
+    if (!smicMinimum) throw new Error(`Calcul bloqué pour ${displayName} : aucune version validée du SMIC n'est disponible.`);
     const smicScope = socialContext.payrollDepartment === "976" ? "MAYOTTE" as const : "FRANCE_HORS_MAYOTTE" as const;
     const minimumSalaryControl = buildMinimumSalaryControlSnapshot({ smic: smicMinimum, collectiveMinimum, monthlyHours, collectiveRuleVersionId: collectiveMinimumResolution.status === "RESOLVED" ? collectiveMinimumResolution.rule.versionId : undefined, monthlyGrossCents: profile.baseSalaryCents });
     if (minimumSalaryControl.status !== "APPLICABLE") {
-      throw new Error(`Calcul bloqué pour le salarié ${employee.id} : contrôle du salaire minimum non résolu. ${minimumSalaryControl.explanation}`);
+      throw new Error(`Calcul bloqué pour ${displayName} : contrôle du salaire minimum non résolu. ${minimumSalaryControl.explanation}`);
     }
     if (minimumSalaryControl.compliant === false) {
-      throw new Error(`Calcul bloqué pour le salarié ${employee.id} : le salaire brut est inférieur au minimum applicable. ${minimumSalaryControl.explanation}`);
+      throw new Error(`Calcul bloqué pour ${displayName} : le salaire brut est inférieur au minimum applicable. ${minimumSalaryControl.explanation}`);
     }
 
     let alternanceMinimum: AlternanceMinimumSnapshot | null = null;
     if (employee.contractType === "APPRENTISSAGE" || employee.contractType === "PROFESSIONNALISATION") {
       const alternanceProfile = await resolveEmployeeAlternanceProfile({ organizationId: input.organizationId, employeeId: employee.id, periodDate: calculationDate });
-      if (!alternanceProfile) throw new Error(`Calcul bloqué pour le salarié ${employee.id} : le profil alternance versionné est manquant.`);
+      if (!alternanceProfile) throw new Error(`Calcul bloqué pour ${displayName} : le profil alternance versionné est manquant.`);
       const age = calculateAgeAtDate(alternanceProfile.birthDate, calculationDate);
       const collectiveMinimumCents = collectiveMinimum.status === "APPLICABLE" ? collectiveMinimum.monthlyMinimumCents ?? null : null;
       const result = employee.contractType === "APPRENTISSAGE"
@@ -195,11 +196,11 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
           : alternanceProfile.hasBaccalaureateOrHigher === null
             ? { status: "UNRESOLVED" as const, code: "MISSING_BACCALAUREATE_LEVEL", source: "PROFESSIONNALISATION_LEGAL" as const, explanation: "Le niveau de qualification est obligatoire pour déterminer le minimum de professionnalisation des moins de 26 ans." }
             : resolveProfessionalisationMinimum({ age, hasBaccalaureateOrHigher: alternanceProfile.hasBaccalaureateOrHigher, smicMonthlyCents: smicMinimum.monthlyGrossCentsAt35Hours, collectiveMinimumCents });
-      if (result.status === "UNRESOLVED") throw new Error(`Calcul bloqué pour le salarié ${employee.id} : contrôle du minimum alternance non résolu (${result.code}). ${result.explanation}`);
+      if (result.status === "UNRESOLVED") throw new Error(`Calcul bloqué pour ${displayName} : contrôle du minimum alternance non résolu (${result.code}). ${result.explanation}`);
       const legalMinimumCents = employee.contractType === "PROFESSIONNALISATION" && age >= 26
         ? Math.max(smicMinimum.monthlyGrossCentsAt35Hours, Math.round((collectiveMinimumCents ?? 0) * 0.85))
         : Math.round(smicMinimum.monthlyGrossCentsAt35Hours * (result.percentageOfSmic ?? 0));
-      if (profile.baseSalaryCents < (result.monthlyMinimumCents ?? Number.POSITIVE_INFINITY)) throw new Error(`Calcul bloqué pour le salarié ${employee.id} : salaire brut mensuel ${baseSalaryAmount} € inférieur au minimum alternance applicable ${((result.monthlyMinimumCents ?? 0) / 100).toFixed(2)} €.`);
+      if (profile.baseSalaryCents < (result.monthlyMinimumCents ?? Number.POSITIVE_INFINITY)) throw new Error(`Calcul bloqué pour ${displayName} : salaire brut mensuel ${baseSalaryAmount} € inférieur au minimum alternance applicable ${((result.monthlyMinimumCents ?? 0) / 100).toFixed(2)} €.`);
       alternanceMinimum = buildAlternanceMinimumSnapshot({ result, age, contractYear: alternanceProfile.contractYear, hasBaccalaureateOrHigher: alternanceProfile.hasBaccalaureateOrHigher, smicMonthlyCents: smicMinimum.monthlyGrossCentsAt35Hours, smicScope, legalMinimumCents, collectiveMinimumCents, baseSalaryCents: profile.baseSalaryCents, profileValidFrom: alternanceProfile.validFrom, profileValidUntil: alternanceProfile.validUntil, profileSource: alternanceProfile.source, profileSourceReference: alternanceProfile.sourceReference });
     }
 
@@ -230,14 +231,14 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     const socialResult = calculateSocialPayroll({ grossAmount, legalCategory: socialContext.legalCategory, calculationDate, companyCreationDate: socialContext.companyCreationDate, contractType: employee.contractType, hireDate: employee.hireDate, executiveStatus, healthPlanMonthlyAmount: socialContext.healthPlanMonthlyAmount, healthPlanEmployerRate: socialContext.healthPlanEmployerRate, situation: { "établissement . taux ATMP": `${socialContext.atmpRate}%`, "établissement . commune . nom": `'${socialContext.payrollCity}'`, "établissement . commune . département": `'${socialContext.payrollDepartment}'` } });
     const numericSocialValues = [socialResult.grossAmount, socialResult.employeeContributions, socialResult.employerContributions, socialResult.netBeforeTax, socialResult.netTaxableAmount, socialResult.netSocialAmount, socialResult.employerCost];
     if (numericSocialValues.some((value) => !Number.isFinite(value) || value < 0)) {
-      throw new Error(`Le moteur social a produit une valeur numérique invalide pour le salarié ${employee.id}.`);
+      throw new Error(`Le moteur social a produit une valeur numérique invalide pour ${displayName}.`);
     }
 
     const netBeforeTax = composeNetBeforeTaxAmount({ socialNetBeforeTax: socialResult.netBeforeTax, variableTreatments: treatments });
     const postSocialAdjustment = roundMoney(netBeforeTax - socialResult.netBeforeTax);
     const withholdingTax = calculateEmployeeWithholdingTax(socialResult.netTaxableAmount, withholdingTaxProfile, employee.id);
     if (withholdingTax > netBeforeTax + 0.01) {
-      throw new Error(`Calcul bloqué pour le salarié ${employee.id} : le prélèvement à la source dépasse le net à payer avant impôt après les remboursements et retenues nettes.`);
+      throw new Error(`Calcul bloqué pour ${displayName} : le prélèvement à la source dépasse le net à payer avant impôt après les remboursements et retenues nettes.`);
     }
     const netPaid = roundMoney(netBeforeTax - withholdingTax);
 

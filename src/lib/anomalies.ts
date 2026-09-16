@@ -247,11 +247,11 @@ async function detectMedicalVisitNeverScheduled(organizationId: string): Promise
     anomalies.push({
       key: `medical-visit-never-${employee.id}`,
       severity: "medium",
-      message: `Aucune visite médicale n'a jamais été programmée pour ${employee.firstName} ${employee.lastName}, embauché·e il y a plus d'un an.`,
+      message: `La prochaine visite médicale de ${employee.firstName} ${employee.lastName} n’est pas renseignée. Vérifiez l’historique avant de programmer une visite.`,
       reasoning: [
         `Embauché·e le ${formatDate(employee.hireDate)} (plus d'un an).`,
         `Aucune date de prochaine visite médicale renseignée sur sa fiche.`,
-        `Aucun parcours "Visite médicale" n'a jamais été déclenché pour cette personne.`,
+        `Aucun parcours actif "Visite médicale" n’est enregistré pour cette personne ; cela ne décrit pas son historique médical.`,
       ],
       consequence:
         "Sans date renseignée, RH Pilot ne peut jamais vous alerter automatiquement sur cette échéance à l'avenir.",

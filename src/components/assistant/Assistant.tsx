@@ -231,7 +231,7 @@ export function Assistant({ summary }: { summary: AssistantSummary }) {
               <div className="flex flex-1 flex-col justify-between p-5">
                 <div>
                   <p className="text-sm leading-relaxed text-ink-soft">
-                    Merci de participer à cette bêta ! Je peux vous accompagner pendant moins
+                    Bienvenue dans RH Pilot ! Je peux vous accompagner pendant moins
                     d&apos;une minute pour découvrir comment RH Pilot fonctionne : créer un
                     salarié, déclencher un premier parcours RH, et voir les tâches apparaître
                     automatiquement.

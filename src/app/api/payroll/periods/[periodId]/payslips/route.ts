@@ -26,14 +26,16 @@ export async function GET(_request: Request, { params }: { params: { periodId: s
     select: { id: true, employeeId: true, storageKey: true },
     orderBy: { employeeId: "asc" },
   });
-  const employees = await prisma.employee.count({ where: { organizationId: membership.organizationId, deletedAt: null } });
-  if (payslips.length !== employees || employees === 0) {
+  const lockedCalculations = await prisma.payrollCalculation.findMany({ where: { organizationId: membership.organizationId, payrollPeriodId: period.id }, select: { employeeId: true } });
+  const expectedIds = new Set(lockedCalculations.map(calculation => calculation.employeeId));
+  const employees = expectedIds.size;
+  if (payslips.length !== employees || employees === 0 || payslips.some(payslip => !expectedIds.has(payslip.employeeId)) || new Set(payslips.map(payslip => payslip.employeeId)).size !== employees) {
     return NextResponse.json({ error: `Les bulletins ne sont pas encore tous générés (${payslips.length}/${employees}). Générez d'abord les bulletins de la période.` }, { status: 409 });
   }
 
   try {
     const pdfs = payslips.map((payslip) => readPayslipDocument(payslip.storageKey!));
-    const merged = mergePayslipPdfs(pdfs);
+    const merged = await mergePayslipPdfs(pdfs);
     const month = String(period.month).padStart(2, "0");
     return new NextResponse(merged as unknown as BodyInit, {
       status: 200,

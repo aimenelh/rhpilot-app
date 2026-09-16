@@ -94,7 +94,7 @@ export function ArrivalHero() {
       </div>
       <div ref={story} className={s.story} id="product-story">
         <div className={s.sticky}>
-          <div className={s.storyTop}><span>À L’INTÉRIEUR DE RH PILOT</span><span>Captures de l’application · version bêta</span></div>
+          <div className={s.storyTop}><span>À L’INTÉRIEUR DE RH PILOT</span><span>Captures de l’application</span></div>
           <div className={s.composition}>
             <div className={s.editorial}>
               <span className={s.chapterNumber} aria-hidden="true">0{active + 1}<small>/ 03</small></span>

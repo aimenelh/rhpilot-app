@@ -43,7 +43,7 @@ export default async function EventDetailPage({
         eventTemplate: true,
         tasks: {
           orderBy: { stepOrder: "asc" },
-          include: { assignedMembership: { include: { user: true } } },
+          include: { assignedMembership: { include: { user: true } }, _count: { select: { attachments: true } } },
         },
       },
     }),
@@ -57,6 +57,7 @@ export default async function EventDetailPage({
   if (!employeeEvent) notFound();
 
   const doneCount = employeeEvent.tasks.filter((task) => task.status === "DONE").length;
+  const missingProofCount = employeeEvent.tasks.filter(task => task.proofRequired && task.status !== "CANCELLED" && task._count.attachments === 0).length;
   const isFullyCompleted = employeeEvent.tasks.length > 0 && doneCount === employeeEvent.tasks.length;
 
   return (
@@ -86,6 +87,12 @@ export default async function EventDetailPage({
         <ArchiveEventButton eventId={employeeEvent.id} />
       </div>
 
+      {missingProofCount > 0 && (
+        <Card className="mt-4 border-accent-amber/30 bg-accent-amber/5">
+          <h2 className="text-sm font-semibold text-ink">Dossier documentaire à compléter</h2>
+          <p className="mt-1 text-sm text-ink-soft">{missingProofCount} pièce(s) attendue(s) sans fichier associé. Le statut « Fait » décrit l’action réalisée ; il ne vaut pas vérification du justificatif.</p>
+        </Card>
+      )}
       {isFullyCompleted && (
         <Card className="mt-4 flex flex-col items-center gap-3 border-accent-teal/25 bg-accent-teal/5 text-center sm:flex-row sm:justify-between sm:text-left">
           <div>
@@ -148,7 +155,7 @@ export default async function EventDetailPage({
                         {formatDate(task.dueDate)}
                         {overdue && <span className="font-medium text-accent-rose">(en retard)</span>}
                       </p>
-                      <p className="mt-0.5 flex items-center gap-1.5 text-xs text-ink-soft">
+                      <div className="mt-0.5 flex items-center gap-1.5 text-xs text-ink-soft">
                         <User size={12} />
                         {task.assignedMembership ? (
                           <>
@@ -196,10 +203,10 @@ export default async function EventDetailPage({
                             </form>
                           </span>
                         )}
-                      </p>
+                      </div>
                       {task.proofRequired && task.proofLabel && (
                         <p className="mt-0.5 text-xs text-accent-amber">
-                          Pièce attendue : {task.proofLabel}
+                          {task._count.attachments > 0 ? "Fichier associé · contenu à vérifier" : task.status === "DONE" ? "Action faite · justificatif non associé" : "Justificatif à fournir"} : {task.proofLabel}
                         </p>
                       )}
                       {task.taskTemplateId === null && (

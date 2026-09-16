@@ -12,13 +12,13 @@ export default function CguPage() {
           <Reveal>
             <div className="rounded-2xl border border-surface-border bg-white/75 p-8 shadow-sm backdrop-blur-md sm:p-10">
               <p className="text-xs font-medium uppercase tracking-wide text-brand-primary">
-                Version bêta, document en cours de finalisation
+                Conditions d’utilisation, document en cours de finalisation
               </p>
               <h1 className="mt-2 text-3xl font-semibold text-ink">
                 Conditions Générales d&apos;Utilisation
               </h1>
               <p className="mt-4 text-sm leading-relaxed text-ink-soft">
-                RH Pilot est actuellement en phase de bêta fermée. Ce document
+                Ce document
                 sera complété au fur et à mesure de l&apos;avancement
                 administratif du projet (immatriculation en cours). Une question
                 ? Contactez-nous directement.
@@ -62,14 +62,12 @@ export default function CguPage() {
 
                 <section>
                   <h2 className="text-base font-semibold text-ink">
-                    3. Bêta fermée : conditions particulières
+                    3. Disponibilité et conservation des données
                   </h2>
                   <p className="mt-2">
-                    Le Service est actuellement fourni à titre gratuit, dans le
-                    cadre d&apos;une bêta fermée réservée à un nombre limité de
-                    testeurs. Aucun engagement de disponibilité continue ni de
+                    Les conditions tarifaires sont présentées sur la page Tarifs. Aucun engagement de disponibilité continue ni de
                     conservation à long terme des données n&apos;est garanti à
-                    ce stade. Les utilisateurs de la bêta sont invités à ne pas
+                    ce stade. Les utilisateurs sont invités à ne pas
                     y enregistrer de données qu&apos;ils ne pourraient se
                     permettre de perdre.
                   </p>
@@ -110,7 +108,7 @@ export default function CguPage() {
                   <p className="mt-2">
                     Pour toute question relative à ces conditions,
                     contactez-nous directement via les coordonnées communiquées
-                    lors de votre entrée en bêta.
+                    lors de votre inscription.
                   </p>
                 </section>
               </div>

@@ -18,7 +18,7 @@ const PUBLIC_FAQ: { question: string; answer: string }[] = [
   {
     question: "Combien ça coûte ?",
     answer:
-      "RH Pilot est actuellement gratuit, en bêta. Le modèle tarifaire définitif n'est pas encore figé, et sera communiqué clairement avant toute mise en place.",
+      "RH Pilot propose une offre gratuite jusqu’à 3 salariés et une offre Pro. Retrouvez le détail sur la page Tarifs.",
   },
   {
     question: "Mon équipe va-t-elle devoir apprendre un outil compliqué ?",

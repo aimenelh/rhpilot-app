@@ -55,7 +55,7 @@ export default function CookiesPage() {
                 <p>
                   Pour toute question relative à cette politique, contactez-nous
                   directement via les coordonnées communiquées lors de votre
-                  entrée en bêta.
+                  inscription.
                 </p>
               </div>
             </div>

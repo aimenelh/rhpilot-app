@@ -46,7 +46,7 @@ export default async function AboutConfigPage() {
           </div>
           <div className="flex items-center justify-between">
             <dt className="text-ink-soft">Version</dt>
-            <dd className="font-medium text-ink">RH Pilot · Bêta</dd>
+            <dd className="font-medium text-ink">RH Pilot</dd>
           </div>
         </dl>
       </Card>
@@ -68,8 +68,7 @@ export default async function AboutConfigPage() {
         </div>
       </Card>
       <p className="mt-6 text-xs text-ink-faint">
-        RH Pilot est actuellement en version bêta gratuite. Les informations d&apos;abonnement
-        apparaîtront ici lors du passage en version payante.
+        Retrouvez votre offre et vos informations d&apos;abonnement dans la rubrique Facturation.
       </p>
     </div>
   );

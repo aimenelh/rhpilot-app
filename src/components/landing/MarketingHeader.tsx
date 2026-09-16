@@ -22,7 +22,7 @@ const GROUPS = [
   {
     label: "Paie",
     links: [
-      { href: "/gestion-paie", label: "Vue d’ensemble · bêta" },
+      { href: "/gestion-paie", label: "Vue d’ensemble" },
       { href: "/gestion-paie/production", label: "Production de la paie" },
       { href: "/gestion-paie/variables", label: "Variables de paie" },
       { href: "/gestion-paie/conges-absences", label: "Congés & absences" },

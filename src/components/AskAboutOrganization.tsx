@@ -35,7 +35,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
       disabled={pending || disabled}
       className="flex shrink-0 items-center gap-1.5 rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-medium text-white disabled:opacity-50"
     >
-      Demander
+      {pending ? "Recherche…" : "Demander"}
     </button>
   );
 }
@@ -61,7 +61,7 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
     }
   }, [state]);
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
   }, [messages]);
   return (
     <Card className="border-brand-primary-dark/25 bg-gradient-to-br from-brand-primary-dark/[0.04] to-brand-primary/[0.04]">
@@ -80,7 +80,7 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
           <Info
             size={14}
             className="text-ink-faint"
-            aria-label="Les réponses s'appuient uniquement sur les données réelles de votre organisation, jamais inventées."
+            aria-label="Réponses fondées sur les données consultées. Vérifiez les éléments sensibles dans le dossier salarié."
           />
         </div>
       </div>
@@ -121,8 +121,9 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
           {state.error}
         </p>
       )}
-      <form action={formAction} className="mt-3 flex gap-2">
+      <form action={formAction} className="mt-3 flex flex-wrap gap-2">
         <Input
+          aria-label="Votre question au Copilote"
           name="question"
           placeholder="Posez votre question..."
           required
@@ -130,7 +131,7 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
           disabled={!aiEnabled}
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          className="flex-1"
+          className="min-w-0 flex-1 basis-40"
         />
         <SubmitButton disabled={!aiEnabled} />
       </form>

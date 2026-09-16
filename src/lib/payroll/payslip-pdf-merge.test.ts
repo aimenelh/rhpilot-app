@@ -18,17 +18,17 @@ const input: PayslipPdfInput = {
 describe("payslip PDF merge", () => {
   it("retourne le PDF individuel byte-for-byte quand il n'y a qu'un salarié", async () => {
     const pdf = await generatePayslipPdf(input);
-    const merged = mergePayslipPdfs([pdf]);
+    const merged = await mergePayslipPdfs([pdf]);
     expect(merged.equals(pdf)).toBe(true);
-    expect(countPdfPages(merged)).toBe(1);
+    expect(await countPdfPages(merged)).toBe(1);
   });
 
   it("assemble deux bulletins d'une page en exactement deux pages", async () => {
     const first = await generatePayslipPdf(input);
     const second = await generatePayslipPdf({ ...input, employee: { ...input.employee, name: "Bob Martin" } });
-    const merged = mergePayslipPdfs([first, second]);
-    expect(countPdfPages(first)).toBe(1);
-    expect(countPdfPages(second)).toBe(1);
-    expect(countPdfPages(merged)).toBe(2);
+    const merged = await mergePayslipPdfs([first, second]);
+    expect(await countPdfPages(first)).toBe(1);
+    expect(await countPdfPages(second)).toBe(1);
+    expect(await countPdfPages(merged)).toBe(2);
   });
 });

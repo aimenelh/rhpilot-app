@@ -1,0 +1,42 @@
+/* Shared application surface. Marketing retains its own art direction. */
+.app-workspace{background:#f6f7f9;color:#20232b;--workspace-muted:#626975}
+.workspace-sidebar{position:sticky;top:0;height:100dvh;overflow-y:auto}
+.workspace-header{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.97);box-shadow:0 1px 0 #20232b04}
+.workspace-main{min-width:0;padding-bottom:6rem}
+.workspace-main>.page-fade-in{max-width:1440px;margin-inline:auto}
+.workspace-main>.page-fade-in>div{width:100%}
+.workspace-main h1{letter-spacing:-.035em;line-height:1.25}
+.workspace-main h2{letter-spacing:-.015em}
+.app-workspace .text-ink-faint{color:var(--workspace-muted)}
+.app-workspace .workspace-nav a{min-height:42px;border:1px solid transparent}
+.app-workspace .workspace-nav a[aria-current=page]{background:#fff0ec;color:#af3524;border-color:#f3dbd5;box-shadow:inset 3px 0 #d6402b}
+.app-workspace .workspace-nav p{color:#717681;font-weight:600;letter-spacing:.12em}
+.app-workspace input:not([type=checkbox]):not([type=radio]):not([type=hidden]),.app-workspace select,.app-workspace textarea{min-height:42px;transition:border-color .15s,box-shadow .15s;max-width:100%}
+.app-workspace input:focus-visible,.app-workspace select:focus-visible,.app-workspace textarea:focus-visible{outline:2px solid #bb3825;outline-offset:2px;border-color:#bb3825}
+.app-workspace input:disabled,.app-workspace select:disabled{cursor:not-allowed}
+.app-workspace table{width:100%;font-variant-numeric:tabular-nums;border-collapse:collapse}
+.app-workspace thead{background:#f6f7f9}
+.app-workspace th{color:#535b67;font-size:11px;font-weight:600;letter-spacing:.035em;vertical-align:middle}
+.app-workspace td{vertical-align:middle}
+.app-workspace tbody tr{border-bottom:1px solid #edf0f3;transition:background .15s}
+.app-workspace tbody tr:hover{background:#fafbfc}
+.app-workspace .overflow-x-auto{overscroll-behavior-x:contain;scrollbar-width:thin}
+.workspace-skip{position:fixed;top:8px;left:8px;z-index:100;background:#fff;padding:12px 20px;border-radius:8px;transform:translateY(-160%)}
+.workspace-skip:focus{transform:none}
+.dashboard-overview{display:flex;flex-direction:column;gap:20px;max-width:none!important}
+.dashboard-heading{align-items:center;min-height:112px}
+.dashboard-heading img{width:180px;height:110px;object-fit:contain}
+.dashboard-overview>.mt-5{margin-top:0}
+.dashboard-stats{order:0;overflow:hidden}
+.dashboard-heading{order:-2}
+.dashboard-priorities{order:-1}
+.dashboard-overview .dashboard-tools{align-items:start}
+.dashboard-copilot{max-width:100%;align-self:start}
+@media(min-width:1200px){.dashboard-overview{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(320px,1fr);gap:20px}.dashboard-heading,.dashboard-stats,.dashboard-tools,.dashboard-overview>aside{grid-column:1/-1}.dashboard-priorities{grid-column:1;order:1}.dashboard-copilot{grid-column:2;order:1;position:sticky;top:88px}.dashboard-tools{order:2}.dashboard-overview>div:last-child{grid-column:1/-1;order:3}}
+@media(max-width:767px){.app-workspace input:not([type=checkbox]):not([type=radio]),.app-workspace select,.app-workspace textarea{font-size:16px}.app-workspace .workspace-header{padding-block:10px}.workspace-main{padding-top:20px}.dashboard-heading{min-height:0}.dashboard-priorities>div:first-child{flex-wrap:wrap;gap:12px}.dashboard-tools{gap:16px}.app-workspace .workspace-nav a{min-height:44px}}
+@media(prefers-reduced-motion:reduce){.app-workspace *,.app-workspace *::before,.app-workspace *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+.app-workspace .text-brand-primary{color:#b83724}
+.app-workspace .text-accent-teal{color:#087f73}
+.app-workspace .text-accent-amber{color:#a85208}
+.app-workspace button.bg-brand-primary,.app-workspace a.bg-brand-primary{background:#c43b28}

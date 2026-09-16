@@ -18,7 +18,7 @@ export function Card({
   return (
     <div
       id={id}
-      className={`rounded-xl border border-surface-border bg-white shadow-card transition-all duration-200 ${
+      className={`rounded-xl border border-surface-border bg-white shadow-card transition-[border-color,box-shadow,transform] duration-200 ${
         interactive ? "hover:-translate-y-0.5 hover:border-brand-primary/30 hover:shadow-lg" : ""
       } ${compact ? "p-4" : "p-6"} ${className}`}
     >

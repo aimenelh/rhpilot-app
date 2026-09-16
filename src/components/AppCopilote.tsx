@@ -261,7 +261,7 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
                   {renderGreeting(`${timeGreeting()} 👋 Bienvenue sur RH Pilot.`)}
                 </p>
                 <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-                  Merci de participer à cette bêta ! Je peux vous accompagner pendant moins
+                  Bienvenue dans RH Pilot ! Je peux vous accompagner pendant moins
                   d&apos;une minute pour découvrir comment RH Pilot fonctionne : créer un
                   salarié, déclencher un premier parcours RH, et voir les tâches apparaître
                   automatiquement.

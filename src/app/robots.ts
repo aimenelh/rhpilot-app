@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-// Bêta ouverte à l'indexation depuis [aujourd'hui] — décision
+// Site public ouvert à l’indexation — décision
 // explicite, pas un oubli. Les pages privées (tableau de bord,
 // paramètres...) restent hors de portée de toute façon : elles
 // exigent une connexion, jamais accessibles à un robot anonyme.

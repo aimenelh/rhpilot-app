@@ -1,3 +1,6 @@
+import { PDFDocument } from "pdf-lib";
+import { mergePayslipPdfs } from "./payslip-pdf-merge";
+import { readPayslipDocument, storePayslipDocument } from "./payslip-storage";
 import { describe, expect, it } from "vitest";
 import { generatePayslipPdf, PayslipPdfPrerequisiteError, type PayslipPdfInput } from "./payslip-pdf";
 
@@ -19,6 +22,7 @@ describe("payslip PDF", () => {
     const pdf = await generatePayslipPdf(baseInput);
     expect(pdf.subarray(0, 5).toString("latin1")).toBe("%PDF-");
     expect(pdf.length).toBeGreaterThan(500);
+    expect((await PDFDocument.load(pdf)).getPageCount()).toBe(1);
   });
 
   it("n'exige pas de référence URSSAF séparée", async () => {
@@ -41,7 +45,22 @@ describe("payslip PDF", () => {
     const variables = Array.from({ length: 24 }, (_, index) => ({ label: `Variable ${index + 1}`, amount: 25 }));
 
     const pdf = await generatePayslipPdf({ ...baseInput, contributions, salary: { ...baseInput.salary, variables } });
-    const pdfText = pdf.toString("latin1");
-    expect((pdfText.match(/\/Type\s*\/Page[^s]/g) ?? []).length).toBeGreaterThan(1);
+    expect((await PDFDocument.load(pdf)).getPageCount()).toBe(2);
   });
+  it("conserve les pages après stockage et regroupement", async () => {
+    const first = await generatePayslipPdf(baseInput);
+    const second = await generatePayslipPdf({ ...baseInput, salary: { ...baseInput.salary,
+      variables: Array.from({ length: 80 }, (_, i) => ({ label: `Prime ${i}`, amount: 1 })) } });
+    const restored = [first, second].map(pdf => readPayslipDocument(storePayslipDocument(pdf).storageKey));
+    const combined = await PDFDocument.load(await mergePayslipPdfs(restored));
+    expect(combined.getPageCount()).toBe(1 + (await PDFDocument.load(second)).getPageCount());
+    expect(restored[0]).toEqual(first);
+    expect(restored[1]).toEqual(second);
+  });
+
+  it("refuse un regroupement vide ou corrompu", async () => {
+    await expect(mergePayslipPdfs([])).rejects.toThrow();
+    await expect(mergePayslipPdfs([Buffer.from("%PDF-invalid")])).rejects.toThrow();
+  });
+
 });

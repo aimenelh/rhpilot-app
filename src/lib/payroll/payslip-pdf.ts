@@ -354,7 +354,7 @@ function drawLegalFooter(doc: PDFKit.PDFDocument, pageNumber: number, pageCount:
   const y = doc.page.height - 34;
   doc.moveTo(PAGE_MARGIN, y - 5).lineTo(PAGE_MARGIN + CONTENT_WIDTH, y - 5).lineWidth(0.5).strokeColor(BORDER).stroke();
   doc.font("Helvetica").fontSize(5.3).fillColor(INK_FAINT).text("Conservez ce bulletin de paie sans limitation de durée. Retrouvez la rubrique dédiée au bulletin de paie sur service-public.fr.", PAGE_MARGIN, y, { width: CONTENT_WIDTH - 70, lineBreak: false, ellipsis: true });
-  doc.text(`Page ${pageNumber}/${pageCount}`, PAGE_MARGIN, y, { width: CONTENT_WIDTH, align: "right" });
+  doc.text(`Page ${pageNumber}/${pageCount}`, PAGE_MARGIN, y, { width: CONTENT_WIDTH, align: "right", lineBreak: false });
 }
 
 function drawPayslip(doc: PDFKit.PDFDocument, input: PayslipPdfInput): void {

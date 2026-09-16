@@ -32,15 +32,17 @@ export function DidYouKnowCard() {
   }, []);
 
   useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    let timeout: ReturnType<typeof setTimeout> | undefined;
     const interval = setInterval(() => {
       setVisible(false);
-      const timeout = setTimeout(() => {
+      timeout = setTimeout(() => {
         setIndex((current) => (current + 1) % DID_YOU_KNOW_TIPS.length);
         setVisible(true);
       }, FADE_MS);
-      return () => clearTimeout(timeout);
+
     }, ROTATION_MS);
-    return () => clearInterval(interval);
+    return () => { clearInterval(interval); clearTimeout(timeout); };
   }, []);
 
   return (

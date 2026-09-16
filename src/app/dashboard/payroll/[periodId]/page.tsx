@@ -68,8 +68,8 @@ export default async function PayrollPeriodPage({ params }: { params: { periodId
 
   const [employees, profiles, calculations, variables, validatedRules] = await Promise.all([
     prisma.employee.findMany({
-      where: { organizationId: membership.organizationId, deletedAt: null },
-      select: { id: true, firstName: true, lastName: true, position: true, contractType: true },
+      where: { organizationId: membership.organizationId, deletedAt: null, hireDate: { lte: periodEnd }, OR: [{ contractEndDate: null }, { contractEndDate: { gte: periodStart } }] },
+      select: { id: true, firstName: true, lastName: true, position: true, contractType: true, hireDate: true, contractEndDate: true },
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     }),
     prisma.payrollProfile.findMany({
@@ -102,8 +102,9 @@ export default async function PayrollPeriodPage({ params }: { params: { periodId
   const calculatedCount = employees.filter((employee) => calculationByEmployee.has(employee.id)).length;
   const readiness = checkPayrollPeriodReadiness(employees.map((employee) => {
     const profile = profileByEmployee.get(employee.id);
-    return { employeeId: employee.id, firstName: employee.firstName, lastName: employee.lastName, baseSalaryCents: profile?.baseSalaryCents, monthlyHours: profile?.monthlyHours == null ? null : Number(profile.monthlyHours) };
-  }));
+    const adjustments = variables.filter(v => v.employeeId === employee.id && v.code === "INCOMPLETE_MONTH");
+    return { hasIncompleteMonthAdjustment: adjustments.length === 1 && adjustments[0].unit === "EUR", hireDate: employee.hireDate, contractEndDate: employee.contractEndDate, profileCount: profiles.filter(p => p.employeeId === employee.id).length, employeeId: employee.id, firstName: employee.firstName, lastName: employee.lastName, baseSalaryCents: profile?.baseSalaryCents, monthlyHours: profile?.monthlyHours == null ? null : Number(profile.monthlyHours) };
+  }), { year: period.year, month: period.month });
 
   const variableRows = variables.map((variable) => ({ id: variable.id, employeeId: variable.employeeId, code: variable.code, label: variable.label, amount: String(variable.amount), unit: variable.unit, source: variable.source }));
   const calculatedRows = employees.map((employee) => calculationByEmployee.get(employee.id)).filter((calculation): calculation is (typeof calculations)[number] => Boolean(calculation));
@@ -217,10 +218,10 @@ export default async function PayrollPeriodPage({ params }: { params: { periodId
       {!readiness.ready ? (
         <section className="mt-5 rounded-xl border border-accent-amber/30 bg-accent-amber/5 p-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-amber">Préparation</p><p className="mt-1 font-semibold text-ink">Le calcul est bloqué tant que les données de base ne sont pas complètes.</p></div><span className="text-xs font-semibold text-accent-amber">{readiness.issues.length} point{readiness.issues.length > 1 ? "s" : ""}</span></div>
-          <div className="mt-3 grid gap-1.5 text-sm text-ink-soft">{readiness.issues.map((issue, index) => <p key={`${issue.code}-${issue.employeeId ?? "period"}-${index}`}>• {issue.message}</p>)}</div>
+          <div className="mt-3 grid gap-1.5 text-sm text-ink-soft">{readiness.issues.map((issue, index) => <p key={`${issue.code}-${issue.employeeId ?? "period"}-${index}`}>• {issue.message} {issue.employeeId && <Link className="font-medium text-brand-primary underline underline-offset-2" href={`/dashboard/employees/${issue.employeeId}`}>Ouvrir le dossier</Link>}</p>)}</div>
         </section>
       ) : (
-        <section className="mt-5 rounded-xl border border-surface-border bg-surface-subtle/30 p-5"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-teal">Préparation terminée</p><p className="mt-1 font-semibold text-ink">Les données salarié de base sont prêtes.</p><p className="mt-1 text-sm text-ink-soft">Le moteur utilisera uniquement les règles réglementaires et conventionnelles validées disponibles pour la période.</p></section>
+        <section className="mt-5 rounded-xl border border-surface-border bg-surface-subtle/30 p-5"><p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-teal">Contrôles préalables</p><p className="mt-1 font-semibold text-ink">Les données de base contrôlées sont renseignées.</p><p className="mt-1 text-sm text-ink-soft">Le moteur utilisera uniquement les règles réglementaires et conventionnelles validées disponibles pour la période.</p></section>
       )}
 
       <section className="mt-5 rounded-xl border border-surface-border bg-white p-5">

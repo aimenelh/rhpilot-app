@@ -31,7 +31,7 @@ export default function TarifsPage() {
               <ul>
                 <li>Votre équipe réunie au même endroit</li>
                 <li>Parcours RH et suivi des échéances</li>
-                <li>Copilote inclus pendant la bêta</li>
+                <li>Copilote inclus</li>
               </ul>
               <Link className={s.secondary} href="/sign-up">
                 Créer mon compte ↗
@@ -82,9 +82,8 @@ export default function TarifsPage() {
       </section>
       <div className={s.wrap}>
         <p className={p.support}>
-          RH Pilot est en bêta. Le Copilote est inclus dans l’offre gratuite
-          pendant cette période, et reste inclus dans Pro après la bêta. Le
-          module paie est encore en développement.
+          Le Copilote est inclus dans les offres Gratuit et Pro. Le module paie
+          reste limité aux situations actuellement prises en charge.
         </p>
       </div>
       <MarketingCTA />

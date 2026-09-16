@@ -128,7 +128,7 @@ export function LandingPage() {
           <div className={`${s.wrap} ${s.payrollInner}`}>
             <div>
               <h2>Et la paie ?</h2>
-              <span className={s.badge}>Module en bêta</span>
+              <span className={s.badge}>Périmètre du module</span>
             </div>
             <p>
               Profils salariés, variables et calculs : découvrez le périmètre du
