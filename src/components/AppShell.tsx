@@ -37,13 +37,22 @@ type NavItem = {
   available: boolean;
   icon: LucideIcon;
   section?: string;
+  previewOwnerAccess?: boolean;
+  badge?: string;
 };
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Tableau de bord", available: true, icon: Compass, section: "Accueil" },
   { href: "/dashboard/employees", label: "Salariés", available: true, icon: Users, section: "Gestion RH" },
   { href: "/dashboard/absences", label: "Absences", available: true, icon: ClipboardCheck },
-  { href: "/dashboard/payroll", label: "Paie", available: true, icon: WalletCards },
+  {
+    href: "/dashboard/payroll",
+    label: "Paie",
+    available: false,
+    previewOwnerAccess: true,
+    badge: "Bientôt disponible",
+    icon: WalletCards,
+  },
   { href: "/dashboard/events", label: "Parcours", available: true, icon: Route },
   { href: "/dashboard/calendar", label: "Calendrier", available: true, icon: CalendarDays },
   {
@@ -140,6 +149,8 @@ export function AppShell({
         {NAV_ITEMS.map((item) => {
           const isActive =
             item.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.href);
+          const isPreview = item.previewOwnerAccess === true;
+          const canOpen = item.available || (isPreview && accessRole === "OWNER");
 
           return (
             <div key={item.href}>
@@ -148,19 +159,45 @@ export function AppShell({
                   {item.section}
                 </p>
               )}
-              <Link
-                href={item.href}
-                aria-current={isActive ? "page" : undefined}
-                onClick={() => setMobileNavOpen(false)}
-                className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
-                  isActive
-                    ? "bg-brand-primary/10 text-brand-primary"
-                    : "text-ink-soft hover:translate-x-0.5 hover:bg-surface-subtle hover:text-ink"
-                }`}
-              >
-                <item.icon size={16} strokeWidth={2.5} />
-                {item.label}
-              </Link>
+              {canOpen ? (
+                <Link
+                  href={item.href}
+                  aria-current={isActive ? "page" : undefined}
+                  onClick={() => setMobileNavOpen(false)}
+                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
+                    isPreview
+                      ? isActive
+                        ? "bg-surface-subtle text-ink"
+                        : "text-ink-faint hover:bg-surface-subtle hover:text-ink-soft"
+                      : isActive
+                        ? "bg-brand-primary/10 text-brand-primary"
+                        : "text-ink-soft hover:translate-x-0.5 hover:bg-surface-subtle hover:text-ink"
+                  }`}
+                  title={isPreview ? "Aperçu privé accessible au propriétaire" : undefined}
+                >
+                  <item.icon size={16} strokeWidth={2.5} />
+                  <span className="min-w-0 flex-1">{item.label}</span>
+                  {item.badge ? (
+                    <span className="rounded-full bg-surface-border/70 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-ink-faint">
+                      {item.badge}
+                    </span>
+                  ) : null}
+                </Link>
+              ) : (
+                <div
+                  aria-disabled="true"
+                  className="flex cursor-not-allowed items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-faint/55"
+                  title="Ce module n'est pas encore disponible"
+                >
+                  <item.icon size={16} strokeWidth={2.5} />
+                  <span className="min-w-0 flex-1">{item.label}</span>
+                  {item.badge ? (
+                    <span className="rounded-full bg-surface-subtle px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-ink-faint/70">
+                      {item.badge}
+                    </span>
+                  ) : null}
+                </div>
+              )}
             </div>
           );
         })}
@@ -206,7 +243,7 @@ export function AppShell({
             aria-hidden="true"
           />
           <aside
-            className="relative flex h-full overflow-y-auto w-72 max-w-[80vw] flex-col bg-white px-4 py-5 shadow-xl"
+            className="relative flex h-full w-72 max-w-[80vw] flex-col overflow-y-auto bg-white px-4 py-5 shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
             <button
