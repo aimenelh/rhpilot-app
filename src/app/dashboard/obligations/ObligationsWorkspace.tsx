@@ -13,7 +13,9 @@ import {
   ExternalLink,
   Eye,
   Save,
+  Search,
   UserRound,
+  UsersRound,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -27,6 +29,13 @@ import type {
 import { saveComplianceTracking } from "./actions";
 
 type Tab = "overview" | "timeline" | "reference";
+
+type EmployeeObligationGroup = {
+  ruleKey: string;
+  title: string;
+  category: string;
+  items: LegalObligationItem[];
+};
 
 const STATUS_META: Record<
   ObligationStatus,
@@ -59,6 +68,14 @@ const STATUS_META: Record<
   },
 };
 
+const STATUS_PRIORITY: Record<ObligationStatus, number> = {
+  TO_DO: 0,
+  INFO_NEEDED: 1,
+  UPCOMING: 2,
+  MONITOR: 3,
+  COMPLIANT: 4,
+};
+
 const INPUT_CLASSES =
   "mt-1.5 w-full rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm text-ink outline-none transition focus:border-brand-primary/50 focus:ring-2 focus:ring-brand-primary/10";
 
@@ -70,6 +87,22 @@ function formatDate(value: string | null) {
     month: "short",
     year: "numeric",
   }).format(date);
+}
+
+function groupTitle(ruleKey: string, fallback: string) {
+  if (ruleKey === "FR.CAREER_INTERVIEW") return "Entretiens de parcours professionnel";
+  return fallback;
+}
+
+function sortItems(items: LegalObligationItem[]) {
+  return [...items].sort((a, b) => {
+    const statusDiff = STATUS_PRIORITY[a.status] - STATUS_PRIORITY[b.status];
+    if (statusDiff !== 0) return statusDiff;
+    if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+    if (a.dueDate) return -1;
+    if (b.dueDate) return 1;
+    return a.subjectLabel.localeCompare(b.subjectLabel, "fr");
+  });
 }
 
 function StatusBadge({ status }: { status: ObligationStatus }) {
@@ -85,6 +118,16 @@ function StatusBadge({ status }: { status: ObligationStatus }) {
   );
 }
 
+function CountBadge({ status, count }: { status: ObligationStatus; count: number }) {
+  if (count === 0) return null;
+  const meta = STATUS_META[status];
+  return (
+    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ring-1 ring-inset ${meta.classes}`}>
+      {count} {meta.label.toLowerCase()}
+    </span>
+  );
+}
+
 function ObligationCard({ item, onOpen }: { item: LegalObligationItem; onOpen: () => void }) {
   return (
     <button
@@ -95,7 +138,7 @@ function ObligationCard({ item, onOpen }: { item: LegalObligationItem; onOpen: (
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-xs text-ink-faint">
-            {item.scope === "ORGANIZATION" ? <Building2 size={14} /> : <UserRound size={14} />}
+            <Building2 size={14} />
             <span className="truncate">{item.subjectLabel}</span>
             <span aria-hidden="true">·</span>
             <span>{item.category}</span>
@@ -112,6 +155,68 @@ function ObligationCard({ item, onOpen }: { item: LegalObligationItem; onOpen: (
             size={17}
             className="text-ink-faint transition-transform group-hover:translate-x-0.5 group-hover:text-ink-soft"
           />
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function EmployeeGroupCard({
+  group,
+  statusFilter,
+  onOpen,
+}: {
+  group: EmployeeObligationGroup;
+  statusFilter: ObligationStatus | "ALL";
+  onOpen: () => void;
+}) {
+  const counts = {
+    TO_DO: group.items.filter((item) => item.status === "TO_DO").length,
+    INFO_NEEDED: group.items.filter((item) => item.status === "INFO_NEEDED").length,
+    UPCOMING: group.items.filter((item) => item.status === "UPCOMING").length,
+    MONITOR: group.items.filter((item) => item.status === "MONITOR").length,
+    COMPLIANT: group.items.filter((item) => item.status === "COMPLIANT").length,
+  } satisfies Record<ObligationStatus, number>;
+
+  const matchingCount = statusFilter === "ALL" ? group.items.length : counts[statusFilter];
+  const nextDueDate = [...group.items]
+    .map((item) => item.dueDate)
+    .filter((value): value is string => Boolean(value))
+    .sort()[0] ?? null;
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group w-full rounded-xl border border-surface-border bg-white p-4 text-left transition hover:border-brand-primary/20 hover:shadow-sm"
+    >
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 text-xs text-ink-faint">
+            <UsersRound size={14} />
+            <span>Salariés</span>
+            <span aria-hidden="true">·</span>
+            <span>{group.category}</span>
+          </div>
+          <h3 className="mt-2 font-semibold text-ink">{group.title}</h3>
+          <p className="mt-1 text-sm text-ink-soft">
+            {group.items.length} salarié{group.items.length > 1 ? "s" : ""} suivi{group.items.length > 1 ? "s" : ""}
+            {statusFilter !== "ALL" ? ` · ${matchingCount} correspondant${matchingCount > 1 ? "s" : ""} au filtre` : ""}
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <CountBadge status="TO_DO" count={counts.TO_DO} />
+            <CountBadge status="INFO_NEEDED" count={counts.INFO_NEEDED} />
+            <CountBadge status="UPCOMING" count={counts.UPCOMING} />
+            <CountBadge status="MONITOR" count={counts.MONITOR} />
+            <CountBadge status="COMPLIANT" count={counts.COMPLIANT} />
+          </div>
+          {nextDueDate ? (
+            <p className="mt-3 text-xs font-medium text-ink-faint">Échéance la plus proche : {formatDate(nextDueDate)}</p>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 items-center gap-2 text-sm font-medium text-brand-primary">
+          Voir les salariés
+          <ChevronRight size={17} className="transition-transform group-hover:translate-x-0.5" />
         </div>
       </div>
     </button>
@@ -161,12 +266,8 @@ function TrackingForm({
     const current = tracking.employees[item.subjectId]?.lastCareerInterviewAt ?? "";
     return (
       <section className="rounded-xl border border-surface-border p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-sm font-semibold text-ink">Données de suivi</p>
-            <p className="mt-1 text-xs leading-5 text-ink-faint">Renseignez uniquement une date dont vous disposez réellement.</p>
-          </div>
-        </div>
+        <p className="text-sm font-semibold text-ink">Données de suivi</p>
+        <p className="mt-1 text-xs leading-5 text-ink-faint">Renseignez uniquement une date dont vous disposez réellement.</p>
         <form onSubmit={onSubmit} className="mt-4 space-y-4">
           <input type="hidden" name="ruleKey" value={item.ruleKey} />
           <input type="hidden" name="employeeId" value={item.subjectId} />
@@ -306,7 +407,7 @@ function DetailDrawer({
   onClose: () => void;
 }) {
   return (
-    <div className="fixed inset-0 z-[70] flex justify-end" role="dialog" aria-modal="true" aria-label={item.title}>
+    <div className="fixed inset-0 z-[80] flex justify-end" role="dialog" aria-modal="true" aria-label={item.title}>
       <button
         type="button"
         className="absolute inset-0 bg-ink/20 backdrop-blur-[1px]"
@@ -386,6 +487,110 @@ function DetailDrawer({
   );
 }
 
+function EmployeeGroupDrawer({
+  group,
+  statusFilter,
+  onClose,
+  onOpenItem,
+}: {
+  group: EmployeeObligationGroup;
+  statusFilter: ObligationStatus | "ALL";
+  onClose: () => void;
+  onOpenItem: (id: string) => void;
+}) {
+  const [query, setQuery] = useState("");
+
+  const rows = useMemo(() => {
+    const normalized = query.trim().toLocaleLowerCase("fr");
+    return sortItems(group.items).filter((item) => {
+      const matchesStatus = statusFilter === "ALL" || item.status === statusFilter;
+      const matchesQuery = !normalized || item.subjectLabel.toLocaleLowerCase("fr").includes(normalized);
+      return matchesStatus && matchesQuery;
+    });
+  }, [group.items, query, statusFilter]);
+
+  const counts = {
+    TO_DO: group.items.filter((item) => item.status === "TO_DO").length,
+    INFO_NEEDED: group.items.filter((item) => item.status === "INFO_NEEDED").length,
+    UPCOMING: group.items.filter((item) => item.status === "UPCOMING").length,
+    MONITOR: group.items.filter((item) => item.status === "MONITOR").length,
+    COMPLIANT: group.items.filter((item) => item.status === "COMPLIANT").length,
+  } satisfies Record<ObligationStatus, number>;
+
+  return (
+    <div className="fixed inset-0 z-[70] flex justify-end" role="dialog" aria-modal="true" aria-label={group.title}>
+      <button type="button" className="absolute inset-0 bg-ink/20 backdrop-blur-[1px]" onClick={onClose} aria-label="Fermer" />
+      <aside className="relative flex h-full w-full max-w-3xl flex-col bg-white shadow-2xl">
+        <div className="border-b border-surface-border px-5 py-5 md:px-6">
+          <button
+            type="button"
+            onClick={onClose}
+            className="absolute right-4 top-4 flex h-8 w-8 items-center justify-center rounded-lg text-ink-faint hover:bg-surface-subtle hover:text-ink"
+            aria-label="Fermer"
+          >
+            <X size={18} />
+          </button>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-primary">Suivi des salariés</p>
+          <h2 className="mt-1 pr-10 text-xl font-semibold text-ink">{group.title}</h2>
+          <p className="mt-1 text-sm text-ink-soft">{group.items.length} salarié{group.items.length > 1 ? "s" : ""} suivi{group.items.length > 1 ? "s" : ""}</p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <CountBadge status="TO_DO" count={counts.TO_DO} />
+            <CountBadge status="INFO_NEEDED" count={counts.INFO_NEEDED} />
+            <CountBadge status="UPCOMING" count={counts.UPCOMING} />
+            <CountBadge status="MONITOR" count={counts.MONITOR} />
+            <CountBadge status="COMPLIANT" count={counts.COMPLIANT} />
+          </div>
+        </div>
+
+        <div className="border-b border-surface-border px-5 py-4 md:px-6">
+          <label className="relative block">
+            <Search size={16} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
+            <input
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Rechercher un salarié..."
+              className="w-full rounded-lg border border-surface-border bg-white py-2.5 pl-9 pr-3 text-sm text-ink outline-none transition focus:border-brand-primary/50 focus:ring-2 focus:ring-brand-primary/10"
+            />
+          </label>
+          {statusFilter !== "ALL" ? (
+            <p className="mt-2 text-xs text-ink-faint">Le filtre « {STATUS_META[statusFilter].label} » de la vue d'ensemble est appliqué.</p>
+          ) : null}
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="hidden grid-cols-[minmax(0,1fr)_160px_160px_32px] gap-3 border-b border-surface-border bg-surface-subtle/50 px-5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-ink-faint md:grid md:px-6">
+            <span>Salarié</span>
+            <span>Échéance</span>
+            <span>Statut</span>
+            <span />
+          </div>
+          <div className="divide-y divide-surface-border">
+            {rows.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onOpenItem(item.id)}
+                className="grid w-full gap-2 px-5 py-4 text-left transition hover:bg-surface-subtle/50 md:grid-cols-[minmax(0,1fr)_160px_160px_32px] md:items-center md:gap-3 md:px-6"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-ink">{item.subjectLabel}</p>
+                  <p className="mt-0.5 truncate text-xs text-ink-faint md:hidden">{item.summary}</p>
+                </div>
+                <p className="text-xs font-medium text-ink-soft">{item.dueDate ? formatDate(item.dueDate) : "—"}</p>
+                <div><StatusBadge status={item.status} /></div>
+                <ChevronRight size={16} className="hidden text-ink-faint md:block" />
+              </button>
+            ))}
+            {rows.length === 0 ? (
+              <p className="px-5 py-10 text-center text-sm text-ink-faint">Aucun salarié ne correspond à cette recherche.</p>
+            ) : null}
+          </div>
+        </div>
+      </aside>
+    </div>
+  );
+}
+
 export default function ObligationsWorkspace({
   snapshot,
   canEdit,
@@ -395,6 +600,7 @@ export default function ObligationsWorkspace({
 }) {
   const [tab, setTab] = useState<Tab>("overview");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<ObligationStatus | "ALL">("ALL");
 
   const selected = useMemo(
@@ -402,28 +608,63 @@ export default function ObligationsWorkspace({
     [selectedId, snapshot.items],
   );
 
-  const filtered = useMemo(
-    () => snapshot.items.filter((item) => statusFilter === "ALL" || item.status === statusFilter),
-    [snapshot.items, statusFilter],
+  const employeeGroups = useMemo(() => {
+    const grouped = new Map<string, EmployeeObligationGroup>();
+    for (const item of snapshot.items) {
+      if (item.scope !== "EMPLOYEE") continue;
+      const existing = grouped.get(item.ruleKey);
+      if (existing) {
+        existing.items.push(item);
+      } else {
+        grouped.set(item.ruleKey, {
+          ruleKey: item.ruleKey,
+          title: groupTitle(item.ruleKey, item.title),
+          category: item.category,
+          items: [item],
+        });
+      }
+    }
+    return [...grouped.values()];
+  }, [snapshot.items]);
+
+  const selectedGroup = useMemo(
+    () => employeeGroups.find((group) => group.ruleKey === selectedGroupKey) ?? null,
+    [employeeGroups, selectedGroupKey],
   );
 
-  const ordered = useMemo(() => {
-    const priority: Record<ObligationStatus, number> = {
-      TO_DO: 0,
-      INFO_NEEDED: 1,
-      UPCOMING: 2,
-      MONITOR: 3,
-      COMPLIANT: 4,
-    };
-    return [...filtered].sort((a, b) => {
-      const statusDiff = priority[a.status] - priority[b.status];
-      if (statusDiff !== 0) return statusDiff;
-      if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
-      if (a.dueDate) return -1;
-      if (b.dueDate) return 1;
-      return a.title.localeCompare(b.title, "fr");
-    });
-  }, [filtered]);
+  const overviewEntries = useMemo(() => {
+    const entries: Array<
+      | { kind: "item"; key: string; priority: number; dueDate: string; item: LegalObligationItem }
+      | { kind: "group"; key: string; priority: number; dueDate: string; group: EmployeeObligationGroup }
+    > = [];
+
+    for (const item of snapshot.items) {
+      if (item.scope !== "ORGANIZATION") continue;
+      if (statusFilter !== "ALL" && item.status !== statusFilter) continue;
+      entries.push({
+        kind: "item",
+        key: item.id,
+        priority: STATUS_PRIORITY[item.status],
+        dueDate: item.dueDate ?? "9999-12-31",
+        item,
+      });
+    }
+
+    for (const group of employeeGroups) {
+      const relevant = statusFilter === "ALL" ? group.items : group.items.filter((item) => item.status === statusFilter);
+      if (relevant.length === 0) continue;
+      const sortedRelevant = sortItems(relevant);
+      entries.push({
+        kind: "group",
+        key: `group-${group.ruleKey}`,
+        priority: Math.min(...relevant.map((item) => STATUS_PRIORITY[item.status])),
+        dueDate: sortedRelevant.find((item) => item.dueDate)?.dueDate ?? "9999-12-31",
+        group,
+      });
+    }
+
+    return entries.sort((a, b) => a.priority - b.priority || a.dueDate.localeCompare(b.dueDate));
+  }, [employeeGroups, snapshot.items, statusFilter]);
 
   const timeline = useMemo(
     () => [...snapshot.items].filter((item) => item.dueDate).sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? "")),
@@ -493,14 +734,25 @@ export default function ObligationsWorkspace({
           <div className="mb-3 flex items-end justify-between gap-3">
             <div>
               <h2 className="text-lg font-semibold text-ink">Suivi des obligations</h2>
-              <p className="mt-1 text-sm text-ink-soft">Les points qui nécessitent une action ou une information apparaissent en premier.</p>
+              <p className="mt-1 text-sm text-ink-soft">Les obligations individuelles sont regroupées par sujet pour garder une vue lisible, quel que soit l'effectif.</p>
             </div>
-            <span className="text-xs text-ink-faint">{ordered.length} dossier{ordered.length > 1 ? "s" : ""}</span>
+            <span className="text-xs text-ink-faint">{overviewEntries.length} suivi{overviewEntries.length > 1 ? "s" : ""}</span>
           </div>
           <div className="grid gap-3 xl:grid-cols-2">
-            {ordered.map((item) => <ObligationCard key={item.id} item={item} onOpen={() => setSelectedId(item.id)} />)}
+            {overviewEntries.map((entry) =>
+              entry.kind === "item" ? (
+                <ObligationCard key={entry.key} item={entry.item} onOpen={() => setSelectedId(entry.item.id)} />
+              ) : (
+                <EmployeeGroupCard
+                  key={entry.key}
+                  group={entry.group}
+                  statusFilter={statusFilter}
+                  onOpen={() => setSelectedGroupKey(entry.group.ruleKey)}
+                />
+              ),
+            )}
           </div>
-          {ordered.length === 0 ? (
+          {overviewEntries.length === 0 ? (
             <div className="rounded-xl border border-dashed border-surface-border px-5 py-10 text-center text-sm text-ink-faint">Aucune obligation ne correspond à ce filtre.</div>
           ) : null}
         </section>
@@ -556,6 +808,18 @@ export default function ObligationsWorkspace({
       <p className="mt-6 max-w-4xl text-xs leading-5 text-ink-faint">
         RH Pilot organise les informations et échéances connues à partir des données de l'entreprise et de sources officielles. Une information absente reste signalée comme telle : le module ne remplace pas une analyse juridique adaptée à une situation particulière.
       </p>
+
+      {selectedGroup ? (
+        <EmployeeGroupDrawer
+          group={selectedGroup}
+          statusFilter={statusFilter}
+          onClose={() => setSelectedGroupKey(null)}
+          onOpenItem={(id) => {
+            setSelectedGroupKey(null);
+            setSelectedId(id);
+          }}
+        />
+      ) : null}
 
       {selected ? (
         <DetailDrawer item={selected} tracking={snapshot.tracking} canEdit={canEdit} onClose={() => setSelectedId(null)} />
