@@ -44,24 +44,19 @@ export function WhyConversationScene() {
   }, []);
 
   return (
-    <div className={styles.scene} aria-label="Conversation d’équipe illustrant un manque de coordination RH">
+    <div
+      className={styles.scene}
+      aria-label="Conversation d’équipe illustrant un manque de coordination lors de l’arrivée d’un nouveau collaborateur"
+    >
       <div className={styles.glow} aria-hidden="true" />
       <div className={styles.deskShadow} aria-hidden="true" />
 
-      <div className={styles.phoneWrap}>
-        <div className={styles.phone} key={replayKey}>
-          <div className={styles.phoneTop} aria-hidden="true">
-            <span>9:41</span>
-            <span className={styles.dynamicIsland} />
-            <span>5G&nbsp;▰</span>
-          </div>
-
+      <div className={styles.mockupStage} aria-hidden="true">
+        <div className={styles.screen} key={replayKey}>
           <div className={styles.chatHeader}>
             <span className={styles.backArrow}>‹</span>
-            <div className={styles.groupAvatar} aria-hidden="true">
-              <span>R</span>
-            </div>
-            <div>
+            <span className={styles.groupAvatar}>R</span>
+            <div className={styles.groupMeta}>
               <strong>Équipe RH</strong>
               <span>6 membres</span>
             </div>
@@ -83,7 +78,7 @@ export function WhyConversationScene() {
                   </div>
                 </div>
               ))}
-              <div className={styles.typing} aria-hidden="true">
+              <div className={styles.typing}>
                 <span />
                 <span />
                 <span />
@@ -91,7 +86,7 @@ export function WhyConversationScene() {
             </div>
           </div>
 
-          <div className={styles.chatInput} aria-hidden="true">
+          <div className={styles.chatInput}>
             <span className={styles.plus}>+</span>
             <span className={styles.inputPlaceholder}>Message</span>
             <span className={styles.mic}>⌁</span>
@@ -114,6 +109,15 @@ export function WhyConversationScene() {
           Rejouer
         </button>
       ) : null}
+
+      <a
+        className={styles.attribution}
+        href="https://www.vecteezy.com/free-png/holding-phone"
+        target="_blank"
+        rel="noreferrer"
+      >
+        Mockup : Vecteezy
+      </a>
     </div>
   );
 }
