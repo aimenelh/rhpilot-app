@@ -2,9 +2,11 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import {
-  calculatePayrollPeriodAction,
-  movePayrollPeriodToReviewAction,
+  calculatePayrollPeriodSafeAction,
   type PayrollCalculationFormState,
+} from "./calculatePayrollPeriodSafeAction";
+import {
+  movePayrollPeriodToReviewAction,
   type PayrollReviewFormState,
 } from "./periodActions";
 
@@ -50,7 +52,7 @@ export default function PayrollCalculateButton({
   const [calculationState, calculationFormAction] = useFormState<
     PayrollCalculationFormState,
     FormData
-  >(calculatePayrollPeriodAction, undefined);
+  >(calculatePayrollPeriodSafeAction, undefined);
   const [reviewState, reviewFormAction] = useFormState<PayrollReviewFormState, FormData>(
     movePayrollPeriodToReviewAction,
     undefined,
