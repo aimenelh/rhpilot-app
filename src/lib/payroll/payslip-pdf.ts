@@ -26,6 +26,11 @@ export type PayslipPdfAnnualCumuls = {
   netPaid: number;
 };
 
+export type PayslipPdfNetAdjustment = {
+  label: string;
+  amount: number;
+};
+
 export type PayslipPdfInput = {
   employer: { name: string; address: string; siret: string; nafCode: string; urssafReference: string };
   employee: {
@@ -39,7 +44,21 @@ export type PayslipPdfInput = {
     seniority?: string;
   };
   period: { year: number; month: number; paymentDate: string; hours: number };
-  salary: { baseGross: number; variables: Array<{ label: string; amount: number }>; gross: number; employeeContributions: number; employerContributions: number; netBeforeTax: number; netTaxable: number; withholdingTaxRate: number; withholdingTax: number; netPaid: number; netSocial: number; totalEmployerCost: number };
+  salary: {
+    baseGross: number;
+    variables: Array<{ label: string; amount: number }>;
+    netAdjustments?: PayslipPdfNetAdjustment[];
+    gross: number;
+    employeeContributions: number;
+    employerContributions: number;
+    netBeforeTax: number;
+    netTaxable: number;
+    withholdingTaxRate: number;
+    withholdingTax: number;
+    netPaid: number;
+    netSocial: number;
+    totalEmployerCost: number;
+  };
   contributions: PayslipPdfContribution[];
   collectiveAgreement: string;
   source: string;
@@ -56,6 +75,10 @@ export class PayslipPdfPrerequisiteError extends Error {
 
 function money(value: number): string {
   return `${value.toFixed(2).replace(".", ",")} €`;
+}
+
+function signedMoney(value: number): string {
+  return value > 0 ? `+${money(value)}` : money(value);
 }
 
 function percentage(value: number): string {
@@ -88,6 +111,10 @@ function requiredMissing(input: PayslipPdfInput): string[] {
   if (!Number.isFinite(input.salary.withholdingTaxRate) || input.salary.withholdingTaxRate < 0 || input.salary.withholdingTaxRate > 1) missing.push("Taux de prélèvement à la source");
   if (!Number.isFinite(input.salary.withholdingTax) || input.salary.withholdingTax < 0) missing.push("Montant du prélèvement à la source");
   if (!Number.isFinite(input.salary.netPaid) || input.salary.netPaid < 0) missing.push("Net payé");
+  for (const adjustment of input.salary.netAdjustments ?? []) {
+    if (!adjustment.label.trim()) missing.push("Libellé ajustement net");
+    if (!Number.isFinite(adjustment.amount)) missing.push(`Montant ajustement net : ${adjustment.label || "sans libellé"}`);
+  }
   for (const contribution of input.contributions) {
     if (contribution.rate === undefined || contribution.baseAmount === undefined) missing.push(`Assiette/taux cotisation : ${contribution.label}`);
     if (!Number.isFinite(contribution.amount) || contribution.amount < 0) missing.push(`Montant cotisation : ${contribution.label}`);
@@ -277,6 +304,33 @@ function drawContributions(l: Layout, input: PayslipPdfInput): void {
   l.y += 25;
 }
 
+function drawNetAdjustments(l: Layout, input: PayslipPdfInput): void {
+  const rows = (input.salary.netAdjustments ?? []).filter((row) => Math.abs(row.amount) >= 0.005);
+  if (rows.length === 0) return;
+
+  ensureSpace(l, 45);
+  drawSectionTitle(l, "AJUSTEMENTS DU NET");
+  drawTableHeader(l, REMUNERATION_COLUMNS);
+  rows.forEach((row, index) => {
+    const rowHeight = 12;
+    if (ensureSpace(l, rowHeight + 22)) {
+      drawSectionTitle(l, "AJUSTEMENTS DU NET — SUITE");
+      drawTableHeader(l, REMUNERATION_COLUMNS);
+    }
+    if (index % 2 === 1) l.doc.rect(PAGE_MARGIN, l.y - 1, CONTENT_WIDTH, rowHeight).fill(ROW_ALT);
+    l.doc.font("Helvetica").fontSize(6.7).fillColor(INK).text(row.label, COLS.label.x, l.y + 1, { width: 380, lineBreak: false, ellipsis: true });
+    l.doc.text(signedMoney(row.amount), PAGE_MARGIN, l.y + 1, { width: CONTENT_WIDTH - 8, align: "right", lineBreak: false });
+    l.y += rowHeight;
+  });
+
+  const total = rows.reduce((sum, row) => sum + row.amount, 0);
+  ensureSpace(l, 26);
+  l.doc.roundedRect(PAGE_MARGIN, l.y, CONTENT_WIDTH, 19, 3).fill(PANEL);
+  l.doc.font("Helvetica-Bold").fontSize(7.2).fillColor(INK).text("Impact total sur le net avant impôt", PAGE_MARGIN + 8, l.y + 5);
+  l.doc.text(signedMoney(total), PAGE_MARGIN, l.y + 5, { width: CONTENT_WIDTH - 8, align: "right" });
+  l.y += 25;
+}
+
 function drawNetAndEmployer(l: Layout, input: PayslipPdfInput): void {
   ensureSpace(l, 95);
   const left = PAGE_MARGIN;
@@ -306,7 +360,7 @@ function drawNetAndEmployer(l: Layout, input: PayslipPdfInput): void {
   l.doc.font("Helvetica-Bold").fontSize(10.5).fillColor(INK).text("COÛT TOTAL EMPLOYEUR", right + 11, l.y + 48);
   l.doc.text(money(input.salary.totalEmployerCost), right, l.y + 48, { width: width - 11, align: "right" });
   l.doc.font("Helvetica").fontSize(6.2).fillColor(INK_SOFT).text("Montant net social", right + 11, l.y + 68);
-  l.doc.font("Helvetica-Bold").fontSize(6.8).fillColor(INK).text(money(input.salary.netSocial), right, l.y + 68, { width: width - 11, align: "right" });
+  l.doc.font("Helvetica-Bold").fontSize(6.8).fillColor(INK).text(money(input.salary.netSocial), right + 11, l.y + 68, { width: width - 22, align: "right" });
   l.y += 91;
 }
 
@@ -364,6 +418,7 @@ function drawPayslip(doc: PDFKit.PDFDocument, input: PayslipPdfInput): void {
   drawContext(l, input);
   drawRemuneration(l, input);
   drawContributions(l, input);
+  drawNetAdjustments(l, input);
   drawNetAndEmployer(l, input);
   drawPaidLeave(l, input.paidLeave);
   drawAnnualCumuls(l, input.annualCumuls, input.period.year);
