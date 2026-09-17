@@ -41,21 +41,27 @@ export default function PaidLeaveCalculator({
   const [leaveStartDate, setLeaveStartDate] = useState("");
   const [leaveEndDate, setLeaveEndDate] = useState("");
 
-  const calculation = useMemo(() => {
-    if (!leaveStartDate || !leaveEndDate) return null;
+  const result = useMemo(() => {
+    if (!leaveStartDate || !leaveEndDate) return { calculation: null, error: null };
     try {
-      return calculatePaidLeaveIndemnity2026({
-        referencePeriodGrossAmount: parse(referenceGross),
-        leaveDays: parse(leaveDays),
-        leaveDayDenominator,
-        monthlySalaryAmount: parse(monthlySalary),
-        actualHoursInMonth: parse(actualHoursInMonth),
-        leaveHoursInMonth: parse(leaveHoursInMonth),
-        leaveStartDate: toDate(leaveStartDate),
-        leaveEndDate: toDate(leaveEndDate),
-      });
-    } catch {
-      return null;
+      return {
+        calculation: calculatePaidLeaveIndemnity2026({
+          referencePeriodGrossAmount: parse(referenceGross),
+          leaveDays: parse(leaveDays),
+          leaveDayDenominator,
+          monthlySalaryAmount: parse(monthlySalary),
+          actualHoursInMonth: parse(actualHoursInMonth),
+          leaveHoursInMonth: parse(leaveHoursInMonth),
+          leaveStartDate: toDate(leaveStartDate),
+          leaveEndDate: toDate(leaveEndDate),
+        }),
+        error: null,
+      };
+    } catch (error) {
+      return {
+        calculation: null,
+        error: error instanceof Error ? error.message : "Les paramètres de congés payés sont invalides.",
+      };
     }
   }, [
     actualHoursInMonth,
@@ -70,6 +76,7 @@ export default function PaidLeaveCalculator({
 
   if (readOnly) return null;
 
+  const calculation = result.calculation;
   const selectedMethod = calculation?.selectedMethod === "TENTH" ? "règle du 1/10e" : "maintien de salaire";
   const canAdd = Boolean(employeeId && calculation && calculation.grossIndemnity > 0);
 
@@ -129,6 +136,12 @@ export default function PaidLeaveCalculator({
           </label>
         </div>
       </div>
+
+      {result.error ? (
+        <p className="mt-3 rounded-lg border border-accent-amber/20 bg-accent-amber/10 px-3 py-2 text-xs leading-5 text-accent-amber" role="alert">
+          {result.error}
+        </p>
+      ) : null}
 
       <div className="mt-3 grid gap-3 md:grid-cols-3">
         <div className="rounded-lg border border-surface-border bg-surface-subtle/30 px-4 py-3">
