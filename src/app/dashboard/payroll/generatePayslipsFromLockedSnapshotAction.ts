@@ -231,7 +231,7 @@ function buildNetAdjustmentRows(snapshot: Snapshot): Array<{ label: string; amou
     const amount = asNumber(treatment.netAdjustment);
     if (!Number.isFinite(amount) || Math.abs(amount) < 0.005) return [];
     const code = asString(treatment.code);
-    return [{ label: labelsByCode.get(code) ?? code || "Ajustement net", amount: roundMoney(amount) }];
+    return [{ label: labelsByCode.get(code) ?? (code || "Ajustement net"), amount: roundMoney(amount) }];
   });
 
   const expected = asNumber(snapshot.payable?.postSocialAdjustment);
