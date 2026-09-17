@@ -220,6 +220,29 @@ function buildGrossVariableRows(snapshot: Snapshot): Array<{ label: string; amou
   return rows;
 }
 
+function buildNetAdjustmentRows(snapshot: Snapshot): Array<{ label: string; amount: number }> {
+  const labelsByCode = new Map<string, string>();
+  for (const variable of snapshot.variables ?? []) {
+    const code = asString(variable.code);
+    if (code && !labelsByCode.has(code)) labelsByCode.set(code, asString(variable.label) || code);
+  }
+
+  const rows = (snapshot.variableTreatments ?? []).flatMap((treatment) => {
+    const amount = asNumber(treatment.netAdjustment);
+    if (!Number.isFinite(amount) || Math.abs(amount) < 0.005) return [];
+    const code = asString(treatment.code);
+    return [{ label: labelsByCode.get(code) ?? code || "Ajustement net", amount: roundMoney(amount) }];
+  });
+
+  const expected = asNumber(snapshot.payable?.postSocialAdjustment);
+  const actual = roundMoney(rows.reduce((sum, row) => sum + row.amount, 0));
+  if (!Number.isFinite(expected)) {
+    throw new Error("Génération bloquée : l’ajustement net total n’est pas historisé dans le snapshot.");
+  }
+  assertClose("le total des ajustements nets", expected, actual);
+  return rows;
+}
+
 function normalizeLockedContributions(snapshot: Snapshot): LockedContribution[] {
   const details = snapshot.socialEngine?.contributionDetails;
   if (!Array.isArray(details)) {
@@ -554,6 +577,7 @@ export async function generatePayslipsFromLockedSnapshotAction(
         salary: {
           baseGross,
           variables: buildGrossVariableRows(snapshot),
+          netAdjustments: buildNetAdjustmentRows(snapshot),
           gross: Number(calculation.grossAmount),
           employeeContributions: Number(calculation.employeeContributions),
           employerContributions: Number(calculation.employerContributions),
