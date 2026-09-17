@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { getCalendarOverlapDays } from "./absence-payroll-impact";
+import {
+  assertValidatedAbsencesReadyForPayroll,
+  getCalendarOverlapDays,
+} from "./absence-payroll-impact";
 
 function utcDate(value: string): Date {
   return new Date(`${value}T00:00:00.000Z`);
@@ -46,5 +49,23 @@ describe("absence payroll impact", () => {
         utcDate("2026-09-30"),
       ),
     ).toBe(0);
+  });
+
+  it("accepts validated absences when every payroll impact is ready", () => {
+    expect(() =>
+      assertValidatedAbsencesReadyForPayroll([
+        { id: "absence-1", payrollImpactStatus: "READY" },
+        { id: "absence-2", payrollImpactStatus: "READY" },
+      ]),
+    ).not.toThrow();
+  });
+
+  it("blocks payroll when a validated absence still has a non-ready payroll impact", () => {
+    expect(() =>
+      assertValidatedAbsencesReadyForPayroll([
+        { id: "absence-ready", payrollImpactStatus: "READY" },
+        { id: "absence-pending", payrollImpactStatus: "PENDING" },
+      ]),
+    ).toThrow(/Calcul de paie bloqué/);
   });
 });

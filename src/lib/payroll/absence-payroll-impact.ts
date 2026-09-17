@@ -17,6 +17,11 @@ export type ValidatedAbsencePayrollImpact = {
   status: "READY";
 };
 
+export type ValidatedAbsencePayrollReadiness = {
+  id: string;
+  payrollImpactStatus: string;
+};
+
 function periodBounds(year: number, month: number) {
   const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
   const end = new Date(Date.UTC(year, month, 0, 0, 0, 0, 0));
@@ -44,6 +49,22 @@ export function getCalendarOverlapDays(startDate: Date, endDate: Date, periodSta
   return Math.floor((endMs - startMs) / 86_400_000) + 1;
 }
 
+export function assertValidatedAbsencesReadyForPayroll(absences: ValidatedAbsencePayrollReadiness[]): void {
+  const blockingAbsences = absences.filter((absence) => absence.payrollImpactStatus !== "READY");
+  if (blockingAbsences.length === 0) return;
+
+  const details = blockingAbsences
+    .slice(0, 5)
+    .map((absence) => `${absence.id} (${absence.payrollImpactStatus})`)
+    .join(", ");
+  const suffix = blockingAbsences.length > 5 ? ", …" : "";
+
+  throw new Error(
+    `Calcul de paie bloqué : ${blockingAbsences.length} absence(s) validée(s) ont un impact paie non prêt. ` +
+      `Finalisez leur traitement avant de calculer la période. ${details}${suffix}`,
+  );
+}
+
 export async function resolveValidatedAbsencesForPayrollPeriod(input: {
   organizationId: string;
   year: number;
@@ -55,7 +76,6 @@ export async function resolveValidatedAbsencesForPayrollPeriod(input: {
     where: {
       organizationId: input.organizationId,
       status: "VALIDATED",
-      payrollImpactStatus: "READY",
       startDate: { lte: periodEnd },
       endDate: { gte: periodStart },
     },
@@ -65,9 +85,12 @@ export async function resolveValidatedAbsencesForPayrollPeriod(input: {
       type: true,
       startDate: true,
       endDate: true,
+      payrollImpactStatus: true,
     },
     orderBy: [{ employeeId: "asc" }, { startDate: "asc" }],
   });
+
+  assertValidatedAbsencesReadyForPayroll(absences);
 
   return absences.map((absence) => ({
     absenceId: absence.id,
