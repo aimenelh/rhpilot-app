@@ -8,6 +8,7 @@ import { MarketingFooter } from "./MarketingFooter";
 import { ProductTabs } from "./ProductTabs";
 import s from "./MarketingV2.module.css";
 import { MascotScene } from "./MascotScene";
+import { TutorialFirstVisitPrompt } from "./TutorialFirstVisitPrompt";
 
 export function LandingPage() {
   return (
@@ -253,6 +254,7 @@ export function LandingPage() {
           </div>
         </section>
       </main>
+      <TutorialFirstVisitPrompt />
       <MarketingFooter />
     </div>
   );

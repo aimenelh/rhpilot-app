@@ -4,6 +4,7 @@ import { Logomark, Wordmark } from "@/components/Brand";
 const PRODUCT_LINKS = [
   { href: "/services", label: "Le logiciel" },
   { href: "/services#demo", label: "Démonstration" },
+  { href: "/tutoriels", label: "Tutoriels vidéo" },
   { href: "/tarifs", label: "Tarifs" },
   { href: "/gestion-paie", label: "Gestion de la paie" },
   { href: "/pourquoi", label: "À propos" },

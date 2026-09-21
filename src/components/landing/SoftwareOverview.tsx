@@ -78,6 +78,9 @@ export function SoftwareOverview() {
               <Link href="#demo" className={s.secondary}>
                 Voir la démonstration →
               </Link>
+              <Link href="/tutoriels" className={s.secondary}>
+                Voir les tutoriels vidéo →
+              </Link>
             </div>
             <nav className={s.index} aria-label="Fonctionnalités">
               {features.map((f) => (
