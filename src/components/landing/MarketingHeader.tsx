@@ -53,6 +53,7 @@ const GROUPS = [
     label: "Ressources",
     links: [
       { href: "/ressources", label: "Guides & articles" },
+      { href: "/tutoriels", label: "Tutoriels vidéo" },
       { href: "/questions", label: "Questions fréquentes" },
       { href: "/diagnostic", label: "Diagnostic RH" },
       { href: "/securite", label: "Sécurité & données" },
