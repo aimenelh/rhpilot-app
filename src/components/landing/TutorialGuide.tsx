@@ -35,7 +35,7 @@ const steps: TutorialStep[] = [
     description: "Créer une organisation et prendre ses premiers repères dans RH Pilot.",
     video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/b9a6afe5-5400-42c5-87ba-df9831405748.mp4",
     introIllustration: "/illustrations/mascot/dashboard.png",
-    outroIllustration: "/illustrations/mascot/completed-journey.png",
+    outroIllustration: "/illustrations/onboarding/guide-success.svg",
     outroTitle: "Votre espace RH est prêt",
     outroText: "Vous savez maintenant créer l’organisation et retrouver les principaux repères de RH Pilot.",
     points: [
@@ -86,7 +86,7 @@ const steps: TutorialStep[] = [
     description: "Répartir les actions RH entre les bonnes personnes et suivre leur avancement.",
     video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/45f50d5a-0df6-40dd-b821-f7061fe5eb96.mp4",
     introIllustration: "/illustrations/illu-checklist.png",
-    outroIllustration: "/illustrations/mascot/completed-journey.png",
+    outroIllustration: "/illustrations/illu-notification.png",
     outroTitle: "Les responsabilités sont réparties",
     outroText: "Chaque action peut maintenant être confiée à la bonne personne et suivie depuis RH Pilot.",
     points: [
@@ -138,7 +138,7 @@ const steps: TutorialStep[] = [
     description: "Retrouver les actions ajoutées et vérifier leur suivi dans le parcours.",
     video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/4d3e57c2-4b65-45dd-be19-6bb2d5f82979.mp4",
     introIllustration: "/illustrations/mascot/reminder.png",
-    outroIllustration: "/illustrations/mascot/completed-journey.png",
+    outroIllustration: "/illustrations/mascot/search.png",
     outroTitle: "Les échéances restent sous contrôle",
     outroText: "Vous savez maintenant retrouver les actions ajoutées et vérifier leur avancement dans le parcours.",
     points: [
@@ -155,9 +155,9 @@ const steps: TutorialStep[] = [
     description: "Ajouter une absence et la retrouver dans les différentes vues de suivi de l’équipe.",
     video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/003d93ac-b32f-48d0-b87b-2d8f2d675564.mp4",
     introIllustration: "/illustrations/mascot/calm.png",
-    outroIllustration: "/illustrations/mascot/completed-journey.png",
-    outroTitle: "Le suivi des absences est en place",
-    outroText: "Vous savez enregistrer une absence et la retrouver dans les vues de suivi de l’équipe.",
+    outroIllustration: "/illustrations/illu-salut.png",
+    outroTitle: "Vous avez terminé le guide RH Pilot",
+    outroText: "Vous savez maintenant enregistrer une absence, la retrouver dans le suivi de l’équipe et utiliser les principaux repères présentés dans ce guide.",
     points: [
       "Créer une absence",
       "Ajouter les informations associées",
