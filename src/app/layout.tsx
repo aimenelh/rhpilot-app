@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { DM_Sans, Caveat, Fraunces } from "next/font/google";
 import { ClerkProvider } from "@clerk/nextjs";
 import { frFR } from "@clerk/localizations";
-import { Analytics } from "@vercel/analytics/next";
+import { CookieConsent } from "@/components/CookieConsent";
 import { PwaRegister } from "@/components/PwaRegister";
 import "./globals.css";
 
@@ -95,7 +95,7 @@ export default function RootLayout({
       <html lang="fr" className={`${dmSans.variable} ${caveat.variable} ${fraunces.variable}`}>
         <body className={`${dmSans.className} antialiased`}>
           {children}
-          <Analytics />
+          <CookieConsent />
           <PwaRegister />
         </body>
       </html>
