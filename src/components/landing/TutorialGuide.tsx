@@ -20,18 +20,14 @@ type TutorialStep = {
   points: string[];
 };
 
-const VIDEO_BASE =
-  process.env.NEXT_PUBLIC_TUTORIAL_VIDEO_BASE_URL?.replace(/\/$/, "") ??
-  "/tutorials/videos";
-
 const steps: TutorialStep[] = [
   {
     id: "creer-espace",
     group: "Démarrage",
     title: "Créer son espace RH",
-    duration: "2 min 12 s",
+    duration: "2 min 10 s",
     description: "Créer une organisation et prendre ses premiers repères dans RH Pilot.",
-    video: "01-creer-espace.mp4",
+    video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/b9a6afe5-5400-42c5-87ba-df9831405748.mp4",
     points: [
       "Créer l’organisation",
       "Consulter le tableau de bord",
@@ -44,7 +40,7 @@ const steps: TutorialStep[] = [
     title: "Configurer l’organisation",
     duration: "2 min 04 s",
     description: "Renseigner les paramètres utiles au fonctionnement de votre espace RH.",
-    video: "02-configurer-organisation.mp4",
+    video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/c3460ae1-cc9e-4461-831a-2bc02f8b0ebc.mp4",
     points: [
       "Renseigner les informations de l’entreprise",
       "Configurer l’organisation",
@@ -57,7 +53,7 @@ const steps: TutorialStep[] = [
     title: "Ajouter un salarié",
     duration: "2 min 30 s",
     description: "Créer un dossier salarié et retrouver les informations qui structurent son suivi.",
-    video: "03-ajouter-salarie.mp4",
+    video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/3e090827-1ca6-45b4-9995-9c1a4b990119.mp4",
     points: [
       "Créer le dossier du salarié",
       "Renseigner les informations du contrat",
@@ -70,7 +66,7 @@ const steps: TutorialStep[] = [
     title: "Assigner les tâches",
     duration: "1 min 19 s",
     description: "Répartir les actions RH entre les bonnes personnes et suivre leur avancement.",
-    video: "04-assigner-taches.mp4",
+    video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/45f50d5a-0df6-40dd-b821-f7061fe5eb96.mp4",
     points: [
       "Choisir un responsable",
       "Répartir les tâches",
@@ -81,9 +77,9 @@ const steps: TutorialStep[] = [
     id: "calendrier-rh",
     group: "Organisation RH",
     title: "Lire le calendrier RH",
-    duration: "4 min 21 s",
+    duration: "4 min 15 s",
     description: "Visualiser les échéances à venir et retrouver rapidement les actions à traiter.",
-    video: "05-calendrier-rh.mp4",
+    video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/21a5f9d0-2a89-4932-84df-55a24df1611b.mp4",
     points: [
       "Lire les échéances du mois",
       "Repérer les tâches à venir",
@@ -94,10 +90,10 @@ const steps: TutorialStep[] = [
     id: "ajouter-echeance",
     group: "Parcours personnalisés",
     title: "Ajouter une échéance",
-    duration: "1 min 58 s",
+    duration: "1 min 55 s",
     description:
       "Personnaliser un parcours déjà généré en ajoutant une échéance adaptée à votre organisation.",
-    video: "06-ajouter-echeance.mp4",
+    video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/0c4373a5-9fd3-42d1-a33f-824eed926757.mp4",
     points: [
       "Ouvrir un parcours existant",
       "Ajouter une nouvelle échéance",
@@ -110,7 +106,7 @@ const steps: TutorialStep[] = [
     title: "Suivre les échéances",
     duration: "1 min 02 s",
     description: "Retrouver les actions ajoutées et vérifier leur suivi dans le parcours.",
-    video: "07-suivre-echeances.mp4",
+    video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/4d3e57c2-4b65-45dd-be19-6bb2d5f82979.mp4",
     points: [
       "Contrôler les tâches du parcours",
       "Retrouver les dates associées",
@@ -123,7 +119,7 @@ const steps: TutorialStep[] = [
     title: "Gérer les absences",
     duration: "3 min 55 s",
     description: "Ajouter une absence et la retrouver dans les différentes vues de suivi de l’équipe.",
-    video: "08-gerer-absences.mp4",
+    video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/003d93ac-b32f-48d0-b87b-2d8f2d675564.mp4",
     points: [
       "Créer une absence",
       "Ajouter les informations associées",
@@ -323,7 +319,7 @@ export function TutorialGuide() {
               }}
               className="aspect-video w-full rounded-lg bg-black"
             >
-              <source src={`${VIDEO_BASE}/${active.video}`} type="video/mp4" />
+              <source src={active.video} type="video/mp4" />
               Votre navigateur ne peut pas lire cette vidéo.
             </video>
           </div>
