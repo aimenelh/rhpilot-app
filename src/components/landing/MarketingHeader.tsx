@@ -53,7 +53,6 @@ const GROUPS = [
     label: "Ressources",
     links: [
       { href: "/ressources", label: "Guides & articles" },
-      { href: "/tutoriels", label: "Tutoriels vidéo" },
       { href: "/questions", label: "Questions fréquentes" },
       { href: "/diagnostic", label: "Diagnostic RH" },
       { href: "/securite", label: "Sécurité & données" },
@@ -169,6 +168,9 @@ export function MarketingHeader() {
             <Link href="/tarifs" className={navLink("/tarifs")}>
               Tarifs
             </Link>
+            <Link href="/tutoriels" className={navLink("/tutoriels")}>
+              Tutoriels
+            </Link>
             <div className="relative">
               <button
                 type="button"
@@ -261,6 +263,13 @@ export function MarketingHeader() {
               className="block py-4 text-sm font-semibold"
             >
               Tarifs
+            </Link>
+            <Link
+              href="/tutoriels"
+              onClick={close}
+              className="block py-4 text-sm font-semibold"
+            >
+              Tutoriels
             </Link>
             <Link
               href="/pourquoi"
