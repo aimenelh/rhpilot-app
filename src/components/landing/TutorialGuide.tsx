@@ -223,7 +223,7 @@ export function TutorialGuide() {
           <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-subtle">
             <div
               className="h-full rounded-full bg-brand-primary transition-[width] duration-500"
-              style={{ width: \`\${progress}%\` }}
+              style={{ width: `${progress}%` }}
             />
           </div>
           <p className="mt-2 text-xs text-ink-faint">
@@ -323,7 +323,7 @@ export function TutorialGuide() {
               }}
               className="aspect-video w-full rounded-lg bg-black"
             >
-              <source src={\`\${VIDEO_BASE}/\${active.video}\`} type="video/mp4" />
+              <source src={`${VIDEO_BASE}/${active.video}`} type="video/mp4" />
               Votre navigateur ne peut pas lire cette vidéo.
             </video>
           </div>
