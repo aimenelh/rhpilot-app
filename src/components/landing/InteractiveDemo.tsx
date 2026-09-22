@@ -1,677 +1,217 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
+import { useEffect, useId, useRef, useState, type CSSProperties, type KeyboardEvent } from "react";
 import Link from "next/link";
-import { ChevronLeft, RotateCcw } from "lucide-react";
-import { Button } from "@/components/ui/Button";
+import { ArrowLeft, ArrowRight, Check, Maximize2, Minimize2, RotateCcw } from "lucide-react";
+import s from "./InteractiveDemo.module.css";
 
-type DemoStep = {
+type Rect = { x: number; y: number; width: number; height: number };
+type Side = "top" | "bottom" | "left" | "right";
+type Step = {
   image: string;
-  alt: string;
-  // Étiquette courte affichée en tête de la bulle (ex. "Maxime Renard").
-  tooltip: string;
-  // Phrase complète affichée dans la bulle : ce que la personne
-  // regarde, et pourquoi elle clique à cet endroit précis.
-  instruction: string;
-  cursor: { x: number; y: number };
+  width: number;
+  height: number;
+  title: string;
+  description: string;
+  focus: Rect;
+  side: Side;
 };
 
-// Les captures 3 et 4 réutilisent volontairement la même image
-// (fiche-salarie.png) : on ne dispose que d'une seule capture de la
-// fiche de Maxime, donc le point cliquable se déplace deux fois dessus
-// avant de passer à l'écran suivant.
-//
-// Position du point cliquable (`cursor`) en % de la largeur/hauteur de
-// l'image d'origine, indépendant de la taille d'affichage réelle. Pour
-// ajuster un point : ouvrir l'image en pleine taille, repérer le point
-// visé, puis x = (position horizontale / largeur totale) * 100,
-// y = (position verticale / hauteur totale) * 100. La bulle se
-// repositionne toute seule selon la proximité des bords (voir
-// `getBubblePlacement` plus bas), pas besoin d'y toucher.
-const DEMO_STEPS: DemoStep[] = [
+const STEPS: Step[] = [
   {
-    image: "/demo/dashboard-vue-ensemble.png",
-    alt: "Tableau de bord RH Pilot avec deux tâches en retard signalées",
-    tooltip: "2 en retard",
-    instruction: "Le tableau de bord signale 2 tâches en retard. Cliquez sur le chiffre pour demander au Copilote de qui il s'agit.",
-    cursor: { x: 21, y: 9 },
+    image: "dashboard-vue-ensemble.png", width: 1885, height: 1035,
+    title: "Repérez les priorités",
+    description: "Deux tâches sont en retard. Le tableau de bord vous permet de retrouver les salariés et les parcours concernés.",
+    focus: { x: 18.8, y: 3.4, width: 16.4, height: 12.8 }, side: "bottom",
   },
   {
-    image: "/demo/dashboard-copilote.png",
-    alt: "Réponse du Copilote RH Pilot sur les parcours à risque",
-    tooltip: "Maxime Renard",
-    instruction: "Le Copilote a répondu : Maxime Renard est concerné. Cliquez sur son nom pour ouvrir sa fiche.",
-    cursor: { x: 43, y: 73 },
+    image: "dashboard-copilote.png", width: 1885, height: 1030,
+    title: "Interrogez le copilote",
+    description: "À partir des données RH, le copilote résume les situations à vérifier : périodes d’essai, visites médicales ou parcours incomplets.",
+    focus: { x: 22.3, y: 56.5, width: 33.2, height: 21.4 }, side: "right",
   },
   {
-    image: "/demo/fiche-salarie.png",
-    alt: "Fiche du salarié Maxime Renard avec son parcours d'embauche",
-    tooltip: "Voir le parcours",
-    instruction: "Vous êtes sur la fiche de Maxime Renard. Cliquez sur son parcours d'embauche pour voir le détail des tâches.",
-    cursor: { x: 68, y: 73 },
+    image: "fiche-salarie.png", width: 1893, height: 1027,
+    title: "Ouvrez le dossier du salarié",
+    description: "Sur la fiche de Maxime, retrouvez son parcours d’embauche. Six tâches sur huit sont terminées ; deux restent à traiter.",
+    focus: { x: 18.7, y: 66.5, width: 50.8, height: 13 }, side: "top",
   },
   {
-    image: "/demo/fiche-salarie.png",
-    alt: "Parcours d'embauche de Maxime Renard avec deux tâches en retard",
-    tooltip: "2 tâches à faire",
-    instruction: "Le parcours affiche encore 2 tâches en retard. Cliquez pour voir comment elles avancent.",
-    cursor: { x: 26, y: 75 },
+    image: "parcours-avance.png", width: 1872, height: 1031,
+    title: "Suivez chaque action",
+    description: "Chaque tâche possède une échéance, un responsable et un statut. Mettez le parcours à jour au fur et à mesure des démarches.",
+    focus: { x: 18.4, y: 40.4, width: 51.3, height: 18.6 }, side: "bottom",
   },
   {
-    image: "/demo/parcours-avance.png",
-    alt: "Étapes du parcours marquées comme faites",
-    tooltip: "Fait",
-    instruction: "Les tâches se cochent au fur et à mesure, jusqu'à la fin du parcours. Cliquez pour continuer.",
-    cursor: { x: 55, y: 83 },
+    image: "suggestions.png", width: 1571, height: 913,
+    title: "Retrouvez les démarches manquantes",
+    description: "Julien a été embauché sans parcours associé. La suggestion permet de créer le parcours depuis le tableau de bord.",
+    focus: { x: 59.8, y: 32.3, width: 22.4, height: 28.8 }, side: "left",
   },
   {
-    image: "/demo/suggestions.png",
-    alt: "Panneau de suggestions proactives de RH Pilot",
-    tooltip: "Créer le parcours",
-    instruction: "RH Pilot détecte aussi les oublis avant qu'ils ne deviennent un problème. Cliquez pour créer le parcours manquant.",
-    cursor: { x: 67, y: 57 },
+    image: "suggestions-parcours-cree.png", width: 1882, height: 1025,
+    title: "Adaptez le parcours",
+    description: "Le parcours de Julien rassemble les démarches à suivre. Vous pouvez y ajouter une étape selon les besoins de votre organisation.",
+    focus: { x: 18.4, y: 14.5, width: 23, height: 21.6 }, side: "right",
   },
   {
-    image: "/demo/suggestions-parcours-cree.png",
-    alt: "Parcours d'embauche généré automatiquement pour Julien Marchand",
-    tooltip: "Voir le calendrier",
-    instruction: "Le parcours d'embauche de Julien Marchand vient d'être généré automatiquement. Cliquez sur Calendrier pour voir la suite.",
-    cursor: { x: 6, y: 26 },
-  },
-  {
-    image: "/demo/calendrier.png",
-    alt: "Vue calendrier de toutes les échéances RH",
-    tooltip: "Recommencer",
-    instruction: "Toutes les échéances RH, de toute l'organisation, apparaissent au même endroit. Cliquez pour recommencer la démo.",
-    cursor: { x: 6, y: 6 },
+    image: "calendrier.png", width: 1887, height: 1032,
+    title: "Gardez les échéances en vue",
+    description: "Le calendrier réunit les tâches de l’organisation. Les échéances à surveiller restent accessibles à côté du planning.",
+    focus: { x: 76.7, y: 49.3, width: 21.3, height: 22.2 }, side: "left",
   },
 ];
 
-// Position du bouton "Commencer la démo" sur l'écran d'intro, dans le
-// même système de coordonnées que les points cliquables ci-dessus.
-const INTRO_TARGET = { x: 50, y: 75 };
-
-// Hauteur fixe de la barre façon navigateur (les trois points), en
-// pixels. Sert à aligner exactement la zone cliquable/bulle sur
-// l'image, qui commence juste en dessous.
-const CHROME_BAR_HEIGHT = 36;
-
-// Sur mobile, forcer l'image à occuper toute la largeur de l'écran la
-// rendrait illisible (ce sont des captures d'interface desktop, avec
-// du texte fin). On l'affiche donc à une taille lisible fixe, quitte
-// à devoir la faire défiler horizontalement — avec un recentrage
-// automatique sur le point cliquable à chaque étape (voir plus bas).
-const MOBILE_IMAGE_HEIGHT = 260;
-const MOBILE_IMAGE_WIDTH = Math.round(MOBILE_IMAGE_HEIGHT * (1882 / 1030));
-
-const TRAVEL_MS = 650; // le point cliquable se déplace vers sa cible
-const CLICK_MS = 350; // effet de clic avant de passer à l'écran suivant
-
-type Phase = "arriving" | "waiting" | "clicking";
-
-// Choisit de quel côté du point afficher la bulle d'explication, pour
-// qu'elle reste toujours visible à l'intérieur du cadre plutôt que de
-// se faire rogner près d'un bord (c'est le bug corrigé ici : la bulle
-// sortait du cadre quand le point était trop près du haut ou du bord
-// gauche).
-function getBubblePlacement(x: number, y: number) {
-  const side: "top" | "bottom" = y < 22 ? "bottom" : "top";
-  const align: "start" | "center" | "end" = x < 18 ? "start" : x > 82 ? "end" : "center";
-  return { side, align };
-}
-
-function Logo({ light = false }: { light?: boolean }) {
-  return (
-    <div className="flex items-center gap-2.5">
-      <Image src="/icon-192.png" alt="" width={40} height={40} className="h-10 w-10" />
-      <span className={`text-2xl font-semibold ${light ? "text-white" : "text-ink"}`}>
-        RH <span className="text-brand-primary">Pilot</span>
-      </span>
-    </div>
-  );
+// Place the explanation beside the highlighted area, keeping it inside the frame.
+function placeBubble(focus: Rect, side: Side, width: number, height: number, bubbleWidth: number, bubbleHeight: number) {
+  const x = focus.x * width / 100;
+  const y = focus.y * height / 100;
+  const w = focus.width * width / 100;
+  const h = focus.height * height / 100;
+  const gap = 18;
+  const positions = {
+    top: { left: x + w / 2 - bubbleWidth / 2, top: y - bubbleHeight - gap },
+    bottom: { left: x + w / 2 - bubbleWidth / 2, top: y + h + gap },
+    left: { left: x - bubbleWidth - gap, top: y + h / 2 - bubbleHeight / 2 },
+    right: { left: x + w + gap, top: y + h / 2 - bubbleHeight / 2 },
+  };
+  const fits = (candidate: Side) => {
+    const p = positions[candidate];
+    return p.left >= 14 && p.top >= 14 && p.left + bubbleWidth <= width - 14 && p.top + bubbleHeight <= height - 14;
+  };
+  const chosen = [side, ...(["top", "bottom", "left", "right"] as Side[]).filter((value) => value !== side)].find(fits) ?? side;
+  const left = Math.max(14, Math.min(positions[chosen].left, width - bubbleWidth - 14));
+  const top = Math.max(14, Math.min(positions[chosen].top, height - bubbleHeight - 14));
+  const arrow = chosen === "top" || chosen === "bottom"
+    ? Math.max(22, Math.min(x + w / 2 - left, bubbleWidth - 22))
+    : Math.max(22, Math.min(y + h / 2 - top, bubbleHeight - 22));
+  return { left, top, side: chosen, arrow };
 }
 
 export function InteractiveDemo() {
-  const [hasStarted, setHasStarted] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
+  const [phase, setPhase] = useState<"welcome" | "tour" | "end">("welcome");
   const [index, setIndex] = useState(0);
-  const [phase, setPhase] = useState<Phase>("waiting");
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const isFirstRender = useRef(true);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [geometry, setGeometry] = useState({ width: 1100, height: 604, bubbleWidth: 310, bubbleHeight: 200 });
+  const rootRef = useRef<HTMLDivElement>(null);
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const sceneRef = useRef<HTMLDivElement>(null);
+  const bubbleRef = useRef<HTMLDivElement>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const interacted = useRef(false);
+  const titleId = useId();
+  const step = STEPS[index];
+  const position = placeBubble(step.focus, step.side, geometry.width, geometry.height, geometry.bubbleWidth, geometry.bubbleHeight);
 
   useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    setPrefersReducedMotion(mq.matches);
-    const handleChange = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
-    mq.addEventListener("change", handleChange);
-    return () => mq.removeEventListener("change", handleChange);
+    const scene = sceneRef.current;
+    const bubble = bubbleRef.current;
+    if (!scene) return;
+    function measure() {
+      const sceneBox = scene!.getBoundingClientRect();
+      const bubbleBox = bubble?.getBoundingClientRect();
+      setGeometry({ width: sceneBox.width, height: sceneBox.height, bubbleWidth: bubbleBox?.width ?? 310, bubbleHeight: bubbleBox?.height ?? 200 });
+    }
+    const observer = new ResizeObserver(measure);
+    observer.observe(scene);
+    if (bubble) observer.observe(bubble);
+    measure();
+    return () => observer.disconnect();
+  }, [phase, index]);
+
+  useEffect(() => {
+    if (interacted.current) (phase === "tour" ? bubbleRef.current : panelRef.current)?.focus({ preventScroll: true });
+    const viewport = viewportRef.current;
+    if (!viewport || phase !== "tour") return;
+    const left = (step.focus.x + step.focus.width / 2) * geometry.width / 100 - viewport.clientWidth / 2;
+    const top = (step.focus.y + step.focus.height / 2) * geometry.height / 100 - viewport.clientHeight / 2;
+    viewport.scrollTo({ left: Math.max(0, left), top: Math.max(0, top), behavior: "instant" });
+  }, [phase, index, geometry.width, geometry.height, step.focus]);
+
+  useEffect(() => {
+    if (phase !== "tour" || index === STEPS.length - 1) return;
+    const image = new window.Image();
+    image.src = `/demo/${STEPS[index + 1].image}`;
+  }, [phase, index]);
+
+  useEffect(() => {
+    const sync = () => setExpanded(document.fullscreenElement === rootRef.current);
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
   }, []);
 
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 639px)");
-    setIsMobile(mq.matches);
-    const handleChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
-    mq.addEventListener("change", handleChange);
-    return () => mq.removeEventListener("change", handleChange);
-  }, []);
-
-  const clearTimers = () => {
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
-  };
-
-  // À chaque changement d'écran (intro -> étape 1, étape 1 -> étape 2,
-  // ..., dernière étape -> écran de fin), le point cliquable "arrive"
-  // avant de devenir cliquable (et avant que sa bulle n'apparaisse).
-  // Pas d'animation d'arrivée au tout premier affichage.
-  useEffect(() => {
-    if (prefersReducedMotion) return;
-    clearTimers();
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
-      setPhase("waiting");
-      return;
-    }
-    setPhase("arriving");
-    const t = setTimeout(() => setPhase("waiting"), TRAVEL_MS);
-    timers.current.push(t);
-    return clearTimers;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasStarted, index, isFinished, prefersReducedMotion]);
-
-  useEffect(() => clearTimers, []);
-
-  const goToIndex = (next: number) => {
-    clearTimers();
-    setIndex(next);
-  };
-
-  const handleHotspotClick = () => {
-    if (phase !== "waiting") return;
-    setPhase("clicking");
-    const t = setTimeout(() => {
-      if (!hasStarted) {
-        setHasStarted(true);
-      } else if (index === DEMO_STEPS.length - 1) {
-        // Dernière étape : direction l'écran de fin plutôt qu'une
-        // boucle silencieuse vers le début.
-        setIsFinished(true);
-      } else {
-        goToIndex(index + 1);
-      }
-    }, CLICK_MS);
-    timers.current.push(t);
-  };
-
-  const handleBack = () => {
-    if (!hasStarted) return;
-    if (isFinished) {
-      // Retour à la dernière étape depuis l'écran de fin.
-      setIsFinished(false);
-      return;
-    }
-    goToIndex((index - 1 + DEMO_STEPS.length) % DEMO_STEPS.length);
-  };
-
-  // Revoir les 8 étapes directement, sans repasser par l'écran d'intro.
-  const handleReplay = () => {
-    clearTimers();
-    setIndex(0);
-    setIsFinished(false);
-  };
-
-  const handleRestart = () => {
-    clearTimers();
-    setHasStarted(false);
-    setIsFinished(false);
-    setIndex(0);
-  };
-
-  const step = hasStarted && !isFinished ? DEMO_STEPS[index] : null;
-  const target = step ? step.cursor : INTRO_TARGET;
-
-  // Vue compacte scrollable : uniquement sur mobile, et seulement
-  // pendant une vraie étape (pas sur l'intro / l'écran de fin, qui
-  // n'ont pas besoin de cette largeur supplémentaire).
-  const useCompactMobileFrame = isMobile && hasStarted && !isFinished;
-
-  // Recentre la vue sur le point cliquable à chaque changement
-  // d'étape, pour ne jamais laisser la personne chercher où défiler.
-  useEffect(() => {
-    if (!useCompactMobileFrame) return;
-    const el = scrollRef.current;
-    if (!el) return;
-    const targetX = (target.x / 100) * MOBILE_IMAGE_WIDTH;
-    const left = Math.max(0, targetX - el.clientWidth / 2);
-    el.scrollTo({ left, behavior: prefersReducedMotion ? "auto" : "smooth" });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [index, hasStarted, isFinished, isMobile]);
-
-  // Version simplifiée pour "mouvement réduit" : pas de point animé ni
-  // de bulle, juste des captures et des boutons Précédent / Suivant
-  // classiques, avec l'explication en texte simple au-dessus.
-  if (prefersReducedMotion) {
-    const isLastStep = index === DEMO_STEPS.length - 1;
-    return (
-      <div className="mx-auto max-w-4xl">
-        {hasStarted && !isFinished && (
-          <div className="mb-3 min-h-[3rem]">
-            <span className="text-xs font-semibold uppercase tracking-wide text-brand-primary">
-              Étape {index + 1} / {DEMO_STEPS.length}
-            </span>
-            <p className="mt-1 text-sm text-ink-soft">{DEMO_STEPS[index].instruction}</p>
-          </div>
-        )}
-        <div className="overflow-hidden rounded-2xl border border-surface-border bg-white shadow-2xl">
-          <div className="flex items-center gap-1.5 border-b border-surface-border bg-surface-subtle px-3 py-2">
-            <span className="h-2.5 w-2.5 rounded-full bg-accent-rose/50" />
-            <span className="h-2.5 w-2.5 rounded-full bg-accent-amber/50" />
-            <span className="h-2.5 w-2.5 rounded-full bg-accent-teal/50" />
-          </div>
-          <div className="relative aspect-[1882/1030] w-full bg-surface-subtle">
-            {!hasStarted ? (
-              <div className="flex h-full flex-col items-center justify-center gap-8 bg-ink px-8 text-center">
-                <Logo light />
-                <p className="max-w-sm text-sm text-white/70">
-                  Suivez, étape par étape, comment RH Pilot repère un oubli RH et génère le plan
-                  d&apos;action correspondant.
-                </p>
-                <Button onClick={() => setHasStarted(true)} className="whitespace-nowrap px-6 py-3 text-base">
-                  Commencer la démo
-                </Button>
-              </div>
-            ) : isFinished ? (
-              <div className="flex h-full flex-col items-center justify-center gap-4 bg-ink px-8 text-center">
-                <Image src="/icon-192.png" alt="" width={56} height={56} className="h-14 w-14" />
-                <h3 className="text-xl font-semibold text-white">Ce n&apos;était qu&apos;un aperçu.</h3>
-                <p className="max-w-sm text-sm text-white/70">
-                  RH Pilot a bien plus à montrer : parcours personnalisables, rappels automatiques,
-                  recherche globale... La meilleure façon de le découvrir, c&apos;est de l&apos;essayer.
-                </p>
-                <div className="mt-1 flex flex-wrap items-center justify-center gap-4">
-                  <Link href="/sign-up">
-                    <Button className="px-6 py-3 text-base">Essayer gratuitement</Button>
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={handleReplay}
-                    className="text-sm font-medium text-white/70 hover:text-white hover:underline"
-                  >
-                    Revoir la démo
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <Image
-                src={DEMO_STEPS[index].image}
-                alt={DEMO_STEPS[index].alt}
-                fill
-                className="object-contain"
-                sizes="(min-width: 1024px) 900px, 100vw"
-              />
-            )}
-          </div>
-        </div>
-        {hasStarted && (
-          <div className="mt-5 flex items-center justify-end gap-3">
-            <Button
-              variant="ghost"
-              className="!px-2.5 !py-2"
-              aria-label="Étape précédente"
-              onClick={handleBack}
-            >
-              <ChevronLeft size={16} />
-            </Button>
-            {!isFinished && (
-              <Button
-                variant="secondary"
-                onClick={() => (isLastStep ? setIsFinished(true) : setIndex((i) => i + 1))}
-              >
-                {isLastStep ? "Terminer" : "Étape suivante"}
-              </Button>
-            )}
-          </div>
-        )}
-      </div>
-    );
+  function start() { interacted.current = true; setIndex(0); setPhase("tour"); }
+  function next() {
+    interacted.current = true;
+    if (index === STEPS.length - 1) setPhase("end");
+    else setIndex((value) => value + 1);
+  }
+  function back() {
+    interacted.current = true;
+    if (phase === "end") setPhase("tour");
+    else setIndex((value) => Math.max(0, value - 1));
+  }
+  function reset() { interacted.current = true; setIndex(0); setPhase("welcome"); }
+  function onKeyDown(event: KeyboardEvent<HTMLDivElement>) {
+    if (phase !== "tour" || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key === "ArrowRight") { event.preventDefault(); next(); }
+    if (event.key === "ArrowLeft") { event.preventDefault(); back(); }
+  }
+  async function toggleFullscreen() {
+    try {
+      if (document.fullscreenElement === rootRef.current) await document.exitFullscreen();
+      else await rootRef.current?.requestFullscreen();
+    } catch { /* The inline tour stays available when fullscreen is unsupported. */ }
   }
 
-  const placement = getBubblePlacement(target.x, target.y);
-
   return (
-    <div className="mx-auto max-w-6xl">
-      <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_300px]">
-        {/* Colonne capture : l'image et son point cliquable. En
-            second sur mobile, pour que l'explication (colonne
-            "Copilote" ci-dessous) se lise avant de regarder l'écran. */}
-        <div className="order-2 lg:order-1">
-        <div
-          ref={useCompactMobileFrame ? scrollRef : undefined}
-          className={useCompactMobileFrame ? "overflow-x-auto [-webkit-overflow-scrolling:touch]" : ""}
-        >
-        {/* Wrapper SANS overflow-hidden : c'est ce qui permet à
-            l'étiquette de s'afficher entièrement même quand le point
-            cliquable est tout près d'un bord, au lieu d'être rognée
-            par le cadre. */}
-        <div className="relative" style={useCompactMobileFrame ? { width: MOBILE_IMAGE_WIDTH } : undefined}>
-        {/* Le personnage qui épie : uniquement sur l'écran d'intro.
-            Position calée par mesure au pixel sur la référence
-            fournie (bord du cadre à 80% de la largeur du personnage
-            depuis son bord gauche, départ vertical à 14% de la
-            hauteur du cadre). Au repos, toujours au-dessus du cadre
-            (z-10), entièrement visible. Au clic sur "Commencer la
-            démo", il repasse sous le cadre (z-0) tout en glissant
-            largement vers la droite : c'est le cadre qui le recouvre
-            visuellement, pas juste un fondu, pour vraiment donner
-            l'impression qu'il se cache derrière. */}
-        {!hasStarted && (
-          <div
-            aria-hidden
-            className={`pointer-events-none absolute left-[-0.5rem] top-[14%] transition-all duration-300 ease-in sm:left-[-7.25rem] ${
-              phase === "clicking"
-                ? "z-0 translate-x-24 opacity-0 sm:translate-x-32"
-                : "z-10 translate-x-0 opacity-100"
-            }`}
-          >
-            <style>{`
-              @media (prefers-reduced-motion: no-preference) {
-                @keyframes peekLinesPulse {
-                  0%, 100% { opacity: 0.55; transform: scale(0.94); }
-                  50% { opacity: 1; transform: scale(1.06); }
-                }
-                .peek-lines-pulse {
-                  animation: peekLinesPulse 1.8s ease-in-out infinite;
-                  transform-origin: 80% 50%;
-                }
-              }
-            `}</style>
-            <div className="relative">
-              <Image
-                src="/illustrations/illu-peek.png"
-                alt=""
-                width={676}
-                height={891}
-                className="h-20 w-auto sm:h-44"
-              />
-              <Image
-                src="/illustrations/illu-peek-lines.png"
-                alt=""
-                width={144}
-                height={205}
-                className="peek-lines-pulse absolute left-[0.5%] top-[16.5%] w-[21%] h-auto"
-              />
-            </div>
-          </div>
-        )}
-        <div className="overflow-hidden rounded-2xl border border-surface-border bg-white shadow-2xl">
-          {/* Barre façon navigateur, cohérente avec le reste du site */}
-          <div className="flex items-center gap-1.5 border-b border-surface-border bg-surface-subtle px-3" style={{ height: CHROME_BAR_HEIGHT }}>
-            <span className="h-2.5 w-2.5 rounded-full bg-accent-rose/50" />
-            <span className="h-2.5 w-2.5 rounded-full bg-accent-amber/50" />
-            <span className="h-2.5 w-2.5 rounded-full bg-accent-teal/50" />
-          </div>
-
-          <div
-            className={`relative bg-surface-subtle ${useCompactMobileFrame ? "" : "aspect-[1882/1030] w-full"}`}
-            style={useCompactMobileFrame ? { width: MOBILE_IMAGE_WIDTH, height: MOBILE_IMAGE_HEIGHT } : undefined}
-          >
-            {/* Intro, les 8 étapes et l'écran de fin sont tous montés
-                en même temps, superposés, seule l'opacité bascule.
-                Nécessaire pour un vrai fondu croisé : en changeant le
-                contenu ET en le faisant réapparaître au même moment,
-                le navigateur pouvait encore afficher l'ancienne image
-                le temps que la nouvelle charge (un flash, pas un
-                fondu). Ici toutes les images sont déjà chargées, donc
-                le changement d'opacité n'attend jamais rien. */}
-            <div
-              className={`absolute inset-0 transition-opacity duration-300 ${
-                !hasStarted ? "opacity-100" : "pointer-events-none opacity-0"
-              }`}
-            >
-              <div className="flex h-full flex-col items-center justify-center gap-6 bg-ink px-8 text-center">
-                <Logo light />
-                <p className="max-w-sm text-sm text-white/70">
-                  Suivez, étape par étape, comment RH Pilot repère un oubli RH et génère le plan
-                  d&apos;action correspondant.
-                </p>
-                {/* Dans le flux normal, juste sous le texte — plutôt
-                    qu'à une position en pourcentage fixe qui ne
-                    pouvait pas deviner sur combien de lignes le texte
-                    s'étalerait selon la largeur d'écran. */}
-                <button
-                  type="button"
-                  onClick={handleHotspotClick}
-                  disabled={phase !== "waiting"}
-                  aria-label="Commencer la démo"
-                  className="relative inline-flex disabled:cursor-default"
-                >
-                  {phase === "waiting" && (
-                    <span className="absolute -inset-3 animate-ping rounded-full bg-brand-primary/30" />
-                  )}
-                  <span
-                    className={`relative inline-flex items-center justify-center whitespace-nowrap rounded-lg bg-brand-primary px-6 py-3 text-base font-medium text-white shadow-card transition-transform ${
-                      phase === "clicking" ? "scale-95" : "scale-100"
-                    }`}
-                  >
-                    Commencer la démo
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            {DEMO_STEPS.map((s, i) => (
-              <div
-                key={s.image + i}
-                className={`absolute inset-0 transition-opacity duration-300 ${
-                  hasStarted && !isFinished && i === index ? "opacity-100" : "pointer-events-none opacity-0"
-                }`}
-              >
-                <Image
-                  src={s.image}
-                  alt={s.alt}
-                  fill
-                  className="object-contain"
-                  sizes="(min-width: 1024px) 820px, 100vw"
-                />
-              </div>
-            ))}
-
-            <div
-              className={`absolute inset-0 transition-opacity duration-300 ${
-                isFinished ? "opacity-100" : "pointer-events-none opacity-0"
-              }`}
-            >
-              <div className="flex h-full flex-col items-center justify-center gap-4 bg-ink px-8 text-center">
-                <Image src="/icon-192.png" alt="" width={56} height={56} className="h-14 w-14" />
-                <h3 className="text-xl font-semibold text-white sm:text-2xl">
-                  Ce n&apos;était qu&apos;un aperçu.
-                </h3>
-                <p className="max-w-sm text-sm text-white/70">
-                  RH Pilot a bien plus à montrer. La meilleure façon de le découvrir, c&apos;est de
-                  l&apos;essayer par vous-même.
-                </p>
-                <div className="mt-1 flex flex-wrap items-center justify-center gap-4">
-                  <Link href="/sign-up">
-                    <Button className="px-6 py-3 text-base">Essayer gratuitement</Button>
-                  </Link>
-                  <button
-                    type="button"
-                    onClick={handleReplay}
-                    className="text-sm font-medium text-white/70 hover:text-white hover:underline"
-                  >
-                    Revoir la démo
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Calque du point cliquable + de sa bulle, dimensionné pour
-            correspondre exactement à la zone image (donc décalé sous
-            la barre façon navigateur), mais SANS être rogné par elle. */}
-        <div
-          role="group"
-          aria-label="Démonstration interactive de RH Pilot"
-          className="pointer-events-none absolute inset-x-0 bottom-0 z-10"
-          style={{ top: CHROME_BAR_HEIGHT }}
-        >
-          <div className="relative h-full w-full">
-            {hasStarted && !isFinished && (
-            <button
-              type="button"
-              onClick={handleHotspotClick}
-              disabled={phase !== "waiting"}
-              aria-label={`${step?.tooltip}. ${step?.instruction}`}
-              className="pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2 transition-[left,top] ease-out disabled:cursor-default"
-              style={{ left: `${target.x}%`, top: `${target.y}%`, transitionDuration: `${TRAVEL_MS}ms` }}
-            >
-              <span className="relative flex h-11 w-11 items-center justify-center">
-                  {phase === "waiting" && (
-                    <span className="absolute h-8 w-8 animate-ping rounded-full bg-brand-primary/40" />
-                  )}
-                  <span
-                    className={`relative flex items-center justify-center transition-transform ${
-                      phase === "clicking" ? "scale-90" : "scale-100"
-                    }`}
-                  >
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" className="drop-shadow-md">
-                      <path
-                        d="M4 2L4 20L9 15.3L12.4 21.8L15 20.4L11.6 14L18 14L4 2Z"
-                        fill="white"
-                        stroke="#14151A"
-                        strokeWidth="1.3"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </span>
-
-                  {/* Étiquette courte : juste de quoi confirmer ce
-                      qu'on s'apprête à cliquer, sans recouvrir le
-                      contenu de la capture. L'explication complète
-                      est au-dessus du cadre. */}
-                  {phase === "waiting" && step && (
-                    <div
-                      className={`absolute z-20 max-w-[70vw] whitespace-nowrap rounded-full bg-ink px-3 py-1.5 text-left shadow-lg ${
-                        placement.side === "top" ? "bottom-full mb-2.5" : "top-full mt-2.5"
-                      } ${
-                        placement.align === "start"
-                          ? "left-0"
-                          : placement.align === "end"
-                            ? "right-0"
-                            : "left-1/2 -translate-x-1/2"
-                      }`}
-                    >
-                      <p className="text-xs font-medium text-white">{step.tooltip}</p>
-                      <span
-                        className={`absolute h-2.5 w-2.5 rotate-45 bg-ink ${
-                          placement.side === "top" ? "-bottom-1" : "-top-1"
-                        } ${
-                          placement.align === "start"
-                            ? "left-4"
-                            : placement.align === "end"
-                              ? "right-4"
-                              : "left-1/2 -translate-x-1/2"
-                        }`}
-                      />
-                    </div>
-                  )}
-                </span>
-            </button>
+    <div ref={rootRef} className={s.root} onKeyDown={onKeyDown} role="region" aria-label="Démonstration interactive de RH Pilot">
+      <div className={s.frame} data-phase={phase}>
+        <div ref={viewportRef} className={s.viewport} tabIndex={phase === "tour" ? 0 : undefined} aria-label="Écran du logiciel">
+          <div ref={sceneRef} className={s.scene} style={{ aspectRatio: `${step.width} / ${step.height}` }}>
+            <img key={step.image} src={`/demo/${step.image}`} alt={phase === "tour" ? step.title : ""} width={step.width} height={step.height} className={s.screen} loading="lazy" />
+            {phase === "tour" && (
+              <>
+                <div className={s.spotlight} style={{ left: `${step.focus.x}%`, top: `${step.focus.y}%`, width: `${step.focus.width}%`, height: `${step.focus.height}%` }} aria-hidden="true" />
+                <button type="button" className={s.hotspot} style={{ left: `${step.focus.x + step.focus.width / 2}%`, top: `${step.focus.y + step.focus.height / 2}%` }} onClick={next} aria-label={`Continuer la démonstration : ${step.title}`} aria-describedby={titleId}><span /></button>
+              </>
             )}
           </div>
         </div>
-        </div>
-        </div>
-        </div>
 
-        {/* Colonne "Copilote" : l'explication complète, présentée
-            comme une note du Copilote plutôt qu'un simple paragraphe
-            perdu au-dessus de l'écran. En premier sur mobile, pour se
-            lire avant de regarder la capture. */}
-        <div className="order-1 lg:order-2">
-          <div className="rounded-2xl border border-surface-border bg-white p-5 shadow-card">
-            <div className="flex items-center gap-2">
-              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-brand-primary text-xs font-bold text-white">
-                R
-              </span>
-              <span className="text-sm font-semibold text-ink">Copilote RH Pilot</span>
-              <span className="rounded-full bg-brand-primary/10 px-2 py-0.5 text-[10px] font-medium text-brand-primary">
-                IA
-              </span>
+        {phase === "tour" ? (
+          <div ref={bubbleRef} tabIndex={-1} role="group" aria-labelledby={titleId} className={s.bubble} data-side={position.side} style={{ left: position.left, top: position.top, "--arrow": `${position.arrow}px` } as CSSProperties}>
+            <h3 id={titleId}>{step.title}</h3>
+            <p>{step.description}</p>
+            <div className={s.bubbleControls}>
+              <button type="button" className={s.back} onClick={back} disabled={index === 0} aria-label="Étape précédente"><ArrowLeft size={17} /></button>
+              <span>{index + 1} / {STEPS.length}</span>
+              <button type="button" className={s.next} onClick={next}>{index === STEPS.length - 1 ? "Terminer" : "Suivant"}<ArrowRight size={15} /></button>
             </div>
-            <div className="mt-3">
-              {!hasStarted ? (
-                <p className="text-sm leading-relaxed text-ink-soft">
-                  Cliquez sur le bouton pour lancer la visite guidée, capture par capture.
-                </p>
-              ) : isFinished ? (
-                <>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
-                    Et ce n&apos;est pas tout
-                  </p>
-                  <ul className="mt-2 space-y-1.5 text-sm text-ink-soft">
-                    <li className="flex items-start gap-2">
-                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand-primary" />
-                      Parcours personnalisables pour chaque type d&apos;événement RH
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand-primary" />
-                      Rappels automatiques, quotidiens ou hebdomadaires
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand-primary" />
-                      Recherche globale sur les salariés et les tâches
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-brand-primary" />
-                      Et bien d&apos;autres choses à découvrir
-                    </li>
-                  </ul>
-                </>
+          </div>
+        ) : (
+          <div className={s.overlay}>
+            <div ref={panelRef} tabIndex={-1} className={s.welcome} role="group" aria-labelledby={titleId}>
+              <div className={s.mascot}><img src="/illustrations/mascot/intro-push-wave.png" alt="" width={240} height={240} /></div>
+              <p className={s.brand}>RH Pilot</p>
+              <h3 id={titleId}>{phase === "welcome" ? "Découvrez votre espace RH" : "À vous d’essayer."}</h3>
+              <p>{phase === "welcome" ? "Du tableau de bord au calendrier, découvrez comment suivre vos salariés et leurs échéances." : "Créez votre espace et retrouvez ces fonctions avec les données de votre entreprise."}</p>
+              {phase === "welcome" ? (
+                <button type="button" onClick={start} className={s.start}>Démarrer le tour <ArrowRight size={16} /></button>
               ) : (
-                <>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">
-                    Étape {index + 1} / {DEMO_STEPS.length}
-                  </p>
-                  <p className="mt-1.5 text-sm leading-relaxed text-ink-soft">{DEMO_STEPS[index].instruction}</p>
-                </>
+                <><Link href="/sign-up" className={s.start}>Essayer RH Pilot <ArrowRight size={16} /></Link><button type="button" onClick={start} className={s.replay}><RotateCcw size={14} /> Revoir la démonstration</button></>
               )}
             </div>
           </div>
+        )}
+      </div>
+      <div className={s.toolbar}>
+        <span className={s.status} aria-live="polite">{phase === "tour" ? `Étape ${index + 1} sur ${STEPS.length}` : phase === "end" ? <><Check size={14} /> Visite terminée</> : `${STEPS.length} étapes · Données de démonstration`}</span>
+        <div className={s.tools}>
+          {phase !== "welcome" && <button type="button" onClick={reset} aria-label="Recommencer la démonstration"><RotateCcw size={15} /><span>Recommencer</span></button>}
+          <button type="button" onClick={toggleFullscreen} aria-label={expanded ? "Quitter le plein écran" : "Agrandir la démonstration"}>{expanded ? <Minimize2 size={15} /> : <Maximize2 size={15} />}<span>{expanded ? "Réduire" : "Agrandir"}</span></button>
         </div>
       </div>
-
-      {/* Navigation de secours (retour arrière, redémarrage, repères) */}
-      {hasStarted && (
-        <div className="mt-5 flex items-center justify-end gap-3">
-          <Button variant="ghost" className="!px-2.5 !py-2" aria-label="Étape précédente" onClick={handleBack}>
-            <ChevronLeft size={16} />
-          </Button>
-
-          <div className="flex items-center gap-1.5" aria-hidden>
-            {DEMO_STEPS.map((_, i) => (
-              <span
-                key={i}
-                className={`h-1.5 w-6 rounded-full ${i <= index ? "bg-brand-primary/60" : "bg-surface-border"}`}
-              />
-            ))}
-          </div>
-
-          <Button
-            variant="ghost"
-            className="!px-2.5 !py-2"
-            aria-label="Revoir l'introduction"
-            onClick={handleRestart}
-          >
-            <RotateCcw size={16} />
-          </Button>
-        </div>
-      )}
     </div>
   );
 }
