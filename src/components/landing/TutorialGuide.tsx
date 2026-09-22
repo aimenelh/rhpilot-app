@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Check,
   ChevronLeft,
@@ -10,34 +10,26 @@ import {
   RotateCcw,
 } from "lucide-react";
 
+import styles from "./TutorialGuide.module.css";
+
 type TutorialPhase = "intro" | "video" | "outro";
 
 type TutorialStep = {
   id: string;
-  group: string;
   title: string;
   duration: string;
   description: string;
   video: string;
-  introIllustration: string;
-  outroIllustration: string;
-  outroTitle: string;
-  outroText: string;
   points: string[];
 };
 
 const steps: TutorialStep[] = [
   {
     id: "creer-espace",
-    group: "Démarrage",
     title: "Créer son espace RH",
     duration: "2 min 10 s",
     description: "Créer une organisation et prendre ses premiers repères dans RH Pilot.",
     video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/b9a6afe5-5400-42c5-87ba-df9831405748.mp4",
-    introIllustration: "/illustrations/mascot/dashboard.png",
-    outroIllustration: "/illustrations/onboarding/guide-success.svg",
-    outroTitle: "Votre espace RH est prêt",
-    outroText: "Vous savez maintenant créer l’organisation et retrouver les principaux repères de RH Pilot.",
     points: [
       "Créer l’organisation",
       "Consulter le tableau de bord",
@@ -46,15 +38,10 @@ const steps: TutorialStep[] = [
   },
   {
     id: "configurer-organisation",
-    group: "Démarrage",
     title: "Configurer l’organisation",
     duration: "2 min 04 s",
     description: "Renseigner les paramètres utiles au fonctionnement de votre espace RH.",
     video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/c3460ae1-cc9e-4461-831a-2bc02f8b0ebc.mp4",
-    introIllustration: "/illustrations/onboarding/guide-tip.svg",
-    outroIllustration: "/illustrations/mascot/calm.png",
-    outroTitle: "L’organisation est configurée",
-    outroText: "Les informations essentielles de votre entreprise sont en place pour poursuivre la prise en main.",
     points: [
       "Renseigner les informations de l’entreprise",
       "Configurer l’organisation",
@@ -63,15 +50,10 @@ const steps: TutorialStep[] = [
   },
   {
     id: "ajouter-salarie",
-    group: "Salariés",
     title: "Ajouter un salarié",
     duration: "2 min 30 s",
     description: "Créer un dossier salarié et retrouver les informations qui structurent son suivi.",
     video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/3e090827-1ca6-45b4-9995-9c1a4b990119.mp4",
-    introIllustration: "/illustrations/mascot/newhire-handshake.png",
-    outroIllustration: "/illustrations/mascot/hire.png",
-    outroTitle: "Le dossier salarié est créé",
-    outroText: "Vous pouvez maintenant structurer le suivi du salarié et retrouver les informations liées à son parcours.",
     points: [
       "Créer le dossier du salarié",
       "Renseigner les informations du contrat",
@@ -80,15 +62,10 @@ const steps: TutorialStep[] = [
   },
   {
     id: "assigner-taches",
-    group: "Organisation RH",
     title: "Assigner les tâches",
     duration: "1 min 19 s",
     description: "Répartir les actions RH entre les bonnes personnes et suivre leur avancement.",
     video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/45f50d5a-0df6-40dd-b821-f7061fe5eb96.mp4",
-    introIllustration: "/illustrations/illu-checklist.png",
-    outroIllustration: "/illustrations/illu-notification.png",
-    outroTitle: "Les responsabilités sont réparties",
-    outroText: "Chaque action peut maintenant être confiée à la bonne personne et suivie depuis RH Pilot.",
     points: [
       "Choisir un responsable",
       "Répartir les tâches",
@@ -97,15 +74,10 @@ const steps: TutorialStep[] = [
   },
   {
     id: "calendrier-rh",
-    group: "Organisation RH",
     title: "Lire le calendrier RH",
     duration: "4 min 15 s",
     description: "Visualiser les échéances à venir et retrouver rapidement les actions à traiter.",
     video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/21a5f9d0-2a89-4932-84df-55a24df1611b.mp4",
-    introIllustration: "/illustrations/illu-calendrier.png",
-    outroIllustration: "/illustrations/mascot/reminder.png",
-    outroTitle: "Le calendrier devient votre point de repère",
-    outroText: "Vous savez retrouver les échéances du mois et ouvrir les actions qui demandent votre attention.",
     points: [
       "Lire les échéances du mois",
       "Repérer les tâches à venir",
@@ -114,16 +86,11 @@ const steps: TutorialStep[] = [
   },
   {
     id: "ajouter-echeance",
-    group: "Parcours personnalisés",
     title: "Ajouter une échéance",
     duration: "1 min 55 s",
     description:
       "Personnaliser un parcours déjà généré en ajoutant une échéance adaptée à votre organisation.",
     video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/0c4373a5-9fd3-42d1-a33f-824eed926757.mp4",
-    introIllustration: "/illustrations/mascot/create-journey.png",
-    outroIllustration: "/illustrations/mascot/completed-journey.png",
-    outroTitle: "Votre parcours est personnalisé",
-    outroText: "L’échéance ajoutée complète le parcours existant sans repartir de zéro.",
     points: [
       "Ouvrir un parcours existant",
       "Ajouter une nouvelle échéance",
@@ -132,15 +99,10 @@ const steps: TutorialStep[] = [
   },
   {
     id: "suivre-echeances",
-    group: "Parcours personnalisés",
     title: "Suivre les échéances",
     duration: "1 min 02 s",
     description: "Retrouver les actions ajoutées et vérifier leur suivi dans le parcours.",
     video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/4d3e57c2-4b65-45dd-be19-6bb2d5f82979.mp4",
-    introIllustration: "/illustrations/mascot/reminder.png",
-    outroIllustration: "/illustrations/mascot/search.png",
-    outroTitle: "Les échéances restent sous contrôle",
-    outroText: "Vous savez maintenant retrouver les actions ajoutées et vérifier leur avancement dans le parcours.",
     points: [
       "Contrôler les tâches du parcours",
       "Retrouver les dates associées",
@@ -149,15 +111,10 @@ const steps: TutorialStep[] = [
   },
   {
     id: "gerer-absences",
-    group: "Absences",
     title: "Gérer les absences",
     duration: "3 min 55 s",
     description: "Ajouter une absence et la retrouver dans les différentes vues de suivi de l’équipe.",
     video: "https://d2ol7oe51mr4n9.cloudfront.net/user_3JQ1PnqulQZQJHPwS2E3Xg2X2Hk/003d93ac-b32f-48d0-b87b-2d8f2d675564.mp4",
-    introIllustration: "/illustrations/mascot/calm.png",
-    outroIllustration: "/illustrations/illu-salut.png",
-    outroTitle: "Vous avez terminé le guide RH Pilot",
-    outroText: "Vous savez maintenant enregistrer une absence, la retrouver dans le suivi de l’équipe et utiliser les principaux repères présentés dans ce guide.",
     points: [
       "Créer une absence",
       "Ajouter les informations associées",
@@ -172,7 +129,11 @@ function readProgress(): string[] {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter((value) => typeof value === "string") : [];
+    return Array.isArray(parsed)
+      ? [...new Set(parsed.filter((value): value is string =>
+          typeof value === "string" && steps.some((step) => step.id === value),
+        ))]
+      : [];
   } catch {
     return [];
   }
@@ -192,21 +153,6 @@ export function TutorialGuide() {
   const active = steps[activeIndex];
   const progress = Math.round((watched.length / steps.length) * 100);
 
-  const grouped = useMemo(() => {
-    return steps.reduce<Array<{ name: string; items: Array<{ step: TutorialStep; index: number }> }>>(
-      (groups, step, index) => {
-        const last = groups[groups.length - 1];
-        if (!last || last.name !== step.group) {
-          groups.push({ name: step.group, items: [{ step, index }] });
-        } else {
-          last.items.push({ step, index });
-        }
-        return groups;
-      },
-      [],
-    );
-  }, []);
-
   function persist(next: string[]) {
     setWatched(next);
     try {
@@ -223,7 +169,10 @@ export function TutorialGuide() {
 
   function scrollToPanel() {
     window.setTimeout(() => {
-      panelRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      panelRef.current?.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        block: "start",
+      });
     }, 0);
   }
 
@@ -255,7 +204,6 @@ export function TutorialGuide() {
   }
 
   function next() {
-    markWatched();
     if (activeIndex < steps.length - 1) choose(activeIndex + 1);
   }
 
@@ -266,257 +214,115 @@ export function TutorialGuide() {
   }
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[300px_minmax(0,1fr)]">
-      <aside className="h-fit rounded-xl border border-surface-border bg-white p-4 shadow-card lg:sticky lg:top-28">
-        <div className="border-b border-surface-border pb-4">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-semibold text-ink">Votre progression</p>
-            <span className="text-xs font-semibold text-brand-primary">
-              {watched.length} / {steps.length}
-            </span>
-          </div>
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-subtle">
-            <div
-              className="h-full rounded-full bg-brand-primary transition-[width] duration-500"
-              style={{ width: progress + "%" }}
-            />
-          </div>
-          <p className="mt-2 text-xs text-ink-faint">
-            La progression est enregistrée sur ce navigateur.
-          </p>
-        </div>
-
-        <nav className="mt-4 space-y-5" aria-label="Séquences du tutoriel">
-          {grouped.map((group) => (
-            <div key={group.name}>
-              <p className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-faint">
-                {group.name}
-              </p>
-              <div className="space-y-1">
-                {group.items.map(({ step, index }) => {
-                  const isActive = index === activeIndex;
-                  const isWatched = watched.includes(step.id);
-                  return (
-                    <button
-                      key={step.id}
-                      type="button"
-                      onClick={() => choose(index)}
-                      className={[
-                        "flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left transition-colors",
-                        isActive
-                          ? "bg-[#FFF1EC] text-brand-primary"
-                          : "text-ink-soft hover:bg-surface-subtle hover:text-ink",
-                      ].join(" ")}
-                    >
-                      <span
-                        className={[
-                          "flex h-7 w-7 shrink-0 items-center justify-center rounded-full border text-[11px] font-semibold",
-                          isActive
-                            ? "border-brand-primary bg-brand-primary text-white"
-                            : isWatched
-                              ? "border-[#C8E2D9] bg-[#EFF8F4] text-[#27725C]"
-                              : "border-surface-border bg-white text-ink-faint",
-                        ].join(" ")}
-                      >
-                        {isWatched && !isActive ? <Check size={13} /> : index + 1}
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block truncate text-sm font-medium">{step.title}</span>
-                        <span className="mt-0.5 block text-[11px] text-ink-faint">{step.duration}</span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
+    <div className={styles.guide}>
+      <div className={styles.mobileSelect}>
+        <label htmlFor="tutorial-chapter">Choisir une vidéo</label>
+        <select id="tutorial-chapter" value={activeIndex} onChange={(event) => choose(Number(event.target.value))}>
+          {steps.map((step, index) => (
+            <option key={step.id} value={index}>{index + 1}. {step.title} · {step.duration}</option>
           ))}
-        </nav>
+        </select>
+      </div>
 
-        {watched.length > 0 && (
-          <button
-            type="button"
-            onClick={reset}
-            className="mt-5 inline-flex items-center gap-2 px-2 text-xs font-semibold text-ink-faint transition-colors hover:text-ink"
-          >
-            <RotateCcw size={13} />
-            Recommencer le parcours
-          </button>
-        )}
-      </aside>
-
-      <section className="min-w-0">
-        <div ref={panelRef} className="overflow-hidden rounded-xl border border-surface-border bg-white shadow-card">
-          <div className="border-b border-surface-border px-5 py-5 sm:px-7">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand-primary">
-                {active.group} · Séquence {String(activeIndex + 1).padStart(2, "0")}
-              </p>
-              <span className="rounded-full bg-surface-subtle px-3 py-1 text-xs font-semibold text-ink-faint">
-                {active.duration}
-              </span>
-            </div>
-            <h2 className="mt-2 font-display text-2xl font-semibold tracking-[-0.02em] text-ink sm:text-3xl">
-              {active.title}
-            </h2>
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-soft sm:text-base">
-              {active.description}
-            </p>
-          </div>
-
-          {phase === "intro" && (
-            <div className="grid min-h-[430px] items-center gap-8 bg-[#F6F4EE] px-6 py-8 sm:px-9 lg:grid-cols-[1fr_0.92fr] lg:px-12 lg:py-10">
-              <div className="max-w-xl">
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-primary">
-                  Avant de commencer
+      <section ref={panelRef} className={styles.player} aria-label="Lecteur du tutoriel">
+        <div className={styles.stage}>
+          {phase !== "video" && (
+            <div className={styles.cover}>
+              <div className={styles.coverContent}>
+                <p className={styles.chapterNumber}>
+                  {phase === "outro" ? <><Check size={15} /> Vidéo terminée</> : `Tutoriel ${String(activeIndex + 1).padStart(2, "0")} / 08`}
                 </p>
-                <h3 className="mt-3 font-display text-3xl font-semibold tracking-[-0.03em] text-ink sm:text-4xl">
-                  {active.title}
-                </h3>
-                <p className="mt-4 text-base leading-7 text-ink-soft">
-                  {active.description}
+                <h2 className={styles.coverTitle}>
+                  {phase === "outro" ? (activeIndex === steps.length - 1 ? "À vous de jouer." : "On continue ?") : active.title}
+                </h2>
+                <p className={styles.coverDescription}>
+                  {phase === "outro"
+                    ? (activeIndex < steps.length - 1 ? `À suivre : ${steps[activeIndex + 1].title.toLocaleLowerCase("fr")}.` : "Vous pouvez retrouver ces vidéos à tout moment.")
+                    : active.description}
                 </p>
-                <button
-                  type="button"
-                  onClick={startVideo}
-                  className="mt-6 inline-flex min-h-[46px] items-center justify-center gap-2 rounded-lg bg-brand-primary px-5 text-sm font-semibold text-white transition-colors hover:bg-brand-primary-dark"
-                >
-                  <Play size={17} fill="currentColor" />
-                  Lancer la vidéo
-                </button>
-              </div>
-              <div className="flex min-h-[260px] items-center justify-center overflow-hidden rounded-2xl border border-[#E7DED6] bg-white/80 p-5">
-                <img
-                  src={active.introIllustration}
-                  alt=""
-                  aria-hidden="true"
-                  className="max-h-[300px] w-full object-contain"
-                />
-              </div>
-            </div>
-          )}
-
-          {phase === "video" && (
-            <div className="bg-[#111318] p-2 sm:p-3">
-              <video
-                key={active.id}
-                ref={videoRef}
-                controls
-                playsInline
-                preload="metadata"
-                onEnded={() => {
-                  markWatched();
-                  setPhase("outro");
-                }}
-                className="aspect-video w-full rounded-lg bg-black"
-              >
-                <source src={active.video} type="video/mp4" />
-                Votre navigateur ne peut pas lire cette vidéo.
-              </video>
-            </div>
-          )}
-
-          {phase === "outro" && (
-            <div className="grid min-h-[430px] items-center gap-8 bg-[#FFF5EF] px-6 py-8 sm:px-9 lg:grid-cols-[1fr_0.92fr] lg:px-12 lg:py-10">
-              <div className="max-w-xl">
-                <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-[#27725C] shadow-sm">
-                  <CircleCheck size={15} />
-                  Séquence terminée
-                </div>
-                <h3 className="mt-4 font-display text-3xl font-semibold tracking-[-0.03em] text-ink sm:text-4xl">
-                  {active.outroTitle}
-                </h3>
-                <p className="mt-4 text-base leading-7 text-ink-soft">
-                  {active.outroText}
-                </p>
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <button
-                    type="button"
-                    onClick={replayVideo}
-                    className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-surface-border bg-white px-4 text-sm font-semibold text-ink transition-colors hover:bg-surface-subtle"
-                  >
-                    <RotateCcw size={15} />
-                    Revoir la séquence
-                  </button>
-                  {activeIndex < steps.length - 1 && (
-                    <button
-                      type="button"
-                      onClick={() => choose(activeIndex + 1)}
-                      className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-lg bg-brand-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-primary-dark"
-                    >
-                      Séquence suivante
-                      <ChevronRight size={16} />
+                <div className={styles.coverActions}>
+                  {phase === "intro" ? (
+                    <button type="button" onClick={startVideo} className={styles.primaryButton}>
+                      <Play size={17} fill="currentColor" /> Regarder la vidéo
+                    </button>
+                  ) : activeIndex < steps.length - 1 ? (
+                    <button type="button" onClick={next} className={styles.primaryButton}>
+                      Vidéo suivante <ChevronRight size={17} />
+                    </button>
+                  ) : (
+                    <a href="/dashboard" className={styles.primaryButton}>Ouvrir RH Pilot <ChevronRight size={17} /></a>
+                  )}
+                  {phase === "outro" && (
+                    <button type="button" onClick={replayVideo} className={styles.textButton}>
+                      <RotateCcw size={15} /> Revoir
                     </button>
                   )}
                 </div>
+                {phase === "intro" && <p className={styles.coverDuration}>{active.duration}</p>}
               </div>
-              <div className="flex min-h-[260px] items-center justify-center overflow-hidden rounded-2xl border border-[#F0D9CC] bg-white/80 p-5">
-                <img
-                  src={active.outroIllustration}
-                  alt=""
-                  aria-hidden="true"
-                  className="max-h-[300px] w-full object-contain"
-                />
-              </div>
+              <img src="/illustrations/tutorials/mascot-presenter.webp" alt="" width={1536} height={1024} className={styles.coverArt} />
             </div>
           )}
-
-          <div className="grid gap-6 px-5 py-6 sm:px-7 md:grid-cols-[1fr_auto] md:items-end">
-            <div>
-              <p className="text-sm font-semibold text-ink">Dans cette démonstration</p>
-              <ul className="mt-3 grid gap-2">
-                {active.points.map((point) => (
-                  <li key={point} className="flex items-start gap-2.5 text-sm text-ink-soft">
-                    <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#FFF1EC] text-brand-primary">
-                      <Check size={12} />
-                    </span>
-                    {point}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => markWatched()}
-              className={[
-                "inline-flex min-h-[42px] items-center justify-center gap-2 rounded-lg border px-4 py-2.5 text-sm font-semibold transition-colors",
-                watched.includes(active.id)
-                  ? "border-[#C8E2D9] bg-[#EFF8F4] text-[#27725C]"
-                  : "border-surface-border bg-white text-ink hover:bg-surface-subtle",
-              ].join(" ")}
+          {phase === "video" && (
+            <video
+              key={active.id}
+              ref={videoRef}
+              aria-label={active.title}
+              controls
+              playsInline
+              preload="metadata"
+              onEnded={() => { markWatched(); setPhase("outro"); }}
+              className={styles.video}
             >
-              {watched.includes(active.id) ? <CircleCheck size={16} /> : <Play size={15} />}
-              {watched.includes(active.id) ? "Séquence vue" : "Marquer comme vue"}
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between gap-3 border-t border-surface-border px-5 py-4 sm:px-7">
-            <button
-              type="button"
-              onClick={previous}
-              disabled={activeIndex === 0}
-              className="inline-flex min-h-[42px] items-center gap-2 rounded-lg px-3 text-sm font-semibold text-ink-soft transition-colors hover:bg-surface-subtle disabled:cursor-not-allowed disabled:opacity-35"
-            >
-              <ChevronLeft size={17} />
-              Précédente
-            </button>
-
-            <p className="hidden text-xs text-ink-faint sm:block">
-              {activeIndex + 1} / {steps.length}
-            </p>
-
-            <button
-              type="button"
-              onClick={next}
-              disabled={activeIndex === steps.length - 1}
-              className="inline-flex min-h-[42px] items-center gap-2 rounded-lg bg-brand-primary px-4 text-sm font-semibold text-white transition-colors hover:bg-brand-primary-dark disabled:cursor-not-allowed disabled:opacity-35"
-            >
-              Suivante
-              <ChevronRight size={17} />
-            </button>
-          </div>
+              <source src={active.video} type="video/mp4" />
+              Votre navigateur ne peut pas lire cette vidéo.
+            </video>
+          )}
         </div>
+
+        {phase !== "intro" && (
+          <div className={styles.videoCaption}>
+            <h2>{active.title}</h2>
+            <p>{active.description}</p>
+          </div>
+        )}
+
+        <div className={styles.playerFooter}>
+          <button type="button" onClick={previous} disabled={activeIndex === 0} className={styles.textButton} aria-label="Vidéo précédente">
+            <ChevronLeft size={17} /> Précédente
+          </button>
+          <button type="button" onClick={() => markWatched()} className={styles.watchedButton} aria-pressed={watched.includes(active.id)}>
+            <CircleCheck size={17} /> {watched.includes(active.id) ? "Vidéo vue" : "Marquer comme vue"}
+          </button>
+          <button type="button" onClick={next} disabled={activeIndex === steps.length - 1} className={styles.textButton} aria-label="Vidéo suivante">
+            Suivante <ChevronRight size={17} />
+          </button>
+        </div>
+        <details className={styles.details} key={active.id}>
+          <summary>Dans cette vidéo</summary>
+          <ul>{active.points.map((point) => <li key={point}>{point}</li>)}</ul>
+        </details>
       </section>
+
+      <aside className={styles.chapters} aria-label="Liste des tutoriels">
+        <div className={styles.chaptersHeading}><h2>Les vidéos</h2><span>8 vidéos · 19 min</span></div>
+        <nav aria-label="Vidéos du tutoriel">
+          {steps.map((step, index) => (
+            <button key={step.id} type="button" onClick={() => choose(index)} aria-current={index === activeIndex ? "step" : undefined} className={styles.chapter}>
+              <span className={styles.chapterIndex}>{watched.includes(step.id) ? <Check size={16} aria-label="Vue" /> : String(index + 1).padStart(2, "0")}</span>
+              <span><span className={styles.chapterTitle}>{step.title}</span><span className={styles.chapterDuration}>{step.duration}</span></span>
+              {index === activeIndex && <Play size={13} fill="currentColor" className={styles.chapterPlay} />}
+            </button>
+          ))}
+        </nav>
+        <div className={styles.progress}>
+          <p>{watched.length} sur {steps.length} vidéos vues</p>
+          <div className={styles.progressTrack} role="progressbar" aria-label="Vidéos vues" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={watched.length}>
+            <span style={{ width: progress + "%" }} />
+          </div>
+          {watched.length > 0 && <button type="button" onClick={reset} className={styles.resetButton}>Réinitialiser</button>}
+        </div>
+      </aside>
     </div>
   );
 }

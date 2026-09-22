@@ -1,0 +1,82 @@
+.page { max-width: 1280px; margin: 0 auto; padding: 44px 32px 72px; }
+.header { display: flex; justify-content: space-between; align-items: center; gap: 28px; padding-bottom: 32px; }
+.pageTitle { font-family: var(--font-fraunces), Georgia, serif; font-size: clamp(2rem, 4vw, 2.75rem); font-weight: 500; letter-spacing: -.045em; line-height: 1.1; }
+.pageIntro { margin-top: 12px; color: #65635f; font-size: 15px; line-height: 1.65; }
+.author { display: flex; align-items: center; gap: 12px; max-width: 350px; }
+.author img { width: 48px; height: 48px; flex-shrink: 0; border-radius: 50%; object-fit: cover; }
+.author p { font-size: 12px; line-height: 1.6; color: #65635f; }
+.author p:first-child { font-size: 13px; color: #242520; margin-bottom: 2px; }
+.author strong { font-weight: 600; }
+.guide { display: grid; grid-template-columns: minmax(0, 1fr) 282px; gap: 30px; align-items: start; }
+.mobileSelect { display: none; }
+.player { min-width: 0; scroll-margin-top: 125px; }
+.stage { overflow: hidden; border-radius: 10px; background: #f6f3eb; }
+.cover { display: grid; grid-template-columns: 1fr 1fr; align-items: center; min-height: 440px; padding: 32px 12px 32px 36px; }
+.coverContent { position: relative; z-index: 1; }
+.chapterNumber { display: flex; align-items: center; gap: 7px; margin-bottom: 28px; font-size: 12px; font-weight: 600; color: #777165; }
+.coverTitle { font-family: var(--font-fraunces), Georgia, serif; font-size: clamp(1.8rem, 2.6vw, 2.35rem); font-weight: 500; line-height: 1.13; letter-spacing: -.035em; text-wrap: balance; }
+.coverDescription { margin-top: 16px; max-width: 330px; font-size: 14px; line-height: 1.7; color: #615e56; }
+.coverActions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-top: 24px; }
+.primaryButton { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 12px 17px; border-radius: 6px; background: #e8432e; color: #fff; font-size: 13px; font-weight: 600; transition: background .15s; }
+.primaryButton:hover { background: #c93322; }
+.coverDuration { font-size: 12px; color: #777165; margin-top: 10px; }
+.coverArt { width: 100%; height: auto; mix-blend-mode: multiply; }
+.video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #111; }
+.videoCaption { padding-top: 20px; }
+.videoCaption h2 { font-size: 20px; font-weight: 600; line-height: 1.4; }
+.videoCaption p { margin-top: 8px; color: #65635f; font-size: 14px; line-height: 1.6; }
+.playerFooter { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px 0; border-bottom: 1px solid #e9e7e1; }
+.textButton, .watchedButton { display: inline-flex; justify-content: center; align-items: center; gap: 6px; min-height: 44px; padding: 5px 3px; color: #565850; font-size: 12px; font-weight: 500; }
+.textButton:hover, .watchedButton:hover { color: #c93322; }
+.textButton:disabled { opacity: .35; cursor: default; }
+.watchedButton[aria-pressed="true"] { color: #27725c; }
+.details { padding-top: 17px; color: #65635f; font-size: 13px; }
+.details summary { cursor: pointer; width: fit-content; min-height: 30px; }
+.details ul { list-style: disc; padding: 4px 0 8px 20px; line-height: 1.9; }
+.chaptersHeading { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; padding: 4px 0 17px; }
+.chaptersHeading h2 { font-weight: 600; font-size: 15px; }
+.chaptersHeading > span { color: #777165; font-size: 11px; white-space: nowrap; }
+.chapter { display: flex; align-items: center; gap: 12px; padding: 13px 11px; width: 100%; text-align: left; border-radius: 6px; color: #363730; transition: background .15s; }
+.chapter:hover { background: #f8f7f3; }
+.chapter[aria-current="step"] { background: #fff0e9; color: #bb3524; }
+.chapterIndex { flex-shrink: 0; width: 21px; color: #888278; font-size: 12px; font-variant-numeric: tabular-nums; }
+.chapter[aria-current="step"] .chapterIndex { color: inherit; }
+.chapterTitle { display: block; font-size: 13px; line-height: 1.4; font-weight: 500; }
+.chapterDuration { display: block; margin-top: 4px; font-size: 11px; color: #777165; }
+.chapterPlay { margin-left: auto; flex-shrink: 0; }
+.progress { margin-top: 17px; padding: 18px 11px 0; border-top: 1px solid #e9e7e1; }
+.progress p { font-size: 12px; color: #777165; }
+.progressTrack { height: 3px; margin-top: 10px; border-radius: 3px; overflow: hidden; background: #eeece6; }
+.progressTrack span { display: block; height: 100%; background: #e8432e; }
+.resetButton { margin-top: 6px; min-height: 32px; font-size: 11px; color: #777165; text-decoration: underline; text-underline-offset: 3px; }
+.guide button:focus-visible, .guide a:focus-visible, .guide select:focus-visible, .guide summary:focus-visible { outline: 2px solid #c93322; outline-offset: 4px; }
+@media (max-width: 1023px) {
+  .header { align-items: flex-start; }
+  .author { max-width: 280px; }
+  .guide { display: flex; flex-direction: column; gap: 18px; }
+  .mobileSelect { display: block; width: 100%; }
+  .mobileSelect label { display: block; margin-bottom: 8px; font-size: 12px; font-weight: 600; }
+  .mobileSelect select { width: 100%; min-height: 46px; padding: 10px 30px 10px 12px; border: 1px solid #e0ddd5; border-radius: 6px; background: white; color: #242520; font-size: 14px; }
+  .player { width: 100%; }
+  .chapters { display: none; }
+  .cover { min-height: 370px; }
+  .coverTitle { font-size: 2.1rem; }
+}
+@media (max-width: 639px) {
+  .page { padding: 28px 20px 48px; }
+  .header { flex-direction: column; gap: 20px; padding-bottom: 26px; }
+  .pageIntro { font-size: 14px; margin-top: 10px; }
+  .author { max-width: none; }
+  .author img { width: 40px; height: 40px; }
+  .author p { font-size: 11px; }
+  .cover { grid-template-columns: 1fr; min-height: 0; padding: 25px 24px 10px; }
+  .chapterNumber { margin-bottom: 17px; }
+  .coverTitle { font-size: 1.9rem; }
+  .coverDescription { margin-top: 12px; font-size: 13px; }
+  .coverActions { margin-top: 20px; }
+  .coverArt { max-width: 270px; height: 175px; object-fit: contain; justify-self: center; margin-top: 5px; }
+  .coverDuration { margin-top: 8px; }
+  .playerFooter { flex-wrap: wrap; }
+  .watchedButton { order: 3; flex-basis: 100%; min-height: 36px; }
+  .details { padding-top: 14px; }
+}
