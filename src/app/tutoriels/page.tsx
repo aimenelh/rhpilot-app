@@ -20,7 +20,7 @@ export default function TutorielsPage() {
             <p className={styles.pageIntro}>Retrouvez les principales fonctions de RH Pilot en vidéo.</p>
           </div>
           <div className={styles.author}>
-            <img src="/team/maxime-dekens.jpg" alt="Maxime Dekens" width={48} height={48} />
+            <img src="/team/maxime-dekens-v2.jpg" alt="Maxime Dekens" width={48} height={48} />
             <div>
               <p>Réalisés avec <strong>Maxime Dekens</strong></p>
               <p>Assistant RH dans le domaine de l’hôtellerie</p>
