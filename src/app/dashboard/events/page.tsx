@@ -13,6 +13,7 @@ import { Mascot } from "@/components/Mascot";
 import { formatDate } from "@/lib/format";
 import { getEventTemplateDotColor } from "@/lib/eventTemplateStyle";
 import { summarizeParcours } from "@/lib/parcoursSummary";
+import { isProbationHistoricalAtEntry } from "@/lib/probationTracking";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export default async function EventsPage({
 
   const query = searchParams.q?.trim() ?? "";
 
-  const events = await prisma.employeeEvent.findMany({
+  const fetchedEvents = await prisma.employeeEvent.findMany({
     where: {
       organizationId: membership.organizationId,
       employee: { deletedAt: null },
@@ -50,6 +51,14 @@ export default async function EventsPage({
     },
     orderBy: { createdAt: "desc" },
   });
+
+  const events = fetchedEvents.filter(
+    (event) =>
+      !(
+        event.eventTemplate.key === "fin_periode_essai" &&
+        isProbationHistoricalAtEntry(event.employee)
+      )
+  );
 
   return (
     <div className="max-w-5xl">

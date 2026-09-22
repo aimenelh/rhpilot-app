@@ -30,6 +30,7 @@ export function TriggerEventForm({
   eventTemplates,
   employee,
   conventionCollective,
+  probationTrackable = true,
 }: {
   action: (state: TriggerEventFormState, formData: FormData) => Promise<TriggerEventFormState>;
   eventTemplates: { key: string; label: string }[];
@@ -39,6 +40,7 @@ export function TriggerEventForm({
     probationDurationUnit: "DAYS" | "WEEKS" | "MONTHS" | null;
   };
   conventionCollective?: string | null;
+  probationTrackable?: boolean;
 }) {
   const [state, formAction] = useFormState<TriggerEventFormState, FormData>(action, undefined);
   const today = new Date().toISOString().slice(0, 10);
@@ -101,12 +103,20 @@ export function TriggerEventForm({
               <option value="" disabled>
                 Choisir...
               </option>
-              {eventTemplates.map((template) => (
-                <option key={template.key} value={template.key}>
-                  {template.label}
-                </option>
-              ))}
+              {eventTemplates
+                .filter((template) => probationTrackable || template.key !== "fin_periode_essai")
+                .map((template) => (
+                  <option key={template.key} value={template.key}>
+                    {template.label}
+                  </option>
+                ))}
             </Select>
+            {!probationTrackable && (
+              <p className="mt-1 text-xs text-ink-faint">
+                La période d&apos;essai calculée est déjà terminée : RH Pilot ne propose plus
+                ce parcours comme action active pour ce salarié.
+              </p>
+            )}
           </div>
           <div className="flex-1">
             <Label htmlFor="triggerDate">Date de l&apos;événement</Label>

@@ -11,8 +11,14 @@ import { Card } from "@/components/ui/Card";
 import { ProgressBar } from "@/components/ui/ProgressBar";
 import { Mascot } from "@/components/Mascot";
 import { getUserDisplayName } from "@/lib/displayName";
-import { formatDate, addDuration, formatDuration } from "@/lib/format";
+import { formatDate, formatDuration } from "@/lib/format";
 import { isOverdue, daysUntil } from "@/lib/urgency";
+import {
+  getProbationEndDate,
+  isProbationActive,
+  isProbationHistoricalAtEntry,
+  shouldOfferProbationWorkflow,
+} from "@/lib/probationTracking";
 import { TriangleAlert, Hourglass } from "lucide-react";
 import { getEventTemplateDotColor } from "@/lib/eventTemplateStyle";
 import { summarizeParcours } from "@/lib/parcoursSummary";
@@ -88,6 +94,18 @@ export default async function EmployeeDetailPage({
 
   const medicalVisitOverdue =
     employee.nextMedicalVisitDate && isOverdue(employee.nextMedicalVisitDate, "TODO");
+
+  const probationEndDate = getProbationEndDate(employee);
+  const probationHistoricalAtEntry = isProbationHistoricalAtEntry(employee);
+  const probationActive = isProbationActive(employee);
+  const probationTrackable = shouldOfferProbationWorkflow(employee);
+  const visibleEmployeeEvents = employeeEvents.filter(
+    (event) =>
+      !(
+        event.eventTemplate.key === "fin_periode_essai" &&
+        probationHistoricalAtEntry
+      )
+  );
 
   return (
     <div className="max-w-3xl">
@@ -188,47 +206,38 @@ export default async function EmployeeDetailPage({
         </Card>
       )}
 
-      {/* Carte "Période d'essai" laissée telle quelle : aucune pose de
-          mascotte dédiée n'existe encore pour ce thème. */}
-      {employee.probationDuration && employee.probationDurationUnit && (
-        (() => {
-          const probationEndDate = addDuration(
-            employee.hireDate,
-            employee.probationDuration,
-            employee.probationDurationUnit
-          );
-          const overdue = isOverdue(probationEndDate, "TODO");
-          return (
-            <Card
-              className={`mt-4 flex items-center gap-3 ${
-                overdue ? "border-accent-rose/30 bg-accent-rose/5" : "border-brand-primary/20 bg-brand-primary/5"
-              }`}
-              compact
-            >
-              <span
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
-                  overdue ? "bg-accent-rose/10 text-accent-rose" : "bg-brand-primary/10 text-brand-primary"
-                }`}
-              >
-                <Hourglass size={16} />
-              </span>
-              <div>
-                <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
-                  Période d&apos;essai
-                </p>
-                <p className="text-sm font-semibold text-ink">
-                  {formatDuration(employee.probationDuration, employee.probationDurationUnit)},
-                  fin prévue le {formatDate(probationEndDate)}
-                  {overdue && (
-                    <span className="ml-2 font-normal text-accent-rose">
-                      (dépassée de {Math.abs(daysUntil(probationEndDate))} jours)
-                    </span>
-                  )}
-                </p>
-              </div>
-            </Card>
-          );
-        })()
+      {probationEndDate && !probationHistoricalAtEntry && (
+        <Card
+          className={`mt-4 flex items-center gap-3 ${
+            probationActive
+              ? "border-brand-primary/20 bg-brand-primary/5"
+              : "border-surface-border bg-surface-subtle"
+          }`}
+          compact
+        >
+          <span
+            className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+              probationActive
+                ? "bg-brand-primary/10 text-brand-primary"
+                : "bg-white text-ink-faint"
+            }`}
+          >
+            <Hourglass size={16} />
+          </span>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-ink-faint">
+              Période d&apos;essai
+            </p>
+            <p className="text-sm font-semibold text-ink">
+              {formatDuration(employee.probationDuration!, employee.probationDurationUnit!)},{" "}
+              {probationActive ? (
+                <>fin prévue le {formatDate(probationEndDate)}</>
+              ) : (
+                <>terminée le {formatDate(probationEndDate)}</>
+              )}
+            </p>
+          </div>
+        </Card>
       )}
 
       <PayrollProfileSection
@@ -265,11 +274,12 @@ export default async function EmployeeDetailPage({
               probationDurationUnit: employee.probationDurationUnit,
             }}
             conventionCollective={organization?.conventionCollective}
+            probationTrackable={probationTrackable}
           />
         </div>
-        {employeeEvents.length > 0 && (
+        {visibleEmployeeEvents.length > 0 && (
           <div className="mt-3 flex flex-col gap-3">
-            {employeeEvents.map((event) => {
+            {visibleEmployeeEvents.map((event) => {
               const doneCount = event.tasks.filter((task) => task.status === "DONE").length;
               const summary = summarizeParcours(event.tasks);
               return (

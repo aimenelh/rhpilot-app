@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Label, Select, FieldHint } from "@/components/ui/Field";
 import type { EmployeeFormState } from "./actions";
 import { isWeekend } from "@/lib/format";
+import { isProbationActive } from "@/lib/probationTracking";
 
 type ManagerOption = { id: string; label: string };
 
@@ -101,6 +102,21 @@ function getLegalProbationSuggestion(
     };
   }
   return null;
+}
+
+function isProbationSuggestionRelevant(
+  hireDate: string,
+  suggestion: { duration: string; unit: string }
+): boolean {
+  if (!hireDate) return true;
+  const parsedHireDate = new Date(`${hireDate}T00:00:00`);
+  if (Number.isNaN(parsedHireDate.getTime())) return true;
+
+  return isProbationActive({
+    hireDate: parsedHireDate,
+    probationDuration: Number(suggestion.duration),
+    probationDurationUnit: suggestion.unit as "DAYS" | "WEEKS" | "MONTHS",
+  });
 }
 
 // Article L6222-18 : période probatoire de l'apprenti fixée à 45 jours
@@ -244,7 +260,7 @@ export function EmployeeForm({
       weeksCompany,
       weeksCfa
     );
-    if (suggestion) {
+    if (suggestion && isProbationSuggestionRelevant(hireDate, suggestion)) {
       setProbationDuration(suggestion.duration);
       setProbationDurationUnit(suggestion.unit);
     } else {
@@ -252,7 +268,7 @@ export function EmployeeForm({
     }
   }, [contractType, professionalCategory, hireDate, contractEndDate, weeksCompany, weeksCfa, probationTouched]);
 
-  const legalSuggestion = getLegalProbationSuggestion(
+  const rawLegalSuggestion = getLegalProbationSuggestion(
     contractType,
     professionalCategory,
     hireDate,
@@ -260,6 +276,9 @@ export function EmployeeForm({
     weeksCompany,
     weeksCfa
   );
+  const probationSuggestionRelevant =
+    rawLegalSuggestion !== null && isProbationSuggestionRelevant(hireDate, rawLegalSuggestion);
+  const legalSuggestion = probationSuggestionRelevant ? rawLegalSuggestion : null;
 
   return (
     <Card>
@@ -455,7 +474,14 @@ export function EmployeeForm({
               <option value="MONTHS">Mois</option>
             </Select>
           </div>
-          {legalSuggestion ? (
+          {rawLegalSuggestion && !probationSuggestionRelevant ? (
+            <FieldHint>
+              La date d&apos;embauche place la période d&apos;essai théorique dans le passé.
+              RH Pilot ne la pré-remplit pas et ne la remontera pas comme une alerte active.
+              Vous pouvez toutefois renseigner une durée manuellement si vous souhaitez la
+              conserver dans le dossier du salarié.
+            </FieldHint>
+          ) : legalSuggestion ? (
             <FieldHint>{legalSuggestion.hint}</FieldHint>
           ) : contractType === "PROFESSIONNALISATION" ? (
             <FieldHint>

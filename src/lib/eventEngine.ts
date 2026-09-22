@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { FunctionalRole, FunctionalRoleResolution, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { shouldOfferProbationWorkflow } from "@/lib/probationTracking";
 
 /**
  * Résout le responsable réel d'une tâche à partir de son rôle de
@@ -52,6 +53,15 @@ export async function triggerEmployeeEvent({
       where: { id: employeeId, organizationId, deletedAt: null },
     });
     if (!employee) throw new Error("Salarié introuvable dans cette organisation.");
+
+    if (
+      eventTemplateKey === "fin_periode_essai" &&
+      !shouldOfferProbationWorkflow(employee)
+    ) {
+      throw new Error(
+        "La période d'essai calculée est déjà terminée. RH Pilot ne crée pas de nouveau parcours actif pour une échéance historique."
+      );
+    }
 
     // Gabarit non archivé uniquement : un gabarit désactivé ne doit
     // plus pouvoir être déclenché pour un nouveau plan, même si des

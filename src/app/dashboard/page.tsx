@@ -22,6 +22,7 @@ import { formatRelativeDueDate, isOverdue } from "@/lib/urgency";
 import { getUserDisplayName } from "@/lib/displayName";
 import { DidYouKnowCard } from "@/components/DidYouKnowCard";
 import { AskAboutOrganization } from "@/components/AskAboutOrganization";
+import { isProbationHistoricalAtEntry } from "@/lib/probationTracking";
 
 export const dynamic = "force-dynamic";
 
@@ -29,14 +30,24 @@ type AttentionReason = "overdue" | "unassigned" | "soon";
 type OpenTask = Awaited<ReturnType<typeof getOpenTasks>>[number];
 
 async function getOpenTasks(organizationId: string) {
-  return prisma.task.findMany({
+  const tasks = await prisma.task.findMany({
     where: {
       organizationId,
       status: { notIn: ["DONE", "CANCELLED"] },
       employeeEvent: { employee: { deletedAt: null } },
     },
-    include: { employeeEvent: { include: { employee: true } } },
+    include: {
+      employeeEvent: { include: { employee: true, eventTemplate: true } },
+    },
   });
+
+  return tasks.filter(
+    (task) =>
+      !(
+        task.employeeEvent.eventTemplate.key === "fin_periode_essai" &&
+        isProbationHistoricalAtEntry(task.employeeEvent.employee)
+      )
+  );
 }
 
 function getReason(task: OpenTask): AttentionReason | null {
