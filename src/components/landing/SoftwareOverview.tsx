@@ -116,19 +116,13 @@ export function SoftwareOverview() {
         ))}
         <section id="demo" className={`${s.section} ${s.demo}`}>
           <div className={s.wrap}>
-            <p className={s.eyebrow}>Démonstration guidée</p>
-            <h2 className={s.title}>
-              Suivez un parcours,
-              <br />
-              du début à la suite.
-            </h2>
+            <h2 className={s.title}>Découvrez RH Pilot en action.</h2>
             <p className={`${s.copy} mb-8`}>
-              Un exemple illustré, à parcourir à votre rythme. Les écrans
-              présentent des données de démonstration.
+              Explorez les principales fonctions du logiciel en quelques clics.
             </p>
             <InteractiveDemo />
-            <Link href="/services?demo=1" className={s.textLink}>
-              Découvrir aussi l’expérience interactive →
+            <Link href="/tutoriels" className={s.textLink}>
+              Voir les tutoriels vidéo →
             </Link>
           </div>
         </section>
