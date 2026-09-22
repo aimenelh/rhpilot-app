@@ -10,7 +10,7 @@
 .guide { display: grid; grid-template-columns: minmax(0, 1fr) 282px; gap: 30px; align-items: start; }
 .mobileSelect { display: none; }
 .player { min-width: 0; scroll-margin-top: 125px; }
-.stage { overflow: hidden; border-radius: 10px; background: #f6f3eb; }
+.stage { overflow: hidden; border-radius: 10px; background: #f5f2ea; }
 .cover { display: grid; grid-template-columns: 1fr 1fr; align-items: center; min-height: 440px; padding: 32px 12px 32px 36px; }
 .coverContent { position: relative; z-index: 1; }
 .chapterNumber { display: flex; align-items: center; gap: 7px; margin-bottom: 28px; font-size: 12px; font-weight: 600; color: #777165; }
@@ -20,7 +20,7 @@
 .primaryButton { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 12px 17px; border-radius: 6px; background: #e8432e; color: #fff; font-size: 13px; font-weight: 600; transition: background .15s; }
 .primaryButton:hover { background: #c93322; }
 .coverDuration { font-size: 12px; color: #777165; margin-top: 10px; }
-.coverArt { width: 100%; height: auto; mix-blend-mode: multiply; }
+.coverArt { width: 100%; height: auto; }
 .video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #111; }
 .videoCaption { padding-top: 20px; }
 .videoCaption h2 { font-size: 20px; font-weight: 600; line-height: 1.4; }
