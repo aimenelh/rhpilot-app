@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership } from "@/lib/auth";
+import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
 
 const RESULTS_LIMIT = 6;
 
@@ -37,7 +38,7 @@ export async function GET(request: Request) {
       where: {
         organizationId: membership.organizationId,
         label: { contains: query, mode: "insensitive" },
-        employeeEvent: { employee: { deletedAt: null } },
+        ...ACTIVE_TASK_SCOPE,
       },
       select: {
         id: true,
