@@ -23,7 +23,19 @@ export async function GET() {
   // Séquentiel volontairement : l'export est ponctuel et potentiellement
   // volumineux. Éviter une rafale de requêtes protège le petit pool de
   // connexions PostgreSQL observé en production.
-  const organization = await prisma.organization.findUnique({ where: { id: organizationId } });
+  const organization = await prisma.organization.findUnique({
+    where: { id: organizationId },
+    select: {
+      id: true,
+      name: true,
+      siret: true,
+      conventionCollective: true,
+      collectiveAgreementId: true,
+      createdAt: true,
+      updatedAt: true,
+      deletedAt: true,
+    },
+  });
 
   const memberships = await prisma.membership.findMany({
     where: { organizationId },
