@@ -139,6 +139,9 @@ export async function generateDemoOrganization() {
   const membership = await getCurrentMembership();
   const user = await getCurrentUser();
   if (!membership || !user) throw new Error("Non authentifié ou aucune organisation active");
+  if (membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN") {
+    throw new Error("Seuls les propriétaires et administrateurs peuvent générer les données de démonstration.");
+  }
 
   const organizationId = membership.organizationId;
   const periodStart = startOfCurrentMonth();
@@ -239,6 +242,9 @@ export async function archiveAllEmployees() {
   const membership = await getCurrentMembership();
   const user = await getCurrentUser();
   if (!membership || !user) throw new Error("Non authentifié ou aucune organisation active");
+  if (membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN") {
+    throw new Error("Seuls les propriétaires et administrateurs peuvent archiver tous les salariés.");
+  }
 
   const result = await prisma.employee.updateMany({ where: { organizationId: membership.organizationId, deletedAt: null }, data: { deletedAt: new Date() } });
   await prisma.auditLog.create({
