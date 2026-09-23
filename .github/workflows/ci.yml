@@ -52,5 +52,13 @@ jobs:
           src/lib/payroll/payroll-output-consistency.test.ts
           src/lib/payroll/dsn-p26v01.test.ts
           src/lib/payroll/dsn-p26v01-complete.test.ts
+      - name: Run core RH regression tests
+        run: >-
+          npx vitest run
+          src/lib/notificationSchedule.test.ts
+          src/lib/probationTracking.test.ts
+          src/lib/urgency.test.ts
+          src/lib/parcoursSummary.test.ts
+          src/lib/employeeCsv.test.ts
       - name: Build application
         run: npx prisma generate && npx next build
