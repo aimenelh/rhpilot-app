@@ -36,6 +36,9 @@ export async function bulkTriggerEvents(
   const membership = await getCurrentMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
+  if (membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN") {
+    return { error: "Seuls les propriétaires et administrateurs peuvent déclencher des parcours en masse." };
+  }
 
   const eventTemplateKey = String(formData.get("eventTemplateKey") ?? "").trim();
   const rawText = String(formData.get("bulkText") ?? "");
