@@ -23,6 +23,7 @@ import { getUserDisplayName } from "@/lib/displayName";
 import { DidYouKnowCard } from "@/components/DidYouKnowCard";
 import { AskAboutOrganization } from "@/components/AskAboutOrganization";
 import { isProbationHistoricalAtEntry } from "@/lib/probationTracking";
+import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ async function getOpenTasks(organizationId: string) {
     where: {
       organizationId,
       status: { notIn: ["DONE", "CANCELLED"] },
-      employeeEvent: { employee: { deletedAt: null } },
+      ...ACTIVE_TASK_SCOPE,
     },
     include: {
       employeeEvent: { include: { employee: true, eventTemplate: true } },
@@ -117,7 +118,7 @@ export default async function DashboardPage({
         where: { organizationId, employee: { deletedAt: null }, deletedAt: null },
       }),
       prisma.task.count({
-        where: { organizationId, status: "DONE", employeeEvent: { employee: { deletedAt: null } } },
+        where: { organizationId, status: "DONE", ...ACTIVE_TASK_SCOPE },
       }),
       getOpenTasks(organizationId),
       prisma.membership.count({ where: { organizationId, deletedAt: null } }),

@@ -6,6 +6,7 @@ import { getAnomalies } from "@/lib/anomalies";
 import { askAboutOrganization } from "@/lib/ai";
 import { formatDate, addDuration } from "@/lib/format";
 import { daysUntil } from "@/lib/urgency";
+import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
 
 // Plafonds volontaires, indépendants de la taille réelle de
 // l'organisation — jamais laisser le contexte (donc le coût et le
@@ -35,7 +36,7 @@ async function buildContext(organizationId: string): Promise<string> {
         organizationId,
         status: { notIn: ["DONE", "CANCELLED"] },
         dueDate: { lte: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) },
-        employeeEvent: { employee: { deletedAt: null } },
+        ...ACTIVE_TASK_SCOPE,
       },
       include: { employeeEvent: { include: { employee: true } } },
       orderBy: { dueDate: "asc" },

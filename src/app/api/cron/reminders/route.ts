@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendConfiguredReminders } from "@/lib/reminders";
+import { sendScheduledDigests } from "@/lib/notifications";
 
 // Vercel signe automatiquement ses appels de tâche planifiée avec ce
 // jeton (Authorization: Bearer CRON_SECRET) — sans lui, n'importe qui
@@ -45,10 +46,15 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 
-  const [reminders, demoPurge] = await Promise.all([
-    sendConfiguredReminders(),
-    purgeStaleDemoEmployees(),
-  ]);
+  // Séquentiel volontairement : ce cron touche déjà plusieurs tables et
+  // notre pool Postgres est volontairement petit en production. Inutile
+  // de créer une pointe de connexions juste pour gagner quelques ms.
+  const reminders = await sendConfiguredReminders();
+  const digests = await sendScheduledDigests();
+  const demoPurge = await purgeStaleDemoEmployees();
 
-  return NextResponse.json({ ...reminders, demoPurge });
+  const result = { reminders, digests, demoPurge };
+  console.info("RH Pilot cron quotidien", result);
+
+  return NextResponse.json(result);
 }
