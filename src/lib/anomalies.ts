@@ -364,19 +364,36 @@ export async function getAnomalies(organizationId: string): Promise<Anomaly[]> {
     prisma.anomalyDismissal.findMany({ where: { organizationId } }),
   ]);
 
+  const allAnomalies = results.flat();
+  const activeKeys = new Set(allAnomalies.map((anomaly) => anomaly.key));
+
+  // Une anomalie ignorée n'est valable que pour l'occurrence actuellement
+  // active. Dès que la situation disparaît réellement (manager renseigné,
+  // nouvelle date médicale, contrat corrigé...), on supprime son ancien
+  // acquittement. Si la même anomalie réapparaît plus tard, RH Pilot doit
+  // donc la signaler de nouveau au lieu de la masquer pour toujours.
+  const staleDismissalIds = dismissals
+    .filter((dismissal) => !activeKeys.has(dismissal.anomalyKey))
+    .map((dismissal) => dismissal.id);
+
+  if (staleDismissalIds.length > 0) {
+    await prisma.anomalyDismissal.deleteMany({
+      where: {
+        organizationId,
+        id: { in: staleDismissalIds },
+      },
+    });
+  }
+
   const now = new Date();
-  // Une clé écartée définitivement (jamais de snoozedUntil) reste
-  // masquée tant que la situation qui la génère ne change pas — elle
-  // disparaît naturellement d'elle-même le jour où les vraies données
-  // changent, puisque la clé elle-même en dépend. Une clé reportée
-  // (snoozedUntil renseigné) réapparaît automatiquement une fois la
-  // date passée.
   const hiddenKeys = new Set(
-    dismissals.filter((d) => !d.snoozedUntil || d.snoozedUntil > now).map((d) => d.anomalyKey)
+    dismissals
+      .filter((d) => activeKeys.has(d.anomalyKey))
+      .filter((d) => !d.snoozedUntil || d.snoozedUntil > now)
+      .map((d) => d.anomalyKey)
   );
 
-  return results
-    .flat()
+  return allAnomalies
     .filter((anomaly) => !hiddenKeys.has(anomaly.key))
     .sort((a, b) => SEVERITY_ORDER[a.severity] - SEVERITY_ORDER[b.severity]);
 }
