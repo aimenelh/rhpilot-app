@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sendEmail, renderNotificationEmail } from "@/lib/email";
 import { getUserDisplayName } from "@/lib/displayName";
 import { formatDate } from "@/lib/format";
+import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
 
 function getAppUrl() {
   return process.env.APP_URL ?? "http://localhost:3000";
@@ -13,22 +14,23 @@ function startOfDay(date: Date): Date {
 }
 
 /**
- * Parcourt toutes les organisations ayant configuré au moins une
- * règle de relance, et envoie un email à chaque destinataire concerné
- * — jamais plus d'une fois pour la même tâche et la même règle,
- * jamais à quelqu'un qui n'a pas de vraie adresse (assigné ou
- * manager), jamais pour une tâche déjà terminée ou annulée.
+ * Parcourt toutes les organisations ayant configuré au moins une règle
+ * de relance. Une relance est considérée comme déjà faite uniquement
+ * lorsqu'un email a réellement été délivré : un échec reste visible
+ * dans l'historique et peut être retenté si le cron est relancé le même jour.
  */
 export async function sendConfiguredReminders(): Promise<{
   sent: number;
   skipped: number;
+  failed: number;
 }> {
   const rules = await prisma.reminderRule.findMany({
-    include: { organization: true },
+    where: { organization: { deletedAt: null } },
   });
 
   let sent = 0;
   let skipped = 0;
+  let failed = 0;
   const appUrl = getAppUrl();
 
   for (const rule of rules) {
@@ -42,7 +44,7 @@ export async function sendConfiguredReminders(): Promise<{
         organizationId: rule.organizationId,
         status: { notIn: ["DONE", "CANCELLED"] },
         dueDate: { gte: targetDate, lt: nextDay },
-        employeeEvent: { employee: { deletedAt: null } },
+        ...ACTIVE_TASK_SCOPE,
       },
       include: {
         assignedMembership: { include: { user: true } },
@@ -55,40 +57,60 @@ export async function sendConfiguredReminders(): Promise<{
     });
 
     for (const task of tasks) {
-      const recipients: { membershipId: string; user: { firstName: string | null; lastName: string | null; email: string } }[] = [];
+      const recipients: {
+        membershipId: string;
+        user: {
+          firstName: string | null;
+          lastName: string | null;
+          email: string;
+          deletedAt: Date | null;
+        };
+      }[] = [];
 
-      if (rule.notifyAssignee && task.assignedMembership) {
+      if (
+        rule.notifyAssignee &&
+        task.assignedMembership &&
+        !task.assignedMembership.deletedAt &&
+        !task.assignedMembership.user.deletedAt
+      ) {
         recipients.push({
           membershipId: task.assignedMembership.id,
           user: task.assignedMembership.user,
         });
       }
+
       if (rule.notifyManager) {
         const managerMembership = task.employeeEvent.employee.managerMembership;
-        if (managerMembership && managerMembership.id !== task.assignedMembershipId) {
+        if (
+          managerMembership &&
+          !managerMembership.deletedAt &&
+          !managerMembership.user.deletedAt &&
+          managerMembership.id !== task.assignedMembershipId
+        ) {
           recipients.push({ membershipId: managerMembership.id, user: managerMembership.user });
         }
       }
 
       for (const recipient of recipients) {
-        // Une seule relance par règle et par tâche, jamais un doublon
-        // si la tâche planifiée venait à se relancer le même jour.
-        const alreadySent = await prisma.notification.findFirst({
+        const alreadyDelivered = await prisma.notification.findFirst({
           where: {
             organizationId: rule.organizationId,
             recipientMembershipId: recipient.membershipId,
             taskId: task.id,
             type: `reminder_rule_${rule.id}`,
+            delivered: true,
           },
+          select: { id: true },
         });
-        if (alreadySent) {
+
+        if (alreadyDelivered) {
           skipped++;
           continue;
         }
 
         const subject = `RH Pilot : échéance dans ${rule.daysBeforeDue} jour${rule.daysBeforeDue > 1 ? "s" : ""}`;
         const html = renderNotificationEmail({
-          greeting: `Bonjour ${getUserDisplayName(recipient.user)}`,
+          greeting: `Bonjour ${getUserDisplayName(recipient.user)},`,
           intro: `Une échéance approche, dans ${rule.daysBeforeDue} jour${rule.daysBeforeDue > 1 ? "s" : ""} :`,
           sections: [
             {
@@ -119,10 +141,12 @@ export async function sendConfiguredReminders(): Promise<{
             delivered: result.ok,
           },
         });
-        sent++;
+
+        if (result.ok) sent++;
+        else failed++;
       }
     }
   }
 
-  return { sent, skipped };
+  return { sent, skipped, failed };
 }
