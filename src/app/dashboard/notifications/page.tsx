@@ -17,6 +17,11 @@ const TYPE_LABELS: Record<string, string> = {
   manual_reminder: "Rappel manuel",
 };
 
+function notificationTypeLabel(type: string) {
+  if (type.startsWith("reminder_rule_")) return "Relance automatique";
+  return TYPE_LABELS[type] ?? type;
+}
+
 function formatDateTime(date: Date) {
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium", timeStyle: "short" }).format(date);
 }
@@ -74,13 +79,13 @@ export default async function NotificationsPage() {
         <form action={sendDigestsNow}>
           <Button type="submit" variant="secondary">
             <Send size={14} />
-            Envoyer les résumés maintenant
+            Recevoir mon résumé maintenant
           </Button>
         </form>
       </div>
       <p className="mt-2 text-xs text-ink-faint">
-        Le bouton ci-dessus déclenche un envoi immédiat. L&apos;envoi automatique
-        quotidien/hebdomadaire suit la préférence choisie ci-dessous, pour chacun.
+        Le bouton ci-dessus vous envoie uniquement votre propre résumé. Les résumés
+        quotidiens partent automatiquement chaque matin ; les résumés hebdomadaires le lundi.
       </p>
 
       <Card className="mt-4 max-w-sm">
@@ -100,8 +105,9 @@ export default async function NotificationsPage() {
             <option value="OFF">Désactivé</option>
           </Select>
           <FieldHint>
-            Ne s&apos;applique qu&apos;aux tâches qui vous sont directement assignées. Un
-            rappel manuel ponctuel reste toujours possible, quelle que soit cette préférence.
+            Le résumé contient vos tâches directement assignées qui sont en retard, prévues
+            aujourd&apos;hui ou dans les 7 prochains jours. Les parcours et salariés archivés
+            sont toujours exclus.
           </FieldHint>
           <Button type="submit" className="mt-3">
             Enregistrer
@@ -145,7 +151,7 @@ export default async function NotificationsPage() {
                           <td className="px-5 py-3 text-ink-soft">
                             <span className="flex items-center gap-1.5">
                               <Mail size={13} />
-                              {TYPE_LABELS[notification.type] ?? notification.type}
+                              {notificationTypeLabel(notification.type)}
                             </span>
                           </td>
                           <td className="px-5 py-3 text-ink-soft">{notification.subject}</td>
