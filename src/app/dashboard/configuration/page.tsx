@@ -114,7 +114,7 @@ export default async function ConfigurationPage() {
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-ink">Données</h2>
             <p className="mt-0.5 text-sm text-ink-soft">
-              Exportez les données de votre organisation ou importez une liste de salariés au format CSV.
+              Exportez les données RH opérationnelles de votre organisation (hors paie) ou importez une liste de salariés au format CSV.
             </p>
             {canManageData ? (
               <div className="mt-2.5 flex flex-wrap gap-2">
@@ -127,7 +127,7 @@ export default async function ConfigurationPage() {
                 <a href="/api/export/organization">
                   <Button variant="secondary" className="text-xs">
                     <Download size={13} />
-                    Tout exporter
+                    Données RH
                   </Button>
                 </a>
                 <Link href="/dashboard/employees/import">
