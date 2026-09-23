@@ -8,6 +8,7 @@ import { isAiEnabled } from "@/lib/ai";
 import { AppShell } from "@/components/AppShell";
 import { Logomark, Wordmark } from "@/components/Brand";
 import { InitializingScreen } from "@/components/InitializingScreen";
+import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
 
 export default async function DashboardLayout({
   children,
@@ -55,7 +56,7 @@ export default async function DashboardLayout({
           organizationId: currentMembership.organizationId,
           status: { notIn: ["DONE", "CANCELLED"] },
           dueDate: { lt: startOfToday },
-          employeeEvent: { employee: { deletedAt: null } },
+          ...ACTIVE_TASK_SCOPE,
         },
       }),
       getAnomalies(currentMembership.organizationId),
