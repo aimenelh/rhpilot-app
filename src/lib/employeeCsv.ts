@@ -122,6 +122,23 @@ export function parseEmployeeCsv(text: string): CsvParseResult {
     const durationRaw = get(idx.probationDuration);
     const medicalRaw = get(idx.nextMedicalVisitDate);
 
+    let probationDuration: number | null = null;
+    if (durationRaw) {
+      const parsedDuration = Number(durationRaw);
+      if (
+        !Number.isInteger(parsedDuration) ||
+        parsedDuration < 0 ||
+        parsedDuration > 365
+      ) {
+        errors.push({
+          line: lineNumber,
+          message: `Durée de période d'essai invalide ("${durationRaw}"), ligne ignorée.`,
+        });
+        continue;
+      }
+      probationDuration = parsedDuration;
+    }
+
     let nextMedicalVisitDate: Date | null = null;
     if (medicalRaw) {
       const parsed = new Date(medicalRaw);
@@ -146,7 +163,7 @@ export function parseEmployeeCsv(text: string): CsvParseResult {
       contractType: VALID_CONTRACTS.includes(contractRaw)
         ? (contractRaw as ParsedEmployeeRow["contractType"])
         : null,
-      probationDuration: durationRaw ? Number(durationRaw) : null,
+      probationDuration,
       probationDurationUnit: durationRaw
         ? VALID_UNITS.includes(unitRaw)
           ? (unitRaw as ParsedEmployeeRow["probationDurationUnit"])
