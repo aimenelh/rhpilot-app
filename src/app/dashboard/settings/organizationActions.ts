@@ -173,6 +173,9 @@ export async function updateHealthPlan(formData: FormData) {
 export async function revertTaskTemplateOverride(overrideId: string) {
   const membership = await getCurrentMembership();
   if (!membership) throw new Error("Non authentifié ou aucune organisation active");
+  if (membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN") {
+    throw new Error("Seuls les propriétaires et administrateurs peuvent modifier les parcours.");
+  }
   await prisma.taskTemplateOverride.deleteMany({ where: { id: overrideId, organizationId: membership.organizationId } });
   revalidatePath("/dashboard/configuration"); revalidatePath("/dashboard/configuration/parcours");
 }
