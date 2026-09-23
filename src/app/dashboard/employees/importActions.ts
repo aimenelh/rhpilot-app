@@ -19,6 +19,9 @@ export async function importEmployeesCsv(
   if (!membership || !user) {
     return { error: "Session expirée, veuillez recharger la page." };
   }
+  if (membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN") {
+    return { error: "Seuls les propriétaires et administrateurs peuvent importer des salariés." };
+  }
 
   const csvText = String(formData.get("csvText") ?? "");
   if (!csvText.trim()) {
@@ -37,34 +40,47 @@ export async function importEmployeesCsv(
   const limitError = await checkFreeTierLimit(membership.organizationId, rows.length);
   if (limitError) return { error: limitError };
 
-  for (const row of rows) {
-    await prisma.employee.create({
-      data: {
-        organizationId: membership.organizationId,
-        firstName: row.firstName,
-        lastName: row.lastName,
-        civility: row.civility,
-        position: row.position,
-        hireDate: row.hireDate,
-        contractType: row.contractType,
-        probationDuration: row.probationDuration,
-        probationDurationUnit: row.probationDurationUnit,
-        nextMedicalVisitDate: row.nextMedicalVisitDate,
-      },
-    });
-  }
+  // Import atomique : soit toutes les lignes validées sont créées avec
+  // leur trace d'audit, soit aucune ne l'est. Une panne au milieu d'un
+  // fichier ne doit jamais laisser une demi-importation silencieuse.
+  try {
+    await prisma.$transaction(async (tx) => {
+      for (const row of rows) {
+        await tx.employee.create({
+          data: {
+            organizationId: membership.organizationId,
+            firstName: row.firstName,
+            lastName: row.lastName,
+            civility: row.civility,
+            position: row.position,
+            hireDate: row.hireDate,
+            contractType: row.contractType,
+            probationDuration: row.probationDuration,
+            probationDurationUnit: row.probationDurationUnit,
+            nextMedicalVisitDate: row.nextMedicalVisitDate,
+          },
+        });
+      }
 
-  await prisma.auditLog.create({
-    data: {
-      id: randomUUID(),
-      organizationId: membership.organizationId,
-      actorUserId: user.id,
-      action: "employees.imported",
-      entityType: "Organization",
-      entityId: membership.organizationId,
-      metadata: { count: rows.length, errorCount: errors.length },
-    },
-  });
+      await tx.auditLog.create({
+        data: {
+          id: randomUUID(),
+          organizationId: membership.organizationId,
+          actorUserId: user.id,
+          action: "employees.imported",
+          entityType: "Organization",
+          entityId: membership.organizationId,
+          metadata: { count: rows.length, errorCount: errors.length },
+        },
+      });
+    });
+  } catch (error) {
+    console.error("Import CSV salariés échoué :", error);
+    return {
+      error:
+        "L'import n'a pas pu être finalisé. Aucun des salariés validés n'a été ajouté ; corrigez le fichier puis réessayez.",
+    };
+  }
 
   const parts = [`${rows.length} salarié${rows.length > 1 ? "s" : ""} importé${rows.length > 1 ? "s" : ""}`];
   if (errors.length > 0) {
