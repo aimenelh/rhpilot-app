@@ -26,6 +26,7 @@ export default async function EventsPage({
   if (!membership) redirect("/dashboard");
 
   const query = searchParams.q?.trim() ?? "";
+  const canBulkTrigger = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
 
   const fetchedEvents = await prisma.employeeEvent.findMany({
     where: {
@@ -69,11 +70,13 @@ export default async function EventsPage({
             Suivez les étapes, les responsables, les échéances et les pièces attendues de chaque parcours.
           </p>
         </div>
-        <Link href="/dashboard/events/bulk-trigger" className="shrink-0">
-          <Button variant="secondary" className="text-sm">
-            Déclencher en masse
-          </Button>
-        </Link>
+        {canBulkTrigger && (
+          <Link href="/dashboard/events/bulk-trigger" className="shrink-0">
+            <Button variant="secondary" className="text-sm">
+              Déclencher en masse
+            </Button>
+          </Link>
+        )}
       </div>
 
       <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
