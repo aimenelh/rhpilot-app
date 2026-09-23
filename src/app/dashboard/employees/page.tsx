@@ -28,6 +28,7 @@ export default async function EmployeesPage({
 
   const status = searchParams.status === "archived" ? "archived" : "active";
   const query = searchParams.q?.trim() ?? "";
+  const canManageBulkData = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
 
   const employees = await prisma.employee.findMany({
     where: {
@@ -68,16 +69,18 @@ export default async function EmployeesPage({
         </div>
 
         <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-          {status === "active" && employees.length > 0 && !query && (
+          {canManageBulkData && status === "active" && employees.length > 0 && !query && (
             <ArchiveAllButton action={archiveAllEmployees} count={employees.length} />
           )}
-          <Link href="/dashboard/employees/import">
-            <Button variant="secondary">
-              <span className="inline-flex items-center gap-1.5">
-                <Upload size={14} /> Importer
-              </span>
-            </Button>
-          </Link>
+          {canManageBulkData && (
+            <Link href="/dashboard/employees/import">
+              <Button variant="secondary">
+                <span className="inline-flex items-center gap-1.5">
+                  <Upload size={14} /> Importer
+                </span>
+              </Button>
+            </Link>
+          )}
           <Link href="/dashboard/employees/new">
             <Button data-tour="add-employee">
               <span className="inline-flex items-center gap-1.5">
@@ -141,12 +144,16 @@ export default async function EmployeesPage({
                     <Link href="/dashboard/employees/new">
                       <Button data-tour="add-employee">Ajouter mon premier salarié</Button>
                     </Link>
-                    <Link href="/dashboard/employees/import">
-                      <Button variant="secondary">Importer depuis un fichier CSV</Button>
-                    </Link>
-                    <form action={generateDemoOrganization}>
-                      <DemoOrgSubmitButton />
-                    </form>
+                    {canManageBulkData && (
+                      <>
+                        <Link href="/dashboard/employees/import">
+                          <Button variant="secondary">Importer depuis un fichier CSV</Button>
+                        </Link>
+                        <form action={generateDemoOrganization}>
+                          <DemoOrgSubmitButton />
+                        </form>
+                      </>
+                    )}
                   </div>
                 }
               />
