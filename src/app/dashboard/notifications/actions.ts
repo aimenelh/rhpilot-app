@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
-import { sendManualReminder as sendManualReminderLogic, sendDueDigests } from "@/lib/notifications";
+import { sendManualReminder as sendManualReminderLogic, sendDueDigestNow } from "@/lib/notifications";
 import type { NotificationFrequency } from "@prisma/client";
 
 const ALLOWED_FREQUENCIES: NotificationFrequency[] = ["DAILY", "WEEKLY", "OFF"];
@@ -55,9 +55,13 @@ export async function sendDigestsNow() {
   const membership = await getCurrentMembership();
   if (!membership) throw new Error("Aucune organisation active");
 
-  const results = await sendDueDigests(membership.organizationId);
+  const results = await sendDueDigestNow(membership.organizationId, membership.id);
 
-  const message = `${results.sent} résumé(s) envoyé(s), ${results.skippedEmpty} personne(s) sans rien à signaler${results.failed > 0 ? `, ${results.failed} échec(s)` : ""}`;
+  const message = results.sent > 0
+    ? "Votre résumé a été envoyé."
+    : results.skippedEmpty > 0
+      ? "Aucune action urgente ou proche à vous signaler pour le moment."
+      : "Le résumé n’a pas pu être envoyé. Réessayez dans quelques instants.";
 
   redirect(`/dashboard/notifications?flash=${encodeURIComponent(message)}`);
 }
