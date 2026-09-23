@@ -11,6 +11,12 @@ export async function GET() {
   if (!membership) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
+  if (membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN") {
+    return NextResponse.json(
+      { error: "Seuls les propriétaires et administrateurs peuvent exporter l'organisation." },
+      { status: 403 }
+    );
+  }
 
   const organizationId = membership.organizationId;
 
