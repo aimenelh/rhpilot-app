@@ -3,6 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { sendEmail, renderNotificationEmail } from "@/lib/email";
 import { formatRelativeDueDate, isOverdue, daysUntil } from "@/lib/urgency";
 import { getUserDisplayName } from "@/lib/displayName";
+import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
+import {
+  scheduledDigestPeriodStart,
+  scheduledDigestType,
+  type DigestType,
+} from "@/lib/notificationSchedule";
 
 const DIGEST_ITEMS_LIMIT = 10;
 
@@ -16,6 +22,7 @@ async function getAttentionTasksForMembership(organizationId: string, membership
       organizationId,
       assignedMembershipId: membershipId,
       status: { notIn: ["DONE", "CANCELLED"] },
+      ...ACTIVE_TASK_SCOPE,
     },
     include: { employeeEvent: { include: { employee: true } } },
     orderBy: { dueDate: "asc" },
@@ -24,9 +31,7 @@ async function getAttentionTasksForMembership(organizationId: string, membership
   const now = new Date();
   return tasks.filter((task) => {
     if (isOverdue(task.dueDate, task.status, now)) return true;
-    const diff = Math.round(
-      (task.dueDate.getTime() - new Date().setHours(0, 0, 0, 0)) / (1000 * 60 * 60 * 24)
-    );
+    const diff = daysUntil(task.dueDate, now);
     return diff >= 0 && diff <= 7;
   });
 }
@@ -41,16 +46,27 @@ export async function sendManualReminder({
   actorUserId: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const task = await prisma.task.findFirst({
-    where: { id: taskId, organizationId },
+    where: {
+      id: taskId,
+      organizationId,
+      status: { notIn: ["DONE", "CANCELLED"] },
+      ...ACTIVE_TASK_SCOPE,
+    },
     include: {
       employeeEvent: { include: { employee: true } },
       assignedMembership: { include: { user: true } },
     },
   });
 
-  if (!task) return { ok: false, error: "Tâche introuvable dans cette organisation." };
-  if (!task.assignedMembership) {
-    return { ok: false, error: "Cette tâche n'est assignée à personne : assignez-la d'abord." };
+  if (!task) {
+    return { ok: false, error: "Cette tâche n'est plus active dans cette organisation." };
+  }
+  if (
+    !task.assignedMembership ||
+    task.assignedMembership.deletedAt ||
+    task.assignedMembership.user.deletedAt
+  ) {
+    return { ok: false, error: "Cette tâche n'est assignée à aucun membre actif : assignez-la d'abord." };
   }
 
   const appUrl = getAppUrl();
@@ -98,12 +114,38 @@ export async function sendManualReminder({
   return result;
 }
 
+type DigestMembership = {
+  id: string;
+  organizationId: string;
+  user: {
+    email: string;
+    firstName: string | null;
+    lastName: string | null;
+  };
+};
+
+type DigestOutcome = "sent" | "skipped_empty" | "skipped_already_sent" | "failed";
+
 async function sendDigestToMembership(
-  organizationId: string,
-  membership: { id: string; user: { email: string; firstName: string | null; lastName: string | null } },
-  type: "digest_daily" | "digest_weekly"
-): Promise<"sent" | "skipped_empty" | "failed"> {
-  const tasks = await getAttentionTasksForMembership(organizationId, membership.id);
+  membership: DigestMembership,
+  type: DigestType,
+  options?: { dedupeSince?: Date }
+): Promise<DigestOutcome> {
+  if (options?.dedupeSince) {
+    const alreadyDelivered = await prisma.notification.findFirst({
+      where: {
+        organizationId: membership.organizationId,
+        recipientMembershipId: membership.id,
+        type,
+        delivered: true,
+        sentAt: { gte: options.dedupeSince },
+      },
+      select: { id: true },
+    });
+    if (alreadyDelivered) return "skipped_already_sent";
+  }
+
+  const tasks = await getAttentionTasksForMembership(membership.organizationId, membership.id);
   if (tasks.length === 0) return "skipped_empty";
 
   const appUrl = getAppUrl();
@@ -152,7 +194,7 @@ async function sendDigestToMembership(
   await prisma.notification.create({
     data: {
       id: randomUUID(),
-      organizationId,
+      organizationId: membership.organizationId,
       recipientMembershipId: membership.id,
       type,
       subject,
@@ -164,24 +206,72 @@ async function sendDigestToMembership(
   return result.ok ? "sent" : "failed";
 }
 
-export async function sendDueDigests(organizationId: string) {
-  const memberships = await prisma.membership.findMany({
+function emptyDigestResults() {
+  return { sent: 0, skippedEmpty: 0, skippedAlreadySent: 0, failed: 0 };
+}
+
+function addOutcome(
+  results: ReturnType<typeof emptyDigestResults>,
+  outcome: DigestOutcome
+) {
+  if (outcome === "sent") results.sent += 1;
+  else if (outcome === "skipped_empty") results.skippedEmpty += 1;
+  else if (outcome === "skipped_already_sent") results.skippedAlreadySent += 1;
+  else results.failed += 1;
+}
+
+/**
+ * Envoi manuel depuis l'interface : uniquement pour le membre courant.
+ * Il reste disponible même si sa fréquence automatique est désactivée.
+ */
+export async function sendDueDigestNow(organizationId: string, membershipId: string) {
+  const membership = await prisma.membership.findFirst({
     where: {
+      id: membershipId,
       organizationId,
       deletedAt: null,
-      notificationFrequency: { in: ["DAILY", "WEEKLY"] },
+      user: { deletedAt: null },
     },
     include: { user: true },
   });
 
-  const results = { sent: 0, skippedEmpty: 0, failed: 0 };
+  const results = emptyDigestResults();
+  if (!membership) {
+    results.failed = 1;
+    return results;
+  }
+
+  const type: DigestType =
+    membership.notificationFrequency === "WEEKLY" ? "digest_weekly" : "digest_daily";
+  addOutcome(results, await sendDigestToMembership(membership, type));
+  return results;
+}
+
+/**
+ * Envoi appelé par le cron quotidien. Les DAILY partent chaque jour,
+ * les WEEKLY le lundi (heure de Paris), et un second appel accidentel
+ * le même jour ne renvoie jamais un digest déjà délivré.
+ */
+export async function sendScheduledDigests(now: Date = new Date()) {
+  const memberships = await prisma.membership.findMany({
+    where: {
+      deletedAt: null,
+      notificationFrequency: { in: ["DAILY", "WEEKLY"] },
+      user: { deletedAt: null },
+      organization: { deletedAt: null },
+    },
+    include: { user: true },
+  });
+
+  const results = emptyDigestResults();
 
   for (const membership of memberships) {
-    const type = membership.notificationFrequency === "DAILY" ? "digest_daily" : "digest_weekly";
-    const outcome = await sendDigestToMembership(organizationId, membership, type);
-    if (outcome === "sent") results.sent += 1;
-    else if (outcome === "skipped_empty") results.skippedEmpty += 1;
-    else results.failed += 1;
+    const type = scheduledDigestType(membership.notificationFrequency, now);
+    if (!type) continue;
+
+    const dedupeSince = scheduledDigestPeriodStart(membership.notificationFrequency, now);
+    const outcome = await sendDigestToMembership(membership, type, { dedupeSince });
+    addOutcome(results, outcome);
   }
 
   return results;
