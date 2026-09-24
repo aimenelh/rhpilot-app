@@ -52,6 +52,19 @@ function parisMidnightUtc(year: number, month: number, day: number) {
   return instant;
 }
 
+export function notificationDayWindow(now: Date = new Date()): { start: Date; end: Date } {
+  const parts = getParisDateParts(now);
+  const start = parisMidnightUtc(parts.year, parts.month, parts.day);
+  const nextCalendarDay = new Date(Date.UTC(parts.year, parts.month - 1, parts.day + 1));
+  const end = parisMidnightUtc(
+    nextCalendarDay.getUTCFullYear(),
+    nextCalendarDay.getUTCMonth() + 1,
+    nextCalendarDay.getUTCDate()
+  );
+
+  return { start, end };
+}
+
 export function scheduledDigestType(
   frequency: NotificationFrequency,
   now: Date = new Date()
