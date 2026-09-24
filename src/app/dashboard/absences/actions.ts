@@ -5,15 +5,14 @@ import { revalidatePath } from "next/cache";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { storeAbsenceJustification } from "@/lib/absence-justification-storage";
+import { parseIsoDateOnly } from "@/lib/dateOnly";
 
 const ABSENCE_TYPES = ["PAID_LEAVE", "RTT", "SICK_LEAVE", "WORK_ACCIDENT", "UNPAID_LEAVE", "FAMILY_EVENT", "OTHER"] as const;
 type AbsenceTypeValue = (typeof ABSENCE_TYPES)[number];
 export type AbsenceActionState = { error?: string; success?: string } | undefined;
 
 function parseDate(value: FormDataEntryValue | null): Date | null {
-  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
-  const date = new Date(`${value}T00:00:00.000Z`);
-  return Number.isNaN(date.getTime()) ? null : date;
+  return typeof value === "string" ? parseIsoDateOnly(value) : null;
 }
 
 function isAdmin(role: string) {

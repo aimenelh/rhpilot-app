@@ -1,3 +1,5 @@
+import { parseIsoDateOnly } from "@/lib/dateOnly";
+
 export type ParsedEmployeeRow = {
   firstName: string;
   lastName: string;
@@ -107,8 +109,8 @@ export function parseEmployeeCsv(text: string): CsvParseResult {
       continue;
     }
 
-    const hireDate = new Date(hireDateRaw);
-    if (!hireDateRaw || Number.isNaN(hireDate.getTime())) {
+    const hireDate = parseIsoDateOnly(hireDateRaw);
+    if (!hireDate) {
       errors.push({
         line: lineNumber,
         message: `Date d'embauche invalide ("${hireDateRaw}"), ligne ignorée.`,
@@ -141,8 +143,8 @@ export function parseEmployeeCsv(text: string): CsvParseResult {
 
     let nextMedicalVisitDate: Date | null = null;
     if (medicalRaw) {
-      const parsed = new Date(medicalRaw);
-      if (Number.isNaN(parsed.getTime())) {
+      const parsed = parseIsoDateOnly(medicalRaw);
+      if (!parsed) {
         errors.push({
           line: lineNumber,
           message: `Date de visite médicale invalide ("${medicalRaw}"), ignorée : salarié importé sans cette date.`,

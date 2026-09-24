@@ -67,5 +67,7 @@ jobs:
           src/lib/employeeIdentity.test.ts
           src/lib/accessPolicy.test.ts
           src/lib/appUrl.test.ts
+          src/lib/dateOnly.test.ts
+          src/lib/csv.test.ts
       - name: Build application
         run: npx prisma generate && npx next build

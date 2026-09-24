@@ -11,7 +11,10 @@ import { getAppUrl } from "@/lib/appUrl";
 
 const INVITATION_VALID_DAYS = 7;
 
-export type InviteFormState = { error: string } | { success: string } | undefined;
+export type InviteFormState =
+  | { error: string; manualJoinUrl?: string }
+  | { success: string }
+  | undefined;
 
 /**
  * Seuls OWNER et ADMIN peuvent inviter — un MEMBER ne doit pas
@@ -131,7 +134,8 @@ export async function createInvitation(
 
   if (!emailResult.ok) {
     return {
-      error: `Invitation créée, mais l'email n'a pas pu être envoyé (${emailResult.error}). Vous pouvez transmettre le lien manuellement depuis la liste ci-dessous.`,
+      error: `Invitation créée, mais l'email n'a pas pu être envoyé (${emailResult.error}).`,
+      manualJoinUrl: joinUrl,
     };
   }
 

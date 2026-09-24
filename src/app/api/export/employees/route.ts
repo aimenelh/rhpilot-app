@@ -1,14 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership } from "@/lib/auth";
-
-function escapeCsvField(value: unknown): string {
-  const str = value === null || value === undefined ? "" : String(value);
-  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-    return `"${str.replace(/"/g, '""')}"`;
-  }
-  return str;
-}
+import { escapeCsvField } from "@/lib/csv";
 
 export async function GET() {
   const membership = await getCurrentMembership();
