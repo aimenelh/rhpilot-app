@@ -29,6 +29,20 @@ describe("payslip PDF", () => {
     await expect(generatePayslipPdf(baseInput)).resolves.not.toThrow();
   });
 
+  it("accepte une réduction patronale en ligne négative (RGDU)", async () => {
+    const withReduction: PayslipPdfInput = {
+      ...baseInput,
+      salary: { ...baseInput.salary, employerContributions: 600, totalEmployerCost: 2600 },
+      contributions: [...baseInput.contributions, { label: "Réduction générale dégressive unique (RGDU)", side: "EMPLOYER", amount: -200, baseAmount: 2000, rate: 0.1 }],
+    };
+    await expect(generatePayslipPdf(withReduction)).resolves.toBeInstanceOf(Buffer);
+  });
+
+  it("refuse toujours une cotisation salariale négative", () => {
+    const invalid: PayslipPdfInput = { ...baseInput, contributions: [{ label: "Assurance vieillesse", side: "EMPLOYEE", amount: -100, baseAmount: 2000, rate: 0.05 }] };
+    expect(() => generatePayslipPdf(invalid)).toThrow(PayslipPdfPrerequisiteError);
+  });
+
   it("bloque si le net imposable ou le taux PAS est absent", () => {
     expect(() => generatePayslipPdf({ ...baseInput, salary: { ...baseInput.salary, netTaxable: Number.NaN } })).toThrow(PayslipPdfPrerequisiteError);
     expect(() => generatePayslipPdf({ ...baseInput, salary: { ...baseInput.salary, withholdingTaxRate: Number.NaN } })).toThrow(PayslipPdfPrerequisiteError);

@@ -26,6 +26,18 @@ describe("buildPayrollLedger", () => {
     expect(entries.find((entry) => entry.code === "atmp")?.socialDelta).toBe(70);
   });
 
+  it("garde le signe d'une réduction patronale comme la RGDU", () => {
+    const withReduction = {
+      ...socialResult,
+      contributionDetails: [...socialResult.contributionDetails, { code: "rgdu", label: "Réduction générale dégressive unique (RGDU)", sourceRule: "salarié . cotisations . exonérations . RGDU", side: "EMPLOYER" as const, amount: -60, baseAmount: 2250, rate: 0.0267 }],
+    };
+    const rgdu = buildPayrollLedger({ ...commonInput, socialResult: withReduction, variables: [], absences: [] }).find((entry) => entry.code === "rgdu");
+    expect(rgdu?.amount).toBe(60);
+    expect(rgdu?.socialDelta).toBe(-60);
+    expect(rgdu?.cashImpact).toBe(-60);
+    expect(rgdu?.netDelta).toBe(0);
+  });
+
   it("ne transforme pas un PAS absent en retenue fictive", () => {
     const pas = buildPayrollLedger({ ...commonInput, variables: [], absences: [] }).find((entry) => entry.code === "PAS");
     expect(pas?.kind).toBe("INFORMATIONAL"); expect(pas?.netDelta).toBe(0); expect(pas?.amount).toBe(0);

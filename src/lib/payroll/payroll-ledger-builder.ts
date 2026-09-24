@@ -173,6 +173,8 @@ export function buildPayrollLedger(input: {
   for (const contribution of input.socialResult.contributionDetails) {
     const isEmployee = contribution.side === "EMPLOYEE";
     const amount = Math.abs(contribution.amount);
+    // Une réduction patronale (RGDU) arrive en négatif : elle baisse le coût employeur.
+    const employerAmount = roundMoney(contribution.amount);
 
     entries.push(
       createPayrollLedgerEntry({
@@ -184,9 +186,9 @@ export function buildPayrollLedger(input: {
         amount,
         grossDelta: 0,
         taxableDelta: 0,
-        socialDelta: roundMoney(isEmployee ? -amount : amount),
+        socialDelta: roundMoney(isEmployee ? -amount : employerAmount),
         netDelta: roundMoney(isEmployee ? -amount : 0),
-        cashImpact: roundMoney(isEmployee ? 0 : amount),
+        cashImpact: roundMoney(isEmployee ? 0 : employerAmount),
         ruleVersionId: input.ruleVersionId,
         sourceName: "Urssaf / Mon-entreprise",
         sourceUrl: "https://mon-entreprise.urssaf.fr/documentation/salari%C3%A9/cotisations",

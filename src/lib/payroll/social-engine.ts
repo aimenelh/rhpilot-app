@@ -20,6 +20,20 @@ const EMPLOYER_CONTRIBUTIONS_RULE = "salarié . cotisations . employeur";
 const GENERAL_CONTRIBUTION_BASE_RULE = "salarié . cotisations . assiette";
 const PRORATED_SOCIAL_SECURITY_CEILING_RULE = "salarié . temps de travail . plafond sécurité sociale";
 const CSG_BASE_RULE = "salarié . cotisations . CSG-CRDS . assiette de base";
+const RGDU_RULE = "salarié . cotisations . exonérations . RGDU";
+const RGDU_COEFFICIENT_RULE = "salarié . cotisations . exonérations . RGDU . coefficient";
+const WORKING_TIME_RULE = "salarié . temps de travail";
+const RGDU_SMIC_RULE = "salarié . temps de travail . SMIC";
+
+/**
+ * Smic retenu pour la RGDU quand un texte le fige pour l'année.
+ * Décret n° 2026-509 du 12 juin 2026 : toute l'année 2026 se calcule avec le Smic
+ * du 1er janvier (12,02 €/h), même après la revalorisation du 1er juin (12,31 €/h).
+ * Le modèle social 11.1.0 applique encore 12,31 €/h à partir de juin.
+ */
+const RGDU_FROZEN_SMIC: ReadonlyArray<{ year: number; hourly: number; source: string }> = [
+  { year: 2026, hourly: 12.02, source: "Décret n° 2026-509 du 12 juin 2026" },
+];
 
 type DetailRule = {
   code: string;
@@ -30,6 +44,10 @@ type DetailRule = {
   baseRule?: string;
   baseCapMultiplier?: number;
   rateRule?: string;
+  /** Taux exprimé directement en fraction par le modèle (coefficient sans unité). */
+  fractionRateRule?: string;
+  /** Réduction de cotisations : le modèle donne un montant positif, le bulletin l'affiche en négatif. */
+  reduction?: boolean;
 };
 
 const DETAIL_RULES: readonly DetailRule[] = [
@@ -37,14 +55,14 @@ const DETAIL_RULES: readonly DetailRule[] = [
   { code: "maladie_employeur", label: "Assurance maladie, maternité, invalidité, décès — part employeur", rule: "salarié . cotisations . maladie . employeur", side: "EMPLOYER", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, rateRule: "salarié . cotisations . maladie . employeur . taux" },
   { code: "sante_salarie", label: "Complémentaire santé — part salarié", rule: "salarié . cotisations . prévoyances . santé . salarié", side: "EMPLOYEE", flat: true },
   { code: "sante_employeur", label: "Complémentaire santé — part employeur", rule: "salarié . cotisations . prévoyances . santé . employeur", side: "EMPLOYER", flat: true },
-  { code: "atmp", label: "Accidents du travail et maladies professionnelles", rule: "salarié . cotisations . ATMP", side: "EMPLOYER", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, baseCapMultiplier: 1, rateRule: "salarié . cotisations . ATMP . taux" },
+  { code: "atmp", label: "Accidents du travail et maladies professionnelles", rule: "salarié . cotisations . ATMP", side: "EMPLOYER", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, rateRule: "salarié . cotisations . ATMP . taux" },
   { code: "vieillesse_plafonnee_salarie", label: "Assurance vieillesse plafonnée", rule: "salarié . cotisations . vieillesse . plafonnée . salarié", side: "EMPLOYEE", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, baseCapMultiplier: 1, rateRule: "salarié . cotisations . vieillesse . salarié . plafonnée . taux" },
   { code: "vieillesse_deplafonnee_salarie", label: "Assurance vieillesse déplafonnée", rule: "salarié . cotisations . vieillesse . déplafonnée . salarié", side: "EMPLOYEE", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, rateRule: "salarié . cotisations . vieillesse . salarié . déplafonnée . taux" },
   { code: "vieillesse_plafonnee_employeur", label: "Assurance vieillesse plafonnée", rule: "salarié . cotisations . vieillesse . plafonnée . employeur", side: "EMPLOYER", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, baseCapMultiplier: 1, rateRule: "salarié . cotisations . vieillesse . employeur . plafonnée . taux" },
   { code: "vieillesse_deplafonnee_employeur", label: "Assurance vieillesse déplafonnée", rule: "salarié . cotisations . vieillesse . déplafonnée . employeur", side: "EMPLOYER", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, rateRule: "salarié . cotisations . vieillesse . employeur . déplafonnée . taux" },
   { code: "retraite_complementaire_salarie", label: "Retraite complémentaire — part salarié", rule: "salarié . cotisations . retraite complémentaire-CEG-CET . salarié", side: "EMPLOYEE", flat: false },
   { code: "retraite_complementaire_employeur", label: "Retraite complémentaire — part employeur", rule: "salarié . cotisations . retraite complémentaire-CEG-CET . employeur", side: "EMPLOYER", flat: false },
-  { code: "allocations_familiales", label: "Allocations familiales", rule: "salarié . cotisations . allocations familiales", side: "EMPLOYER", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, baseCapMultiplier: 1, rateRule: "salarié . cotisations . allocations familiales . taux" },
+  { code: "allocations_familiales", label: "Allocations familiales", rule: "salarié . cotisations . allocations familiales", side: "EMPLOYER", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, rateRule: "salarié . cotisations . allocations familiales . taux" },
   { code: "assurance_chomage", label: "Assurance chômage", rule: "salarié . cotisations . assurance chômage", side: "EMPLOYER", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, baseCapMultiplier: 4 },
   { code: "apec_salarie", label: "APEC — part salarié", rule: "salarié . cotisations . APEC . salarié", side: "EMPLOYEE", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, baseCapMultiplier: 4 },
   { code: "apec_employeur", label: "APEC — part employeur", rule: "salarié . cotisations . APEC . employeur", side: "EMPLOYER", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, baseCapMultiplier: 4 },
@@ -54,12 +72,17 @@ const DETAIL_RULES: readonly DetailRule[] = [
   { code: "invalidite_deces_salarie", label: "Prévoyance incapacité, invalidité, décès — part salarié", rule: "salarié . cotisations . prévoyances . incapacité invalidité décès . salarié", side: "EMPLOYEE", flat: false },
   { code: "invalidite_deces_employeur", label: "Prévoyance incapacité, invalidité, décès — part employeur", rule: "salarié . cotisations . prévoyances . incapacité invalidité décès . employeur", side: "EMPLOYER", flat: false },
   { code: "autres_charges_employeur", label: "Autres charges dues par l'employeur", rule: "salarié . cotisations . autres employeur", side: "EMPLOYER", flat: true },
+  { code: "rgdu", label: "Réduction générale dégressive unique (RGDU)", rule: RGDU_RULE, side: "EMPLOYER", flat: false, baseRule: GENERAL_CONTRIBUTION_BASE_RULE, fractionRateRule: RGDU_COEFFICIENT_RULE, reduction: true },
 ];
 
 const MODEL_DEFAULT_SITUATION: SocialPayrollSituation = {
   "salarié . cotisations . exonérations . JEI": "non",
   "entreprise . salariés . effectif . seuil": "'moins de 5'",
   "salarié . cotisations . ATMP . taux fonctions support": "non",
+  // Un bulletin RH Pilot concerne toujours un salarié. Sans cette précision, le
+  // modèle traite la personne d'une SAS comme son président (assimilé salarié) :
+  // ni RGDU ni assurance chômage.
+  "dirigeant . assimilé salarié": "non",
 };
 
 export const LEGAL_CATEGORIES = ["EI", "SARL", "SAS", "SELARL", "SELAS", "association", "autre"] as const;
@@ -113,6 +136,15 @@ function assertNumber(value: unknown, label: string): number {
   return Math.round((value + Number.EPSILON) * 100) / 100;
 }
 
+function assertRawNumber(value: unknown, label: string): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) throw new Error(`Le modèle social n'a pas fourni une valeur numérique pour ${label}.`);
+  return value;
+}
+
+function roundMoney(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
 function assertRate(value: unknown, label: string): number {
   if (typeof value !== "number" || !Number.isFinite(value)) throw new Error(`Le modèle social n'a pas fourni un taux numérique pour ${label}.`);
   // Publicodes exposes the value of rules typed as percentages in percentage
@@ -147,6 +179,13 @@ function evaluateContributionBase(engine: Engine, detail: DetailRule): number | 
 }
 
 function evaluateContributionRate(engine: Engine, detail: DetailRule): number | null {
+  if (detail.fractionRateRule) {
+    const evaluation = engine.evaluate(detail.fractionRateRule);
+    assertNoMissingVariables(evaluation, detail.fractionRateRule);
+    const value = evaluation.nodeValue;
+    if (typeof value !== "number" || !Number.isFinite(value) || value < 0 || value > 1) throw new Error(`Le modèle social a fourni un taux invalide pour ${detail.fractionRateRule}.`);
+    return Math.round((value + Number.EPSILON) * 1000000) / 1000000;
+  }
   if (!detail.rateRule) return null;
   const evaluation = engine.evaluate(detail.rateRule);
   assertNoMissingVariables(evaluation, detail.rateRule);
@@ -158,8 +197,10 @@ function evaluateContributionDetails(engine: Engine): SocialContributionDetail[]
     const evaluation = engine.evaluate(detail.rule);
     assertNoMissingVariables(evaluation, detail.rule);
     if (evaluation.nodeValue === null || evaluation.nodeValue === undefined) return [];
-    const amount = assertNumber(evaluation.nodeValue, detail.rule);
-    if (amount === 0) return [];
+    const value = assertNumber(evaluation.nodeValue, detail.rule);
+    if (value === 0) return [];
+    if (detail.reduction && value < 0) throw new Error(`Le modèle social a fourni une réduction négative pour ${detail.rule}.`);
+    const amount = detail.reduction ? -value : value;
     const baseAmount = detail.flat ? null : evaluateContributionBase(engine, detail);
     const rate = detail.flat ? null : evaluateContributionRate(engine, detail);
     if (baseAmount !== null && baseAmount < 0) throw new Error(`Le modèle social a fourni une assiette invalide pour ${detail.rule}.`);
@@ -190,7 +231,7 @@ export function calculateSocialPayroll(input: {
   const legalCategory = assertLegalCategory(input.legalCategory);
   const contractType = assertContractType(input.contractType);
   const engine = new Engine(socialRules);
-  engine.setSituation({
+  const situation: SocialPayrollSituation = {
     ...MODEL_DEFAULT_SITUATION,
     [GROSS_RULE]: `${input.grossAmount} €/mois`,
     [LEGAL_CATEGORY_RULE]: `'${legalCategory}'`,
@@ -202,7 +243,16 @@ export function calculateSocialPayroll(input: {
     [HEALTH_PLAN_RULE]: `${input.healthPlanMonthlyAmount} €/mois`,
     [HEALTH_EMPLOYER_RATE_RULE]: `${input.healthPlanEmployerRate}%`,
     ...(input.situation ?? {}),
-  });
+  };
+  engine.setSituation(situation as Parameters<Engine["setSituation"]>[0]);
+  const frozenSmic = RGDU_FROZEN_SMIC.find((entry) => entry.year === input.calculationDate.getUTCFullYear());
+  if (frozenSmic && !(RGDU_SMIC_RULE in situation)) {
+    const workingTime = engine.evaluate(WORKING_TIME_RULE);
+    assertNoMissingVariables(workingTime, WORKING_TIME_RULE);
+    if (typeof workingTime.nodeValue !== "number" || !Number.isFinite(workingTime.nodeValue) || workingTime.nodeValue <= 0) throw new Error("Le modèle social n'a pas fourni un temps de travail valide pour la RGDU.");
+    const monthlySmic = Math.round(workingTime.nodeValue * frozenSmic.hourly * 10000) / 10000;
+    engine.setSituation({ ...situation, [RGDU_SMIC_RULE]: `${monthlySmic} €/mois` } as Parameters<Engine["setSituation"]>[0]);
+  }
 
   const netBeforeTaxEvaluation = engine.evaluate(NET_BEFORE_TAX_RULE);
   assertNoMissingVariables(netBeforeTaxEvaluation, NET_BEFORE_TAX_RULE);
@@ -215,10 +265,11 @@ export function calculateSocialPayroll(input: {
   const employerContributionsEvaluation = engine.evaluate(EMPLOYER_CONTRIBUTIONS_RULE);
   assertNoMissingVariables(employerContributionsEvaluation, EMPLOYER_CONTRIBUTIONS_RULE);
 
-  const netBeforeTax = assertNumber(netBeforeTaxEvaluation.nodeValue, NET_BEFORE_TAX_RULE);
-  const netTaxableAmount = assertNumber(netTaxableEvaluation.nodeValue, NET_TAXABLE_RULE);
-  const netSocialAmount = assertNumber(netSocialEvaluation.nodeValue, NET_SOCIAL_RULE);
-  const employeeContributions = assertNumber(employeeContributionsEvaluation.nodeValue, EMPLOYEE_CONTRIBUTIONS_RULE);
+  const rawNetBeforeTax = assertRawNumber(netBeforeTaxEvaluation.nodeValue, NET_BEFORE_TAX_RULE);
+  const rawNetTaxable = assertRawNumber(netTaxableEvaluation.nodeValue, NET_TAXABLE_RULE);
+  const rawNetSocial = assertRawNumber(netSocialEvaluation.nodeValue, NET_SOCIAL_RULE);
+  const rawEmployeeContributions = assertRawNumber(employeeContributionsEvaluation.nodeValue, EMPLOYEE_CONTRIBUTIONS_RULE);
+  const employeeContributions = roundMoney(rawEmployeeContributions);
   const employerContributions = assertNumber(employerContributionsEvaluation.nodeValue, EMPLOYER_CONTRIBUTIONS_RULE);
   const contributionDetails = evaluateContributionDetails(engine);
   const employeeDetailTotal = contributionDetails.filter((contribution) => contribution.side === "EMPLOYEE").reduce((total, contribution) => total + contribution.amount, 0);
@@ -230,16 +281,42 @@ export function calculateSocialPayroll(input: {
     throw new Error(`Le détail des cotisations patronales (${employerDetailTotal.toFixed(2)} €) ne réconcilie pas le total du modèle social (${employerContributions.toFixed(2)} €). Le bulletin est bloqué pour éviter un détail incomplet.`);
   }
 
+  // Un bulletin additionne des lignes arrondies au centime : les totaux et les nets
+  // sont recalés sur ces lignes pour qu'aucun total ne diffère d'un centime de leur somme.
+  const employeeLinesTotal = roundMoney(employeeDetailTotal);
+  const employerLinesTotal = roundMoney(employerDetailTotal);
+  const roundingShift = rawEmployeeContributions - employeeLinesTotal;
+  const netBeforeTax = roundMoney(rawNetBeforeTax + roundingShift);
+  const netSocialAmount = roundMoney(rawNetSocial + roundingShift);
+
+  // Net imposable = net avant impôt + CSG/CRDS non déductible + part patronale santé.
+  // Le modèle 11.1.0 y ajoute aussi la prévoyance patronale (incapacité, invalidité,
+  // décès), qui n'est pas imposable dans la limite de l'art. 83, 1° quater du CGI.
+  const lineAmount = (code: string) => contributionDetails.find((contribution) => contribution.code === code)?.amount ?? 0;
+  const socialSecurityCeiling = engine.evaluate(PRORATED_SOCIAL_SECURITY_CEILING_RULE);
+  assertNoMissingVariables(socialSecurityCeiling, PRORATED_SOCIAL_SECURITY_CEILING_RULE);
+  const ceiling = assertNumber(socialSecurityCeiling.nodeValue, PRORATED_SOCIAL_SECURITY_CEILING_RULE);
+  const prevoyanceContributions = ["sante_salarie", "sante_employeur", "invalidite_deces_salarie", "invalidite_deces_employeur"].reduce((total, code) => total + lineAmount(code), 0);
+  const prevoyanceTaxLimit = Math.min(0.05 * ceiling + 0.02 * input.grossAmount, 0.16 * ceiling);
+  if (prevoyanceContributions > prevoyanceTaxLimit) {
+    throw new Error("Le calcul est bloqué : les cotisations de prévoyance et de santé dépassent la limite d'exonération fiscale (art. 83, 1° quater du CGI). Cette situation n'est pas encore prise en charge.");
+  }
+  const netTaxableAmount = roundMoney(netBeforeTax + lineAmount("csg_non_deductible") + lineAmount("sante_employeur"));
+  const modelNetTaxableWithoutDisability = rawNetTaxable - lineAmount("invalidite_deces_employeur");
+  if (Math.abs(netTaxableAmount - modelNetTaxableWithoutDisability) > 0.05) {
+    throw new Error(`Le net imposable (${netTaxableAmount.toFixed(2)} €) ne réconcilie pas le modèle social (${modelNetTaxableWithoutDisability.toFixed(2)} €). Le bulletin est bloqué pour éviter un net imposable inexact.`);
+  }
+
   return {
     modelVersion: SOCIAL_MODEL_VERSION,
-    grossAmount: Math.round((input.grossAmount + Number.EPSILON) * 100) / 100,
+    grossAmount: roundMoney(input.grossAmount),
     legalCategory,
-    employeeContributions,
-    employerContributions,
+    employeeContributions: employeeLinesTotal,
+    employerContributions: employerLinesTotal,
     netBeforeTax,
     netTaxableAmount,
     netSocialAmount,
-    employerCost: Math.round((input.grossAmount + employerContributions + Number.EPSILON) * 100) / 100,
+    employerCost: roundMoney(input.grossAmount + employerLinesTotal),
     contributionDetails,
   };
 }

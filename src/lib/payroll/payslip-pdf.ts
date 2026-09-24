@@ -117,7 +117,8 @@ function requiredMissing(input: PayslipPdfInput): string[] {
   }
   for (const contribution of input.contributions) {
     if (contribution.rate === undefined || contribution.baseAmount === undefined) missing.push(`Assiette/taux cotisation : ${contribution.label}`);
-    if (!Number.isFinite(contribution.amount) || contribution.amount < 0) missing.push(`Montant cotisation : ${contribution.label}`);
+    // Seule une réduction patronale (RGDU) peut être négative ; une retenue salariale jamais.
+    if (!Number.isFinite(contribution.amount) || (contribution.amount < 0 && contribution.side !== "EMPLOYER")) missing.push(`Montant cotisation : ${contribution.label}`);
     if (contribution.rate !== null && contribution.rate !== undefined && (!Number.isFinite(contribution.rate) || contribution.rate < 0 || contribution.rate > 1)) missing.push(`Taux cotisation : ${contribution.label}`);
     if (contribution.baseAmount !== null && contribution.baseAmount !== undefined && (!Number.isFinite(contribution.baseAmount) || contribution.baseAmount < 0)) missing.push(`Assiette cotisation : ${contribution.label}`);
   }
