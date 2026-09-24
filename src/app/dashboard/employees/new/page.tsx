@@ -5,10 +5,12 @@ import { prisma } from "@/lib/prisma";
 import { createEmployee } from "../actions";
 import { EmployeeForm } from "../EmployeeForm";
 import { getUserDisplayName } from "@/lib/displayName";
+import { isOrganizationAdmin } from "@/lib/accessPolicy";
 
 export default async function NewEmployeePage() {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
+  if (!isOrganizationAdmin(membership)) redirect("/dashboard/employees");
 
   const memberships = await prisma.membership.findMany({
     where: { organizationId: membership.organizationId, deletedAt: null },

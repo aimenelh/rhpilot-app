@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { Mail, Clock, Users, UserPlus } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership } from "@/lib/auth";
+import { isOrganizationAdmin } from "@/lib/accessPolicy";
 import { getUserDisplayName } from "@/lib/displayName";
 import { formatDate } from "@/lib/format";
 import { Card } from "@/components/ui/Card";
@@ -53,6 +54,7 @@ function getInitials(user: { firstName: string | null; lastName: string | null; 
 export default async function TeamPage() {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
+  if (!isOrganizationAdmin(membership)) redirect("/dashboard");
 
   const canInvite = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
 

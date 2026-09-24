@@ -4,6 +4,7 @@ import { sendEmail, renderNotificationEmail } from "@/lib/email";
 import { formatRelativeDueDate, isOverdue, daysUntil } from "@/lib/urgency";
 import { getUserDisplayName } from "@/lib/displayName";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
+import { taskAccessWhere, type MembershipAccess } from "@/lib/accessPolicy";
 import {
   scheduledDigestPeriodStart,
   scheduledDigestType,
@@ -22,7 +23,7 @@ async function getAttentionTasksForMembership(organizationId: string, membership
       organizationId,
       assignedMembershipId: membershipId,
       status: { notIn: ["DONE", "CANCELLED"] },
-      ...ACTIVE_TASK_SCOPE,
+      AND: [ACTIVE_TASK_SCOPE, taskAccessWhere(requester)],
     },
     include: { employeeEvent: { include: { employee: true } } },
     orderBy: { dueDate: "asc" },
@@ -40,10 +41,12 @@ export async function sendManualReminder({
   taskId,
   organizationId,
   actorUserId,
+  requester,
 }: {
   taskId: string;
   organizationId: string;
   actorUserId: string;
+  requester: MembershipAccess;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   const task = await prisma.task.findFirst({
     where: {

@@ -39,14 +39,15 @@ type NavItem = {
   icon: LucideIcon;
   section?: string;
   previewOwnerAccess?: boolean;
+  adminOnly?: boolean;
   badge?: string;
 };
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Tableau de bord", available: true, icon: Compass, section: "Accueil" },
   { href: "/dashboard/employees", label: "Salariés", available: true, icon: Users, section: "Gestion RH" },
-  { href: "/dashboard/absences", label: "Absences", available: true, icon: ClipboardCheck },
-  { href: "/dashboard/obligations", label: "Obligations RH", available: true, icon: FileCheck2 },
+  { href: "/dashboard/absences", label: "Absences", available: true, icon: ClipboardCheck, adminOnly: true },
+  { href: "/dashboard/obligations", label: "Obligations RH", available: true, icon: FileCheck2, adminOnly: true },
   {
     href: "/dashboard/payroll",
     label: "Paie",
@@ -61,10 +62,11 @@ const NAV_ITEMS: NavItem[] = [
     href: "/dashboard/team",
     label: "Équipe",
     available: true,
+    adminOnly: true,
     icon: UsersRound,
     section: "Espace",
   },
-  { href: "/dashboard/billing", label: "Facturation", available: true, icon: CreditCard },
+  { href: "/dashboard/billing", label: "Facturation", available: true, icon: CreditCard, adminOnly: true },
   { href: "/dashboard/configuration", label: "Configuration", available: true, icon: Settings },
   { href: "/dashboard/notifications", label: "Notifications", available: true, icon: Bell },
 ];
@@ -152,7 +154,8 @@ export function AppShell({
           const isActive =
             item.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.href);
           const isPreview = item.previewOwnerAccess === true;
-          const canOpen = item.available || (isPreview && accessRole === "OWNER");
+          const isAdmin = accessRole === "OWNER" || accessRole === "ADMIN";
+          const canOpen = (!item.adminOnly || isAdmin) && (item.available || (isPreview && accessRole === "OWNER"));
 
           return (
             <div key={item.href}>

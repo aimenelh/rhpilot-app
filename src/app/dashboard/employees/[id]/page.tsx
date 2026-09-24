@@ -24,6 +24,7 @@ import { getEventTemplateDotColor } from "@/lib/eventTemplateStyle";
 import { summarizeParcours } from "@/lib/parcoursSummary";
 import { CcnHint } from "@/components/CcnHint";
 import { PayrollProfileSection } from "../../payroll/PayrollProfileSection";
+import { employeeAccessWhere, eventAccessWhere, isOrganizationAdmin } from "@/lib/accessPolicy";
 
 export const dynamic = "force-dynamic";
 
@@ -46,10 +47,13 @@ export default async function EmployeeDetailPage({
       id: params.id,
       organizationId: membership.organizationId,
       deletedAt: null,
+      ...employeeAccessWhere(membership),
     },
   });
 
   if (!employee) notFound();
+
+  const canManageEmployee = isOrganizationAdmin(membership);
 
   const [memberships, eventTemplates, employeeEvents, organization, payrollProfile, collectiveAgreements] = await Promise.all([
     prisma.membership.findMany({
@@ -62,7 +66,7 @@ export default async function EmployeeDetailPage({
       orderBy: { label: "asc" },
     }),
     prisma.employeeEvent.findMany({
-      where: { employeeId: employee.id, organizationId: membership.organizationId, deletedAt: null },
+      where: { employeeId: employee.id, organizationId: membership.organizationId, deletedAt: null, ...eventAccessWhere(membership) },
       include: { eventTemplate: true, tasks: true },
       orderBy: { triggerDate: "desc" },
     }),
@@ -126,10 +130,12 @@ export default async function EmployeeDetailPage({
               {employee.position || "Poste non renseigné"} · Embauché·e le {formatDate(employee.hireDate)} · Actif
             </p>
           </div>
-          <div className="flex items-center gap-4 pt-1 text-sm font-medium">
-            <a href="#informations" className="text-brand-primary hover:underline">Modifier</a>
-            <a href="#archiver" className="text-ink-faint hover:text-ink-soft">Archiver</a>
-          </div>
+          {canManageEmployee && (
+            <div className="flex items-center gap-4 pt-1 text-sm font-medium">
+              <a href="#informations" className="text-brand-primary hover:underline">Modifier</a>
+              <a href="#archiver" className="text-ink-faint hover:text-ink-soft">Archiver</a>
+            </div>
+          )}
         </div>
 
         <dl className="mt-4 flex flex-wrap gap-x-8 gap-y-3 border-t border-surface-border pt-4">
@@ -240,7 +246,7 @@ export default async function EmployeeDetailPage({
         </Card>
       )}
 
-      <PayrollProfileSection
+      {canManageEmployee && <PayrollProfileSection
         employeeId={employee.id}
         firstName={employee.firstName}
         canEdit={["OWNER", "ADMIN"].includes(membership.accessRole)}
@@ -260,11 +266,11 @@ export default async function EmployeeDetailPage({
             : null
         }
         agreements={collectiveAgreements}
-      />
+      />}
 
       <div className="mt-8">
         <h2 className="text-sm font-semibold text-ink">Parcours RH de {employee.firstName}</h2>
-        <div className="mt-3">
+        {canManageEmployee && <div className="mt-3">
           <TriggerEventForm
             action={triggerEventForEmployee}
             eventTemplates={eventTemplates.map((t) => ({ key: t.key, label: t.label }))}
@@ -276,7 +282,7 @@ export default async function EmployeeDetailPage({
             conventionCollective={organization?.conventionCollective}
             probationTrackable={probationTrackable}
           />
-        </div>
+        </div>}
         {visibleEmployeeEvents.length > 0 && (
           <div className="mt-3 flex flex-col gap-3">
             {visibleEmployeeEvents.map((event) => {
@@ -313,7 +319,7 @@ export default async function EmployeeDetailPage({
         )}
       </div>
 
-      <div id="informations" className="mt-8 max-w-xl scroll-mt-6">
+      {canManageEmployee && <div id="informations" className="mt-8 max-w-xl scroll-mt-6">
         <h2 className="text-sm font-semibold text-ink">Informations du salarié</h2>
         <div className="mt-3">
           <EmployeeForm
@@ -356,7 +362,7 @@ export default async function EmployeeDetailPage({
             />
           </div>
         </Card>
-      </div>
+      </div>}
     </div>
   );
 }

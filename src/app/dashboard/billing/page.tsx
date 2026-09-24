@@ -1,5 +1,6 @@
 import { CircleCheck, Lock } from "lucide-react";
 import { getCurrentMembership } from "@/lib/auth";
+import { isOrganizationAdmin } from "@/lib/accessPolicy";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { formatDate } from "@/lib/format";
@@ -25,6 +26,7 @@ export default async function BillingPage({
 }) {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
+  if (!isOrganizationAdmin(membership)) redirect("/dashboard");
 
   const [organization, employeeCount] = await Promise.all([
     prisma.organization.findUnique({ where: { id: membership.organizationId } }),
