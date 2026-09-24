@@ -6,6 +6,7 @@ import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { stripe, STRIPE_PRICE_BASE, STRIPE_PRICE_PER_EMPLOYEE } from "@/lib/stripe";
 import { employeeQuantityForBilling } from "@/lib/billingPolicy";
 import { getAppUrl } from "@/lib/appUrl";
+import { billableEmployeeWhere } from "@/lib/billingEmployeeScope";
 
 export type BillingActionState = { error: string } | undefined;
 
@@ -34,11 +35,11 @@ export async function createCheckoutSession(
     return { error: "Un abonnement est déjà actif pour cette organisation." };
   }
 
-  // Quantité du prix "par salarié" = nombre de salariés actifs
-  // aujourd'hui. Se resynchronisera ensuite via la tâche planifiée
-  // quotidienne plutôt qu'à chaque ajout/suppression de salarié.
+  // Quantité du prix "par salarié" = salariés réels actifs uniquement.
+  // Les 15 fiches de démonstration ne doivent jamais devenir une ligne
+  // facturable. La quantité se resynchronisera ensuite via le cron.
   const employeeCount = await prisma.employee.count({
-    where: { organizationId: organization.id, deletedAt: null },
+    where: billableEmployeeWhere(organization.id),
   });
 
   const appUrl = getAppUrl();

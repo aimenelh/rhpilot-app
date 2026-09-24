@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { formatDate } from "@/lib/format";
 import { ManageSubscriptionButton } from "./ManageSubscriptionButton";
 import { UpgradeToProButton } from "./UpgradeToProButton";
+import { billableEmployeeWhere } from "@/lib/billingEmployeeScope";
 
 const FREE_TIER_LIMIT = 3;
 
@@ -30,7 +31,7 @@ export default async function BillingPage({
 
   const [organization, employeeCount] = await Promise.all([
     prisma.organization.findUnique({ where: { id: membership.organizationId } }),
-    prisma.employee.count({ where: { organizationId: membership.organizationId, deletedAt: null } }),
+    prisma.employee.count({ where: billableEmployeeWhere(membership.organizationId) }),
   ]);
 
   const isPro = organization?.subscriptionStatus === "active";
@@ -69,7 +70,7 @@ export default async function BillingPage({
         </div>
         <p className="mt-2 text-sm text-ink-soft">
           {isPro
-            ? `${employeeCount} salarié${employeeCount > 1 ? "s" : ""} · ${monthlyEstimate} € estimés ce mois-ci`
+            ? `${employeeCount} salarié${employeeCount > 1 ? "s" : ""} facturable${employeeCount > 1 ? "s" : ""} · ${monthlyEstimate} € estimés ce mois-ci`
             : `Jusqu'à ${FREE_TIER_LIMIT} salariés inclus, sans engagement`}
         </p>
         {isPro && organization?.currentPeriodEnd && (
@@ -95,7 +96,7 @@ export default async function BillingPage({
         <div className="mt-6 border-t border-surface-border pt-5">
           <div className="flex items-center justify-between text-sm text-ink-soft">
             <span>
-              {employeeCount} / {FREE_TIER_LIMIT} salariés utilisés
+              {employeeCount} / {FREE_TIER_LIMIT} salariés réels utilisés
             </span>
           </div>
           <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-surface-subtle">
@@ -104,6 +105,9 @@ export default async function BillingPage({
               style={{ width: `${usageRatio * 100}%` }}
             />
           </div>
+          <p className="mt-2 text-xs text-ink-faint">
+            Les salariés fictifs générés par la démonstration ne comptent jamais dans cette limite ni dans la facturation.
+          </p>
         </div>
       )}
 

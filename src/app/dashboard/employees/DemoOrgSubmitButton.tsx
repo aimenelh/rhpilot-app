@@ -40,8 +40,9 @@ export function DemoOrgSubmitButton() {
     <div>
       <SubmitButton />
       <FieldHint>
-        Génère 15 salariés fictifs pour découvrir RH Pilot. Ces fiches sont temporaires : elles
-        seront automatiquement archivées après 48h, sauf si vous passez sur Pro entre-temps.
+        Génère 15 salariés fictifs pour découvrir RH Pilot. Ces fiches ne comptent jamais dans
+        la limite du plan Gratuit ni dans la facturation. Elles sont automatiquement archivées
+        après 48h, sauf si vous passez sur Pro entre-temps.
       </FieldHint>
       <GenerationOverlay />
     </div>

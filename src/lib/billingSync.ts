@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { stripe, STRIPE_PRICE_PER_EMPLOYEE } from "@/lib/stripe";
 import { employeeQuantityForBilling } from "@/lib/billingPolicy";
+import { billableEmployeeWhere } from "@/lib/billingEmployeeScope";
 
 const TERMINAL_SUBSCRIPTION_STATUSES = new Set(["canceled", "incomplete_expired"]);
 
@@ -47,10 +48,7 @@ export async function syncStripeEmployeeQuantities() {
       }
 
       const activeEmployeeCount = await prisma.employee.count({
-        where: {
-          organizationId: organization.id,
-          deletedAt: null,
-        },
+        where: billableEmployeeWhere(organization.id),
       });
 
       const desiredQuantity = employeeQuantityForBilling(activeEmployeeCount);
