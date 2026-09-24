@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendConfiguredReminders } from "@/lib/reminders";
 import { sendScheduledDigests } from "@/lib/notifications";
+import { syncStripeEmployeeQuantities } from "@/lib/billingSync";
 
 // Vercel signe automatiquement ses appels de tâche planifiée avec ce
 // jeton (Authorization: Bearer CRON_SECRET) — sans lui, n'importe qui
@@ -52,8 +53,9 @@ export async function GET(request: Request) {
   const reminders = await sendConfiguredReminders();
   const digests = await sendScheduledDigests();
   const demoPurge = await purgeStaleDemoEmployees();
+  const billingSync = await syncStripeEmployeeQuantities();
 
-  const result = { reminders, digests, demoPurge };
+  const result = { reminders, digests, demoPurge, billingSync };
   console.info("RH Pilot cron quotidien", result);
 
   return NextResponse.json(result);
