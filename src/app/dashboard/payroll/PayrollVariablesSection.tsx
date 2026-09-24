@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
-import { Calculator, FileSpreadsheet, Gauge, ReceiptText } from "lucide-react";
+import { Calculator, Clock3, FileSpreadsheet, Gauge, ReceiptText } from "lucide-react";
 import { addPayrollVariable, deletePayrollVariable, type PayrollVariableFormState } from "./periodActions";
 import MinimumSalaryControlSection from "./MinimumSalaryControlSection";
 import PaidLeaveCalculator from "./PaidLeaveCalculator";
+import WorkingTimeCalculator from "./WorkingTimeCalculator";
 
 const VARIABLE_OPTIONS = [
   ["ACTIVITY_BONUS", "Prime liée à l'activité"],
@@ -14,8 +15,6 @@ const VARIABLE_OPTIONS = [
   ["OBJECTIVE_BONUS", "Prime sur objectifs"],
   ["EXCEPTIONAL_BONUS", "Prime exceptionnelle"],
   ["SUJETION_BONUS", "Prime de sujétion"],
-  ["OVERTIME_HOURS", "Heures supplémentaires — montant brut calculé"],
-  ["ADDITIONAL_HOURS", "Heures complémentaires — montant brut calculé"],
   ["INCOMPLETE_MONTH", "Entrée / sortie en cours de mois — retenue calculée"],
   ["PAID_LEAVE_INDEMNITY", "Indemnité de congés payés"],
   ["SICK_PAY_MAINTENANCE", "Maintien employeur maladie"],
@@ -46,7 +45,7 @@ type VariableRow = { id: string; employeeId: string; code: string; label: string
 type Employee = { id: string; firstName: string; lastName: string };
 type ContributionDetail = { code: string; label: string; sourceRule: string; side: "EMPLOYEE" | "EMPLOYER"; amount: number };
 type ContributionResult = { employeeId: string; modelVersion: string | null; contributionDetails: ContributionDetail[] };
-type TabKey = "variables" | "paid-leave" | "minimum" | "contributions";
+type TabKey = "variables" | "working-time" | "paid-leave" | "minimum" | "contributions";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -93,6 +92,7 @@ export default function PayrollVariablesSection({ periodId, employees, variables
   const contributionByEmployee = new Map(contributions.map((item) => [item.employeeId, item]));
   const tabs: Array<{ key: TabKey; label: string; helper: string; icon: typeof Calculator }> = [
     { key: "variables", label: "Éléments du mois", helper: `${variables.length} saisi${variables.length > 1 ? "s" : ""}`, icon: ReceiptText },
+    { key: "working-time", label: "Temps de travail", helper: "Valorisation", icon: Clock3 },
     { key: "paid-leave", label: "Congés payés", helper: "Calcul dédié", icon: Calculator },
     { key: "minimum", label: "Salaire minimum", helper: "Contrôle", icon: Gauge },
     { key: "contributions", label: "Cotisations", helper: "Détail du calcul", icon: FileSpreadsheet },
@@ -165,6 +165,7 @@ export default function PayrollVariablesSection({ periodId, employees, variables
         </div>
       ) : null}
 
+      {activeTab === "working-time" ? <div className="p-5"><WorkingTimeCalculator periodId={periodId} employees={employees} readOnly={!canEdit} /></div> : null}
       {activeTab === "paid-leave" ? <div className="p-5"><PaidLeaveCalculator periodId={periodId} employees={employees} readOnly={!canEdit} /></div> : null}
       {activeTab === "minimum" ? <div className="p-5"><MinimumSalaryControlSection periodId={periodId} employees={employees} /></div> : null}
       {activeTab === "contributions" ? (
