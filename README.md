@@ -67,6 +67,11 @@ Voir `.env.example` pour la liste complète. Principales :
 | `CLERK_WEBHOOK_SIGNING_SECRET` | Signature du webhook Clerk |
 | `RESEND_API_KEY` / `RESEND_FROM_EMAIL` | Envoi d'email |
 | `APP_URL` | Base des liens dans les emails |
+| `CRON_SECRET` | Protection de la tâche planifiée quotidienne |
+| `ANTHROPIC_API_KEY` | Copilote RH |
+| `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET` | Facturation et webhook Stripe |
+| `STRIPE_PRICE_ID_BASE` / `STRIPE_PRICE_ID_PER_EMPLOYEE` | Tarifs Stripe du palier Pro |
+| `NEXT_PUBLIC_APP_URL` | URL publique utilisée pour les retours Stripe |
 
 ## Webhooks
 
