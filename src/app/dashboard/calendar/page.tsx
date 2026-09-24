@@ -5,7 +5,6 @@ import {
   ChevronRight,
   CalendarDays,
   TriangleAlert,
-  CalendarClock,
   User,
   X,
   CheckCircle2,
@@ -262,11 +261,18 @@ export default async function CalendarPage({
   const closeDayHref = `/dashboard/calendar?${baseParams}${
     activeCategory ? `&category=${encodeURIComponent(activeCategory)}` : ""
   }`;
-  const visibleSelectedDayTasks = activeCategory
-    ? selectedDayTasks.filter(
-        (task) => task.employeeEvent.eventTemplate?.label === activeCategory
-      )
-    : selectedDayTasks;
+  const visibleSelectedDayTasks = (
+    activeCategory
+      ? selectedDayTasks.filter(
+          (task) => task.employeeEvent.eventTemplate?.label === activeCategory
+        )
+      : selectedDayTasks
+  )
+    .slice()
+    .sort((a, b) => {
+      const doneOrder = Number(a.status === "DONE") - Number(b.status === "DONE");
+      return doneOrder || a.label.localeCompare(b.label, "fr");
+    });
   const selectedDayOpenCount = visibleSelectedDayTasks.filter(
     (task) => task.status !== "DONE"
   ).length;
@@ -276,7 +282,15 @@ export default async function CalendarPage({
   const selectedDayOverdueCount = visibleSelectedDayTasks.filter((task) =>
     isOverdue(task.dueDate, task.status as never)
   ).length;
-  const selectedDayGroupsMap = new Map<string, { label: string; tasks: TaskForDisplay[] }>();
+  const selectedDayResponsibleCount = new Set(
+    visibleSelectedDayTasks
+      .map((task) => task.assignedMembership?.user.email)
+      .filter((email): email is string => Boolean(email))
+  ).size;
+  const selectedDayGroupsMap = new Map<
+    string,
+    { key: string; label: string; tasks: TaskForDisplay[] }
+  >();
   for (const task of visibleSelectedDayTasks) {
     const label = task.assignedMembership
       ? getUserDisplayName(task.assignedMembership.user)
@@ -285,7 +299,7 @@ export default async function CalendarPage({
       ? task.assignedMembership.user.email
       : "__unassigned__";
     if (!selectedDayGroupsMap.has(key)) {
-      selectedDayGroupsMap.set(key, { label, tasks: [] });
+      selectedDayGroupsMap.set(key, { key, label, tasks: [] });
     }
     selectedDayGroupsMap.get(key)!.tasks.push(task);
   }
@@ -425,6 +439,7 @@ export default async function CalendarPage({
                 <Link
                   key={key}
                   href={`/dashboard/calendar?${baseParams}${activeCategory ? `&category=${encodeURIComponent(activeCategory)}` : ""}&day=${key}`}
+                  scroll={false}
                   aria-label={`${key} · ${dayTasks.length} échéance${dayTasks.length > 1 ? "s" : ""}`}
                   className={`min-h-[100px] p-1.5 transition-colors ${
                     day.isToday ? "bg-brand-primary/5" : isWeekend ? "bg-surface-subtle/50" : "bg-white"
@@ -562,6 +577,7 @@ export default async function CalendarPage({
         >
           <Link
             href={closeDayHref}
+            scroll={false}
             aria-label="Fermer le détail de la journée"
             className="absolute inset-0 bg-ink/25 backdrop-blur-[1px]"
           />
@@ -577,11 +593,12 @@ export default async function CalendarPage({
                 <p className="mt-1 text-sm text-ink-soft">
                   {visibleSelectedDayTasks.length === 0
                     ? "Aucune action planifiée."
-                    : `${visibleSelectedDayTasks.length} action${visibleSelectedDayTasks.length > 1 ? "s" : ""} · ${selectedDayGroups.length} responsable${selectedDayGroups.length > 1 ? "s" : ""}`}
+                    : `${visibleSelectedDayTasks.length} action${visibleSelectedDayTasks.length > 1 ? "s" : ""} · ${selectedDayResponsibleCount} responsable${selectedDayResponsibleCount > 1 ? "s" : ""}`}
                 </p>
               </div>
               <Link
                 href={closeDayHref}
+                scroll={false}
                 aria-label="Fermer"
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-surface-border text-ink-faint transition-colors hover:border-ink-faint hover:text-ink"
               >
@@ -614,7 +631,7 @@ export default async function CalendarPage({
               </div>
             )}
 
-            <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+            <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-5 sm:px-6">
               {visibleSelectedDayTasks.length === 0 ? (
                 <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed border-surface-border px-6 text-center">
                   <CalendarDays size={24} className="text-ink-faint" />
@@ -626,7 +643,7 @@ export default async function CalendarPage({
               ) : (
                 <div className="space-y-6">
                   {selectedDayGroups.map((group) => (
-                    <section key={group.label}>
+                    <section key={group.key}>
                       <div className="mb-2 flex items-center justify-between gap-3">
                         <h3 className="flex min-w-0 items-center gap-2 text-sm font-semibold text-ink">
                           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-subtle text-ink-soft">
