@@ -1,9 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { stripe, STRIPE_PRICE_PER_EMPLOYEE } from "@/lib/stripe";
-import { employeeQuantityForBilling } from "@/lib/billingPolicy";
+import { employeeQuantityForBilling, hasOpenStripeSubscription } from "@/lib/billingPolicy";
 import { billableEmployeeWhere } from "@/lib/billingEmployeeScope";
-
-const TERMINAL_SUBSCRIPTION_STATUSES = new Set(["canceled", "incomplete_expired"]);
 
 export async function syncStripeEmployeeQuantities() {
   const organizations = await prisma.organization.findMany({
@@ -29,7 +27,7 @@ export async function syncStripeEmployeeQuantities() {
     try {
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
 
-      if (TERMINAL_SUBSCRIPTION_STATUSES.has(subscription.status)) {
+      if (!hasOpenStripeSubscription(subscription.id, subscription.status)) {
         skipped += 1;
         continue;
       }

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { sendConfiguredReminders } from "@/lib/reminders";
 import { sendScheduledDigests } from "@/lib/notifications";
 import { syncStripeEmployeeQuantities } from "@/lib/billingSync";
+import { PRO_ACCESS_STATUS_VALUES } from "@/lib/billingPolicy";
 
 // Vercel signe automatiquement ses appels de tâche planifiée avec ce
 // jeton (Authorization: Bearer CRON_SECRET) — sans lui, n'importe qui
@@ -38,7 +39,10 @@ async function purgeStaleDemoEmployees() {
       deletedAt: null,
       createdAt: { lt: cutoff },
       organization: {
-        OR: [{ subscriptionStatus: null }, { subscriptionStatus: { not: "active" } }],
+        OR: [
+          { subscriptionStatus: null },
+          { subscriptionStatus: { notIn: [...PRO_ACCESS_STATUS_VALUES] } },
+        ],
       },
     },
     select: { id: true },
