@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { chooseOwnershipSuccessor } from "@/lib/ownership";
 import { randomUUID } from "node:crypto";
 import { releaseMembershipResponsibilities } from "@/lib/membershipLifecycle";
+import { stripe } from "@/lib/stripe";
+import { shouldCancelSubscriptionForLastMembership } from "@/lib/billingPolicy";
 
 // Webhook Clerk : synchronise notre table User avec les événements
 // d'identité (création, mise à jour d'email, suppression de compte).
@@ -90,6 +92,53 @@ export async function POST(request: Request) {
       });
 
       if (existing) {
+        const membershipsBeforeDeletion = await prisma.membership.findMany({
+          where: { userId: existing.id, deletedAt: null },
+          select: {
+            id: true,
+            organizationId: true,
+            organization: {
+              select: {
+                stripeSubscriptionId: true,
+                subscriptionStatus: true,
+              },
+            },
+          },
+        });
+
+        // Clerk a déjà supprimé le compte côté identité : si cette personne
+        // était le dernier membre actif d'une organisation, aucun utilisateur
+        // ne pourrait ensuite ouvrir le portail Stripe. On coupe donc toute
+        // souscription encore ouverte AVANT de désactiver nos données locales.
+        // Le contrôle est rejoué sans effet dangereux lors d'un retry webhook :
+        // on relit d'abord le statut Stripe distant avant d'annuler.
+        for (const membership of membershipsBeforeDeletion) {
+          const otherActiveMembersCount = await prisma.membership.count({
+            where: {
+              organizationId: membership.organizationId,
+              deletedAt: null,
+              id: { not: membership.id },
+              user: { deletedAt: null },
+            },
+          });
+
+          if (
+            shouldCancelSubscriptionForLastMembership(
+              otherActiveMembersCount,
+              membership.organization.stripeSubscriptionId,
+              membership.organization.subscriptionStatus
+            ) &&
+            membership.organization.stripeSubscriptionId
+          ) {
+            const remoteSubscription = await stripe.subscriptions.retrieve(
+              membership.organization.stripeSubscriptionId
+            );
+            if (remoteSubscription.status !== "canceled") {
+              await stripe.subscriptions.cancel(membership.organization.stripeSubscriptionId);
+            }
+          }
+        }
+
         const deletedAt = new Date();
 
         await prisma.$transaction(async (tx) => {

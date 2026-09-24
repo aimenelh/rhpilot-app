@@ -33,3 +33,17 @@ export function estimatedProMonthlyPrice(activeEmployeeCount: number): number {
     employeeQuantityForBilling(activeEmployeeCount) * PRO_PER_EMPLOYEE_MONTHLY_EUR
   );
 }
+
+export function shouldCancelSubscriptionForLastMembership(
+  otherActiveMembersCount: number,
+  stripeSubscriptionId: string | null | undefined,
+  subscriptionStatus: string | null | undefined
+): boolean {
+  if (!Number.isInteger(otherActiveMembersCount) || otherActiveMembersCount < 0) {
+    throw new Error("Le nombre de membres actifs doit être un entier positif ou nul.");
+  }
+  return (
+    otherActiveMembersCount === 0 &&
+    hasOpenStripeSubscription(stripeSubscriptionId, subscriptionStatus)
+  );
+}

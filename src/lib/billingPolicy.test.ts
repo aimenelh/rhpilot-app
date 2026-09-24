@@ -5,6 +5,7 @@ import {
   FREE_TIER_LIMIT,
   hasOpenStripeSubscription,
   hasProAccess,
+  shouldCancelSubscriptionForLastMembership,
 } from "@/lib/billingPolicy";
 
 describe("employeeQuantityForBilling", () => {
@@ -50,5 +51,13 @@ describe("politique d'abonnement", () => {
     expect(estimatedProMonthlyPrice(0)).toBe(18);
     expect(estimatedProMonthlyPrice(1)).toBe(18);
     expect(estimatedProMonthlyPrice(5)).toBe(30);
+  });
+
+  it("résilie seulement si le membre supprimé est le dernier et que l'abonnement est ouvert", () => {
+    expect(shouldCancelSubscriptionForLastMembership(0, "sub_1", "active")).toBe(true);
+    expect(shouldCancelSubscriptionForLastMembership(0, "sub_1", "past_due")).toBe(true);
+    expect(shouldCancelSubscriptionForLastMembership(1, "sub_1", "active")).toBe(false);
+    expect(shouldCancelSubscriptionForLastMembership(0, "sub_1", "canceled")).toBe(false);
+    expect(shouldCancelSubscriptionForLastMembership(0, null, "active")).toBe(false);
   });
 });
