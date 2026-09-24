@@ -1,5 +1,6 @@
 import { LandingMotion } from "./LandingMotion";
 import { ArrivalHero } from "./ArrivalHero";
+import { LiveMonth } from "./LiveMonth";
 import { BrandIntro } from "./BrandIntro";
 import Image from "next/image";
 import Link from "next/link";
@@ -18,6 +19,7 @@ export function LandingPage() {
       <MarketingHeader />
       <main id="main-content">
         <ArrivalHero />
+        <LiveMonth />
         <div className={s.strip}>
           <div className={`${s.wrap} ${s.stripInner}`}>
             <span>Un suivi continu, pour les moments qui comptent.</span>
