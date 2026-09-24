@@ -8,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { isOrganizationAdmin } from "@/lib/accessPolicy";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
+import { billableEmployeeWhere } from "@/lib/billingEmployeeScope";
 
 // Sécurité : l'organisation courante est TOUJOURS résolue côté serveur
 // à partir de la session (getCurrentMembership), jamais à partir d'un
@@ -22,8 +23,9 @@ export type EmployeeFormState = { error: string } | undefined;
 // l'une la fait respecter, l'autre l'explique visuellement.
 const FREE_TIER_LIMIT = 3;
 
-// Ne bloque que la croissance du nombre de salariés actifs (création,
-// réactivation, import CSV), jamais la modification ou l'archivage
+// Ne bloque que la croissance du nombre de salariés réels actifs
+// (création, réactivation, import CSV). Les fiches de démonstration
+// ne comptent jamais dans le quota, la modification ou l'archivage
 // d'une fiche existante. Un abonnement Pro actif lève la limite
 // entièrement. `additionalCount` permet de vérifier l'ajout de
 // plusieurs salariés d'un coup (import CSV), pas seulement un par un.
@@ -38,7 +40,7 @@ export async function checkFreeTierLimit(
   if (organization?.subscriptionStatus === "active") return null;
 
   const activeCount = await prisma.employee.count({
-    where: { organizationId, deletedAt: null },
+    where: billableEmployeeWhere(organizationId),
   });
   if (activeCount + additionalCount > FREE_TIER_LIMIT) {
     return `Le palier Gratuit est limité à ${FREE_TIER_LIMIT} salariés. Passez sur Pro depuis la page Facturation pour en ajouter davantage.`;

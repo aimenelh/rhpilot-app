@@ -62,6 +62,7 @@ jobs:
           src/lib/probationTracking.test.ts
           src/lib/employeeCsv.test.ts
           src/lib/billingPolicy.test.ts
+          src/lib/billingEmployeeScope.test.ts
           src/lib/ownership.test.ts
           src/lib/copilotPolicy.test.ts
           src/lib/employeeIdentity.test.ts
