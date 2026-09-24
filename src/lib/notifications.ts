@@ -23,7 +23,7 @@ async function getAttentionTasksForMembership(organizationId: string, membership
       organizationId,
       assignedMembershipId: membershipId,
       status: { notIn: ["DONE", "CANCELLED"] },
-      AND: [ACTIVE_TASK_SCOPE, taskAccessWhere(requester)],
+      ...ACTIVE_TASK_SCOPE,
     },
     include: { employeeEvent: { include: { employee: true } } },
     orderBy: { dueDate: "asc" },
@@ -53,7 +53,7 @@ export async function sendManualReminder({
       id: taskId,
       organizationId,
       status: { notIn: ["DONE", "CANCELLED"] },
-      ...ACTIVE_TASK_SCOPE,
+      AND: [ACTIVE_TASK_SCOPE, taskAccessWhere(requester)],
     },
     include: {
       employeeEvent: { include: { employee: true } },
