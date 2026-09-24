@@ -64,6 +64,7 @@ jobs:
           src/lib/billingPolicy.test.ts
           src/lib/billingEmployeeScope.test.ts
           src/lib/ownership.test.ts
+          src/lib/membershipLifecycle.test.ts
           src/lib/copilotPolicy.test.ts
           src/lib/employeeIdentity.test.ts
           src/lib/accessPolicy.test.ts

@@ -3,6 +3,7 @@ import { Webhook } from "svix";
 import { prisma } from "@/lib/prisma";
 import { chooseOwnershipSuccessor } from "@/lib/ownership";
 import { randomUUID } from "node:crypto";
+import { releaseMembershipResponsibilities } from "@/lib/membershipLifecycle";
 
 // Webhook Clerk : synchronise notre table User avec les événements
 // d'identité (création, mise à jour d'email, suppression de compte).
@@ -102,46 +103,68 @@ export async function POST(request: Request) {
           });
 
           for (const membership of memberships) {
-            if (membership.accessRole !== "OWNER") continue;
-
-            const candidates = await tx.membership.findMany({
-              where: {
-                organizationId: membership.organizationId,
-                deletedAt: null,
-                id: { not: membership.id },
-                user: { deletedAt: null },
-              },
-              select: {
-                id: true,
-                accessRole: true,
-                createdAt: true,
-              },
-            });
-
-            const successor = chooseOwnershipSuccessor(candidates);
-            if (!successor) continue;
-
-            if (successor.accessRole !== "OWNER") {
-              await tx.membership.update({
-                where: { id: successor.id },
-                data: { accessRole: "OWNER" },
+            if (membership.accessRole === "OWNER") {
+              const candidates = await tx.membership.findMany({
+                where: {
+                  organizationId: membership.organizationId,
+                  deletedAt: null,
+                  id: { not: membership.id },
+                  user: { deletedAt: null },
+                },
+                select: {
+                  id: true,
+                  accessRole: true,
+                  createdAt: true,
+                },
               });
+
+              const successor = chooseOwnershipSuccessor(candidates);
+              if (successor) {
+                if (successor.accessRole !== "OWNER") {
+                  await tx.membership.update({
+                    where: { id: successor.id },
+                    data: { accessRole: "OWNER" },
+                  });
+                }
+
+                await tx.auditLog.create({
+                  data: {
+                    id: randomUUID(),
+                    organizationId: membership.organizationId,
+                    actorUserId: null,
+                    action: "ownership.transferred_after_account_deletion",
+                    entityType: "Membership",
+                    entityId: successor.id,
+                    metadata: {
+                      previousOwnerMembershipId: membership.id,
+                      successorMembershipId: successor.id,
+                    },
+                  },
+                });
+              }
             }
 
-            await tx.auditLog.create({
-              data: {
-                id: randomUUID(),
-                organizationId: membership.organizationId,
-                actorUserId: null,
-                action: "ownership.transferred_after_account_deletion",
-                entityType: "Membership",
-                entityId: successor.id,
-                metadata: {
-                  previousOwnerMembershipId: membership.id,
-                  successorMembershipId: successor.id,
-                },
-              },
+            const releasedResponsibilities = await releaseMembershipResponsibilities(tx, {
+              membershipId: membership.id,
+              organizationId: membership.organizationId,
             });
+
+            if (
+              releasedResponsibilities.releasedTaskCount > 0 ||
+              releasedResponsibilities.releasedManagerEmployeeCount > 0
+            ) {
+              await tx.auditLog.create({
+                data: {
+                  id: randomUUID(),
+                  organizationId: membership.organizationId,
+                  actorUserId: null,
+                  action: "membership.responsibilities_released_after_account_deletion",
+                  entityType: "Membership",
+                  entityId: membership.id,
+                  metadata: releasedResponsibilities,
+                },
+              });
+            }
           }
 
           await tx.membership.updateMany({

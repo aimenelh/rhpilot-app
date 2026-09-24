@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { releaseMembershipResponsibilities } from "@/lib/membershipLifecycle";
 
 /**
  * Quitter son organisation actuelle pour en rejoindre une nouvelle,
@@ -55,6 +56,11 @@ export async function switchOrganization(token: string) {
   }
 
   await prisma.$transaction(async (tx) => {
+    const releasedResponsibilities = await releaseMembershipResponsibilities(tx, {
+      membershipId: currentMembership.id,
+      organizationId: currentMembership.organizationId,
+    });
+
     await tx.membership.update({
       where: { id: currentMembership.id },
       data: { deletedAt: new Date() },
@@ -88,6 +94,7 @@ export async function switchOrganization(token: string) {
         action: "membership.left_for_another_org",
         entityType: "Membership",
         entityId: currentMembership.id,
+        metadata: releasedResponsibilities,
       },
     });
     await tx.auditLog.create({
