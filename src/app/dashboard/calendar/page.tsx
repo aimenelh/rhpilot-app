@@ -1,11 +1,29 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ChevronLeft, ChevronRight, CalendarDays, TriangleAlert, CalendarClock, User } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  CalendarDays,
+  TriangleAlert,
+  CalendarClock,
+  User,
+  X,
+  CheckCircle2,
+  Clock3,
+  UsersRound,
+  ArrowUpRight,
+} from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership } from "@/lib/auth";
 import { taskAccessWhere } from "@/lib/accessPolicy";
 import { formatDate } from "@/lib/format";
 import { isOverdue } from "@/lib/urgency";
+import {
+  getParisDateParts,
+  parisCalendarDayNumber,
+  parisDayWindow,
+  parisMidnightUtc,
+} from "@/lib/parisDate";
 import { getUserDisplayName } from "@/lib/displayName";
 import {
   getMonthGrid,
@@ -37,12 +55,41 @@ function categoryFilterDot(label: string | undefined) {
 // détermine sa couleur partout où une tâche individuelle est affichée.
 function taskUrgencyDot(task: { dueDate: Date; status: string }): string {
   if (isOverdue(task.dueDate, task.status as never)) return "bg-accent-rose";
-  if (dateKey(task.dueDate) === dateKey(new Date())) return "bg-brand-primary";
+  if (parisCalendarDayNumber(task.dueDate) === parisCalendarDayNumber(new Date())) {
+    return "bg-brand-primary";
+  }
   return "bg-ink-faint";
 }
 function parseDayKey(key: string): Date {
   const [y, m, d] = key.split("-").map(Number);
-  return new Date(y, m - 1, d);
+  return new Date(Date.UTC(y, m - 1, d));
+}
+function formatDayHeading(date: Date) {
+  const formatted = new Intl.DateTimeFormat("fr-FR", {
+    timeZone: "Europe/Paris",
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  }).format(date);
+  return formatted.charAt(0).toUpperCase() + formatted.slice(1);
+}
+function taskStatusMeta(task: { dueDate: Date; status: string }) {
+  if (isOverdue(task.dueDate, task.status as never)) {
+    return { label: "En retard", className: "bg-accent-rose/10 text-accent-rose" };
+  }
+  switch (task.status) {
+    case "DONE":
+      return { label: "Terminée", className: "bg-accent-teal/10 text-accent-teal" };
+    case "IN_PROGRESS":
+      return { label: "En cours", className: "bg-brand-primary/10 text-brand-primary" };
+    case "WAITING_EXTERNAL":
+      return { label: "En attente", className: "bg-accent-amber/10 text-ink-soft" };
+    case "TO_PREPARE":
+      return { label: "À préparer", className: "bg-surface-subtle text-ink-soft" };
+    default:
+      return { label: "À faire", className: "bg-surface-subtle text-ink-soft" };
+  }
 }
 type TaskForDisplay = {
   id: string;
@@ -95,13 +142,21 @@ export default async function CalendarPage({
   const { year, month } = parseMonthParam(searchParams.month);
   const viewFilter = view === "mine" ? { assignedMembershipId: membership.id } : taskAccessWhere(membership);
   const now = new Date();
-  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const todayKey = dateKey(todayStart);
-  const weekEnd = new Date(todayStart);
-  weekEnd.setDate(weekEnd.getDate() + 7);
-  const selectedDay = searchParams.day ? parseDayKey(searchParams.day) : todayStart;
-  const selectedDayEnd = new Date(selectedDay);
-  selectedDayEnd.setDate(selectedDayEnd.getDate() + 1);
+  const todayWindow = parisDayWindow(now);
+  const todayStart = todayWindow.start;
+  const todayEnd = todayWindow.end;
+  const todayParts = getParisDateParts(now);
+  const todayKey = `${todayParts.year}-${String(todayParts.month).padStart(2, "0")}-${String(todayParts.day).padStart(2, "0")}`;
+  const weekEndCalendar = new Date(Date.UTC(todayParts.year, todayParts.month - 1, todayParts.day + 7));
+  const weekEnd = parisMidnightUtc(
+    weekEndCalendar.getUTCFullYear(),
+    weekEndCalendar.getUTCMonth() + 1,
+    weekEndCalendar.getUTCDate()
+  );
+  const selectedDay = searchParams.day ? parseDayKey(searchParams.day) : parseDayKey(todayKey);
+  const selectedDayWindow = parisDayWindow(selectedDay);
+  const selectedDayStart = selectedDayWindow.start;
+  const selectedDayEnd = selectedDayWindow.end;
   const weeks = getMonthGrid(year, month);
   const rangeStart = weeks[0][0].date;
   const rangeEnd = weeks[weeks.length - 1][6].date;
@@ -128,7 +183,7 @@ export default async function CalendarPage({
         where: {
           organizationId: membership.organizationId,
           status: { notIn: ["DONE", "CANCELLED"] },
-          dueDate: { gte: todayStart, lt: new Date(todayStart.getTime() + 86400000) },
+          dueDate: { gte: todayStart, lt: todayEnd },
           employeeEvent: { deletedAt: null, employee: { deletedAt: null } },
           ...viewFilter,
         },
@@ -181,7 +236,7 @@ export default async function CalendarPage({
         where: {
           organizationId: membership.organizationId,
           status: { not: "CANCELLED" },
-          dueDate: { gte: selectedDay, lt: selectedDayEnd },
+          dueDate: { gte: selectedDayStart, lt: selectedDayEnd },
           employeeEvent: { deletedAt: null, employee: { deletedAt: null } },
           ...viewFilter,
         },
@@ -200,9 +255,45 @@ export default async function CalendarPage({
   ) as string[];
   const prevMonth = month === 0 ? { year: year - 1, month: 11 } : { year, month: month - 1 };
   const nextMonth = month === 11 ? { year: year + 1, month: 0 } : { year, month: month + 1 };
-  const isCurrentRealMonth = year === now.getFullYear() && month === now.getMonth();
+  const isCurrentRealMonth =
+    year === todayParts.year && month === todayParts.month - 1;
   const baseParams = `month=${monthParam(year, month)}&view=${view}`;
   const activeCategory = searchParams.category;
+  const closeDayHref = `/dashboard/calendar?${baseParams}${
+    activeCategory ? `&category=${encodeURIComponent(activeCategory)}` : ""
+  }`;
+  const visibleSelectedDayTasks = activeCategory
+    ? selectedDayTasks.filter(
+        (task) => task.employeeEvent.eventTemplate?.label === activeCategory
+      )
+    : selectedDayTasks;
+  const selectedDayOpenCount = visibleSelectedDayTasks.filter(
+    (task) => task.status !== "DONE"
+  ).length;
+  const selectedDayDoneCount = visibleSelectedDayTasks.filter(
+    (task) => task.status === "DONE"
+  ).length;
+  const selectedDayOverdueCount = visibleSelectedDayTasks.filter((task) =>
+    isOverdue(task.dueDate, task.status as never)
+  ).length;
+  const selectedDayGroupsMap = new Map<string, { label: string; tasks: TaskForDisplay[] }>();
+  for (const task of visibleSelectedDayTasks) {
+    const label = task.assignedMembership
+      ? getUserDisplayName(task.assignedMembership.user)
+      : "Non assigné";
+    const key = task.assignedMembership
+      ? task.assignedMembership.user.email
+      : "__unassigned__";
+    if (!selectedDayGroupsMap.has(key)) {
+      selectedDayGroupsMap.set(key, { label, tasks: [] });
+    }
+    selectedDayGroupsMap.get(key)!.tasks.push(task);
+  }
+  const selectedDayGroups = Array.from(selectedDayGroupsMap.values()).sort((a, b) => {
+    if (a.label === "Non assigné") return 1;
+    if (b.label === "Non assigné") return -1;
+    return a.label.localeCompare(b.label, "fr");
+  });
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4">
@@ -308,6 +399,7 @@ export default async function CalendarPage({
                 Aujourd&apos;hui
               </Link>
             )}
+            <MonthSummaryButton year={year} month={month} />
           </div>
           <div className="mt-4 grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-surface-border bg-surface-border">
             {WEEKDAY_LABELS.map((label, i) => (
@@ -328,11 +420,12 @@ export default async function CalendarPage({
               if (activeCategory) {
                 dayTasks = dayTasks.filter((t) => t.employeeEvent.eventTemplate?.label === activeCategory);
               }
-              const isSelected = key === dateKey(selectedDay);
+              const isSelected = key === searchParams.day;
               return (
                 <Link
                   key={key}
                   href={`/dashboard/calendar?${baseParams}${activeCategory ? `&category=${encodeURIComponent(activeCategory)}` : ""}&day=${key}`}
+                  aria-label={`${key} · ${dayTasks.length} échéance${dayTasks.length > 1 ? "s" : ""}`}
                   className={`min-h-[100px] p-1.5 transition-colors ${
                     day.isToday ? "bg-brand-primary/5" : isWeekend ? "bg-surface-subtle/50" : "bg-white"
                   } ${!day.isCurrentMonth ? "opacity-50" : ""} ${isSelected ? "ring-2 ring-inset ring-brand-primary/40" : ""} hover:bg-surface-subtle`}
@@ -379,26 +472,6 @@ export default async function CalendarPage({
               </p>
             </div>
           )}
-          <div className="mt-6">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="flex items-center gap-2 text-base font-semibold text-ink">
-                <CalendarClock size={16} className="text-ink-faint" />
-                {dateKey(selectedDay) === todayKey ? "Aujourd'hui" : formatDate(selectedDay)}
-              </h2>
-              <MonthSummaryButton year={year} month={month} />
-            </div>
-            {selectedDayTasks.length === 0 ? (
-              <p className="mt-3 text-sm text-ink-faint">Aucune tâche ce jour-là.</p>
-            ) : (
-              <Card className="mt-3 divide-y divide-surface-border p-0">
-                {selectedDayTasks.map((task) => (
-                  <div key={task.id} className="px-1">
-                    <TaskRow task={task} />
-                  </div>
-                ))}
-              </Card>
-            )}
-          </div>
         </div>
         <div className="flex w-full flex-col gap-4 lg:w-80 lg:shrink-0">
           <Card>
@@ -479,6 +552,144 @@ export default async function CalendarPage({
           </Card>
         </div>
       </div>
+
+      {searchParams.day && (
+        <div
+          className="fixed inset-0 z-50"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="calendar-day-title"
+        >
+          <Link
+            href={closeDayHref}
+            aria-label="Fermer le détail de la journée"
+            className="absolute inset-0 bg-ink/25 backdrop-blur-[1px]"
+          />
+          <aside className="absolute inset-y-0 right-0 flex w-full flex-col bg-white shadow-2xl sm:max-w-xl">
+            <div className="flex items-start justify-between gap-4 border-b border-surface-border px-5 py-5 sm:px-6">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">
+                  Journée RH
+                </p>
+                <h2 id="calendar-day-title" className="mt-1 text-xl font-semibold text-ink">
+                  {formatDayHeading(selectedDay)}
+                </h2>
+                <p className="mt-1 text-sm text-ink-soft">
+                  {visibleSelectedDayTasks.length === 0
+                    ? "Aucune action planifiée."
+                    : `${visibleSelectedDayTasks.length} action${visibleSelectedDayTasks.length > 1 ? "s" : ""} · ${selectedDayGroups.length} responsable${selectedDayGroups.length > 1 ? "s" : ""}`}
+                </p>
+              </div>
+              <Link
+                href={closeDayHref}
+                aria-label="Fermer"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-surface-border text-ink-faint transition-colors hover:border-ink-faint hover:text-ink"
+              >
+                <X size={17} />
+              </Link>
+            </div>
+
+            {visibleSelectedDayTasks.length > 0 && (
+              <div className="grid grid-cols-3 gap-px border-b border-surface-border bg-surface-border">
+                <div className="bg-white px-4 py-3">
+                  <div className="flex items-center gap-1.5 text-xs text-ink-faint">
+                    <Clock3 size={13} /> À traiter
+                  </div>
+                  <p className="mt-1 text-xl font-semibold text-ink">{selectedDayOpenCount}</p>
+                </div>
+                <div className="bg-white px-4 py-3">
+                  <div className="flex items-center gap-1.5 text-xs text-ink-faint">
+                    <TriangleAlert size={13} /> En retard
+                  </div>
+                  <p className={`mt-1 text-xl font-semibold ${selectedDayOverdueCount > 0 ? "text-accent-rose" : "text-ink"}`}>
+                    {selectedDayOverdueCount}
+                  </p>
+                </div>
+                <div className="bg-white px-4 py-3">
+                  <div className="flex items-center gap-1.5 text-xs text-ink-faint">
+                    <CheckCircle2 size={13} /> Terminées
+                  </div>
+                  <p className="mt-1 text-xl font-semibold text-ink">{selectedDayDoneCount}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex-1 overflow-y-auto px-5 py-5 sm:px-6">
+              {visibleSelectedDayTasks.length === 0 ? (
+                <div className="flex min-h-64 flex-col items-center justify-center rounded-xl border border-dashed border-surface-border px-6 text-center">
+                  <CalendarDays size={24} className="text-ink-faint" />
+                  <p className="mt-3 text-sm font-medium text-ink">Aucune échéance ce jour-là</p>
+                  <p className="mt-1 max-w-xs text-sm text-ink-faint">
+                    Sélectionnez une autre journée dans le calendrier pour consulter son organisation.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {selectedDayGroups.map((group) => (
+                    <section key={group.label}>
+                      <div className="mb-2 flex items-center justify-between gap-3">
+                        <h3 className="flex min-w-0 items-center gap-2 text-sm font-semibold text-ink">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface-subtle text-ink-soft">
+                            <UsersRound size={14} />
+                          </span>
+                          <span className="truncate">{group.label}</span>
+                        </h3>
+                        <span className="shrink-0 text-xs text-ink-faint">
+                          {group.tasks.length} tâche{group.tasks.length > 1 ? "s" : ""}
+                        </span>
+                      </div>
+
+                      <div className="space-y-2">
+                        {group.tasks.map((task) => {
+                          const statusMeta = taskStatusMeta(task);
+                          const isDone = task.status === "DONE";
+                          return (
+                            <Link
+                              key={task.id}
+                              href={`/dashboard/events/${task.employeeEventId}#task-${task.id}`}
+                              className="group block rounded-xl border border-surface-border bg-white p-4 transition-all hover:border-brand-primary/35 hover:shadow-sm"
+                            >
+                              <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className={`text-sm font-semibold ${isDone ? "text-ink-faint line-through" : "text-ink"}`}>
+                                    {task.label}
+                                  </p>
+                                  <p className="mt-1 text-sm text-ink-soft">
+                                    {task.employeeEvent.employee.firstName} {task.employeeEvent.employee.lastName}
+                                  </p>
+                                </div>
+                                <span className={`shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold ${statusMeta.className}`}>
+                                  {statusMeta.label}
+                                </span>
+                              </div>
+
+                              <div className="mt-3 flex items-end justify-between gap-3">
+                                <div className="min-w-0">
+                                  {task.employeeEvent.eventTemplate?.label ? (
+                                    <p className="truncate text-xs text-ink-faint">
+                                      Parcours · {task.employeeEvent.eventTemplate.label}
+                                    </p>
+                                  ) : (
+                                    <p className="text-xs text-ink-faint">Tâche RH personnalisée</p>
+                                  )}
+                                </div>
+                                <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-brand-primary opacity-80 transition-opacity group-hover:opacity-100">
+                                  Ouvrir <ArrowUpRight size={12} />
+                                </span>
+                              </div>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </section>
+                  ))}
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
+      )}
+
     </div>
   );
 }
