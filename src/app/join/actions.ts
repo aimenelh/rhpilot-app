@@ -59,10 +59,20 @@ export async function switchOrganization(token: string) {
       where: { id: currentMembership.id },
       data: { deletedAt: new Date() },
     });
-    await tx.membership.create({
-      data: {
+    await tx.membership.upsert({
+      where: {
+        userId_organizationId: {
+          userId: user.id,
+          organizationId: invitation.organizationId,
+        },
+      },
+      create: {
         userId: user.id,
         organizationId: invitation.organizationId,
+        accessRole: invitation.accessRole,
+      },
+      update: {
+        deletedAt: null,
         accessRole: invitation.accessRole,
       },
     });
