@@ -1,6 +1,8 @@
 import { headers } from "next/headers";
 import { Webhook } from "svix";
 import { prisma } from "@/lib/prisma";
+import { chooseOwnershipSuccessor } from "@/lib/ownership";
+import { randomUUID } from "node:crypto";
 
 // Webhook Clerk : synchronise notre table User avec les événements
 // d'identité (création, mise à jour d'email, suppression de compte).
@@ -76,29 +78,86 @@ export async function POST(request: Request) {
     }
 
     case "user.deleted": {
-      // Correspond au "temps 1" de la stratégie de suppression :
-      // désactivation immédiate, jamais de suppression physique ici.
-      // La purge (temps 3) reste un job explicite séparé.
+      // Désactivation immédiate, sans suppression physique. Si la personne
+      // supprimée était OWNER d'une organisation qui possède encore des
+      // membres actifs, on garantit d'abord qu'un propriétaire actif reste
+      // en place afin de ne jamais rendre l'organisation administrativement
+      // orpheline.
       const data = event.data as { id: string };
       const existing = await prisma.user.findUnique({
         where: { authProviderId: data.id },
       });
 
       if (existing) {
-        await prisma.$transaction([
-          prisma.user.update({
+        const deletedAt = new Date();
+
+        await prisma.$transaction(async (tx) => {
+          const memberships = await tx.membership.findMany({
+            where: { userId: existing.id, deletedAt: null },
+            select: {
+              id: true,
+              organizationId: true,
+              accessRole: true,
+            },
+          });
+
+          for (const membership of memberships) {
+            if (membership.accessRole !== "OWNER") continue;
+
+            const candidates = await tx.membership.findMany({
+              where: {
+                organizationId: membership.organizationId,
+                deletedAt: null,
+                id: { not: membership.id },
+                user: { deletedAt: null },
+              },
+              select: {
+                id: true,
+                accessRole: true,
+                createdAt: true,
+              },
+            });
+
+            const successor = chooseOwnershipSuccessor(candidates);
+            if (!successor) continue;
+
+            if (successor.accessRole !== "OWNER") {
+              await tx.membership.update({
+                where: { id: successor.id },
+                data: { accessRole: "OWNER" },
+              });
+            }
+
+            await tx.auditLog.create({
+              data: {
+                id: randomUUID(),
+                organizationId: membership.organizationId,
+                actorUserId: null,
+                action: "ownership.transferred_after_account_deletion",
+                entityType: "Membership",
+                entityId: successor.id,
+                metadata: {
+                  previousOwnerMembershipId: membership.id,
+                  successorMembershipId: successor.id,
+                },
+              },
+            });
+          }
+
+          await tx.membership.updateMany({
+            where: { userId: existing.id, deletedAt: null },
+            data: { deletedAt },
+          });
+
+          await tx.user.update({
             where: { id: existing.id },
             data: {
-              deletedAt: new Date(),
+              deletedAt,
               authProviderId: null,
               email: `deleted-${existing.id}@rhpilot.invalid`,
             },
-          }),
-          prisma.membership.updateMany({
-            where: { userId: existing.id, deletedAt: null },
-            data: { deletedAt: new Date() },
-          }),
-        ]);
+          });
+        });
       }
       break;
     }

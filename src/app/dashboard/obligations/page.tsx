@@ -31,8 +31,10 @@ export default async function ObligationsPage() {
         action: "compliance.tracking.updated",
       },
       select: { entityId: true, metadata: true },
+      // Ces logs constituent encore la source d'état du module obligations.
+      // Ne jamais tronquer arbitrairement : une valeur ancienne mais toujours
+      // courante doit rester lisible même après de nombreuses mises à jour.
       orderBy: { createdAt: "desc" },
-      take: 1000,
     }),
   ]);
 
