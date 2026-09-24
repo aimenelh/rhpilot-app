@@ -25,5 +25,10 @@ export function resolveAppUrl(env: AppUrlEnvironment): string {
 }
 
 export function getAppUrl(): string {
-  return resolveAppUrl(process.env);
+  return resolveAppUrl({
+    APP_URL: process.env.APP_URL,
+    NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
+    VERCEL_ENV: process.env.VERCEL_ENV,
+    VERCEL_URL: process.env.VERCEL_URL,
+  });
 }
