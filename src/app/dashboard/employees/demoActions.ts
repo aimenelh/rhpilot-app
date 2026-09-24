@@ -6,18 +6,12 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { triggerEmployeeEvent } from "@/lib/eventEngine";
-import { prepareDemoPayrollDataForOrganization } from "../payroll/demoPayrollActions";
 
 function daysFromNow(offset: number): Date {
   const date = new Date();
   date.setDate(date.getDate() + offset);
   date.setHours(9, 0, 0, 0);
   return date;
-}
-
-function startOfCurrentMonth() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
 }
 
 async function mapWithConcurrencyLimit<T, R>(items: T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
@@ -59,34 +53,7 @@ function redirectWithFlash(message: string): never {
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/employees");
   revalidatePath("/dashboard/events");
-  revalidatePath("/dashboard/payroll");
   redirect(`/dashboard/employees?flash=${encodeURIComponent(message)}`);
-}
-
-async function resetDemoPayrollPeriod(organizationId: string, periodId: string) {
-  await prisma.$transaction(async (tx) => {
-    const period = await tx.payrollPeriod.findFirst({
-      where: { id: periodId, organizationId },
-      select: { id: true, status: true },
-    });
-    if (!period) return;
-    if (period.status !== "DRAFT") {
-      throw new Error("La période de paie de démonstration existe déjà et n'est plus en préparation. Elle ne sera pas écrasée.");
-    }
-
-    const calculations = await tx.payrollCalculation.findMany({
-      where: { organizationId, payrollPeriodId: periodId },
-      select: { id: true },
-    });
-    if (calculations.length > 0) {
-      const calculationIds = calculations.map((calculation) => calculation.id);
-      await tx.payslip.deleteMany({ where: { organizationId, payrollPeriodId: periodId } });
-      await tx.payrollContribution.deleteMany({ where: { calculationId: { in: calculationIds } } });
-      await tx.payrollCalculation.deleteMany({ where: { id: { in: calculationIds } } });
-    }
-    await tx.payrollVariable.deleteMany({ where: { organizationId, payrollPeriodId: periodId } });
-    await tx.payrollPeriod.delete({ where: { id: periodId } });
-  });
 }
 
 async function createDemoEmployee(template: (typeof DEMO_EMPLOYEES)[number], organizationId: string, managerMembershipId: string) {
@@ -144,11 +111,6 @@ export async function generateDemoOrganization() {
   }
 
   const organizationId = membership.organizationId;
-  const periodStart = startOfCurrentMonth();
-  let existingPeriod = await prisma.payrollPeriod.findUnique({
-    where: { organizationId_year_month: { organizationId, year: periodStart.getFullYear(), month: periodStart.getMonth() + 1 } },
-    select: { id: true, status: true },
-  });
 
   const allEmployees = await prisma.employee.findMany({
     where: { organizationId },
@@ -159,14 +121,6 @@ export async function generateDemoOrganization() {
   if (hasRealEmployee) redirectWithFlash("Votre organisation contient déjà des salariés réels. La génération fictive a été annulée pour protéger vos données.");
 
   const demoOnlyOrganization = allEmployees.length > 0;
-
-  if (demoOnlyOrganization && existingPeriod?.status !== "DRAFT" && existingPeriod) {
-    redirectWithFlash("La période de paie de démonstration existe déjà et n'est plus en préparation. Elle ne sera pas écrasée.");
-  }
-  if (demoOnlyOrganization && existingPeriod?.status === "DRAFT") {
-    await resetDemoPayrollPeriod(organizationId, existingPeriod.id);
-    existingPeriod = null;
-  }
 
   const employeesByName = new Map<string, (typeof allEmployees)[number]>();
   for (const employee of allEmployees) {
@@ -205,8 +159,7 @@ export async function generateDemoOrganization() {
     );
   }
 
-  try {
-    if (createdEmployees.length > 0) {
+  if (createdEmployees.length > 0) {
       await prisma.auditLog.create({
         data: {
           id: randomUUID(),
@@ -219,23 +172,9 @@ export async function generateDemoOrganization() {
         },
       });
       await triggerDemoEmployeeEvents(createdEmployees.map((employee) => ({ id: employee.id, firstName: employee.firstName, hireDate: employee.hireDate })), organizationId, user.id);
-    }
-
-    await prepareDemoPayrollDataForOrganization(organizationId);
-  } catch (error) {
-    // Les salariés sont déjà créés à ce stade (pas dans la même
-    // transaction que ce qui suit) -- une erreur ici ne doit pas
-    // laisser l'utilisateur sans aucune explication. Le message
-    // d'origine de l'erreur est inclus : les erreurs de ce bloc sont
-    // déjà écrites pour être lisibles par un humain (voir
-    // demoPayrollActions.ts).
-    const detail = error instanceof Error ? error.message : "Erreur inconnue.";
-    redirectWithFlash(
-      `${allDemoEmployees.length} salariés créés, mais la préparation des données de paie a échoué : ${detail}`
-    );
   }
 
-  redirectWithFlash("Entreprise de démonstration générée (15 salariés) avec données de paie prêtes pour le test.");
+  redirectWithFlash("Entreprise de démonstration générée (15 salariés) avec parcours, échéances et tâches RH prêts à être testés.");
 }
 
 export async function archiveAllEmployees() {
