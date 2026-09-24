@@ -1,322 +1,266 @@
+/*
+  Introduction « le fil » (2,7 s) :
+  60-840 ms     le fil arrive et fait une boucle
+  840-1140 ms   il dessine le contour du logo
+  1100-1460 ms  le logo se remplit, le R apparaît
+  1260-1990 ms  « RH Pilot » monte
+  1650-1950 ms  le fil se rembobine dans le logo
+  1950-2600 ms  logo et nom vont se poser dans l'en-tête
+  2150-2550 ms  le fond s'efface, la page d'accueil monte dès 2,3 s (--intro-offset)
+  Les repères EXIT_AT / END_AT de BrandIntro.tsx suivent ce minutage.
+*/
+
 .intro {
+  display: none;
   position: fixed;
   inset: 0;
   z-index: 200;
-  background: #faf7f5;
-  color: #14151a;
-  display: grid;
-  place-items: center;
   overflow: hidden;
-  font-family: var(--font-dm-sans), sans-serif;
-  animation: open 420ms cubic-bezier(0.76, 0, 0.24, 1) 4s both;
+  cursor: default;
 }
-.topline {
+.intro[data-state="play"] {
+  display: block;
+  animation: done 1ms 2700ms forwards;
+}
+
+/* Même papier que la page d'accueil : quand il s'efface, rien ne saute. */
+.paper {
   position: absolute;
-  inset: 32px 40px auto;
-  display: flex;
-  justify-content: space-between;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.17em;
-  color: #77716d;
-  animation: appear 0.5s both;
+  inset: 0;
+  background: #f7f5ef;
+  animation: paperOut 400ms 2150ms ease both;
 }
+
+/* Point d'ancrage au centre de l'écran : le fil et le logo partagent ce repère. */
 .stage {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 520px;
-  width: min(540px, 100%);
-  perspective: 850px;
-}
-.logo {
   position: absolute;
-  left: calc(50% - 46px);
-  top: 80px;
-  border-radius: 24px;
-  box-shadow:
-    7px 9px 0 #b8321f,
-    18px 28px 45px #6c2a1924;
-  animation: pushed 2.1s cubic-bezier(0.2, 0.7, 0.3, 1) both;
-  transform-style: preserve-3d;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
 }
-.logo svg {
+
+.thread {
+  position: absolute;
+  left: -1500px;
+  top: -700px;
+  overflow: visible;
+  pointer-events: none;
+}
+.line,
+.outline {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: 1.01;
+}
+.line {
+  animation: thread 1950ms linear both;
+}
+.narrow {
+  display: none;
+}
+.outline {
+  animation: outline 1400ms linear both;
+}
+
+.lockup {
+  position: absolute;
+  left: -153px;
+  top: -52px;
+  display: flex;
+  align-items: center;
+  gap: 32.5px;
+  transform-origin: 0 0;
+  will-change: transform;
+  animation:
+    fly 650ms 1950ms cubic-bezier(0.7, 0, 0.2, 1) both,
+    vanish 1ms 2600ms forwards;
+}
+.mark {
+  width: 104px;
+  height: 104px;
+  flex: none;
+  border-radius: 26px;
+  animation: markShadow 1400ms 1200ms both;
+}
+.mark svg {
   display: block;
+  overflow: visible;
 }
+.mark svg rect {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: fill 380ms 1100ms cubic-bezier(0.3, 1.5, 0.5, 1) both;
+}
+.mark svg path {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: glyph 420ms 1200ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+
+/* Proportions exactes du logo de l'en-tête (x 3,25) pour qu'il s'y pose sans saut. */
 .name {
-  position: relative;
-  overflow: hidden;
-  margin-top: 8px;
-  font-size: clamp(44px, 8vw, 64px);
-  line-height: 1.2;
+  font-family: var(--font-dm-sans), sans-serif;
+  font-size: 48.75px;
   font-weight: 600;
-  letter-spacing: -0.055em;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  white-space: nowrap;
+  color: #14151a;
 }
-.name > span {
-  display: block;
-  animation: rise 0.75s cubic-bezier(0.16, 1, 0.3, 1) 1.6s both;
+.mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: bottom;
+  padding: 0.08em 0 0.12em;
+  margin: -0.08em 0 -0.12em;
 }
-.name em {
-  font-style: normal;
-  font-weight: 500;
+.word {
+  display: inline-block;
+  animation: rise 650ms 1260ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.dot {
+.pilot {
   color: #e8432e;
+  animation-delay: 1340ms;
 }
-.caption {
-  position: relative;
-  margin-top: 14px;
-  font-size: 13px;
-  letter-spacing: 0.01em;
-  color: #6a6461;
-  text-align: center;
-  padding: 0 24px;
-  animation: appear 0.65s 2s both;
+
+/* Relais avec la page : le titre attend la fin de l'intro, le logo de l'en-tête
+   n'apparaît qu'à l'instant où celui de l'intro s'y pose. */
+.intro[data-state="play"] ~ :global(main) {
+  --intro-offset: 2.3s;
 }
-.stroke {
-  height: 2px;
-  width: 60px;
-  background: #e8432e;
-  margin-top: 27px;
-  transform-origin: left;
-  animation: stroke 0.7s 2.2s both;
+.intro[data-state="play"] ~ * [data-header-lockup] {
+  animation: headerLockup 1ms 2600ms both;
 }
-.skip {
-  position: absolute;
-  right: 40px;
-  bottom: 30px;
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  background: transparent;
-  border: 0;
-  padding: 12px 0;
-  color: #68615d;
-  font-size: 12px;
-  cursor: pointer;
+
+@keyframes thread {
+  0% {
+    stroke-dashoffset: 1.01;
+  }
+  3.08% {
+    stroke-dashoffset: 1.01;
+    animation-timing-function: cubic-bezier(0.35, 0.1, 0.75, 0.6);
+  }
+  43.08% {
+    stroke-dashoffset: 0;
+  }
+  84.62% {
+    stroke-dashoffset: 0;
+    animation-timing-function: cubic-bezier(0.55, 0, 0.8, 0.3);
+  }
+  100% {
+    stroke-dashoffset: -1.01;
+  }
 }
-.skip:hover {
-  color: #b8321f;
+@keyframes outline {
+  0% {
+    stroke-dashoffset: 1.01;
+    opacity: 1;
+  }
+  60% {
+    stroke-dashoffset: 1.01;
+    animation-timing-function: cubic-bezier(0.15, 0.5, 0.35, 1);
+  }
+  81.43% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
 }
-.skip:focus-visible {
-  outline: 2px solid #e8432e;
-  outline-offset: 6px;
-}
-@keyframes logo {
+@keyframes fill {
   from {
     opacity: 0;
-    transform: translateY(36px) rotateX(34deg) rotateY(-35deg) rotateZ(-12deg)
-      scale(0.82);
+    transform: scale(0.82);
+  }
+  60% {
+    opacity: 1;
   }
   to {
     opacity: 1;
-    transform: translateY(0) rotateX(0) rotateY(0) rotateZ(0) scale(1);
+    transform: scale(1);
+  }
+}
+@keyframes glyph {
+  from {
+    opacity: 0;
+    transform: scale(0.35) rotate(-10deg);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes markShadow {
+  0% {
+    box-shadow: 0 0 0 rgba(184, 50, 31, 0);
+  }
+  25%,
+  55% {
+    box-shadow: 0 18px 36px -14px rgba(184, 50, 31, 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 rgba(184, 50, 31, 0);
   }
 }
 @keyframes rise {
   from {
-    transform: translateY(110%);
+    transform: translateY(108%);
   }
   to {
-    transform: translateY(0);
+    transform: none;
   }
 }
-@keyframes appear {
+@keyframes fly {
   from {
+    transform: none;
+  }
+  to {
+    transform: translate(var(--fly-x, 0px), var(--fly-y, -30px)) scale(var(--fly-k, 0.92));
+    opacity: var(--fly-o, 0);
+  }
+}
+@keyframes vanish {
+  to {
     opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
   }
 }
-@keyframes stroke {
-  from {
-    transform: scaleX(0);
-  }
+@keyframes paperOut {
   to {
-    transform: scaleX(1);
+    opacity: 0;
   }
 }
-@keyframes open {
-  from {
-    clip-path: inset(0 0 0 0);
-    visibility: visible;
-  }
+@keyframes done {
   to {
-    clip-path: inset(0 0 100% 0);
     visibility: hidden;
   }
 }
-@media (max-width: 600px) {
-  .topline {
-    inset: 24px 24px auto;
-    font-size: 9px;
+@keyframes headerLockup {
+  from {
+    opacity: 0;
   }
-  .skip {
-    right: 24px;
-    bottom: 20px;
-  }
-  .logo svg {
-    width: 88px;
-    height: 88px;
-  }
-  .logo {
-    border-radius: 22px;
-  }
-  .stage {
-    min-height: 380px;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .intro {
-    display: none;
-  }
-  .intro * {
-    animation: none !important;
+  to {
+    opacity: 1;
   }
 }
 
-.vignette {
-  position: relative;
-  width: min(360px, 100%);
-  height: 230px;
-}
-.mascot {
-  position: absolute;
-  left: calc(50% - 198px);
-  top: 5px;
-  width: 155px;
-  height: 220px;
-  animation: shuffle 2.1s cubic-bezier(0.2, 0.7, 0.3, 1) both;
-}
-.mascot svg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-}
-.pushPose {
-  animation: pushPose 4.4s steps(1, end) both;
-}
-.wavePose {
-  animation: wavePose 4.4s steps(1, end) both;
-  transform-origin: 50% 100%;
-}
-.effort {
-  position: absolute;
-  left: calc(50% - 175px);
-  top: 0;
-  font-family: var(--font-handwriting), cursive;
-  color: #b8321f;
-  font-size: 22px;
-  animation: effort 4.4s both;
-}
-.ground {
-  position: absolute;
-  bottom: 5px;
-  left: 12%;
-  right: 12%;
-  height: 1px;
-  background: #dcd4cf;
-  animation: appear 0.5s both;
-}
-@keyframes pushed {
-  0% {
-    transform: translateX(-65px) rotate(-9deg);
-    opacity: 0;
+@media (max-width: 700px) {
+  .wide {
+    display: none;
   }
-  15% {
-    opacity: 1;
-  }
-  35% {
-    transform: translateX(-42px) rotate(-6deg);
-  }
-  60% {
-    transform: translateX(-25px) rotate(-10deg);
-  }
-  85% {
-    transform: translateX(3px) rotate(3deg);
-  }
-  100% {
-    transform: translateX(0) rotate(0);
+  .narrow {
+    display: block;
   }
 }
-@keyframes shuffle {
-  0% {
-    transform: translateX(-65px);
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-  }
-  35% {
-    transform: translate(-42px, -3px);
-  }
-  60% {
-    transform: translate(-25px, 0);
-  }
-  85% {
-    transform: translate(3px, -2px);
-  }
-  100% {
-    transform: translate(0, 0);
-  }
-}
-@keyframes pushPose {
-  0%,
-  46% {
-    opacity: 1;
-  }
-  47%,
-  100% {
-    opacity: 0;
-  }
-}
-@keyframes wavePose {
-  0%,
-  46% {
-    opacity: 0;
-  }
-  47%,
-  100% {
-    opacity: 1;
-  }
-}
-@keyframes effort {
-  0%,
-  12% {
-    opacity: 0;
-    transform: translateY(5px);
-  }
-  25%,
-  39% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  48%,
-  100% {
-    opacity: 0;
-  }
-}
-@media (max-width: 600px) {
-  .vignette {
-    width: 320px;
-    transform: scale(0.9);
-    transform-origin: center bottom;
-  }
-  .mascot {
-    left: calc(50% - 188px);
-  }
-  .stage {
-    min-height: 470px;
-  }
-  .logo svg {
-    width: 96px;
-    height: 96px;
+
+@media (prefers-reduced-motion: reduce) {
+  .intro,
+  .intro[data-state="play"] {
+    display: none;
   }
 }

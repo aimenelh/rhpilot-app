@@ -121,6 +121,7 @@ export function MarketingHeader() {
             aria-label="RH Pilot, accueil"
             onClick={close}
             className="flex shrink-0 items-center gap-2.5"
+            data-header-lockup
           >
             <Logomark size={32} />
             <Wordmark />

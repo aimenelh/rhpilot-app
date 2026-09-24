@@ -42,14 +42,8 @@ export function ArrivalHero() {
     observer.observe(root.current ?? el);
     window.addEventListener("resize", schedule);
     query.addEventListener("change", schedule);
-    // Wait for the existing brand introduction before revealing the headline.
-    const introObserver = new MutationObserver(() => {
-      root.current?.setAttribute("data-ready", document.querySelector("[data-brand-intro]") ? "false" : "true");
-    });
-    introObserver.observe(root.current?.closest("[data-landing-motion]") ?? document.body, { childList: true });
-    root.current?.setAttribute("data-ready", "true");
     return () => {
-      observer.disconnect(); introObserver.disconnect(); cancelAnimationFrame(frame);
+      observer.disconnect(); cancelAnimationFrame(frame);
       window.removeEventListener("scroll", schedule); window.removeEventListener("resize", schedule);
       query.removeEventListener("change", schedule);
     };
