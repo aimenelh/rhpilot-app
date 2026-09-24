@@ -5,6 +5,7 @@ import { formatRelativeDueDate, isOverdue, daysUntil } from "@/lib/urgency";
 import { getUserDisplayName } from "@/lib/displayName";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
 import { taskAccessWhere, type MembershipAccess } from "@/lib/accessPolicy";
+import { getAppUrl } from "@/lib/appUrl";
 import {
   scheduledDigestPeriodStart,
   scheduledDigestType,
@@ -12,10 +13,6 @@ import {
 } from "@/lib/notificationSchedule";
 
 const DIGEST_ITEMS_LIMIT = 10;
-
-function getAppUrl() {
-  return process.env.APP_URL ?? "http://localhost:3000";
-}
 
 async function getAttentionTasksForMembership(membership: DigestMembership) {
   const tasks = await prisma.task.findMany({

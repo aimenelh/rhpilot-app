@@ -7,12 +7,9 @@ import type { AccessRole } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { sendEmail, escapeHtml } from "@/lib/email";
+import { getAppUrl } from "@/lib/appUrl";
 
 const INVITATION_VALID_DAYS = 7;
-
-function getAppUrl() {
-  return process.env.APP_URL ?? "http://localhost:3000";
-}
 
 export type InviteFormState = { error: string } | { success: string } | undefined;
 

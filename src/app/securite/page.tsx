@@ -31,7 +31,7 @@ const PILLARS = [
   {
     icon: Globe,
     title: "Une infrastructure identifiée",
-    text: "Base de données Neon en Union européenne. L’application est déployée via Vercel. Retrouvez nos prestataires ci-dessous.",
+    text: "Base de données Neon en Union européenne. Les fonctions applicatives Vercel sont configurées à Francfort (fra1). Retrouvez nos prestataires ci-dessous.",
     badge: true,
   },
   {
