@@ -2,12 +2,13 @@
 
 import { useEffect } from "react";
 
-/** Progressive enhancement: sections remain visible without JavaScript. */
+/** Progressive enhancement: sections remain visible without JavaScript.
+ *  Les sections collantes (data-no-reveal) gèrent leur propre apparition. */
 export function LandingMotion() {
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     let observer: IntersectionObserver | undefined;
-    const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-landing-motion] main > section:not(:first-child)"));
+    const elements = Array.from(document.querySelectorAll<HTMLElement>("[data-landing-motion] main > section:not(:first-child):not([data-no-reveal])"));
     const configure = () => {
       observer?.disconnect();
       elements.forEach(el => { el.removeAttribute("data-reveal"); el.removeAttribute("data-entered"); });
