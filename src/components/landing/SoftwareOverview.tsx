@@ -1,155 +1,78 @@
-import Image from "next/image";
 import Link from "next/link";
 import { MarketingHeader } from "./MarketingHeader";
 import { MarketingFooter } from "./MarketingFooter";
+import { ClosingCta } from "./ClosingCta";
 import { InteractiveDemo } from "./InteractiveDemo";
-import s from "./MarketingV2.module.css";
-const features = [
-  {
-    id: "salaries",
-    label: "Dossiers salariés",
-    title: "Une fiche pour retrouver le fil.",
-    text: "Consultez les informations du salarié et les parcours qui lui sont associés. Un point de départ commun pour le suivi de votre équipe.",
-    items: [
-      "Informations du salarié et de son contrat",
-      "Parcours associés à chaque personne",
-      "Accès aux étapes de son suivi RH",
-    ],
-    image: "/demo/fiche-salarie.png",
-  },
-  {
-    id: "parcours",
-    label: "Parcours RH & documents",
-    title: "Passez de l’événement aux actions.",
-    text: "Préparez les étapes à réaliser lors d’une embauche ou d’une autre échéance RH. Les tâches donnent un cadre au suivi, avec leurs dates et leurs responsables.",
-    items: [
-      "Parcours structurés en étapes",
-      "Responsables et échéances identifiés",
-      "Suivi des actions et documents associés",
-    ],
-    image: "/demo/parcours-avance.png",
-  },
-  {
-    id: "echeances",
-    label: "Calendrier & rappels",
-    title: "Gardez les prochaines dates en vue.",
-    text: "Le calendrier rassemble les échéances des parcours. Consultez ce qui arrive et retrouvez les tâches à traiter sans reprendre chaque dossier.",
-    items: [
-      "Vue calendrier des échéances",
-      "Repérage des tâches en retard",
-      "Notifications et résumés pour le suivi",
-    ],
-    image: "/marketing/calendar-landing.webp",
-  },
-  {
-    id: "copilote",
-    label: "Copilote RH",
-    title: "Interrogez votre suivi, simplement.",
-    text: "Le copilote utilise les données de votre entreprise pour vous aider à retrouver les priorités. Il propose des pistes à vérifier et accompagne la navigation dans vos parcours.",
-    items: [
-      "Questions sur les données de l’entreprise",
-      "Repérage des parcours à surveiller",
-      "Suggestions d’actions à examiner",
-    ],
-    image: "/marketing/copilot-landing.webp",
-  },
+import { SoftwareSandbox } from "./SoftwareSandbox";
+import h from "./payroll/PayrollHub.module.css";
+
+// Page « Le logiciel » : on l'essaie avant de le lire. Les ancres #parcours,
+// #salaries, #echeances, #copilote (dans la démonstration) et #demo restent
+// celles du menu.
+
+const BEYOND = [
+  { title: "Les pièces au bon endroit", text: "Contrat signé, accusé de DPAE, convocation : chaque étape garde son justificatif, retrouvable depuis la fiche du salarié." },
+  { title: "Un résumé dans votre boîte mail", text: "Chaque jour ou chaque semaine, au choix : ce qui est en retard, ce qui tombe aujourd’hui, ce qui arrive cette semaine. Et un rappel au responsable d’une tâche en un clic." },
+  { title: "La paie dans la continuité", text: "Les salariés, leurs absences et leurs arrêts enregistrés ici servent directement au calcul de la paie, sur le palier Pro." },
 ];
+
 export function SoftwareOverview() {
   return (
-    <div className={s.site}>
+    <div className={h.page}>
       <MarketingHeader />
       <main id="main-content">
-        <section className={s.pageHero}>
-          <div className={s.wrap}>
-            <p className={s.eyebrow}>Le logiciel RH Pilot</p>
-            <h1>
-              Des dossiers aux échéances,
-              <br />
-              un même fil conducteur.
+        <section className={h.hero} aria-labelledby="software-title">
+          <div className={h.inner}>
+            <p className={h.kicker}>Le logiciel</p>
+            <h1 id="software-title" className={h.title}>
+              Écrivez ce qui arrive.
+              <em> RH Pilot prépare la suite.</em>
             </h1>
-            <p className={s.lead}>
-              Découvrez comment RH Pilot organise le suivi des salariés,
-              répartit les démarches et rend les prochaines actions visibles.
+            <p className={h.intro}>
+              Essayez-le ici, sans créer de compte : un événement devient un parcours daté, rangé dans la fiche du salarié et
+              dans le calendrier, et le Copilote vous dit par quoi commencer.
             </p>
-            <div className={s.actions}>
-              <Link href="/sign-up" className={s.primary}>
-                Essayer gratuitement ↗
-              </Link>
-              <Link href="#demo" className={s.secondary}>
-                Voir la démonstration →
-              </Link>
-              <Link href="/tutoriels" className={s.secondary}>
-                Voir les tutoriels vidéo →
-              </Link>
+            <div className={h.demo}>
+              <SoftwareSandbox />
             </div>
-            <nav className={s.index} aria-label="Fonctionnalités">
-              {features.map((f) => (
-                <Link key={f.id} href={`#${f.id}`}>
-                  {f.label}
-                </Link>
+          </div>
+        </section>
+
+        <section className={h.how} aria-labelledby="software-beyond-title">
+          <div className={h.inner}>
+            <h2 id="software-beyond-title" className={h.h2Small}>
+              Et dans le logiciel, en plus
+            </h2>
+            <div className={h.howGrid}>
+              {BEYOND.map((item) => (
+                <div key={item.title}>
+                  <h3>{item.title}</h3>
+                  <p>{item.text}</p>
+                </div>
               ))}
-            </nav>
-          </div>
-        </section>
-        {features.map((f) => (
-          <section id={f.id} key={f.id} className={s.feature}>
-            <div className={`${s.wrap} ${s.featureGrid}`}>
-              <div>
-                <p className={s.eyebrow}>{f.label}</p>
-                <h2 className={s.title}>{f.title}</h2>
-                <p className={`${s.copy} mt-5`}>{f.text}</p>
-                <ul>
-                  {f.items.map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-              <Image
-                src={f.image}
-                alt={`${f.label} : exemple dans RH Pilot`}
-                width={1200}
-                height={680}
-                sizes="(max-width: 700px) 95vw, 60vw"
-              />
             </div>
-          </section>
-        ))}
-        <section id="demo" className={`${s.section} ${s.demo}`}>
-          <div className={s.wrap}>
-            <h2 className={s.title}>Découvrez RH Pilot en action.</h2>
-            <p className={`${s.copy} mb-8`}>
-              Explorez les principales fonctions du logiciel en quelques clics.
+            <p className={h.sources}>
+              La paie en détail : <Link href="/gestion-paie">calculez un bulletin en direct</Link>. Les tarifs : <Link href="/tarifs">gratuit jusqu’à 3 salariés</Link>.
             </p>
-            <InteractiveDemo />
-            <Link href="/tutoriels" className={s.textLink}>
-              Voir les tutoriels vidéo →
-            </Link>
           </div>
         </section>
-        <section className={s.cta}>
-          <div className={`${s.wrap} ${s.ctaInner}`}>
-            <div>
-              <h2 className={s.title}>
-                Votre équipe.
-                <br />
-                Votre premier parcours.
-              </h2>
-              <p>Comparez les offres ou commencez à découvrir RH Pilot.</p>
+
+        <section id="demo" className={h.topics} aria-labelledby="software-tour-title">
+          <div className={h.inner}>
+            <h2 id="software-tour-title" className={h.h2Small}>
+              La visite guidée du vrai logiciel
+            </h2>
+            <p className={h.lead}>Les écrans de RH Pilot, étape par étape, avec les données d’une entreprise de démonstration.</p>
+            <div className={h.demo}>
+              <InteractiveDemo />
             </div>
-            <div className="flex flex-col gap-5">
-              <Link href="/sign-up" className={s.primary}>
-                Essayer gratuitement ↗
-              </Link>
-              <Link
-                href="/tarifs"
-                className="text-center text-sm underline underline-offset-4"
-              >
-                Consulter les tarifs
-              </Link>
-            </div>
+            <p className={h.sources}>
+              Vous préférez la vidéo ? <Link href="/tutoriels">Voir les tutoriels</Link>.
+            </p>
           </div>
         </section>
       </main>
+      <ClosingCta />
       <MarketingFooter />
     </div>
   );
