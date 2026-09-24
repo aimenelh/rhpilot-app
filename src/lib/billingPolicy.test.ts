@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   employeeQuantityForBilling,
   estimatedProMonthlyPrice,
+  FREE_TIER_LIMIT,
   hasOpenStripeSubscription,
   hasProAccess,
 } from "@/lib/billingPolicy";
@@ -23,6 +24,10 @@ describe("employeeQuantityForBilling", () => {
 });
 
 describe("politique d'abonnement", () => {
+  it("centralise la limite gratuite", () => {
+    expect(FREE_TIER_LIMIT).toBe(3);
+  });
+
   it("accorde l'accès Pro aux statuts encore servis", () => {
     expect(hasProAccess("active")).toBe(true);
     expect(hasProAccess("trialing")).toBe(true);

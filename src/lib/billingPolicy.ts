@@ -1,6 +1,7 @@
 const PRO_ACCESS_STATUSES = new Set(["active", "trialing", "past_due"]);
 const TERMINAL_SUBSCRIPTION_STATUSES = new Set(["canceled", "incomplete_expired"]);
 
+export const FREE_TIER_LIMIT = 3;
 export const PRO_BASE_MONTHLY_EUR = 15;
 export const PRO_PER_EMPLOYEE_MONTHLY_EUR = 3;
 

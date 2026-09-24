@@ -7,9 +7,12 @@ import { formatDate } from "@/lib/format";
 import { ManageSubscriptionButton } from "./ManageSubscriptionButton";
 import { UpgradeToProButton } from "./UpgradeToProButton";
 import { billableEmployeeWhere } from "@/lib/billingEmployeeScope";
-import { estimatedProMonthlyPrice, hasProAccess } from "@/lib/billingPolicy";
-
-const FREE_TIER_LIMIT = 3;
+import {
+  estimatedProMonthlyPrice,
+  FREE_TIER_LIMIT,
+  hasOpenStripeSubscription,
+  hasProAccess,
+} from "@/lib/billingPolicy";
 
 // Ce que RH Pilot inclut réellement, identique sur les deux paliers —
 // seul le nombre de salariés distingue Gratuit de Pro. Jamais de
@@ -36,6 +39,10 @@ export default async function BillingPage({
   ]);
 
   const isPro = hasProAccess(organization?.subscriptionStatus);
+  const hasSubscription = hasOpenStripeSubscription(
+    organization?.stripeSubscriptionId,
+    organization?.subscriptionStatus
+  );
   const canManageBilling = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
   const monthlyEstimate = isPro ? estimatedProMonthlyPrice(employeeCount).toFixed(2) : null;
   const usageRatio = Math.min(employeeCount / FREE_TIER_LIMIT, 1);
@@ -62,21 +69,29 @@ export default async function BillingPage({
       <div className="mt-8">
         <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Palier actuel</p>
         <div className="mt-2 flex items-baseline gap-2.5">
-          <h2 className="text-3xl font-semibold text-ink">{isPro ? "Pro" : "Gratuit"}</h2>
-          {isPro && (
+          <h2 className="text-3xl font-semibold text-ink">{hasSubscription ? "Pro" : "Gratuit"}</h2>
+          {hasSubscription && (
             <span className="rounded-full bg-accent-teal/10 px-2 py-0.5 text-xs font-medium text-accent-teal">
               {organization?.subscriptionStatus === "trialing"
                 ? "Essai"
                 : organization?.subscriptionStatus === "past_due"
                   ? "Paiement à régulariser"
-                  : "Actif"}
+                  : organization?.subscriptionStatus === "unpaid"
+                    ? "Paiement requis"
+                    : organization?.subscriptionStatus === "paused"
+                      ? "En pause"
+                      : organization?.subscriptionStatus === "incomplete"
+                        ? "Activation incomplète"
+                        : "Actif"}
             </span>
           )}
         </div>
         <p className="mt-2 text-sm text-ink-soft">
           {isPro
             ? `${employeeCount} salarié${employeeCount > 1 ? "s" : ""} facturable${employeeCount > 1 ? "s" : ""} · ${monthlyEstimate} € estimés ce mois-ci`
-            : `Jusqu'à ${FREE_TIER_LIMIT} salariés inclus, sans engagement`}
+            : hasSubscription
+              ? "Votre abonnement nécessite une action. Ouvrez sa gestion pour régulariser la situation."
+              : `Jusqu'à ${FREE_TIER_LIMIT} salariés inclus, sans engagement`}
         </p>
         {isPro && organization?.currentPeriodEnd && (
           <p className="mt-1 text-sm text-ink-faint">
@@ -85,7 +100,7 @@ export default async function BillingPage({
         )}
         <div className="mt-5">
           {canManageBilling ? (
-            isPro ? <ManageSubscriptionButton /> : <UpgradeToProButton />
+            hasSubscription ? <ManageSubscriptionButton /> : <UpgradeToProButton />
           ) : (
             <p className="text-sm text-ink-faint">
               Seuls les propriétaires et administrateurs peuvent modifier l&apos;abonnement.

@@ -9,7 +9,7 @@ import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { isOrganizationAdmin } from "@/lib/accessPolicy";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
 import { billableEmployeeWhere } from "@/lib/billingEmployeeScope";
-import { hasProAccess } from "@/lib/billingPolicy";
+import { FREE_TIER_LIMIT, hasProAccess } from "@/lib/billingPolicy";
 
 // Sécurité : l'organisation courante est TOUJOURS résolue côté serveur
 // à partir de la session (getCurrentMembership), jamais à partir d'un
@@ -18,11 +18,6 @@ import { hasProAccess } from "@/lib/billingPolicy";
 // composites du schéma.
 
 export type EmployeeFormState = { error: string } | undefined;
-
-// Doit rester identique à FREE_TIER_LIMIT dans
-// app/dashboard/billing/page.tsx — les deux affichent la même limite,
-// l'une la fait respecter, l'autre l'explique visuellement.
-const FREE_TIER_LIMIT = 3;
 
 // Ne bloque que la croissance du nombre de salariés réels actifs
 // (création, réactivation, import CSV). Les fiches de démonstration
