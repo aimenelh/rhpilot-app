@@ -63,5 +63,6 @@ jobs:
           src/lib/ownership.test.ts
           src/lib/copilotPolicy.test.ts
           src/lib/employeeIdentity.test.ts
+          src/lib/accessPolicy.test.ts
       - name: Build application
         run: npx prisma generate && npx next build
