@@ -6,6 +6,7 @@ import { ChevronDown, Menu, X } from "lucide-react";
 import { Logomark, Wordmark } from "@/components/Brand";
 import { AnnouncementBar } from "./AnnouncementBar";
 import { PublicCopilotePreview } from "./PublicCopilotePreview";
+import { PAYROLL_TOPIC_GROUPS } from "./payroll/payrollTopics";
 
 const GROUPS = [
   {
@@ -21,32 +22,10 @@ const GROUPS = [
   },
   {
     label: "Paie",
+    // Les douze sujets sont rendus par groupes (PAYROLL_TOPIC_GROUPS) sous ces deux entrées.
     links: [
-      { href: "/gestion-paie", label: "Vue d’ensemble" },
-      { href: "/gestion-paie/production", label: "Production de la paie" },
-      { href: "/gestion-paie/variables", label: "Variables de paie" },
-      { href: "/gestion-paie/conges-absences", label: "Congés & absences" },
-      { href: "/gestion-paie/arrets-travail", label: "Arrêts de travail" },
-      {
-        href: "/gestion-paie/referentiel-conventionnel",
-        label: "Référentiel conventionnel",
-      },
-      {
-        href: "/gestion-paie/complementaire-sante",
-        label: "Complémentaire santé",
-      },
-      {
-        href: "/gestion-paie/cotisations-sociales",
-        label: "Cotisations sociales",
-      },
-      { href: "/gestion-paie/montant-net-social", label: "Montant net social" },
-      { href: "/gestion-paie/bulletin-de-paie", label: "Bulletin de paie" },
-      {
-        href: "/gestion-paie/tracabilite-calcul",
-        label: "Traçabilité du calcul",
-      },
-      { href: "/gestion-paie/profil-paie", label: "Profil de paie" },
-      { href: "/gestion-paie/contexte-employeur", label: "Contexte employeur" },
+      { href: "/gestion-paie", label: "Vue d’ensemble de la paie" },
+      { href: "/gestion-paie#bulletin", label: "Calculer un bulletin en direct" },
     ],
   },
   {
@@ -150,18 +129,52 @@ export function MarketingHeader() {
                 {group === item.label && (
                   <div
                     id={`nav-${item.label === "Paie" ? "paie" : "logiciel"}`}
-                    className={`absolute left-0 top-full mt-5 grid max-h-[70vh] overflow-auto rounded-lg border border-surface-border bg-white p-3 shadow-elevated ${item.label === "Paie" ? "w-[520px] grid-cols-2" : "w-64"}`}
+                    className={`absolute left-0 top-full mt-5 grid max-h-[70vh] overflow-auto rounded-lg border border-surface-border bg-white p-3 shadow-elevated ${item.label === "Paie" ? "w-[680px]" : "w-64"}`}
                   >
-                    {item.links.map((link) => (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        onClick={close}
-                        className="rounded px-3 py-3 text-sm text-ink-soft hover:bg-surface-subtle hover:text-ink"
-                      >
-                        {link.label}
-                      </Link>
-                    ))}
+                    {item.label === "Paie" ? (
+                      <>
+                        <div className="grid grid-cols-2 gap-1 border-b border-surface-border pb-2">
+                          {item.links.map((link) => (
+                            <Link
+                              key={link.href}
+                              href={link.href}
+                              onClick={close}
+                              className="rounded px-3 py-3 text-sm font-semibold text-ink hover:bg-surface-subtle"
+                            >
+                              {link.label}
+                            </Link>
+                          ))}
+                        </div>
+                        <div className="grid grid-cols-3 gap-2 pt-2">
+                          {PAYROLL_TOPIC_GROUPS.map((topicGroup) => (
+                            <div key={topicGroup.title}>
+                              <p className="px-3 pb-1 pt-2 text-xs font-semibold text-ink-faint">{topicGroup.title}</p>
+                              {topicGroup.topics.map((topic) => (
+                                <Link
+                                  key={topic.href}
+                                  href={topic.href}
+                                  onClick={close}
+                                  className="block rounded px-3 py-2 text-sm text-ink-soft hover:bg-surface-subtle hover:text-ink"
+                                >
+                                  {topic.label}
+                                </Link>
+                              ))}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    ) : (
+                      item.links.map((link) => (
+                        <Link
+                          key={link.href}
+                          href={link.href}
+                          onClick={close}
+                          className="rounded px-3 py-3 text-sm text-ink-soft hover:bg-surface-subtle hover:text-ink"
+                        >
+                          {link.label}
+                        </Link>
+                      ))
+                    )}
                   </div>
                 )}
               </div>
@@ -255,6 +268,23 @@ export function MarketingHeader() {
                       {link.label}
                     </Link>
                   ))}
+                  {item.label === "Paie"
+                    ? PAYROLL_TOPIC_GROUPS.map((topicGroup) => (
+                        <div key={topicGroup.title} className="mt-2">
+                          <p className="pl-3 pt-2 text-xs font-semibold text-ink-faint">{topicGroup.title}</p>
+                          {topicGroup.topics.map((topic) => (
+                            <Link
+                              key={topic.href}
+                              href={topic.href}
+                              onClick={close}
+                              className="block py-2.5 pl-3 text-sm text-ink-soft"
+                            >
+                              {topic.label}
+                            </Link>
+                          ))}
+                        </div>
+                      ))
+                    : null}
                 </div>
               </details>
             ))}

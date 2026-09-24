@@ -98,7 +98,8 @@
   margin-bottom: 38px;
   color: #b83b2a;
   font-family: var(--font-fraunces), Georgia, serif;
-  font-size: 15px;
+  font-size: 17px;
+  font-style: italic;
 }
 
 .pillar h3 {

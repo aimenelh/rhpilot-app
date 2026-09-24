@@ -1,10 +1,16 @@
-import p from "./InnerPages.module.css";
-import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Check, ExternalLink } from "lucide-react";
+import type { ReactNode } from "react";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
-import { Reveal } from "@/components/landing/Reveal";
+import { ClosingCta } from "@/components/landing/ClosingCta";
+import { LivePayslip, type PayslipFocus } from "@/components/landing/payroll/LivePayslip";
+import { computePayslipDemo, DEFAULT_DEMO_INPUT } from "@/components/landing/payroll/payslipDemo";
+import { IjssDemo, MinimumDemo, OvertimeDemo, PaidLeaveDemo, PreflightDemo, PrerequisitesDemo } from "@/components/landing/payroll/PayrollDemos";
+import { PayrollTopics } from "@/components/landing/payroll/PayrollHub";
+import h from "@/components/landing/payroll/PayrollHub.module.css";
+
+// Gabarit commun des douze pages paie : une phrase, une démonstration qui
+// appelle la vraie fonction du logiciel, la méthode en trois temps, les sources.
 
 export type PayrollSource = {
   name: string;
@@ -41,408 +47,191 @@ export type PayrollEditorialCapability = {
   sources?: PayrollSource[];
 };
 
-const ILLUSTRATIONS: Record<string, string> = {
-  production: "/illustrations/payroll/pay_01.svg",
-  variables: "/illustrations/payroll/pay_02.svg",
-  absences: "/illustrations/payroll/pay_03.svg",
-  arrets: "/illustrations/payroll/pay_04.svg",
-  payslip: "/illustrations/payroll/pay_05.svg",
-  contributions: "/illustrations/payroll/pay_06.svg",
-  netSocial: "/illustrations/payroll/pay_07.svg",
-  health: "/illustrations/payroll/pay_08.svg",
-  profile: "/illustrations/payroll/pay_09.svg",
-  agreement: "/illustrations/payroll/pay_10.svg",
-  employer: "/illustrations/payroll/pay_11.svg",
-  traceability: "/illustrations/payroll/pay_12.svg",
+type PageKey =
+  | "production"
+  | "variables"
+  | "absences"
+  | "arrets"
+  | "payslip"
+  | "contributions"
+  | "netSocial"
+  | "health"
+  | "profile"
+  | "agreement"
+  | "employer"
+  | "traceability";
+
+const PAGES: Record<PageKey, { href: string; accent: string; lead: string; payslip?: PayslipFocus }> = {
+  production: { href: "/gestion-paie/production", accent: "ce qui doit être contrôlé", lead: "Trois salariés, deux blocages. Réglez-les pour débloquer le calcul : c’est le contrôle que fait le logiciel avant chaque période." },
+  variables: { href: "/gestion-paie/variables", accent: "bonne période", lead: "Ajoutez des heures supplémentaires : RH Pilot calcule le taux horaire, applique les majorations semaine par semaine et met à jour le brut du mois." },
+  absences: { href: "/gestion-paie/conges-absences", accent: "période concernée", lead: "Changez le salaire, les primes ou la durée des congés : les deux méthodes légales sont calculées et la plus favorable est retenue." },
+  arrets: { href: "/gestion-paie/arrets-travail", accent: "traité en paie", lead: "Faites varier le salaire et la durée de l’arrêt : carence, plafond et indemnités journalières sont recalculés." },
+  payslip: { href: "/gestion-paie/bulletin-de-paie", accent: "période verrouillée", lead: "Sept prérequis, deux manquants. Tant qu’ils ne sont pas réunis, la génération reste bloquée. Réglez-les." },
+  contributions: { href: "/gestion-paie/cotisations-sociales", accent: "ligne par ligne", lead: "Ouvrez n’importe quelle ligne : base, taux, montant, et la règle officielle qui l’a produite.", payslip: "contributions" },
+  netSocial: { href: "/gestion-paie/montant-net-social", accent: "montant net social", lead: "Le montant net social se calcule avec le reste du bulletin. Faites varier le salaire pour le voir bouger.", payslip: "netSocial" },
+  health: { href: "/gestion-paie/complementaire-sante", accent: "complémentaire santé", lead: "Changez le prix du contrat et la part de l’employeur : les lignes santé et le net imposable suivent.", payslip: "health" },
+  profile: { href: "/gestion-paie/profil-paie", accent: "base au calcul", lead: "Le salaire et le statut du profil changent tout le bulletin. Passez le salarié cadre : l’APEC et la prévoyance apparaissent.", payslip: "profile" },
+  agreement: { href: "/gestion-paie/referentiel-conventionnel", accent: "convention collective", lead: "Choisissez une classification : RH Pilot compare le minimum de la convention au Smic et retient le plus élevé." },
+  employer: { href: "/gestion-paie/contexte-employeur", accent: "l’entreprise", lead: "Le taux accidents du travail de l’établissement change la part employeur. Faites-le varier.", payslip: "employer" },
+  traceability: { href: "/gestion-paie/tracabilite-calcul", accent: "comment une paie a été calculée", lead: "La ligne de réduction générale est ouverte : son calcul, la règle du moteur et ses sources officielles.", payslip: "traceability" },
 };
 
-const ACCENT_PHRASES: Record<string, string> = {
-  production: "ce qui doit être contrôlé",
-  variables: "variables de paie",
-  absences: "congés et absences",
-  arrets: "arrêts de travail",
-  payslip: "bulletins de paie",
-  contributions: "cotisations sociales",
-  netSocial: "montant net social",
-  health: "complémentaire santé",
-  profile: "chaque salarié",
-  agreement: "référentiel conventionnel",
-  employer: "contexte employeur",
-  traceability: "traçabilité de vos calculs",
-};
-
-function richText(text: string) {
-  const parts = text.split(/\*\*(.+?)\*\*/g);
-  return parts.map((part, index) =>
-    index % 2 === 1 ? (
-      <strong
-        key={`${part}-${index}`}
-        className="font-semibold text-brand-primary"
-      >
-        {part}
-      </strong>
-    ) : (
-      <span key={`${part}-${index}`}>{part}</span>
-    ),
-  );
-}
-
-function getVisualKey(eyebrow: string, variant?: string) {
+function pageKey(eyebrow: string, variant?: string): PageKey {
   const value = `${variant ?? ""} ${eyebrow}`
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, "-");
-
   if (value.includes("production")) return "production";
   if (value.includes("variables")) return "variables";
   if (value.includes("conges") || value.includes("absences")) return "absences";
   if (value.includes("arrets")) return "arrets";
   if (value.includes("bulletin") || value.includes("payslip")) return "payslip";
-  if (value.includes("cotisations") || value.includes("contributions"))
-    return "contributions";
-  if (value.includes("net-social") || value.includes("netsocial"))
-    return "netSocial";
-  if (value.includes("complementaire") || value.includes("health"))
-    return "health";
+  if (value.includes("cotisations") || value.includes("contributions")) return "contributions";
+  if (value.includes("net-social") || value.includes("netsocial")) return "netSocial";
+  if (value.includes("complementaire") || value.includes("health")) return "health";
   if (value.includes("profil") || value.includes("profile")) return "profile";
-  if (value.includes("referentiel") || value.includes("agreement"))
-    return "agreement";
-  if (value.includes("employeur") || value.includes("employer"))
-    return "employer";
-  if (value.includes("tracabilite") || value.includes("traceability"))
-    return "traceability";
+  if (value.includes("agreement") || value.includes("convention") || value.includes("referentiel")) return "agreement";
+  if (value.includes("employeur") || value.includes("employer") || value.includes("entreprise")) return "employer";
+  if (value.includes("tracabilite") || value.includes("traceability") || value.includes("suivi")) return "traceability";
   return "production";
 }
 
+function richText(text: string) {
+  return text.split(/\*\*(.+?)\*\*/g).map((part, index) => (index % 2 === 1 ? <strong key={index}>{part}</strong> : <span key={index}>{part}</span>));
+}
+
 function AccentTitle({ title, phrase }: { title: string; phrase: string }) {
-  if (!phrase || !title.toLowerCase().includes(phrase.toLowerCase()))
-    return <>{title}</>;
   const index = title.toLowerCase().indexOf(phrase.toLowerCase());
+  if (!phrase || index < 0) return <>{title}</>;
   return (
     <>
       {title.slice(0, index)}
-      <span className="text-brand-primary">
-        {title.slice(index, index + phrase.length)}
-      </span>
+      <em>{title.slice(index, index + phrase.length)}</em>
       {title.slice(index + phrase.length)}
     </>
   );
 }
 
-function SourcesStrip({ sources }: { sources?: PayrollSource[] }) {
-  if (!sources?.length) return null;
-  return (
-    <div className="flex flex-wrap gap-2">
-      {sources.map((source) => (
-        <a
-          key={source.name}
-          href={source.href}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex items-center gap-1.5 rounded-lg border border-surface-border bg-white px-3 py-2 text-xs font-medium text-ink-soft transition-colors hover:border-brand-primary/40 hover:text-ink"
-        >
-          {source.name}
-          <ExternalLink className="h-3 w-3" aria-hidden="true" />
-        </a>
-      ))}
-    </div>
-  );
+function Demo({ keyName }: { keyName: PageKey }) {
+  const focus = PAGES[keyName].payslip;
+  if (focus) return <LivePayslip initial={computePayslipDemo(DEFAULT_DEMO_INPUT)} focus={focus} />;
+  switch (keyName) {
+    case "payslip":
+      return <PrerequisitesDemo net={computePayslipDemo(DEFAULT_DEMO_INPUT).netBeforeTax} />;
+    case "variables":
+      return <OvertimeDemo />;
+    case "absences":
+      return <PaidLeaveDemo />;
+    case "arrets":
+      return <IjssDemo />;
+    case "agreement":
+      return <MinimumDemo />;
+    default:
+      return <PreflightDemo />;
+  }
 }
 
-function IllustrationPanel({ keyName }: { keyName: string }) {
-  const src = ILLUSTRATIONS[keyName] ?? ILLUSTRATIONS.production;
-  return (
-    <div className="relative overflow-hidden rounded-2xl bg-surface-subtle shadow-card">
-      <div className="relative aspect-[16/10] w-full">
-        <Image
-          src={src}
-          alt="Illustration RH Pilot"
-          fill
-          priority
-          className="object-cover object-center"
-          sizes="(min-width: 1280px) 56vw, (min-width: 1024px) 54vw, 100vw"
-        />
-      </div>
-    </div>
-  );
-}
-
-function PrimaryButton({
-  children,
-  href = "/services",
-}: {
-  children: React.ReactNode;
-  href?: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-primary-dark active:scale-[0.97]"
-    >
-      {children}
-    </Link>
-  );
-}
-
-function HeroCopy({
+function TopicPage({
   eyebrow,
   title,
   intro,
-  sources,
   keyName,
+  steps,
+  sources,
 }: {
   eyebrow: string;
   title: string;
   intro: string;
+  keyName: PageKey;
+  steps: { title: string; body: string }[];
   sources?: PayrollSource[];
-  keyName: string;
-}) {
+}): ReactNode {
+  const page = PAGES[keyName];
   return (
-    <div className="max-w-2xl">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">
-        {eyebrow}
-      </p>
-      <h1 className="font-display mt-4 text-4xl font-semibold leading-[1.02] tracking-[-0.045em] text-ink sm:text-5xl lg:text-[3.75rem]">
-        <AccentTitle title={title} phrase={ACCENT_PHRASES[keyName] ?? ""} />
-      </h1>
-      <p className="mt-6 max-w-xl text-base leading-7 text-ink-soft sm:text-lg sm:leading-8">
-        {richText(intro)}
-      </p>
-      <div className="mt-8">
-        <PrimaryButton>
-          Découvrir RH Pilot
-          <ArrowRight className="h-4 w-4" aria-hidden="true" />
-        </PrimaryButton>
-      </div>
-      <div className="mt-8">
-        <SourcesStrip sources={sources} />
-      </div>
-    </div>
-  );
-}
-
-function FeatureHero({ feature }: { feature: PayrollEditorialFeature }) {
-  const keyName = getVisualKey(feature.eyebrow);
-  return (
-    <section className="border-b border-surface-border bg-white">
-      <div className="mx-auto grid max-w-7xl items-center gap-8 px-6 py-12 sm:px-8 lg:grid-cols-[0.78fr_1.22fr] lg:gap-10 lg:px-10 lg:py-16">
-        <HeroCopy
-          eyebrow={feature.eyebrow}
-          title={feature.title}
-          intro={feature.intro}
-          sources={feature.sources}
-          keyName={keyName}
-        />
-        <IllustrationPanel keyName={keyName} />
-      </div>
-    </section>
-  );
-}
-
-function CapabilityHero({
-  capability,
-}: {
-  capability: PayrollEditorialCapability;
-}) {
-  const keyName = getVisualKey(capability.eyebrow, capability.variant);
-  return (
-    <section className="border-b border-surface-border bg-white">
-      <div className="mx-auto grid max-w-7xl items-center gap-8 px-6 py-12 sm:px-8 lg:grid-cols-[0.78fr_1.22fr] lg:gap-10 lg:px-10 lg:py-16">
-        <HeroCopy
-          eyebrow={capability.eyebrow}
-          title={capability.title}
-          intro={capability.intro}
-          sources={capability.sources}
-          keyName={keyName}
-        />
-        <IllustrationPanel keyName={keyName} />
-      </div>
-    </section>
-  );
-}
-
-function FeatureContent({ feature }: { feature: PayrollEditorialFeature }) {
-  return (
-    <>
-      <section className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
-        <div className="max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
-            À prendre en compte
-          </p>
-          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">
-            {feature.workflowTitle}
-          </h2>
-        </div>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
-          {feature.points.map((point) => (
-            <Reveal
-              key={point.title}
-              className="rounded-xl border border-surface-border bg-white p-6 shadow-card"
-            >
-              <Check
-                className="h-5 w-5 text-brand-primary"
-                aria-hidden="true"
-              />
-              <h3 className="mt-4 text-base font-semibold text-ink">
-                {point.title}
-              </h3>
-              <p className="mt-2 text-sm leading-6 text-ink-soft">
-                {richText(point.text)}
-              </p>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-      <section className="border-y border-surface-border bg-surface-subtle">
-        <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
-          <h2 className="text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">
-            Du contexte au résultat
-          </h2>
-          <div className="mt-8 grid gap-4 lg:grid-cols-4">
-            {feature.workflow.map((step) => (
-              <div
-                key={step.label}
-                className="rounded-xl border border-surface-border bg-white p-5"
-              >
-                <div className="h-1 w-8 bg-brand-primary" aria-hidden="true" />
-                <h3 className="mt-4 text-base font-semibold text-ink">
-                  {step.label}
-                </h3>
-                <p className="mt-2 text-sm leading-6 text-ink-soft">
-                  {richText(step.text)}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-      <section className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
-        <div className="grid gap-10 lg:grid-cols-[0.7fr_1.3fr]">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
-              Références
+    <div className={h.page}>
+      <MarketingHeader />
+      <main id="main-content">
+        <section className={h.hero} aria-labelledby="payroll-topic-title">
+          <div className={h.inner}>
+            <p className={h.kicker}>
+              <Link href="/gestion-paie">Gestion de la paie</Link> · {eyebrow}
             </p>
-            <h2 className="mt-3 text-2xl font-semibold text-ink sm:text-3xl">
-              {feature.detailsTitle}
+            <h1 id="payroll-topic-title" className={h.title}>
+              <AccentTitle title={title} phrase={page.accent} />
+            </h1>
+            <p className={h.intro}>{richText(intro)}</p>
+            <p className={h.try}>{page.lead}</p>
+            <div className={h.demo}>
+              <Demo keyName={keyName} />
+            </div>
+          </div>
+        </section>
+
+        <section className={h.how} aria-labelledby="payroll-how-title">
+          <div className={h.inner}>
+            <h2 id="payroll-how-title" className={h.h2Small}>
+              Comment RH Pilot s’y prend
             </h2>
-            <p className="mt-4 text-sm leading-6 text-ink-soft">
-              {richText(feature.note)}
-            </p>
-          </div>
-          <div className="space-y-2">
-            {feature.details.map((detail) => (
-              <div
-                key={detail}
-                className="flex gap-3 rounded-xl border border-surface-border bg-white p-4"
-              >
-                <Check
-                  className="mt-0.5 h-4 w-4 shrink-0 text-brand-primary"
-                  aria-hidden="true"
-                />
-                <p className="text-sm leading-6 text-ink-soft">
-                  {richText(detail)}
-                </p>
-              </div>
-            ))}
-            <div className="pt-4">
-              <SourcesStrip sources={feature.sources} />
+            <div className={h.howGrid}>
+              {steps.map((step) => (
+                <div key={step.title}>
+                  <h3>{step.title}</h3>
+                  <p>{richText(step.body)}</p>
+                </div>
+              ))}
             </div>
+            {sources?.length ? (
+              <p className={h.sources}>
+                Textes et sources officielles :{" "}
+                {sources.map((source, index) => (
+                  <span key={source.href}>
+                    {index ? " · " : null}
+                    <a href={source.href} target="_blank" rel="noreferrer" title={source.detail}>
+                      {source.name}
+                    </a>
+                  </span>
+                ))}
+              </p>
+            ) : null}
           </div>
-        </div>
-      </section>
-    </>
-  );
-}
+        </section>
 
-function CapabilityContent({
-  capability,
-}: {
-  capability: PayrollEditorialCapability;
-}) {
-  return (
-    <>
-      <section className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
-        <div className="max-w-2xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
-            Le fonctionnement
-          </p>
-          <h2 className="mt-3 text-2xl font-semibold tracking-[-0.03em] text-ink sm:text-3xl">
-            {richText(capability.summary)}
-          </h2>
-        </div>
-        <div className="mt-8 grid gap-4 lg:grid-cols-3">
-          {capability.moments.map((moment) => (
-            <div
-              key={moment.heading}
-              className="rounded-xl border border-surface-border bg-white p-6 shadow-card"
-            >
-              <div className="h-1 w-10 bg-brand-primary" aria-hidden="true" />
-              <h3 className="mt-4 text-base font-semibold text-ink">
-                {moment.heading}
-              </h3>
-              <p className="mt-3 text-sm leading-6 text-ink-soft">
-                {richText(moment.body)}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-      <section className="border-t border-surface-border bg-surface-subtle">
-        <div className="mx-auto max-w-7xl px-6 py-14 sm:px-8 lg:px-10 lg:py-20">
-          <div className="flex flex-col gap-6 rounded-xl border border-surface-border bg-white p-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink-faint">
-                Références
-              </p>
-              <p className="mt-2 text-base font-semibold text-ink">
-                Les règles restent rattachées à des sources identifiables.
-              </p>
-            </div>
-            <PrimaryButton href="mailto:aimenoffi@gmail.com">
-              Échanger avec l’équipe
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </PrimaryButton>
-          </div>
-          <div className="mt-5">
-            <SourcesStrip sources={capability.sources} />
-          </div>
-        </div>
-      </section>
-    </>
-  );
-}
-
-export function PayrollFeatureEditorial({
-  feature,
-}: {
-  feature: PayrollEditorialFeature;
-}) {
-  return (
-    <div className={p.editorial}>
-      <MarketingHeader />
-      <main id="main-content">
-        <FeatureHero feature={feature} />
-        <FeatureContent feature={feature} />
+        <PayrollTopics current={page.href} title="Les autres sujets de la paie" />
       </main>
+      <ClosingCta
+        title="Votre prochaine paie se prépare déjà."
+        accent="Autant la voir venir."
+        text="Créez votre espace, ajoutez vos salariés et lancez votre première période."
+        action="Essayer RH Pilot"
+      />
       <MarketingFooter />
     </div>
   );
 }
 
-export function PayrollCapabilityEditorial({
-  capability,
-}: {
-  capability: PayrollEditorialCapability;
-}) {
+export function PayrollFeatureEditorial({ feature }: { feature: PayrollEditorialFeature }) {
   return (
-    <div className={p.editorial}>
-      <MarketingHeader />
-      <main id="main-content">
-        <CapabilityHero capability={capability} />
-        <CapabilityContent capability={capability} />
-      </main>
-      <MarketingFooter />
-    </div>
+    <TopicPage
+      eyebrow={feature.eyebrow}
+      title={feature.title}
+      intro={feature.intro}
+      keyName={pageKey(feature.eyebrow)}
+      steps={feature.points.map((point) => ({ title: point.title, body: point.text }))}
+      sources={feature.sources}
+    />
+  );
+}
+
+export function PayrollCapabilityEditorial({ capability }: { capability: PayrollEditorialCapability }) {
+  return (
+    <TopicPage
+      eyebrow={capability.eyebrow}
+      title={capability.title}
+      intro={capability.intro}
+      keyName={pageKey(capability.eyebrow, capability.variant)}
+      steps={capability.moments.map((moment) => ({ title: moment.heading, body: moment.body }))}
+      sources={capability.sources}
+    />
   );
 }

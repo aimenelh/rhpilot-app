@@ -3,6 +3,19 @@ import socialRules from "modele-social";
 
 export const SOCIAL_MODEL_VERSION = "11.1.0";
 
+// Le modèle signale ses règles expérimentales à chaque évaluation : on garde
+// seulement les erreurs dans les journaux.
+const SILENT_LOGGER = { log: () => undefined, warn: () => undefined, error: (message: string) => console.error(message) };
+
+// Analyser les règles du modèle prend environ 300 ms ; une copie légère du moteur
+// déjà analysé en prend 30 et donne les mêmes résultats. Chaque calcul part d'une
+// copie neuve : aucune situation ne passe d'un salarié à l'autre.
+let parsedEngine: Engine | null = null;
+function freshEngine(): Engine {
+  parsedEngine ??= new Engine(socialRules, { logger: SILENT_LOGGER });
+  return parsedEngine.shallowCopy();
+}
+
 const GROSS_RULE = "salarié . contrat . salaire brut";
 const LEGAL_CATEGORY_RULE = "entreprise . catégorie juridique";
 const DATE_RULE = "date";
@@ -230,7 +243,7 @@ export function calculateSocialPayroll(input: {
 
   const legalCategory = assertLegalCategory(input.legalCategory);
   const contractType = assertContractType(input.contractType);
-  const engine = new Engine(socialRules);
+  const engine = freshEngine();
   const situation: SocialPayrollSituation = {
     ...MODEL_DEFAULT_SITUATION,
     [GROSS_RULE]: `${input.grossAmount} €/mois`,

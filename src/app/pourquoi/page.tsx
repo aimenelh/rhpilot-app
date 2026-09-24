@@ -90,7 +90,7 @@ export default function WhyPage() {
 
           <div className={w.pillars}>
             <article className={w.pillar}>
-              <span className={w.pillarIndex}>01</span>
+              <span className={w.pillarIndex}>Au lieu de chercher</span>
               <h3>Centraliser</h3>
               <p>
                 Réunir les informations, documents et échéances au même endroit
@@ -98,7 +98,7 @@ export default function WhyPage() {
               </p>
             </article>
             <article className={w.pillar}>
-              <span className={w.pillarIndex}>02</span>
+              <span className={w.pillarIndex}>Au lieu de supposer</span>
               <h3>Clarifier</h3>
               <p>
                 Savoir qui doit intervenir et ce qui reste à organiser, sans
@@ -106,7 +106,7 @@ export default function WhyPage() {
               </p>
             </article>
             <article className={w.pillar}>
-              <span className={w.pillarIndex}>03</span>
+              <span className={w.pillarIndex}>Au lieu d’oublier</span>
               <h3>Suivre</h3>
               <p>
                 Garder les prochaines actions visibles jusqu’à leur réalisation,

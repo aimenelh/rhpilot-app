@@ -1,8 +1,15 @@
 import Link from "next/link";
 import s from "./ClosingCta.module.css";
 
+type ClosingCtaProps = { title?: string; accent?: string; text?: string; action?: string };
+
 /** Fin de page : le fil corail de l'introduction revient et traverse l'appel final. */
-export function ClosingCta() {
+export function ClosingCta({
+  title = "Le prochain événement RH arrive.",
+  accent = "Gardez le fil.",
+  text = "Créez votre espace et préparez votre premier parcours.",
+  action = "Créer mon premier plan",
+}: ClosingCtaProps = {}) {
   return (
     <section className={s.close} aria-labelledby="closing-title">
       <svg className={s.thread} viewBox="0 0 1440 360" preserveAspectRatio="none" aria-hidden="true">
@@ -11,14 +18,14 @@ export function ClosingCta() {
       <div className={s.inner}>
         <div>
           <h2 id="closing-title" className={s.title}>
-            Le prochain événement RH arrive.
-            <em>Gardez le fil.</em>
+            {title}
+            <em>{accent}</em>
           </h2>
-          <p className={s.text}>Créez votre espace et préparez votre premier parcours.</p>
+          <p className={s.text}>{text}</p>
         </div>
         <div className={s.action}>
           <Link href="/sign-up" className={s.primary}>
-            Créer mon premier plan
+            {action}
           </Link>
           <span>Gratuit jusqu’à 3 salariés.</span>
         </div>

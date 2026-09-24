@@ -12,7 +12,7 @@ const PAYROLL_SOURCES = [
     href: "https://boss.gouv.fr/",
   },
   {
-    name: "impots.gouv.fr — DGFiP",
+    name: "impots.gouv.fr (DGFiP)",
     detail: "Prélèvement à la source et obligations fiscales.",
     href: "https://www.impots.gouv.fr/",
   },

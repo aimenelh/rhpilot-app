@@ -43,7 +43,8 @@ const GROUPS = [
       [
         "Le module paie est-il disponible ?",
         <>
-          Le module paie prend en charge un périmètre défini. Son périmètre est présenté sur la page{" "}
+          Oui, sur le palier Pro, pour un périmètre défini : quand une situation n’est pas encore prise en charge, le
+          calcul est bloqué plutôt que faux. Vous pouvez essayer le calcul d’un bulletin sur la page{" "}
           <Link href="/gestion-paie">Gestion de la paie</Link>.
         </>,
       ],

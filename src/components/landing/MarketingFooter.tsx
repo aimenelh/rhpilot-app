@@ -15,9 +15,11 @@ const PRODUCT_LINKS = [
 ];
 
 const PAYROLL_LINKS = [
+  { href: "/gestion-paie#bulletin", label: "Calculer un bulletin" },
+  { href: "/gestion-paie/cotisations-sociales", label: "Cotisations sociales" },
+  { href: "/gestion-paie/bulletin-de-paie", label: "Bulletin de paie" },
   { href: "/gestion-paie/production", label: "Production de la paie" },
-  { href: "/gestion-paie/variables", label: "Variables de paie" },
-  { href: "/gestion-paie/conges-absences", label: "Congés & absences" },
+  { href: "/gestion-paie/conges-absences", label: "Congés et absences" },
   { href: "/gestion-paie/arrets-travail", label: "Arrêts de travail" },
 ];
 
