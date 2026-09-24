@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { parseIsoDateOnly } from "@/lib/dateOnly";
 import { resolveApprenticeshipMinimum, resolveProfessionalisationMinimum } from "@/lib/payroll/alternance-minimum";
 import { calculateAgeAtDate } from "@/lib/payroll/alternance-profile";
 import { resolveSmicMinimumFromPrisma } from "@/lib/payroll/minimum-wage-prisma";
@@ -165,8 +166,8 @@ export async function getAlternanceMinimumPreview(employeeId: string): Promise<A
 }
 
 function parseDate(value: string, label: string): Date {
-  const date = new Date(`${value}T00:00:00.000Z`);
-  if (!value || Number.isNaN(date.getTime())) throw new Error(`${label} n'est pas valide.`);
+  const date = parseIsoDateOnly(value);
+  if (!date) throw new Error(`${label} n'est pas valide.`);
   return date;
 }
 

@@ -4,6 +4,7 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership } from "@/lib/auth";
+import { parseIsoDateOnly } from "@/lib/dateOnly";
 
 export type WithholdingTaxFormState = { error: string } | undefined;
 
@@ -68,8 +69,8 @@ export async function saveWithholdingTaxRate(
     return { error: "Le taux doit être un nombre entre 0 et 100." };
   }
   if (!validFromRaw) return { error: "La date de prise d'effet est obligatoire." };
-  const validFrom = new Date(validFromRaw);
-  if (Number.isNaN(validFrom.getTime())) return { error: "La date de prise d'effet n'est pas valide." };
+  const validFrom = parseIsoDateOnly(validFromRaw);
+  if (!validFrom) return { error: "La date de prise d'effet n'est pas valide." };
   if (!["DGFIP", "NON_PERSONNALISE"].includes(source)) {
     return { error: "Indiquez si ce taux vient de la DGFiP ou s'il s'agit du taux non personnalisé." };
   }
