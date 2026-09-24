@@ -14,14 +14,45 @@ export const dynamic = "force-dynamic";
 
 const LEGAL_CATEGORIES = ["EI", "SARL", "SAS", "SELARL", "SELAS", "association", "autre"] as const;
 type OrganisationConfigPageProps = { searchParams?: { saved?: string } };
+type SocialRow = {
+  legalCategory: string | null;
+  atmpRate: unknown;
+  healthPlanMonthlyAmount: unknown;
+  healthPlanEmployerRate: unknown;
+  companyCreationDate: Date | null;
+  payrollDepartment: string | null;
+};
 
 export default async function OrganisationConfigPage({ searchParams }: OrganisationConfigPageProps) {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
   const canEditOrganization = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
-  const organization = await prisma.organization.findUnique({ where: { id: membership.organizationId }, include: { collectiveAgreement: true } });
-  const collectiveAgreements = await prisma.collectiveAgreement.findMany({ where: { status: "ACTIVE" }, select: { id: true, idcc: true, name: true }, orderBy: { name: "asc" } });
-  const socialRows = await prisma.$queryRaw<Array<{ legalCategory: string | null; atmpRate: unknown; healthPlanMonthlyAmount: unknown; healthPlanEmployerRate: unknown; companyCreationDate: Date | null; payrollDepartment: string | null }>>`SELECT "legalCategory", "atmpRate", "healthPlanMonthlyAmount", "healthPlanEmployerRate", "companyCreationDate", "payrollDepartment" FROM "organizations" WHERE "id" = ${membership.organizationId} LIMIT 1`;
+  let organization: {
+    payrollCity: string | null;
+    conventionCollective: string | null;
+    collectiveAgreement: { idcc: string; name: string } | null;
+  } | null = null;
+  let collectiveAgreements: Array<{ id: string; idcc: string; name: string }> = [];
+  let socialRows: SocialRow[] = [];
+
+  if (canEditOrganization) {
+    [organization, collectiveAgreements, socialRows] = await Promise.all([
+      prisma.organization.findUnique({
+        where: { id: membership.organizationId },
+        select: {
+          payrollCity: true,
+          conventionCollective: true,
+          collectiveAgreement: { select: { idcc: true, name: true } },
+        },
+      }),
+      prisma.collectiveAgreement.findMany({
+        where: { status: "ACTIVE" },
+        select: { id: true, idcc: true, name: true },
+        orderBy: { name: "asc" },
+      }),
+      prisma.$queryRaw<SocialRow[]>`SELECT "legalCategory", "atmpRate", "healthPlanMonthlyAmount", "healthPlanEmployerRate", "companyCreationDate", "payrollDepartment" FROM "organizations" WHERE "id" = ${membership.organizationId} LIMIT 1`,
+    ]);
+  }
   const legalCategory = socialRows[0]?.legalCategory ?? "";
   const atmpRate = socialRows[0]?.atmpRate === null || socialRows[0]?.atmpRate === undefined ? "" : String(socialRows[0].atmpRate);
   const healthPlanMonthlyAmount = socialRows[0]?.healthPlanMonthlyAmount === null || socialRows[0]?.healthPlanMonthlyAmount === undefined ? "" : String(socialRows[0].healthPlanMonthlyAmount);
@@ -34,7 +65,7 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
     <div className="max-w-3xl">
       <Link href="/dashboard/configuration" className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-faint hover:text-ink"><ArrowLeft size={14} /> Configuration</Link>
       <h1 className="mt-3 text-2xl font-semibold text-ink">Organisation</h1>
-      <p className="mt-1 text-sm text-ink-soft">Votre rôle RH, les paramètres sociaux et la convention collective applicable.</p>
+      <p className="mt-1 text-sm text-ink-soft">{canEditOrganization ? "Votre rôle RH, les paramètres sociaux et la convention collective applicable." : "Votre rôle dans l’organisation."}</p>
       {saved && <div role="status" className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">✓ Modifications enregistrées.</div>}
       <form action={updateOrganizationSettings}>
         <Card className="mt-6">

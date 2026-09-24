@@ -13,10 +13,13 @@ const ACCESS_ROLE_LABELS: Record<string, string> = {
 export default async function AboutConfigPage() {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
-  const organization = await prisma.organization.findUnique({
-    where: { id: membership.organizationId },
-    select: { conventionCollective: true },
-  });
+  const canViewOrganizationSettings = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
+  const organization = canViewOrganizationSettings
+    ? await prisma.organization.findUnique({
+        where: { id: membership.organizationId },
+        select: { conventionCollective: true },
+      })
+    : null;
   return (
     <div className="max-w-3xl">
       <Link
@@ -38,12 +41,14 @@ export default async function AboutConfigPage() {
               {ACCESS_ROLE_LABELS[membership.accessRole] ?? membership.accessRole}
             </dd>
           </div>
-          <div className="flex items-center justify-between">
-            <dt className="text-ink-soft">Convention collective</dt>
-            <dd className="font-medium text-ink">
-              {organization?.conventionCollective || "Non renseignée"}
-            </dd>
-          </div>
+          {canViewOrganizationSettings && (
+            <div className="flex items-center justify-between">
+              <dt className="text-ink-soft">Convention collective</dt>
+              <dd className="font-medium text-ink">
+                {organization?.conventionCollective || "Non renseignée"}
+              </dd>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <dt className="text-ink-soft">Version</dt>
             <dd className="font-medium text-ink">RH Pilot</dd>
@@ -67,9 +72,11 @@ export default async function AboutConfigPage() {
           </Link>
         </div>
       </Card>
-      <p className="mt-6 text-xs text-ink-faint">
-        Retrouvez votre offre et vos informations d&apos;abonnement dans la rubrique Facturation.
-      </p>
+      {canViewOrganizationSettings && (
+        <p className="mt-6 text-xs text-ink-faint">
+          Retrouvez votre offre et vos informations d&apos;abonnement dans la rubrique Facturation.
+        </p>
+      )}
     </div>
   );
 }
