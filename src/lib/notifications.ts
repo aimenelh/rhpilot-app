@@ -17,13 +17,12 @@ function getAppUrl() {
   return process.env.APP_URL ?? "http://localhost:3000";
 }
 
-async function getAttentionTasksForMembership(organizationId: string, membershipId: string) {
+async function getAttentionTasksForMembership(membership: DigestMembership) {
   const tasks = await prisma.task.findMany({
     where: {
-      organizationId,
-      assignedMembershipId: membershipId,
+      organizationId: membership.organizationId,
       status: { notIn: ["DONE", "CANCELLED"] },
-      ...ACTIVE_TASK_SCOPE,
+      AND: [ACTIVE_TASK_SCOPE, taskAccessWhere(membership)],
     },
     include: { employeeEvent: { include: { employee: true } } },
     orderBy: { dueDate: "asc" },
@@ -117,9 +116,7 @@ export async function sendManualReminder({
   return result;
 }
 
-type DigestMembership = {
-  id: string;
-  organizationId: string;
+type DigestMembership = MembershipAccess & {
   user: {
     email: string;
     firstName: string | null;
@@ -148,11 +145,13 @@ async function sendDigestToMembership(
     if (alreadyDelivered) return "skipped_already_sent";
   }
 
-  const tasks = await getAttentionTasksForMembership(membership.organizationId, membership.id);
+  const tasks = await getAttentionTasksForMembership(membership);
   if (tasks.length === 0) return "skipped_empty";
 
   const appUrl = getAppUrl();
   const frequencyLabel = type === "digest_daily" ? "quotidien" : "hebdomadaire";
+  const organizationWide =
+    membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
   const subject = `RH Pilot : ${tasks.length} action${tasks.length > 1 ? "s" : ""} à surveiller`;
 
   const toItem = (task: (typeof tasks)[number]) => ({
@@ -175,7 +174,9 @@ async function sendDigestToMembership(
 
   const html = renderNotificationEmail({
     greeting: `Bonjour ${getUserDisplayName(membership.user)},`,
-    intro: `Voici votre résumé ${frequencyLabel} des actions qui vous sont assignées et qui méritent votre attention :`,
+    intro: organizationWide
+      ? `Voici votre résumé ${frequencyLabel} des actions de l'organisation qui méritent votre attention :`
+      : `Voici votre résumé ${frequencyLabel} des actions de votre périmètre qui méritent votre attention :`,
     summary: {
       overdueCount: overdue.length,
       todayCount: today.length,

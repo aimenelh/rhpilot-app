@@ -1,5 +1,6 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAnomalies } from "@/lib/anomalies";
@@ -8,12 +9,17 @@ import { formatDate, addDuration } from "@/lib/format";
 import { daysUntil } from "@/lib/urgency";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
 import { employeeAccessWhere, isOrganizationAdmin, taskAccessWhere, type MembershipAccess } from "@/lib/accessPolicy";
+import {
+  COPILOT_REQUESTS_PER_HOUR,
+  isCopilotRateLimited,
+} from "@/lib/copilotPolicy";
 
 // Plafonds volontaires, indépendants de la taille réelle de
 // l'organisation — jamais laisser le contexte (donc le coût et le
 // temps de réponse) grandir sans limite avec le nombre de salariés.
 const MAX_EMPLOYEES_IN_CONTEXT = 60;
-const MAX_UPCOMING_TASKS_IN_CONTEXT = 30;
+const MAX_OVERDUE_TASKS_IN_CONTEXT = 15;
+const MAX_UPCOMING_TASKS_IN_CONTEXT = 15;
 
 function taskTemporalStatus(dueDate: Date, today = new Date()): string {
   const diff = daysUntil(dueDate, today);
@@ -26,25 +32,47 @@ function taskTemporalStatus(dueDate: Date, today = new Date()): string {
 async function buildContext(membership: MembershipAccess): Promise<string> {
   const organizationId = membership.organizationId;
   const now = new Date();
-  const [employees, anomalies, upcomingTasks] = await Promise.all([
-    prisma.employee.findMany({
-      where: { organizationId, deletedAt: null, ...employeeAccessWhere(membership) },
-      orderBy: { hireDate: "desc" },
-      take: MAX_EMPLOYEES_IN_CONTEXT,
-    }),
-    isOrganizationAdmin(membership) ? getAnomalies(organizationId) : Promise.resolve([]),
-    prisma.task.findMany({
-      where: {
-        organizationId,
-        status: { notIn: ["DONE", "CANCELLED"] },
-        dueDate: { lte: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) },
-        AND: [ACTIVE_TASK_SCOPE, taskAccessWhere(membership)],
-      },
-      include: { employeeEvent: { include: { employee: true } } },
-      orderBy: { dueDate: "asc" },
-      take: MAX_UPCOMING_TASKS_IN_CONTEXT,
-    }),
-  ]);
+  // Requêtes séquentielles : le pool PostgreSQL de production est petit.
+  // Le Copilote privilégie la fiabilité à quelques millisecondes gagnées
+  // par une rafale de requêtes simultanées.
+  const employees = await prisma.employee.findMany({
+    where: { organizationId, deletedAt: null, ...employeeAccessWhere(membership) },
+    orderBy: { hireDate: "desc" },
+    take: MAX_EMPLOYEES_IN_CONTEXT,
+  });
+
+  const anomalies = isOrganizationAdmin(membership)
+    ? await getAnomalies(organizationId)
+    : [];
+
+  const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const horizon = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+  const overdueTasks = await prisma.task.findMany({
+    where: {
+      organizationId,
+      status: { notIn: ["DONE", "CANCELLED"] },
+      dueDate: { lt: todayStart },
+      AND: [ACTIVE_TASK_SCOPE, taskAccessWhere(membership)],
+    },
+    include: { employeeEvent: { include: { employee: true } } },
+    orderBy: { dueDate: "desc" },
+    take: MAX_OVERDUE_TASKS_IN_CONTEXT,
+  });
+
+  const upcomingTasks = await prisma.task.findMany({
+    where: {
+      organizationId,
+      status: { notIn: ["DONE", "CANCELLED"] },
+      dueDate: { gte: todayStart, lte: horizon },
+      AND: [ACTIVE_TASK_SCOPE, taskAccessWhere(membership)],
+    },
+    include: { employeeEvent: { include: { employee: true } } },
+    orderBy: { dueDate: "asc" },
+    take: MAX_UPCOMING_TASKS_IN_CONTEXT,
+  });
+
+  const contextTasks = [...overdueTasks, ...upcomingTasks];
 
   const employeeLines = employees.map((e) => {
     const parts = [`${e.firstName} ${e.lastName}`, `embauché·e le ${formatDate(e.hireDate)}`];
@@ -68,7 +96,7 @@ async function buildContext(membership: MembershipAccess): Promise<string> {
     (a) => `- [SUGGESTION ${a.severity}] ${a.message} — ceci est un signal calculé, pas un fait historique supplémentaire.`
   );
 
-  const taskLines = upcomingTasks.map((t) => {
+  const taskLines = contextTasks.map((t) => {
     const employeeName = `${t.employeeEvent.employee.firstName} ${t.employeeEvent.employee.lastName}`;
     return `- [TÂCHE ENREGISTRÉE] ${t.label} pour ${employeeName}, échéance le ${formatDate(t.dueDate)}, ${taskTemporalStatus(t.dueDate, now)}, statut applicatif : ${t.status}`;
   });
@@ -82,7 +110,7 @@ async function buildContext(membership: MembershipAccess): Promise<string> {
     `SUGGESTIONS / SIGNAUX À VÉRIFIER (${anomalies.length}) :`,
     anomalyLines.join("\n") || "Aucune suggestion active.",
     "",
-    `FAITS ENREGISTRÉS — TÂCHES OUVERTES : RETARDS ET 30 PROCHAINS JOURS (${upcomingTasks.length}) :`,
+    `FAITS ENREGISTRÉS — TÂCHES OUVERTES : RETARDS RÉCENTS ET 30 PROCHAINS JOURS (${contextTasks.length}) :`,
     taskLines.join("\n") || "Aucune tâche à échéance proche.",
   ].join("\n");
 }
@@ -104,8 +132,41 @@ export async function askAboutOrganizationAction(
     return { answer: "", error: "Question trop longue (500 caractères maximum).", question };
   }
 
+  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+  const recentRequests = await prisma.auditLog.count({
+    where: {
+      organizationId: membership.organizationId,
+      actorUserId: membership.userId,
+      action: "copilot.question",
+      createdAt: { gte: oneHourAgo },
+    },
+  });
+
+  if (isCopilotRateLimited(recentRequests)) {
+    return {
+      answer: "",
+      question,
+      error: `Le Copilote a atteint sa limite de ${COPILOT_REQUESTS_PER_HOUR} questions par heure pour votre compte. Réessayez un peu plus tard.`,
+    };
+  }
+
   try {
     const context = await buildContext(membership);
+
+    // Journaliser l'usage sans stocker le texte de la question : on
+    // protège le budget IA sans conserver de contenu potentiellement sensible.
+    await prisma.auditLog.create({
+      data: {
+        id: randomUUID(),
+        organizationId: membership.organizationId,
+        actorUserId: membership.userId,
+        action: "copilot.question",
+        entityType: "Membership",
+        entityId: membership.id,
+        metadata: { questionLength: question.length },
+      },
+    });
+
     const answer = await askAboutOrganization(question, context);
     return { answer, error: "", question };
   } catch (err) {

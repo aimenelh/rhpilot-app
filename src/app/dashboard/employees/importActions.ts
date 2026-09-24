@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { parseEmployeeCsv } from "@/lib/employeeCsv";
+import { employeeIdentityKey } from "@/lib/employeeIdentity";
 import { checkFreeTierLimit } from "./actions";
 
 export type ImportState = { error: string } | undefined;
@@ -32,6 +33,37 @@ export async function importEmployeesCsv(
 
   if (rows.length === 0) {
     return { error: errors[0]?.message ?? "Aucune ligne valide trouvée dans ce contenu." };
+  }
+
+  const seenInFile = new Set<string>();
+  const duplicateRowsInFile = rows.filter((row) => {
+    const key = employeeIdentityKey(row);
+    if (seenInFile.has(key)) return true;
+    seenInFile.add(key);
+    return false;
+  });
+
+  if (duplicateRowsInFile.length > 0) {
+    return {
+      error: `Le fichier contient ${duplicateRowsInFile.length} doublon${duplicateRowsInFile.length > 1 ? "s" : ""} (même prénom, nom et date d'embauche). Aucun salarié n'a été ajouté.`,
+    };
+  }
+
+  const existingEmployees = await prisma.employee.findMany({
+    where: { organizationId: membership.organizationId },
+    select: { firstName: true, lastName: true, hireDate: true },
+  });
+  const existingKeys = new Set(existingEmployees.map(employeeIdentityKey));
+  const alreadyExisting = rows.filter((row) => existingKeys.has(employeeIdentityKey(row)));
+
+  if (alreadyExisting.length > 0) {
+    const examples = alreadyExisting
+      .slice(0, 3)
+      .map((row) => `${row.firstName} ${row.lastName}`)
+      .join(", ");
+    return {
+      error: `${alreadyExisting.length} salarié${alreadyExisting.length > 1 ? "s semblent" : " semble"} déjà présent${alreadyExisting.length > 1 ? "s" : ""} dans RH Pilot (${examples}${alreadyExisting.length > 3 ? ", …" : ""}). Aucun salarié n'a été ajouté pour éviter les doublons.`,
+    };
   }
 
   // Même limite que pour une création individuelle — un import ne
