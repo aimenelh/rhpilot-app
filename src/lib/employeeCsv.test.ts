@@ -86,17 +86,21 @@ describe("parseEmployeeCsv", () => {
     expect(rows[0].position).toBe("Développeuse, senior");
   });
 
-  // Comportement actuel documenté tel quel, PAS corrigé ici — c'est le
-  // point déjà identifié dans l'audit (validation CSV insuffisante,
-  // Number(durationRaw) sans contrôle). Ce test sert de filet pour
-  // détecter le jour où ce comportement change, sans se prononcer sur
-  // s'il est souhaitable. À corriger dans une phase dédiée.
-  it("[comportement connu à corriger plus tard] une durée de période d'essai non numérique devient NaN plutôt qu'une erreur", () => {
+  it("rejette une ligne dont la durée de période d'essai n'est pas un entier valide", () => {
     const csv = `${HEADER}\nJulie,Martin,,,2026-01-15,,trois,MONTHS,`;
     const { rows, errors } = parseEmployeeCsv(csv);
 
-    expect(errors).toHaveLength(0);
-    expect(rows[0].probationDuration).toBeNaN();
+    expect(rows).toHaveLength(0);
+    expect(errors).toHaveLength(1);
+    expect(errors[0].message).toMatch(/durée de période d'essai invalide/i);
+  });
+
+  it("rejette une durée de période d'essai hors limites", () => {
+    const csv = `${HEADER}\nJulie,Martin,,,2026-01-15,,999,MONTHS,`;
+    const { rows, errors } = parseEmployeeCsv(csv);
+
+    expect(rows).toHaveLength(0);
+    expect(errors).toHaveLength(1);
   });
 
   it("retourne une erreur explicite pour un contenu vide", () => {

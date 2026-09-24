@@ -9,6 +9,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Non authentifié" }, { status: 401 });
   }
 
+  // L'interface actuelle ne sait gérer qu'une organisation active par
+  // utilisateur. Bloquer ici évite de créer une deuxième organisation
+  // "fantôme" qui serait ensuite invisible puisque getCurrentMembership()
+  // sélectionne la première appartenance active.
+  const existingMembership = await prisma.membership.findFirst({
+    where: { userId: user.id, deletedAt: null },
+    select: { id: true },
+  });
+  if (existingMembership) {
+    return NextResponse.json(
+      { error: "Vous appartenez déjà à une organisation active." },
+      { status: 409 }
+    );
+  }
+
   const body = await request.json().catch(() => null);
   const name = typeof body?.name === "string" ? body.name.trim() : "";
   const siretRaw = typeof body?.siret === "string" ? body.siret.trim() : null;

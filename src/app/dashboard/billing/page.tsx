@@ -32,6 +32,7 @@ export default async function BillingPage({
   ]);
 
   const isPro = organization?.subscriptionStatus === "active";
+  const canManageBilling = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
   const monthlyEstimate = isPro ? (15 + employeeCount * 3).toFixed(2) : null;
   const usageRatio = Math.min(employeeCount / FREE_TIER_LIMIT, 1);
 
@@ -74,7 +75,15 @@ export default async function BillingPage({
             Prochain renouvellement le {formatDate(organization.currentPeriodEnd)}.
           </p>
         )}
-        <div className="mt-5">{isPro ? <ManageSubscriptionButton /> : <UpgradeToProButton />}</div>
+        <div className="mt-5">
+          {canManageBilling ? (
+            isPro ? <ManageSubscriptionButton /> : <UpgradeToProButton />
+          ) : (
+            <p className="text-sm text-ink-faint">
+              Seuls les propriétaires et administrateurs peuvent modifier l&apos;abonnement.
+            </p>
+          )}
+        </div>
       </div>
 
       {/* Utilisation — seulement pertinent sur Gratuit, où la limite

@@ -34,6 +34,7 @@ export default async function ConfigurationPage() {
   ]);
 
   const organizationSectionIncomplete = !membership.functionalRole || !organization?.conventionCollective;
+  const canManageData = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
 
   return (
     <div className="max-w-3xl">
@@ -113,28 +114,34 @@ export default async function ConfigurationPage() {
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-ink">Données</h2>
             <p className="mt-0.5 text-sm text-ink-soft">
-              Exportez les données de votre organisation ou importez une liste de salariés au format CSV.
+              Exportez les données RH opérationnelles de votre organisation (hors paie) ou importez une liste de salariés au format CSV.
             </p>
-            <div className="mt-2.5 flex flex-wrap gap-2">
-              <a href="/api/export/employees">
-                <Button variant="secondary" className="text-xs">
-                  <Download size={13} />
-                  Salariés
-                </Button>
-              </a>
-              <a href="/api/export/organization">
-                <Button variant="secondary" className="text-xs">
-                  <Download size={13} />
-                  Tout exporter
-                </Button>
-              </a>
-              <Link href="/dashboard/employees/import">
-                <Button variant="secondary" className="text-xs">
-                  <Upload size={13} />
-                  Importer un CSV
-                </Button>
-              </Link>
-            </div>
+            {canManageData ? (
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                <a href="/api/export/employees">
+                  <Button variant="secondary" className="text-xs">
+                    <Download size={13} />
+                    Salariés
+                  </Button>
+                </a>
+                <a href="/api/export/organization">
+                  <Button variant="secondary" className="text-xs">
+                    <Download size={13} />
+                    Données RH
+                  </Button>
+                </a>
+                <Link href="/dashboard/employees/import">
+                  <Button variant="secondary" className="text-xs">
+                    <Upload size={13} />
+                    Importer un CSV
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <p className="mt-2 text-xs text-ink-faint">
+                Seuls les propriétaires et administrateurs peuvent importer ou exporter des données.
+              </p>
+            )}
           </div>
         </div>
 

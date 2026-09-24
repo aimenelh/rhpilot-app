@@ -6,6 +6,9 @@ import { BulkTriggerForm } from "./BulkTriggerForm";
 export default async function BulkTriggerPage() {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
+  if (membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN") {
+    redirect("/dashboard/events");
+  }
 
   const eventTemplates = await prisma.eventTemplate.findMany({
     where: { archivedAt: null },

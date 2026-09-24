@@ -15,6 +15,9 @@ export async function createCheckoutSession(
   if (!membership || !user) {
     return { error: "Session expirée, veuillez recharger la page." };
   }
+  if (membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN") {
+    return { error: "Seuls les propriétaires et administrateurs peuvent gérer la facturation." };
+  }
 
   const organization = await prisma.organization.findUnique({
     where: { id: membership.organizationId },
@@ -77,6 +80,9 @@ export async function createPortalSession(
   const membership = await getCurrentMembership();
   if (!membership) {
     return { error: "Session expirée, veuillez recharger la page." };
+  }
+  if (membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN") {
+    return { error: "Seuls les propriétaires et administrateurs peuvent gérer la facturation." };
   }
 
   const organization = await prisma.organization.findUnique({
