@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { triggerEmployeeEvent } from "@/lib/eventEngine";
 import type { TaskStatus, Prisma } from "@prisma/client";
+import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
 
 export type TriggerEventFormState = { error: string } | undefined;
 
@@ -95,7 +96,7 @@ export async function updateTaskStatus(taskId: string, formData: FormData) {
   // Isolation multi-tenant : vérification explicite en plus des clés
   // composites du schéma, comme partout ailleurs dans l'application.
   const task = await prisma.task.findFirst({
-    where: { id: taskId, organizationId: membership.organizationId },
+    where: { id: taskId, organizationId: membership.organizationId, ...ACTIVE_TASK_SCOPE },
   });
   if (!task) throw new Error("Tâche introuvable dans cette organisation");
 
@@ -147,7 +148,7 @@ export async function assignTask(taskId: string, formData: FormData) {
   }
 
   const task = await prisma.task.findFirst({
-    where: { id: taskId, organizationId: membership.organizationId },
+    where: { id: taskId, organizationId: membership.organizationId, ...ACTIVE_TASK_SCOPE },
   });
   if (!task) throw new Error("Tâche introuvable dans cette organisation");
 
@@ -304,7 +305,7 @@ export async function moveTask(taskId: string, direction: "up" | "down") {
   if (!membership) throw new Error("Non authentifié ou aucune organisation active");
 
   const task = await prisma.task.findFirst({
-    where: { id: taskId, organizationId: membership.organizationId },
+    where: { id: taskId, organizationId: membership.organizationId, ...ACTIVE_TASK_SCOPE },
   });
   if (!task) throw new Error("Tâche introuvable dans cette organisation");
 
@@ -341,7 +342,7 @@ export async function updateCustomTask(taskId: string, formData: FormData) {
   if (!membership || !user) throw new Error("Non authentifié ou aucune organisation active");
 
   const task = await prisma.task.findFirst({
-    where: { id: taskId, organizationId: membership.organizationId },
+    where: { id: taskId, organizationId: membership.organizationId, ...ACTIVE_TASK_SCOPE },
     include: { employeeEvent: true },
   });
   if (!task) throw new Error("Tâche introuvable dans cette organisation");
@@ -429,7 +430,7 @@ export async function deleteCustomTask(taskId: string, rememberForFuture: boolea
   if (!membership || !user) throw new Error("Non authentifié ou aucune organisation active");
 
   const task = await prisma.task.findFirst({
-    where: { id: taskId, organizationId: membership.organizationId },
+    where: { id: taskId, organizationId: membership.organizationId, ...ACTIVE_TASK_SCOPE },
   });
   if (!task) throw new Error("Tâche introuvable dans cette organisation");
 

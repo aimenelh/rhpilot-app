@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { CalendarDays, User, CircleCheck, TriangleAlert, Send, ChevronUp, ChevronDown } from "lucide-react";
+import { CalendarDays, User, CircleCheck, TriangleAlert, Send, ChevronUp, ChevronDown, FileText, Trash2 } from "lucide-react";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
@@ -18,6 +18,8 @@ import { getEventTemplateDotColor } from "@/lib/eventTemplateStyle";
 import { ArchiveEventButton } from "./ArchiveEventButton";
 import { AddCustomTaskForm } from "./AddCustomTaskForm";
 import { CustomTaskActions } from "./CustomTaskActions";
+import { TaskAttachmentUploadForm } from "./TaskAttachmentUploadForm";
+import { deleteTaskAttachment } from "../attachmentActions";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +28,12 @@ const RESOLUTION_ROLE_LABELS: Record<string, string> = {
   DIRIGEANT: "Dirigeant",
   MANAGER_DIRECT: "Manager direct",
 };
+
+function formatAttachmentSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} o`;
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} Ko`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+}
 
 export default async function EventDetailPage({
   params,
@@ -43,7 +51,20 @@ export default async function EventDetailPage({
         eventTemplate: true,
         tasks: {
           orderBy: { stepOrder: "asc" },
-          include: { assignedMembership: { include: { user: true } }, _count: { select: { attachments: true } } },
+          include: {
+            assignedMembership: { include: { user: true } },
+            attachments: {
+              orderBy: { createdAt: "asc" },
+              select: {
+                id: true,
+                fileName: true,
+                mimeType: true,
+                sizeBytes: true,
+                uploadedByMembershipId: true,
+                createdAt: true,
+              },
+            },
+          },
         },
       },
     }),
@@ -57,7 +78,7 @@ export default async function EventDetailPage({
   if (!employeeEvent) notFound();
 
   const doneCount = employeeEvent.tasks.filter((task) => task.status === "DONE").length;
-  const missingProofCount = employeeEvent.tasks.filter(task => task.proofRequired && task.status !== "CANCELLED" && task._count.attachments === 0).length;
+  const missingProofCount = employeeEvent.tasks.filter(task => task.proofRequired && task.status !== "CANCELLED" && task.attachments.length === 0).length;
   const isFullyCompleted = employeeEvent.tasks.length > 0 && doneCount === employeeEvent.tasks.length;
 
   return (
@@ -204,10 +225,74 @@ export default async function EventDetailPage({
                           </span>
                         )}
                       </div>
-                      {task.proofRequired && task.proofLabel && (
-                        <p className="mt-0.5 text-xs text-accent-amber">
-                          {task._count.attachments > 0 ? "Fichier associé · contenu à vérifier" : task.status === "DONE" ? "Action faite · justificatif non associé" : "Justificatif à fournir"} : {task.proofLabel}
-                        </p>
+                      {task.proofLabel && (
+                        <div className="mt-2">
+                          <p
+                            className={`text-xs ${
+                              task.proofRequired && task.attachments.length === 0
+                                ? "text-accent-amber"
+                                : "text-ink-faint"
+                            }`}
+                          >
+                            {task.proofRequired
+                              ? task.attachments.length > 0
+                                ? "Justificatif associé"
+                                : task.status === "DONE"
+                                  ? "Action faite · justificatif encore manquant"
+                                  : "Justificatif à fournir"
+                              : task.attachments.length > 0
+                                ? "Pièce associée"
+                                : "Pièce recommandée"}{" "}
+                            : {task.proofLabel}
+                          </p>
+
+                          {task.attachments.length > 0 && (
+                            <div className="mt-2 flex flex-col gap-1.5">
+                              {task.attachments.map((attachment) => {
+                                const canDeleteAttachment =
+                                  membership.accessRole === "OWNER" ||
+                                  membership.accessRole === "ADMIN" ||
+                                  attachment.uploadedByMembershipId === membership.id;
+
+                                return (
+                                  <div
+                                    key={attachment.id}
+                                    className="flex items-center gap-2 rounded-lg border border-surface-border bg-surface-subtle/45 px-2.5 py-2"
+                                  >
+                                    <FileText size={13} className="shrink-0 text-ink-faint" />
+                                    <a
+                                      href={`/api/tasks/attachments/${attachment.id}`}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="min-w-0 flex-1 truncate text-xs font-medium text-brand-primary hover:underline"
+                                    >
+                                      {attachment.fileName || "Pièce RH"}
+                                    </a>
+                                    <span className="shrink-0 text-[10px] text-ink-faint">
+                                      {formatAttachmentSize(attachment.sizeBytes)}
+                                    </span>
+                                    {canDeleteAttachment && (
+                                      <form action={deleteTaskAttachment.bind(null, attachment.id)}>
+                                        <button
+                                          type="submit"
+                                          aria-label={`Supprimer ${attachment.fileName || "cette pièce"}`}
+                                          title="Supprimer la pièce"
+                                          className="flex h-6 w-6 items-center justify-center rounded text-ink-faint hover:bg-white hover:text-accent-rose"
+                                        >
+                                          <Trash2 size={12} />
+                                        </button>
+                                      </form>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+
+                          {task.status !== "CANCELLED" && (
+                            <TaskAttachmentUploadForm taskId={task.id} />
+                          )}
+                        </div>
                       )}
                       {task.taskTemplateId === null && (
                         <p className="mt-0.5 text-[11px] font-medium text-brand-primary">
