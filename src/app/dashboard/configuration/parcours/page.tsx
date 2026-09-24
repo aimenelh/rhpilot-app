@@ -12,6 +12,7 @@ export default async function ParcoursConfigPage() {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
   const canEditOrganization = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
+  if (!canEditOrganization) redirect("/dashboard/configuration");
   const [eventTemplates, overrides] = await Promise.all([
     prisma.eventTemplate.findMany({
       where: { archivedAt: null },

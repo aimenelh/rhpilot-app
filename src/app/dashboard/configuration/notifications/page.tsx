@@ -12,6 +12,7 @@ export default async function NotificationsConfigPage() {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
   const canEditOrganization = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
+  if (!canEditOrganization) redirect("/dashboard/configuration");
   const reminderRules = await prisma.reminderRule.findMany({
     where: { organizationId: membership.organizationId },
     orderBy: { daysBeforeDue: "desc" },

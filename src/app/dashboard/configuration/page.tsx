@@ -23,25 +23,34 @@ export default async function ConfigurationPage() {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
 
-  const [organization, eventTemplateCount, overrideCount, reminderRuleCount] = await Promise.all([
-    prisma.organization.findUnique({
-      where: { id: membership.organizationId },
-      select: { conventionCollective: true },
-    }),
-    prisma.eventTemplate.count({ where: { archivedAt: null } }),
-    prisma.taskTemplateOverride.count({ where: { organizationId: membership.organizationId } }),
-    prisma.reminderRule.count({ where: { organizationId: membership.organizationId } }),
-  ]);
-
-  const organizationSectionIncomplete = !membership.functionalRole || !organization?.conventionCollective;
   const canManageData = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
+  let organization: { conventionCollective: string | null } | null = null;
+  let eventTemplateCount = 0;
+  let overrideCount = 0;
+  let reminderRuleCount = 0;
+
+  if (canManageData) {
+    [organization, eventTemplateCount, overrideCount, reminderRuleCount] = await Promise.all([
+      prisma.organization.findUnique({
+        where: { id: membership.organizationId },
+        select: { conventionCollective: true },
+      }),
+      prisma.eventTemplate.count({ where: { archivedAt: null } }),
+      prisma.taskTemplateOverride.count({ where: { organizationId: membership.organizationId } }),
+      prisma.reminderRule.count({ where: { organizationId: membership.organizationId } }),
+    ]);
+  }
+
+  const organizationSectionIncomplete =
+    !membership.functionalRole || (canManageData && !organization?.conventionCollective);
 
   return (
     <div className="max-w-3xl">
       <h1 className="text-2xl font-semibold text-ink">Configuration</h1>
       <p className="mt-1 text-sm text-ink-soft">
-        Gérez les paramètres de votre espace RH Pilot. Personnalisez votre organisation, vos
-        parcours, vos notifications et vos données.
+        {canManageData
+          ? "Gérez les paramètres de votre espace RH Pilot. Personnalisez votre organisation, vos parcours, vos notifications et vos données."
+          : "Gérez votre rôle et les informations de votre espace RH Pilot."}
       </p>
 
       {organizationSectionIncomplete && (
@@ -51,8 +60,9 @@ export default async function ConfigurationPage() {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-ink">Complétez votre organisation</p>
               <p className="mt-0.5 text-sm text-ink-soft">
-                Votre rôle RH et votre convention collective ne sont pas encore renseignés. RH
-                Pilot en a besoin pour bien vous orienter.
+                {canManageData
+                  ? "Votre rôle RH et votre convention collective ne sont pas encore renseignés. RH Pilot en a besoin pour bien vous orienter."
+                  : "Votre rôle dans l’organisation n’est pas encore renseigné. RH Pilot en a besoin pour bien vous orienter."}
               </p>
             </div>
             <ChevronRight size={16} className="shrink-0 text-ink-faint" />
@@ -70,13 +80,14 @@ export default async function ConfigurationPage() {
             <div className="min-w-0 flex-1">
               <h2 className="text-sm font-semibold text-ink">Organisation</h2>
               <p className="mt-0.5 text-sm text-ink-soft">
-                Votre rôle RH et votre convention collective.
+                {canManageData ? "Votre rôle RH et votre convention collective." : "Votre rôle dans l’organisation."}
               </p>
             </div>
             <ChevronRight size={16} className="mt-0.5 shrink-0 text-ink-faint" />
           </Link>
         )}
 
+        {canManageData && (
         <Link
           href="/dashboard/configuration/parcours"
           className="flex items-start gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
@@ -92,7 +103,9 @@ export default async function ConfigurationPage() {
           </div>
           <ChevronRight size={16} className="mt-0.5 shrink-0 text-ink-faint" />
         </Link>
+        )}
 
+        {canManageData && (
         <Link
           href="/dashboard/configuration/notifications"
           className="flex items-start gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"
@@ -108,7 +121,9 @@ export default async function ConfigurationPage() {
           </div>
           <ChevronRight size={16} className="mt-0.5 shrink-0 text-ink-faint" />
         </Link>
+        )}
 
+        {canManageData && (
         <div className="flex items-start gap-3 px-5 py-4">
           <Database size={18} className="mt-0.5 shrink-0 text-ink-faint" />
           <div className="min-w-0 flex-1">
@@ -116,35 +131,31 @@ export default async function ConfigurationPage() {
             <p className="mt-0.5 text-sm text-ink-soft">
               Exportez les données RH opérationnelles de votre organisation (hors paie) ou importez une liste de salariés au format CSV.
             </p>
-            {canManageData ? (
-              <div className="mt-2.5 flex flex-wrap gap-2">
-                <a href="/api/export/employees">
-                  <Button variant="secondary" className="text-xs">
-                    <Download size={13} />
-                    Salariés
-                  </Button>
-                </a>
-                <a href="/api/export/organization">
-                  <Button variant="secondary" className="text-xs">
-                    <Download size={13} />
-                    Données RH
-                  </Button>
-                </a>
-                <Link href="/dashboard/employees/import">
-                  <Button variant="secondary" className="text-xs">
-                    <Upload size={13} />
-                    Importer un CSV
-                  </Button>
-                </Link>
-              </div>
-            ) : (
-              <p className="mt-2 text-xs text-ink-faint">
-                Seuls les propriétaires et administrateurs peuvent importer ou exporter des données.
-              </p>
-            )}
+            <div className="mt-2.5 flex flex-wrap gap-2">
+              <a href="/api/export/employees">
+                <Button variant="secondary" className="text-xs">
+                  <Download size={13} />
+                  Salariés
+                </Button>
+              </a>
+              <a href="/api/export/organization">
+                <Button variant="secondary" className="text-xs">
+                  <Download size={13} />
+                  Données RH
+                </Button>
+              </a>
+              <Link href="/dashboard/employees/import">
+                <Button variant="secondary" className="text-xs">
+                  <Upload size={13} />
+                  Importer un CSV
+                </Button>
+              </Link>
+            </div>
           </div>
         </div>
+        )}
 
+        {canManageData && (
         <div className="flex items-start gap-3 px-5 py-4 opacity-60">
           <Shield size={18} className="mt-0.5 shrink-0 text-ink-faint" />
           <div className="min-w-0 flex-1">
@@ -152,6 +163,7 @@ export default async function ConfigurationPage() {
             <p className="mt-0.5 text-sm text-ink-soft">Paramètres avancés à venir.</p>
           </div>
         </div>
+        )}
 
         <Link
           href="/dashboard/configuration/a-propos"
@@ -161,7 +173,7 @@ export default async function ConfigurationPage() {
           <div className="min-w-0 flex-1">
             <h2 className="text-sm font-semibold text-ink">À propos</h2>
             <p className="mt-0.5 text-sm text-ink-soft">
-              Informations sur votre organisation et votre espace RH Pilot.
+              Informations sur votre espace RH Pilot.
             </p>
           </div>
           <ChevronRight size={16} className="mt-0.5 shrink-0 text-ink-faint" />
