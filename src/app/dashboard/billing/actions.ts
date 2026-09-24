@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { stripe, STRIPE_PRICE_BASE, STRIPE_PRICE_PER_EMPLOYEE } from "@/lib/stripe";
+import { employeeQuantityForBilling } from "@/lib/billingPolicy";
 
 export type BillingActionState = { error: string } | undefined;
 
@@ -24,6 +25,12 @@ export async function createCheckoutSession(
   });
   if (!organization) {
     return { error: "Organisation introuvable." };
+  }
+  if (
+    organization.stripeSubscriptionId &&
+    ["active", "trialing", "past_due"].includes(organization.subscriptionStatus ?? "")
+  ) {
+    return { error: "Un abonnement est déjà actif pour cette organisation." };
   }
 
   // Quantité du prix "par salarié" = nombre de salariés actifs
@@ -46,7 +53,7 @@ export async function createCheckoutSession(
       },
       line_items: [
         { price: STRIPE_PRICE_BASE, quantity: 1 },
-        { price: STRIPE_PRICE_PER_EMPLOYEE, quantity: Math.max(employeeCount, 1) },
+        { price: STRIPE_PRICE_PER_EMPLOYEE, quantity: employeeQuantityForBilling(employeeCount) },
       ],
       success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=1`,
       cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?canceled=1`,
