@@ -1,14 +1,9 @@
 import type { TaskStatus } from "@prisma/client";
-
-const DAY_MS = 1000 * 60 * 60 * 24;
-
-function startOfDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
+import { parisDaysBetween } from "@/lib/parisDate";
 
 /** Nombre de jours entre aujourd'hui et la date donnée (négatif si passé). */
 export function daysUntil(date: Date, today: Date = new Date()) {
-  return Math.round((startOfDay(date).getTime() - startOfDay(today).getTime()) / DAY_MS);
+  return parisDaysBetween(today, date);
 }
 
 export function isTaskOpen(status: TaskStatus) {

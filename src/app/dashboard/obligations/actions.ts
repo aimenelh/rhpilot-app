@@ -6,6 +6,7 @@ import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { CseTrackingStatus } from "@/lib/compliance/obligations";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
+import { isParisDayAfter } from "@/lib/parisDate";
 
 export type ComplianceActionState = { success?: string; error?: string };
 
@@ -25,9 +26,7 @@ function parseDateOnly(value: FormDataEntryValue | null) {
 
 function isFuture(value: { raw: string; date: Date } | null | undefined) {
   if (!value) return false;
-  const now = new Date();
-  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-  return value.date.getTime() > today.getTime();
+  return isParisDayAfter(value.date);
 }
 
 function revalidateComplianceViews() {

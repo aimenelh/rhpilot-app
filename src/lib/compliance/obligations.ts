@@ -1,3 +1,4 @@
+import { parisCalendarDayNumber, parisDaysBetween } from "@/lib/parisDate";
 export type ObligationStatus = "TO_DO" | "UPCOMING" | "COMPLIANT" | "INFO_NEEDED" | "MONITOR";
 export type ObligationScope = "ORGANIZATION" | "EMPLOYEE";
 export type CseTrackingStatus = "UNKNOWN" | "IN_PLACE" | "NOT_IN_PLACE";
@@ -220,8 +221,7 @@ function addMonths(date: Date, months: number) {
 }
 
 function daysBetween(from: Date, to: Date) {
-  const day = 86_400_000;
-  return Math.ceil((to.getTime() - from.getTime()) / day);
+  return parisDaysBetween(from, to);
 }
 
 function careerInterviewItem(
@@ -255,7 +255,7 @@ function careerInterviewItem(
 
     const due = addYears(lastInterview, 4);
     const remainingDays = daysBetween(now, due);
-    const overdue = due.getTime() < now.getTime();
+    const overdue = daysBetween(now, due) < 0;
 
     return {
       id: `career-${employee.id}`,
@@ -280,7 +280,8 @@ function careerInterviewItem(
     };
   }
 
-  const hiredUnderCurrentRule = employee.hireDate.getTime() >= CAREER_INTERVIEW_EFFECTIVE_FROM.getTime();
+  const hiredUnderCurrentRule =
+    parisCalendarDayNumber(employee.hireDate) >= parisCalendarDayNumber(CAREER_INTERVIEW_EFFECTIVE_FROM);
   if (!hiredUnderCurrentRule) {
     return {
       id: `career-${employee.id}`,
@@ -304,7 +305,7 @@ function careerInterviewItem(
   const due = addYears(employee.hireDate, 1);
   const remainingDays = daysBetween(now, due);
 
-  if (due.getTime() < now.getTime()) {
+  if (daysBetween(now, due) < 0) {
     return {
       id: `career-${employee.id}`,
       ruleKey: "FR.CAREER_INTERVIEW",
@@ -356,7 +357,7 @@ function duerpItem(
   if (annualUpdateApplies && lastUpdate) {
     const due = addYears(lastUpdate, 1);
     const remainingDays = daysBetween(now, due);
-    const overdue = due.getTime() < now.getTime();
+    const overdue = daysBetween(now, due) < 0;
 
     return {
       id: "duerp-organization",
@@ -476,7 +477,7 @@ function cseItem(
 
     const due = addYears(lastElectionAt, 4);
     const remainingDays = daysBetween(now, due);
-    const overdue = due.getTime() < now.getTime();
+    const overdue = daysBetween(now, due) < 0;
 
     return {
       id: "cse-organization",
@@ -518,7 +519,7 @@ function cseItem(
   }
 
   const thresholdDue = addMonths(thresholdReachedAt, 12);
-  if (thresholdDue.getTime() > now.getTime()) {
+  if (daysBetween(now, thresholdDue) > 0) {
     return {
       id: "cse-organization",
       ruleKey: "FR.CSE.ELECTION",

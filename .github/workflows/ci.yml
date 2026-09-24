@@ -58,6 +58,9 @@ jobs:
         run: >-
           npx vitest run
           src/lib/notificationSchedule.test.ts
+          src/lib/parisDate.test.ts
+          src/lib/urgency.test.ts
+          src/lib/compliance/obligations.test.ts
           src/lib/task-attachment-storage.test.ts
           src/lib/probationTracking.test.ts
           src/lib/employeeCsv.test.ts
