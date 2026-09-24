@@ -6,6 +6,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership } from "@/lib/auth";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
+import { isParisDayAfter } from "@/lib/parisDate";
 
 const LEGAL_CATEGORIES = ["EI", "SARL", "SAS", "SELARL", "SELAS", "association", "autre"] as const;
 const KNOWN_CONVENTIONS = [
@@ -79,7 +80,7 @@ export async function updateOrganizationSettings(formData: FormData) {
     if (companyCreationDateRaw !== "" && !companyCreationDate) {
       throw new Error("La date de création de l'entreprise est invalide.");
     }
-    if (companyCreationDate !== null && companyCreationDate > new Date()) throw new Error("La date de création de l'entreprise ne peut pas être dans le futur.");
+    if (companyCreationDate !== null && isParisDayAfter(companyCreationDate)) throw new Error("La date de création de l'entreprise ne peut pas être dans le futur.");
     const payrollCity = String(formData.get("payrollCity") ?? "").trim();
     const atmpRateRaw = String(formData.get("atmpRate") ?? "").trim().replace(",", ".");
     const atmpRate = atmpRateRaw === "" ? null : Number(atmpRateRaw);

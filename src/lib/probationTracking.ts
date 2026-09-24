@@ -1,4 +1,5 @@
 import { addDuration } from "@/lib/format";
+import { parisCalendarDayNumber } from "@/lib/parisDate";
 
 export type ProbationDurationUnit = "DAYS" | "WEEKS" | "MONTHS";
 
@@ -11,10 +12,6 @@ export type ProbationTrackingInput = {
 export type ProbationHistoricalInput = ProbationTrackingInput & {
   createdAt: Date;
 };
-
-function startOfDay(date: Date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
-}
 
 export function getProbationEndDate(input: ProbationTrackingInput): Date | null {
   if (
@@ -40,7 +37,7 @@ export function getProbationEndDate(input: ProbationTrackingInput): Date | null 
 export function isProbationHistoricalAtEntry(input: ProbationHistoricalInput): boolean {
   const endDate = getProbationEndDate(input);
   if (!endDate) return false;
-  return startOfDay(endDate).getTime() < startOfDay(input.createdAt).getTime();
+  return parisCalendarDayNumber(endDate) < parisCalendarDayNumber(input.createdAt);
 }
 
 export function isProbationActive(
@@ -49,7 +46,7 @@ export function isProbationActive(
 ): boolean {
   const endDate = getProbationEndDate(input);
   if (!endDate) return false;
-  return startOfDay(endDate).getTime() >= startOfDay(today).getTime();
+  return parisCalendarDayNumber(endDate) >= parisCalendarDayNumber(today);
 }
 
 /**
@@ -63,5 +60,5 @@ export function shouldOfferProbationWorkflow(
 ): boolean {
   const endDate = getProbationEndDate(input);
   if (!endDate) return true;
-  return startOfDay(endDate).getTime() >= startOfDay(today).getTime();
+  return parisCalendarDayNumber(endDate) >= parisCalendarDayNumber(today);
 }

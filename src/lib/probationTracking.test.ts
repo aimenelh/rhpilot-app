@@ -46,6 +46,16 @@ describe("probationTracking", () => {
     expect(isProbationActive(employee, new Date("2026-04-01T00:00:00"))).toBe(false);
   });
 
+  it("reste active le jour de fin juste après minuit à Paris", () => {
+    const employee = {
+      hireDate: new Date("2026-09-23T00:00:00.000Z"),
+      probationDuration: 1,
+      probationDurationUnit: "DAYS" as const,
+    };
+
+    expect(isProbationActive(employee, new Date("2026-09-23T22:30:00.000Z"))).toBe(true);
+  });
+
   it("laisse le parcours disponible quand aucune durée n'est connue", () => {
     const employee = {
       hireDate: new Date("2000-02-01T00:00:00"),
