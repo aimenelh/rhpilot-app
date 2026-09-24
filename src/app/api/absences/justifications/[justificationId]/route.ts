@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { readAbsenceJustification } from "@/lib/absence-justification-storage";
+import { isOrganizationAdmin } from "@/lib/accessPolicy";
 
 function safeFileName(name: string | null | undefined) {
   const cleaned = (name ?? "justificatif").replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 120);
@@ -14,6 +15,9 @@ export async function GET(
 ) {
   const membership = await getCurrentMembership();
   if (!membership) return new NextResponse("Non autorisé", { status: 401 });
+  if (!isOrganizationAdmin(membership)) {
+    return new NextResponse("Accès interdit", { status: 403 });
+  }
 
   const justification = await prisma.absenceJustification.findFirst({
     where: {
