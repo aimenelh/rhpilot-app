@@ -24,7 +24,7 @@ import { getEventTemplateDotColor } from "@/lib/eventTemplateStyle";
 import { summarizeParcours } from "@/lib/parcoursSummary";
 import { CcnHint } from "@/components/CcnHint";
 import { PayrollProfileSection } from "../../payroll/PayrollProfileSection";
-import { employeeAccessWhere, eventAccessWhere, isOrganizationAdmin } from "@/lib/accessPolicy";
+import { employeeAccessWhere, eventAccessWhere, isOrganizationAdmin, taskAccessWhere } from "@/lib/accessPolicy";
 
 export const dynamic = "force-dynamic";
 
@@ -57,34 +57,59 @@ export default async function EmployeeDetailPage({
 
   const [memberships, eventTemplates, employeeEvents, organization, payrollProfile, collectiveAgreements] = await Promise.all([
     prisma.membership.findMany({
-      where: { organizationId: membership.organizationId, deletedAt: null },
+      where: {
+        organizationId: membership.organizationId,
+        deletedAt: null,
+        ...(canManageEmployee
+          ? {}
+          : {
+              id: {
+                in: [
+                  membership.id,
+                  ...(employee.managerMembershipId ? [employee.managerMembershipId] : []),
+                ],
+              },
+            }),
+      },
       include: { user: true },
       orderBy: { createdAt: "asc" },
     }),
-    prisma.eventTemplate.findMany({
-      where: { archivedAt: null },
-      orderBy: { label: "asc" },
-    }),
+    canManageEmployee
+      ? prisma.eventTemplate.findMany({
+          where: { archivedAt: null },
+          orderBy: { label: "asc" },
+        })
+      : Promise.resolve([]),
     prisma.employeeEvent.findMany({
       where: { employeeId: employee.id, organizationId: membership.organizationId, deletedAt: null, ...eventAccessWhere(membership) },
-      include: { eventTemplate: true, tasks: true },
+      include: {
+        eventTemplate: true,
+        tasks: { where: taskAccessWhere(membership) },
+      },
       orderBy: { triggerDate: "desc" },
     }),
-    prisma.organization.findUnique({ where: { id: membership.organizationId } }),
-    prisma.payrollProfile.findFirst({
-      where: {
-        organizationId: membership.organizationId,
-        employeeId: employee.id,
-        effectiveFrom: { lte: new Date() },
-        OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: new Date() } }],
-      },
-      orderBy: { effectiveFrom: "desc" },
+    prisma.organization.findUnique({
+      where: { id: membership.organizationId },
+      select: { conventionCollective: true },
     }),
-    prisma.collectiveAgreement.findMany({
-      where: { status: "ACTIVE" },
-      select: { id: true, idcc: true, name: true },
-      orderBy: { name: "asc" },
-    }),
+    canManageEmployee
+      ? prisma.payrollProfile.findFirst({
+          where: {
+            organizationId: membership.organizationId,
+            employeeId: employee.id,
+            effectiveFrom: { lte: new Date() },
+            OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: new Date() } }],
+          },
+          orderBy: { effectiveFrom: "desc" },
+        })
+      : Promise.resolve(null),
+    canManageEmployee
+      ? prisma.collectiveAgreement.findMany({
+          where: { status: "ACTIVE" },
+          select: { id: true, idcc: true, name: true },
+          orderBy: { name: "asc" },
+        })
+      : Promise.resolve([]),
   ]);
 
   const potentialManagers = memberships.map((m) => ({

@@ -20,7 +20,7 @@ import { AddCustomTaskForm } from "./AddCustomTaskForm";
 import { CustomTaskActions } from "./CustomTaskActions";
 import { TaskAttachmentUploadForm } from "./TaskAttachmentUploadForm";
 import { deleteTaskAttachment } from "../attachmentActions";
-import { eventAccessWhere, isOrganizationAdmin } from "@/lib/accessPolicy";
+import { eventAccessWhere, isOrganizationAdmin, taskAccessWhere } from "@/lib/accessPolicy";
 
 export const dynamic = "force-dynamic";
 
@@ -53,6 +53,8 @@ export default async function EventDetailPage({
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
 
+  const canManageStructure = isOrganizationAdmin(membership);
+
   const [employeeEvent, members] = await Promise.all([
     prisma.employeeEvent.findFirst({
       where: { id: params.id, organizationId: membership.organizationId, deletedAt: null, ...eventAccessWhere(membership) },
@@ -60,6 +62,7 @@ export default async function EventDetailPage({
         employee: true,
         eventTemplate: true,
         tasks: {
+          where: taskAccessWhere(membership),
           orderBy: { stepOrder: "asc" },
           include: {
             assignedMembership: { include: { user: true } },
@@ -78,16 +81,17 @@ export default async function EventDetailPage({
         },
       },
     }),
-    prisma.membership.findMany({
-      where: { organizationId: membership.organizationId, deletedAt: null },
-      include: { user: true },
-      orderBy: { createdAt: "asc" },
-    }),
+    canManageStructure
+      ? prisma.membership.findMany({
+          where: { organizationId: membership.organizationId, deletedAt: null },
+          include: { user: true },
+          orderBy: { createdAt: "asc" },
+        })
+      : Promise.resolve([]),
   ]);
 
   if (!employeeEvent) notFound();
 
-  const canManageStructure = isOrganizationAdmin(membership);
   const doneCount = employeeEvent.tasks.filter((task) => task.status === "DONE").length;
   const missingProofCount = employeeEvent.tasks.filter(task => task.proofRequired && task.status !== "CANCELLED" && task.attachments.length === 0).length;
   const isFullyCompleted = employeeEvent.tasks.length > 0 && doneCount === employeeEvent.tasks.length;
