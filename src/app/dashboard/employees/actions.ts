@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto";
 import type { ContractType, Civility, DurationUnit, ProfessionalCategory } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { isOrganizationAdmin } from "@/lib/accessPolicy";
 
 // Sécurité : l'organisation courante est TOUJOURS résolue côté serveur
 // à partir de la session (getCurrentMembership), jamais à partir d'un
@@ -124,6 +125,9 @@ export async function createEmployee(
   if (!membership || !user) {
     return { error: "Session expirée, veuillez recharger la page." };
   }
+  if (!isOrganizationAdmin(membership)) {
+    return { error: "Seuls les propriétaires et administrateurs peuvent ajouter un salarié." };
+  }
 
   const limitError = await checkFreeTierLimit(membership.organizationId);
   if (limitError) return { error: limitError };
@@ -190,6 +194,9 @@ export async function updateEmployee(
   const user = await getCurrentUser();
   if (!membership || !user) {
     return { error: "Session expirée, veuillez recharger la page." };
+  }
+  if (!isOrganizationAdmin(membership)) {
+    return { error: "Seuls les propriétaires et administrateurs peuvent modifier un salarié." };
   }
 
   // Vérification explicite d'appartenance à l'organisation avant toute
@@ -258,6 +265,9 @@ export async function archiveEmployee(employeeId: string) {
   if (!membership || !user) {
     throw new Error("Non authentifié ou aucune organisation active");
   }
+  if (!isOrganizationAdmin(membership)) {
+    throw new Error("Seuls les propriétaires et administrateurs peuvent archiver un salarié.");
+  }
 
   const existing = await prisma.employee.findFirst({
     where: { id: employeeId, organizationId: membership.organizationId, deletedAt: null },
@@ -295,6 +305,9 @@ export async function reactivateEmployee(employeeId: string) {
   const user = await getCurrentUser();
   if (!membership || !user) {
     throw new Error("Non authentifié ou aucune organisation active");
+  }
+  if (!isOrganizationAdmin(membership)) {
+    throw new Error("Seuls les propriétaires et administrateurs peuvent réactiver un salarié.");
   }
 
   const existing = await prisma.employee.findFirst({

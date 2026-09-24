@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { canUpdateTask, isOrganizationAdmin } from "@/lib/accessPolicy";
 import { triggerEmployeeEvent } from "@/lib/eventEngine";
 import type { TaskStatus, Prisma } from "@prisma/client";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
@@ -29,6 +30,9 @@ export async function triggerEvent(
   const user = await getCurrentUser();
   if (!membership || !user) {
     return { error: "Session expirée, veuillez recharger la page." };
+  }
+  if (!isOrganizationAdmin(membership)) {
+    return { error: "Seuls les propriétaires et administrateurs peuvent générer un parcours." };
   }
 
   const eventTemplateKey = String(formData.get("eventTemplateKey") ?? "");
@@ -64,6 +68,9 @@ export async function triggerEventQuick(formData: FormData) {
   if (!membership || !user) {
     throw new Error("Non authentifié ou aucune organisation active");
   }
+  if (!isOrganizationAdmin(membership)) {
+    throw new Error("Seuls les propriétaires et administrateurs peuvent modifier la structure des parcours.");
+  }
 
   const employeeId = String(formData.get("employeeId") ?? "");
   const eventTemplateKey = String(formData.get("eventTemplateKey") ?? "");
@@ -97,8 +104,12 @@ export async function updateTaskStatus(taskId: string, formData: FormData) {
   // composites du schéma, comme partout ailleurs dans l'application.
   const task = await prisma.task.findFirst({
     where: { id: taskId, organizationId: membership.organizationId, ...ACTIVE_TASK_SCOPE },
+    include: { employeeEvent: { include: { employee: true } } },
   });
   if (!task) throw new Error("Tâche introuvable dans cette organisation");
+  if (!canUpdateTask(membership, task)) {
+    throw new Error("Vous n'êtes pas autorisé à modifier cette tâche.");
+  }
 
   const statusRaw = String(formData.get("status") ?? "");
   if (!ALLOWED_STATUSES.includes(statusRaw as TaskStatus)) {
@@ -145,6 +156,9 @@ export async function assignTask(taskId: string, formData: FormData) {
   const user = await getCurrentUser();
   if (!membership || !user) {
     throw new Error("Non authentifié ou aucune organisation active");
+  }
+  if (!isOrganizationAdmin(membership)) {
+    throw new Error("Seuls les propriétaires et administrateurs peuvent modifier la structure des parcours.");
   }
 
   const task = await prisma.task.findFirst({
@@ -196,6 +210,9 @@ export async function archiveEmployeeEvent(eventId: string) {
   if (!membership || !user) {
     throw new Error("Non authentifié ou aucune organisation active");
   }
+  if (!isOrganizationAdmin(membership)) {
+    throw new Error("Seuls les propriétaires et administrateurs peuvent modifier la structure des parcours.");
+  }
 
   const event = await prisma.employeeEvent.findFirst({
     where: { id: eventId, organizationId: membership.organizationId, deletedAt: null },
@@ -236,6 +253,9 @@ export async function addCustomTask(employeeEventId: string, formData: FormData)
   const user = await getCurrentUser();
   if (!membership || !user) {
     throw new Error("Non authentifié ou aucune organisation active");
+  }
+  if (!isOrganizationAdmin(membership)) {
+    throw new Error("Seuls les propriétaires et administrateurs peuvent modifier la structure des parcours.");
   }
 
   const event = await prisma.employeeEvent.findFirst({
@@ -340,6 +360,12 @@ export async function updateCustomTask(taskId: string, formData: FormData) {
   const membership = await getCurrentMembership();
   const user = await getCurrentUser();
   if (!membership || !user) throw new Error("Non authentifié ou aucune organisation active");
+  if (!isOrganizationAdmin(membership)) {
+    throw new Error("Seuls les propriétaires et administrateurs peuvent modifier la structure des parcours.");
+  }
+  if (!isOrganizationAdmin(membership)) {
+    throw new Error("Seuls les propriétaires et administrateurs peuvent modifier la structure des parcours.");
+  }
 
   const task = await prisma.task.findFirst({
     where: { id: taskId, organizationId: membership.organizationId, ...ACTIVE_TASK_SCOPE },
@@ -428,6 +454,9 @@ export async function deleteCustomTask(taskId: string, rememberForFuture: boolea
   const membership = await getCurrentMembership();
   const user = await getCurrentUser();
   if (!membership || !user) throw new Error("Non authentifié ou aucune organisation active");
+  if (!isOrganizationAdmin(membership)) {
+    throw new Error("Seuls les propriétaires et administrateurs peuvent modifier la structure des parcours.");
+  }
 
   const task = await prisma.task.findFirst({
     where: { id: taskId, organizationId: membership.organizationId, ...ACTIVE_TASK_SCOPE },

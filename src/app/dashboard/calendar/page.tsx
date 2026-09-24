@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { ChevronLeft, ChevronRight, CalendarDays, TriangleAlert, CalendarClock, User } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership } from "@/lib/auth";
+import { taskAccessWhere } from "@/lib/accessPolicy";
 import { formatDate } from "@/lib/format";
 import { isOverdue } from "@/lib/urgency";
 import { getUserDisplayName } from "@/lib/displayName";
@@ -92,7 +93,7 @@ export default async function CalendarPage({
   if (!membership) redirect("/dashboard");
   const view = searchParams.view === "all" ? "all" : "mine";
   const { year, month } = parseMonthParam(searchParams.month);
-  const viewFilter = view === "mine" ? { assignedMembershipId: membership.id } : {};
+  const viewFilter = view === "mine" ? { assignedMembershipId: membership.id } : taskAccessWhere(membership);
   const now = new Date();
   const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const todayKey = dateKey(todayStart);

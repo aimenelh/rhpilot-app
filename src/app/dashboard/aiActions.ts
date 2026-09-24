@@ -7,6 +7,7 @@ import { askAboutOrganization } from "@/lib/ai";
 import { formatDate, addDuration } from "@/lib/format";
 import { daysUntil } from "@/lib/urgency";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
+import { employeeAccessWhere, isOrganizationAdmin, taskAccessWhere, type MembershipAccess } from "@/lib/accessPolicy";
 
 // Plafonds volontaires, indépendants de la taille réelle de
 // l'organisation — jamais laisser le contexte (donc le coût et le
@@ -22,21 +23,22 @@ function taskTemporalStatus(dueDate: Date, today = new Date()): string {
   return `ÉCHÉANCE DANS ${diff} JOURS`;
 }
 
-async function buildContext(organizationId: string): Promise<string> {
+async function buildContext(membership: MembershipAccess): Promise<string> {
+  const organizationId = membership.organizationId;
   const now = new Date();
   const [employees, anomalies, upcomingTasks] = await Promise.all([
     prisma.employee.findMany({
-      where: { organizationId, deletedAt: null },
+      where: { organizationId, deletedAt: null, ...employeeAccessWhere(membership) },
       orderBy: { hireDate: "desc" },
       take: MAX_EMPLOYEES_IN_CONTEXT,
     }),
-    getAnomalies(organizationId),
+    isOrganizationAdmin(membership) ? getAnomalies(organizationId) : Promise.resolve([]),
     prisma.task.findMany({
       where: {
         organizationId,
         status: { notIn: ["DONE", "CANCELLED"] },
         dueDate: { lte: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000) },
-        ...ACTIVE_TASK_SCOPE,
+        AND: [ACTIVE_TASK_SCOPE, taskAccessWhere(membership)],
       },
       include: { employeeEvent: { include: { employee: true } } },
       orderBy: { dueDate: "asc" },
@@ -103,7 +105,7 @@ export async function askAboutOrganizationAction(
   }
 
   try {
-    const context = await buildContext(membership.organizationId);
+    const context = await buildContext(membership);
     const answer = await askAboutOrganization(question, context);
     return { answer, error: "", question };
   } catch (err) {
