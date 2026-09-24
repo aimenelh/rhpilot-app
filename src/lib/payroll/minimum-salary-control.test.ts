@@ -8,7 +8,12 @@ const collective = { status: "APPLICABLE" as const, classificationCode: "IC_1.1"
 describe("snapshot du contrôle du salaire minimum", () => {
   it("trace le minimum conventionnel retenu", () => expect(buildMinimumSalaryControlSnapshot({ smic, collectiveMinimum: collective, monthlyHours: 151.67, collectiveRuleVersionId: "ccn-2025-v1", monthlyGrossCents: 220000 })).toEqual({ status: "APPLICABLE", source: "COLLECTIVE_AGREEMENT", appliedMonthlyMinimumCents: 213500, smicMonthlyMinimumCents: 186702, collectiveMonthlyMinimumCents: 213500, compliant: true, differenceCents: 6500, smicRuleCode: "SMIC_GROSS", smicRuleVersionId: "smic-2026-06", collectiveRuleVersionId: "ccn-2025-v1", explanation: "Le minimum conventionnel applicable est supérieur ou égal au SMIC proratisé." }));
 
-  it("trace le SMIC lorsque celui-ci est le minimum le plus favorable", () => expect(buildMinimumSalaryControlSnapshot({ smic, collectiveMinimum: { ...collective, monthlyMinimumCents: 180000 }, monthlyHours: 160, collectiveRuleVersionId: "ccn-2025-v1", monthlyGrossCents: 200000 })).toMatchObject({ status: "APPLICABLE", source: "SMIC", appliedMonthlyMinimumCents: 196960, collectiveMonthlyMinimumCents: 180000, collectiveRuleVersionId: undefined, compliant: true }));
+  it("trace le SMIC lorsque celui-ci est le minimum le plus favorable", () => {
+    const result = buildMinimumSalaryControlSnapshot({ smic, collectiveMinimum: { ...collective, monthlyMinimumCents: 180000 }, monthlyHours: 160, collectiveRuleVersionId: "ccn-2025-v1", monthlyGrossCents: 200000 });
+    expect(result).toMatchObject({ status: "APPLICABLE", source: "SMIC", appliedMonthlyMinimumCents: 196960, collectiveMonthlyMinimumCents: 180000, compliant: true });
+    // Quand le Smic l'emporte, aucune version conventionnelle n'est retenue.
+    expect(result).not.toHaveProperty("collectiveRuleVersionId");
+  });
 
   it("utilise le SMIC lorsqu'aucune convention collective n'est applicable", () => expect(buildMinimumSalaryControlSnapshot({ smic, collectiveMinimum: { status: "UNRESOLVED", code: "NO_COLLECTIVE_AGREEMENT", message: "Aucune convention collective applicable n'est configurée pour ce salarié." }, monthlyHours: 151.67, monthlyGrossCents: 190000 })).toMatchObject({ status: "APPLICABLE", source: "SMIC", appliedMonthlyMinimumCents: 186702, collectiveMonthlyMinimumCents: null, compliant: true }));
 

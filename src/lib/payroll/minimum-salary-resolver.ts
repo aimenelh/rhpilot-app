@@ -1,6 +1,17 @@
 import type { CollectiveMinimumSalaryResult } from "./collective-agreement-rule-engine";
 import type { SmicMinimumResult } from "./minimum-wage";
 
+/**
+ * Les durées mensualisées sont saisies arrondies au centième : 151,67 h pour
+ * 35 h × 52 / 12 = 151,666… h. On retrouve la durée exacte quand la valeur
+ * correspond à un horaire hebdomadaire au centième près, sinon on garde la saisie.
+ */
+function exactMonthlyHours(monthlyHours: number): number {
+  const weeklyHours = Math.round(((monthlyHours * 12) / 52) * 100) / 100;
+  const mensualised = (weeklyHours * 52) / 12;
+  return Math.abs(mensualised - monthlyHours) < 0.005 ? mensualised : monthlyHours;
+}
+
 export type MinimumSalaryResolution =
   | {
       status: "APPLICABLE";
@@ -69,9 +80,12 @@ export function resolveMinimumSalary(input: {
     };
   }
 
+  // Le Smic est un taux horaire : le minimum du mois est ce taux multiplié par
+  // les heures du mois (12,31 € × 160 h = 1 969,60 €). Proratiser le montant
+  // mensuel arrondi (1 867,02 € ÷ 151,67 h) donnait 12,3097 €/h et un minimum
+  // trop bas de quelques centimes.
   const smicMonthlyMinimumCents = Math.round(
-    input.smic.monthlyGrossCentsAt35Hours *
-      (input.monthlyHours / input.smic.monthlyHoursAt35Hours),
+    input.smic.hourlyGrossCents * exactMonthlyHours(input.monthlyHours),
   );
 
   let collectiveMonthlyMinimumCents: number | null = null;
