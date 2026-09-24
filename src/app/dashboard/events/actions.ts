@@ -9,6 +9,7 @@ import { canUpdateTask, isOrganizationAdmin } from "@/lib/accessPolicy";
 import { triggerEmployeeEvent } from "@/lib/eventEngine";
 import type { TaskStatus, Prisma } from "@prisma/client";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
+import { parseIsoDateOnly } from "@/lib/dateOnly";
 
 export type TriggerEventFormState = { error: string } | undefined;
 
@@ -39,8 +40,9 @@ export async function triggerEvent(
   const triggerDateRaw = String(formData.get("triggerDate") ?? "");
 
   if (!eventTemplateKey) return { error: "Choisissez un type d'événement." };
-  if (!triggerDateRaw || Number.isNaN(new Date(triggerDateRaw).getTime())) {
-    return { error: "La date de l'événement n'est pas valide." };
+  const triggerDate = parseIsoDateOnly(triggerDateRaw);
+  if (!triggerDate) {
+    return { error: "La date de l'événement n'est pas valide. Utilisez le format AAAA-MM-JJ." };
   }
 
   let employeeEventId: string;
@@ -49,7 +51,7 @@ export async function triggerEvent(
       organizationId: membership.organizationId,
       employeeId,
       eventTemplateKey,
-      triggerDate: new Date(triggerDateRaw),
+      triggerDate,
       actorUserId: user.id,
     });
     employeeEventId = employeeEvent.id;
@@ -79,12 +81,16 @@ export async function triggerEventQuick(formData: FormData) {
   if (!employeeId || !eventTemplateKey || !triggerDateRaw) {
     throw new Error("Suggestion invalide : données manquantes.");
   }
+  const triggerDate = parseIsoDateOnly(triggerDateRaw);
+  if (!triggerDate) {
+    throw new Error("La date de l'événement n'est pas valide. Utilisez le format AAAA-MM-JJ.");
+  }
 
   const employeeEvent = await triggerEmployeeEvent({
     organizationId: membership.organizationId,
     employeeId,
     eventTemplateKey,
-    triggerDate: new Date(triggerDateRaw),
+    triggerDate,
     actorUserId: user.id,
   });
 
@@ -268,8 +274,9 @@ export async function addCustomTask(employeeEventId: string, formData: FormData)
   const assignedMembershipId = String(formData.get("assignedMembershipId") ?? "").trim();
 
   if (!label) throw new Error("Le libellé de la tâche est obligatoire.");
-  if (!dueDateRaw || Number.isNaN(new Date(dueDateRaw).getTime())) {
-    throw new Error("L'échéance n'est pas valide.");
+  const dueDate = parseIsoDateOnly(dueDateRaw);
+  if (!dueDate) {
+    throw new Error("L'échéance n'est pas valide. Utilisez le format AAAA-MM-JJ.");
   }
   if (!assignedMembershipId) throw new Error("Veuillez choisir un responsable.");
 
@@ -292,7 +299,7 @@ export async function addCustomTask(employeeEventId: string, formData: FormData)
         taskTemplateId: null,
         label,
         stepOrder: nextStepOrder,
-        dueDate: new Date(dueDateRaw),
+        dueDate,
         deadlineType: "USER_DEFINED",
         resolutionRole: "MANAGER_DIRECT", // jamais affiché : la tâche est toujours déjà assignée
         assignedMembershipId,
@@ -379,8 +386,9 @@ export async function updateCustomTask(taskId: string, formData: FormData) {
   const rememberForFuture = formData.get("rememberForFuture") === "on";
 
   if (!label) throw new Error("Le libellé de la tâche est obligatoire.");
-  if (!dueDateRaw || Number.isNaN(new Date(dueDateRaw).getTime())) {
-    throw new Error("L'échéance n'est pas valide.");
+  const newDueDate = parseIsoDateOnly(dueDateRaw);
+  if (!newDueDate) {
+    throw new Error("L'échéance n'est pas valide. Utilisez le format AAAA-MM-JJ.");
   }
   if (!assignedMembershipId) throw new Error("Veuillez choisir un responsable.");
 
@@ -389,7 +397,6 @@ export async function updateCustomTask(taskId: string, formData: FormData) {
   });
   if (!assignedMember) throw new Error("Cette personne ne fait pas partie de votre organisation.");
 
-  const newDueDate = new Date(dueDateRaw);
 
   const operations: Prisma.PrismaPromise<unknown>[] = [
     prisma.task.update({
