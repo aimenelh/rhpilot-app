@@ -544,7 +544,7 @@ function JustificationsView({ absences, isAdmin, isPending, runAction, onOpen }:
                   <form onSubmit={(event) => upload(event, absence)} className="mt-3 rounded-lg border border-dashed border-surface-border p-3">
                     <input type="hidden" name="absenceId" value={absence.id} />
                     <input name="file" type="file" accept="application/pdf,image/jpeg,image/png" required className="block w-full text-xs text-ink-soft" />
-                    <div className="mt-2 flex items-center justify-between gap-2"><span className="text-[11px] text-ink-faint">PDF, JPG, PNG · 10 Mo max</span><Button type="submit" variant="secondary" disabled={isPending} className="min-h-8 px-3 py-1.5 text-xs">Déposer</Button></div>
+                    <div className="mt-2 flex items-center justify-between gap-2"><span className="text-[11px] text-ink-faint">PDF, JPG, PNG · 4 Mo max</span><Button type="submit" variant="secondary" disabled={isPending} className="min-h-8 px-3 py-1.5 text-xs">Déposer</Button></div>
                   </form>
                 )}
 
