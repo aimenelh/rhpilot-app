@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 
 const PREFIX = "inline-db-absence-v1:";
-const MAX_BYTES = 10 * 1024 * 1024;
+const MAX_BYTES = 4 * 1024 * 1024;
 
 export const ALLOWED_JUSTIFICATION_TYPES = [
   "application/pdf",
@@ -24,7 +24,7 @@ export function storeAbsenceJustification(
     throw new Error("Format de fichier non autorisé. Utilisez un PDF, JPG ou PNG.");
   }
   if (bytes.length === 0) throw new Error("Le fichier est vide.");
-  if (bytes.length > MAX_BYTES) throw new Error("Le fichier dépasse 10 Mo.");
+  if (bytes.length > MAX_BYTES) throw new Error("Le fichier dépasse 4 Mo.");
 
   const sha256 = createHash("sha256").update(bytes).digest("hex");
   return {
