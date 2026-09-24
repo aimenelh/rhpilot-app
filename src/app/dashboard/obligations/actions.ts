@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import type { CseTrackingStatus } from "@/lib/compliance/obligations";
+import { parseIsoDateOnly } from "@/lib/dateOnly";
 
 export type ComplianceActionState = { success?: string; error?: string };
 
@@ -17,9 +18,8 @@ function isAdmin(role: string) {
 function parseDateOnly(value: FormDataEntryValue | null) {
   if (typeof value !== "string" || value.trim() === "") return null;
   const trimmed = value.trim();
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return undefined;
-  const date = new Date(`${trimmed}T00:00:00.000Z`);
-  if (Number.isNaN(date.getTime())) return undefined;
+  const date = parseIsoDateOnly(trimmed);
+  if (!date) return undefined;
   return { raw: trimmed, date };
 }
 

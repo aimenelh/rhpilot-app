@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership } from "@/lib/auth";
+import { parseIsoDateOnly } from "@/lib/dateOnly";
 
 const LEGAL_CATEGORIES = ["EI", "SARL", "SAS", "SELARL", "SELAS", "association", "autre"] as const;
 const KNOWN_CONVENTIONS = [
@@ -73,8 +74,11 @@ export async function updateOrganizationSettings(formData: FormData) {
     const legalCategory = legalCategoryRaw === "" ? null : legalCategoryRaw;
     if (legalCategory !== null && !LEGAL_CATEGORIES.includes(legalCategory as (typeof LEGAL_CATEGORIES)[number])) throw new Error("Forme juridique invalide.");
     const companyCreationDateRaw = String(formData.get("companyCreationDate") ?? "").trim();
-    const companyCreationDate = companyCreationDateRaw === "" ? null : new Date(`${companyCreationDateRaw}T00:00:00.000Z`);
-    if (companyCreationDate !== null && Number.isNaN(companyCreationDate.getTime())) throw new Error("La date de création de l'entreprise est invalide.");
+    const companyCreationDate =
+      companyCreationDateRaw === "" ? null : parseIsoDateOnly(companyCreationDateRaw);
+    if (companyCreationDateRaw !== "" && !companyCreationDate) {
+      throw new Error("La date de création de l'entreprise est invalide.");
+    }
     if (companyCreationDate !== null && companyCreationDate > new Date()) throw new Error("La date de création de l'entreprise ne peut pas être dans le futur.");
     const payrollCity = String(formData.get("payrollCity") ?? "").trim();
     const atmpRateRaw = String(formData.get("atmpRate") ?? "").trim().replace(",", ".");
