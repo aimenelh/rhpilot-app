@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { triggerEmployeeEvent } from "@/lib/eventEngine";
+import { parseIsoDateOnly } from "@/lib/dateOnly";
 
 type LineResult = { line: number; input: string; message: string };
 
@@ -76,14 +77,18 @@ export async function bulkTriggerEvents(
     }
 
     const [firstName, lastName, dateRaw] = parts;
-    const triggerDate = new Date(dateRaw);
+    const triggerDate = parseIsoDateOnly(dateRaw);
 
     if (!firstName || !lastName) {
       failures.push({ line: lineNumber, input: raw, message: "Prénom ou nom manquant." });
       continue;
     }
-    if (Number.isNaN(triggerDate.getTime())) {
-      failures.push({ line: lineNumber, input: raw, message: `Date invalide : "${dateRaw}".` });
+    if (!triggerDate) {
+      failures.push({
+        line: lineNumber,
+        input: raw,
+        message: `Date invalide : "${dateRaw}". Utilisez strictement le format AAAA-MM-JJ.`,
+      });
       continue;
     }
 

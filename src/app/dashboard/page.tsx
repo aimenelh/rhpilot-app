@@ -113,6 +113,7 @@ export default async function DashboardPage({
   const organization = currentMembership.organization;
   const view = searchParams.view === "tasks" ? "tasks" : "employee";
   const aiEnabled = Boolean(process.env.ANTHROPIC_API_KEY);
+  const canManageOrganization = isOrganizationAdmin(currentMembership);
 
   const [employeeCount, eventCount, doneCount, openTasks, membersInOrgCount, recentActivity] =
     await Promise.all([
@@ -124,8 +125,10 @@ export default async function DashboardPage({
         where: { organizationId, status: "DONE", AND: [ACTIVE_TASK_SCOPE, taskAccessWhere(currentMembership)] },
       }),
       getOpenTasks(currentMembership),
-      prisma.membership.count({ where: { organizationId, deletedAt: null } }),
-      isOrganizationAdmin(currentMembership)
+      canManageOrganization
+        ? prisma.membership.count({ where: { organizationId, deletedAt: null } })
+        : Promise.resolve(0),
+      canManageOrganization
         ? prisma.auditLog.findMany({
             where: { organizationId },
             include: { actor: true },
@@ -197,31 +200,34 @@ export default async function DashboardPage({
     eventCount > 0 ? Math.round(((eventCount - overdueEventIds.size) / eventCount) * 100) : null;
 
   const isEmpty = employeeCount === 0;
-  const onboardingSteps = [
-    { label: "Créer votre organisation", done: true },
-    { label: "Définir votre convention collective", done: Boolean(organization.conventionCollective) },
-    { label: "Ajouter votre premier salarié", done: employeeCount > 0 },
-    { label: "Déclencher un premier parcours", done: eventCount > 0 },
-    { label: "Inviter un collègue", done: membersInOrgCount > 1 },
-  ];
-  const allStepsDone = onboardingSteps.every((step) => step.done);
+  const onboardingSteps = canManageOrganization
+    ? [
+        { label: "Créer votre organisation", done: true },
+        { label: "Définir votre convention collective", done: Boolean(organization.conventionCollective) },
+        { label: "Ajouter votre premier salarié", done: employeeCount > 0 },
+        { label: "Déclencher un premier parcours", done: eventCount > 0 },
+        { label: "Inviter un collègue", done: membersInOrgCount > 1 },
+      ]
+    : [];
+  const allStepsDone =
+    !canManageOrganization || onboardingSteps.every((step) => step.done);
 
   let tip: { heading: string; description: string; ctaLabel: string; ctaHref: string } | null = null;
-  if (!organization.conventionCollective) {
+  if (canManageOrganization && !organization.conventionCollective) {
     tip = {
       heading: "Renseignez votre convention collective",
       description: "Elle permet de mieux contextualiser les parcours et les échéances RH.",
       ctaLabel: "Configurer",
       ctaHref: "/dashboard/configuration/organisation",
     };
-  } else if (employeeCount > 0 && eventCount === 0) {
+  } else if (canManageOrganization && employeeCount > 0 && eventCount === 0) {
     tip = {
       heading: "Lancez votre premier parcours",
       description: "Déclenchez un parcours RH depuis la fiche d’un salarié pour commencer le suivi.",
       ctaLabel: "Voir les salariés",
       ctaHref: "/dashboard/employees",
     };
-  } else if (membersInOrgCount === 1) {
+  } else if (canManageOrganization && membersInOrgCount === 1) {
     tip = {
       heading: "Invitez votre équipe",
       description: "Ajoutez un collègue pour répartir les responsabilités dans les parcours.",
@@ -232,7 +238,9 @@ export default async function DashboardPage({
 
   let synthesis: string;
   if (isEmpty) {
-    synthesis = "Ajoutez votre premier salarié pour commencer à suivre les échéances RH.";
+    synthesis = canManageOrganization
+      ? "Ajoutez votre premier salarié pour commencer à suivre les échéances RH."
+      : "Aucun salarié n’est actuellement rattaché à votre périmètre de travail.";
   } else if (overdueCount > 0) {
     synthesis = `${overdueCount} tâche${overdueCount > 1 ? "s" : ""} en retard nécessite${overdueCount > 1 ? "nt" : ""} votre attention.`;
   } else if (soonCount > 0 || unassignedCount > 0) {
@@ -259,20 +267,41 @@ export default async function DashboardPage({
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-ink-soft">{synthesis}</p>
           <div className="mt-4 flex flex-wrap gap-2.5">
-            <Link href="/dashboard/employees/new">
-              <Button data-tour="add-employee">
-                <span className="inline-flex items-center gap-1.5">
-                  <Plus size={16} /> Ajouter un salarié
-                </span>
-              </Button>
-            </Link>
-            <Link href="/dashboard/events">
-              <Button variant="secondary">
-                <span className="inline-flex items-center gap-1.5">
-                  <Route size={15} /> Lancer un parcours
-                </span>
-              </Button>
-            </Link>
+            {canManageOrganization ? (
+              <>
+                <Link href="/dashboard/employees/new">
+                  <Button data-tour="add-employee">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Plus size={16} /> Ajouter un salarié
+                    </span>
+                  </Button>
+                </Link>
+                <Link href="/dashboard/events">
+                  <Button variant="secondary">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Route size={15} /> Lancer un parcours
+                    </span>
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link href="/dashboard/employees">
+                  <Button variant="secondary">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Users size={15} /> Voir mes salariés
+                    </span>
+                  </Button>
+                </Link>
+                <Link href="/dashboard/events">
+                  <Button variant="secondary">
+                    <span className="inline-flex items-center gap-1.5">
+                      <Route size={15} /> Voir mes parcours
+                    </span>
+                  </Button>
+                </Link>
+              </>
+            )}
           </div>
         </div>
         <Mascot pose={mascotPose} className="hidden shrink-0 lg:block" />
@@ -411,6 +440,7 @@ export default async function DashboardPage({
         <AskAboutOrganization aiEnabled={aiEnabled} />
       </div>
 
+      {canManageOrganization && (
       <div className="dashboard-tools mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
         {!allStepsDone && (
           <Card>
@@ -475,6 +505,7 @@ export default async function DashboardPage({
           </Card>
         )}
       </div>
+      )}
 
       <DidYouKnowCard />
     </div>

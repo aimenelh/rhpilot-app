@@ -7,6 +7,7 @@ import type { ContractType, Civility, DurationUnit, ProfessionalCategory } from 
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { isOrganizationAdmin } from "@/lib/accessPolicy";
+import { parseIsoDateOnly } from "@/lib/dateOnly";
 
 // Sécurité : l'organisation courante est TOUJOURS résolue côté serveur
 // à partir de la session (getCurrentMembership), jamais à partir d'un
@@ -92,12 +93,12 @@ function validateEmployeeFields(fields: ReturnType<typeof readEmployeeFields>): 
   if (!fields.firstName) return "Le prénom est obligatoire.";
   if (!fields.lastName) return "Le nom est obligatoire.";
   if (!fields.hireDateRaw) return "La date d'embauche est obligatoire.";
-  if (Number.isNaN(new Date(fields.hireDateRaw).getTime())) {
+  if (!parseIsoDateOnly(fields.hireDateRaw)) {
     return "La date d'embauche n'est pas valide.";
   }
   if (
     fields.contractEndDateRaw !== null &&
-    Number.isNaN(new Date(fields.contractEndDateRaw).getTime())
+    !parseIsoDateOnly(fields.contractEndDateRaw)
   ) {
     return "La date de fin de contrat n'est pas valide.";
   }
@@ -109,7 +110,7 @@ function validateEmployeeFields(fields: ReturnType<typeof readEmployeeFields>): 
   }
   if (
     fields.nextMedicalVisitDateRaw !== null &&
-    Number.isNaN(new Date(fields.nextMedicalVisitDateRaw).getTime())
+    !parseIsoDateOnly(fields.nextMedicalVisitDateRaw)
   ) {
     return "La date de prochaine visite médicale n'est pas valide.";
   }
@@ -156,12 +157,12 @@ export async function createEmployee(
         civility: fields.civility,
         professionalCategory: fields.professionalCategory,
         position: fields.position || null,
-        hireDate: new Date(fields.hireDateRaw),
+        hireDate: parseIsoDateOnly(fields.hireDateRaw)!,
         contractType: fields.contractType,
-        contractEndDate: fields.contractEndDateRaw ? new Date(fields.contractEndDateRaw) : null,
+        contractEndDate: fields.contractEndDateRaw ? parseIsoDateOnly(fields.contractEndDateRaw) : null,
         probationDuration: fields.probationDuration,
         probationDurationUnit: fields.probationDurationUnit,
-        nextMedicalVisitDate: fields.nextMedicalVisitDateRaw ? new Date(fields.nextMedicalVisitDateRaw) : null,
+        nextMedicalVisitDate: fields.nextMedicalVisitDateRaw ? parseIsoDateOnly(fields.nextMedicalVisitDateRaw) : null,
         managerMembershipId: fields.managerMembershipId,
       },
     });
@@ -231,12 +232,12 @@ export async function updateEmployee(
         civility: fields.civility,
         professionalCategory: fields.professionalCategory,
         position: fields.position || null,
-        hireDate: new Date(fields.hireDateRaw),
+        hireDate: parseIsoDateOnly(fields.hireDateRaw)!,
         contractType: fields.contractType,
-        contractEndDate: fields.contractEndDateRaw ? new Date(fields.contractEndDateRaw) : null,
+        contractEndDate: fields.contractEndDateRaw ? parseIsoDateOnly(fields.contractEndDateRaw) : null,
         probationDuration: fields.probationDuration,
         probationDurationUnit: fields.probationDurationUnit,
-        nextMedicalVisitDate: fields.nextMedicalVisitDateRaw ? new Date(fields.nextMedicalVisitDateRaw) : null,
+        nextMedicalVisitDate: fields.nextMedicalVisitDateRaw ? parseIsoDateOnly(fields.nextMedicalVisitDateRaw) : null,
         managerMembershipId: fields.managerMembershipId,
       },
     }),

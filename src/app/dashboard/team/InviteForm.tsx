@@ -59,9 +59,24 @@ export function InviteForm() {
       </p>
 
       {state && "error" in state && (
-        <p role="alert" className="text-sm text-accent-rose sm:col-span-3">
-          {state.error}
-        </p>
+        <div role="alert" className="sm:col-span-3">
+          <p className="text-sm text-accent-rose">{state.error}</p>
+          {state.manualJoinUrl && (
+            <div className="mt-2 rounded-lg border border-surface-border bg-surface-subtle px-3 py-2">
+              <p className="text-xs font-medium text-ink-soft">
+                L&apos;invitation reste valide. Transmettez ce lien manuellement :
+              </p>
+              <a
+                href={state.manualJoinUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-1 block break-all text-xs font-medium text-brand-primary hover:underline"
+              >
+                {state.manualJoinUrl}
+              </a>
+            </div>
+          )}
+        </div>
       )}
       {state && "success" in state && (
         <p className="text-sm text-accent-teal sm:col-span-3">{state.success}</p>
