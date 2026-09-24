@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { releaseMembershipResponsibilities } from "@/lib/membershipLifecycle";
+import { hasOpenStripeSubscription } from "@/lib/billingPolicy";
 
 /**
  * Quitter son organisation actuelle pour en rejoindre une nouvelle,
@@ -51,6 +52,21 @@ export async function switchOrganization(token: string) {
     if (otherMembersCount > 0) {
       throw new Error(
         "Vous êtes propriétaire de votre organisation actuelle, qui compte d'autres membres. Transférez la propriété avant de la quitter, contactez-nous si besoin."
+      );
+    }
+
+    const currentOrganization = await prisma.organization.findUnique({
+      where: { id: currentMembership.organizationId },
+      select: { stripeSubscriptionId: true, subscriptionStatus: true },
+    });
+    if (
+      hasOpenStripeSubscription(
+        currentOrganization?.stripeSubscriptionId,
+        currentOrganization?.subscriptionStatus
+      )
+    ) {
+      throw new Error(
+        "Votre organisation possède encore un abonnement Stripe. Résiliez-le depuis Facturation avant de quitter l'organisation."
       );
     }
   }

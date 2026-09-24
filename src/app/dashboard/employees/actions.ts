@@ -9,6 +9,7 @@ import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { isOrganizationAdmin } from "@/lib/accessPolicy";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
 import { billableEmployeeWhere } from "@/lib/billingEmployeeScope";
+import { hasProAccess } from "@/lib/billingPolicy";
 
 // Sécurité : l'organisation courante est TOUJOURS résolue côté serveur
 // à partir de la session (getCurrentMembership), jamais à partir d'un
@@ -26,8 +27,8 @@ const FREE_TIER_LIMIT = 3;
 // Ne bloque que la croissance du nombre de salariés réels actifs
 // (création, réactivation, import CSV). Les fiches de démonstration
 // ne comptent jamais dans le quota, la modification ou l'archivage
-// d'une fiche existante. Un abonnement Pro actif lève la limite
-// entièrement. `additionalCount` permet de vérifier l'ajout de
+// d'une fiche existante. Un abonnement Pro servi (actif, essai ou
+// paiement à régulariser) lève la limite entièrement. `additionalCount` permet de vérifier l'ajout de
 // plusieurs salariés d'un coup (import CSV), pas seulement un par un.
 export async function checkFreeTierLimit(
   organizationId: string,
@@ -37,7 +38,7 @@ export async function checkFreeTierLimit(
     where: { id: organizationId },
     select: { subscriptionStatus: true },
   });
-  if (organization?.subscriptionStatus === "active") return null;
+  if (hasProAccess(organization?.subscriptionStatus)) return null;
 
   const activeCount = await prisma.employee.count({
     where: billableEmployeeWhere(organizationId),

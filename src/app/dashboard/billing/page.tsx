@@ -7,6 +7,7 @@ import { formatDate } from "@/lib/format";
 import { ManageSubscriptionButton } from "./ManageSubscriptionButton";
 import { UpgradeToProButton } from "./UpgradeToProButton";
 import { billableEmployeeWhere } from "@/lib/billingEmployeeScope";
+import { estimatedProMonthlyPrice, hasProAccess } from "@/lib/billingPolicy";
 
 const FREE_TIER_LIMIT = 3;
 
@@ -34,9 +35,9 @@ export default async function BillingPage({
     prisma.employee.count({ where: billableEmployeeWhere(membership.organizationId) }),
   ]);
 
-  const isPro = organization?.subscriptionStatus === "active";
+  const isPro = hasProAccess(organization?.subscriptionStatus);
   const canManageBilling = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
-  const monthlyEstimate = isPro ? (15 + employeeCount * 3).toFixed(2) : null;
+  const monthlyEstimate = isPro ? estimatedProMonthlyPrice(employeeCount).toFixed(2) : null;
   const usageRatio = Math.min(employeeCount / FREE_TIER_LIMIT, 1);
 
   return (
@@ -64,7 +65,11 @@ export default async function BillingPage({
           <h2 className="text-3xl font-semibold text-ink">{isPro ? "Pro" : "Gratuit"}</h2>
           {isPro && (
             <span className="rounded-full bg-accent-teal/10 px-2 py-0.5 text-xs font-medium text-accent-teal">
-              Actif
+              {organization?.subscriptionStatus === "trialing"
+                ? "Essai"
+                : organization?.subscriptionStatus === "past_due"
+                  ? "Paiement à régulariser"
+                  : "Actif"}
             </span>
           )}
         </div>

@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { stripe, STRIPE_PRICE_BASE, STRIPE_PRICE_PER_EMPLOYEE } from "@/lib/stripe";
-import { employeeQuantityForBilling } from "@/lib/billingPolicy";
+import { employeeQuantityForBilling, hasOpenStripeSubscription } from "@/lib/billingPolicy";
 import { getAppUrl } from "@/lib/appUrl";
 import { billableEmployeeWhere } from "@/lib/billingEmployeeScope";
 
@@ -29,10 +29,12 @@ export async function createCheckoutSession(
     return { error: "Organisation introuvable." };
   }
   if (
-    organization.stripeSubscriptionId &&
-    ["active", "trialing", "past_due"].includes(organization.subscriptionStatus ?? "")
+    hasOpenStripeSubscription(
+      organization.stripeSubscriptionId,
+      organization.subscriptionStatus
+    )
   ) {
-    return { error: "Un abonnement est déjà actif pour cette organisation." };
+    return { error: "Un abonnement Stripe existe déjà pour cette organisation." };
   }
 
   // Quantité du prix "par salarié" = salariés réels actifs uniquement.
