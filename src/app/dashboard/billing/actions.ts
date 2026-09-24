@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { stripe, STRIPE_PRICE_BASE, STRIPE_PRICE_PER_EMPLOYEE } from "@/lib/stripe";
 import { employeeQuantityForBilling } from "@/lib/billingPolicy";
+import { getAppUrl } from "@/lib/appUrl";
 
 export type BillingActionState = { error: string } | undefined;
 
@@ -40,6 +41,7 @@ export async function createCheckoutSession(
     where: { organizationId: organization.id, deletedAt: null },
   });
 
+  const appUrl = getAppUrl();
   let sessionUrl: string | null;
   try {
     const session = await stripe.checkout.sessions.create({
@@ -55,8 +57,8 @@ export async function createCheckoutSession(
         { price: STRIPE_PRICE_BASE, quantity: 1 },
         { price: STRIPE_PRICE_PER_EMPLOYEE, quantity: employeeQuantityForBilling(employeeCount) },
       ],
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?success=1`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing?canceled=1`,
+      success_url: `${appUrl}/dashboard/billing?success=1`,
+      cancel_url: `${appUrl}/dashboard/billing?canceled=1`,
     });
     sessionUrl = session.url;
   } catch (error) {
@@ -99,11 +101,12 @@ export async function createPortalSession(
     return { error: "Aucun abonnement actif à gérer." };
   }
 
+  const appUrl = getAppUrl();
   let portalUrl: string;
   try {
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: organization.stripeCustomerId,
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/billing`,
+      return_url: `${appUrl}/dashboard/billing`,
     });
     portalUrl = portalSession.url;
   } catch (error) {

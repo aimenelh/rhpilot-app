@@ -4,10 +4,7 @@ import { sendEmail, renderNotificationEmail } from "@/lib/email";
 import { getUserDisplayName } from "@/lib/displayName";
 import { formatDate } from "@/lib/format";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
-
-function getAppUrl() {
-  return process.env.APP_URL ?? "http://localhost:3000";
-}
+import { getAppUrl } from "@/lib/appUrl";
 
 function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());

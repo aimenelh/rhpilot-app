@@ -2,6 +2,8 @@ name: Payroll Core CI
 
 on:
   push:
+    branches:
+      - main
   pull_request:
 
 jobs:
@@ -64,5 +66,6 @@ jobs:
           src/lib/copilotPolicy.test.ts
           src/lib/employeeIdentity.test.ts
           src/lib/accessPolicy.test.ts
+          src/lib/appUrl.test.ts
       - name: Build application
         run: npx prisma generate && npx next build

@@ -14,7 +14,7 @@ export const metadata = {
 // Dernière révision : garder cette date à jour à chaque modification
 // du contenu ci-dessous, c'est la seule chose que la loi demande de
 // signaler explicitement en haut d'une politique de confidentialité.
-const LAST_UPDATED = "17 août 2026";
+const LAST_UPDATED = "24 septembre 2026";
 
 const SUBPROCESSORS = [
   {
@@ -41,9 +41,9 @@ const SUBPROCESSORS = [
   {
     name: "Vercel",
     role: "Hébergement du site et de l'application",
-    location: "Exécution en Europe, société basée aux États-Unis",
+    location: "Fonctions applicatives : Francfort (Allemagne)",
     detail:
-      "L'application s'exécute sur des serveurs européens, mais Vercel Inc. (l'entreprise) est basée aux États-Unis et certaines données de compte transitent sous les mêmes garanties contractuelles.",
+      "Les fonctions applicatives RH Pilot sont configurées sur la région Vercel fra1 à Francfort. Les contenus statiques peuvent être distribués via le réseau mondial de Vercel. Vercel Inc. reste une société basée aux États-Unis et les transferts concernés sont encadrés contractuellement.",
   },
   {
     name: "Resend",
