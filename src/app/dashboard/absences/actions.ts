@@ -163,8 +163,15 @@ export async function updateAbsence(absenceId: string, formData: FormData): Prom
   const latestJustification = absence.justifications[0];
   let nextStatus: "TO_VALIDATE" | "TO_PROVIDE_JUSTIFICATION" | "TO_REVIEW_JUSTIFICATION" = "TO_VALIDATE";
   if (parsed.justificationRequired) {
-    if (!latestJustification || !latestJustification.storageKey) nextStatus = "TO_PROVIDE_JUSTIFICATION";
-    else if (latestJustification.status !== "VALIDATED") nextStatus = "TO_REVIEW_JUSTIFICATION";
+    if (
+      !latestJustification ||
+      !latestJustification.storageKey ||
+      latestJustification.status === "REJECTED"
+    ) {
+      nextStatus = "TO_PROVIDE_JUSTIFICATION";
+    } else if (latestJustification.status !== "VALIDATED") {
+      nextStatus = "TO_REVIEW_JUSTIFICATION";
+    }
   }
 
   await prisma.$transaction(async (tx) => {
