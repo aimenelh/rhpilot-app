@@ -14,6 +14,7 @@ import { formatDate } from "@/lib/format";
 import { getEventTemplateDotColor } from "@/lib/eventTemplateStyle";
 import { summarizeParcours } from "@/lib/parcoursSummary";
 import { isProbationHistoricalAtEntry } from "@/lib/probationTracking";
+import { eventAccessWhere } from "@/lib/accessPolicy";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,7 @@ export default async function EventsPage({
       organizationId: membership.organizationId,
       employee: { deletedAt: null },
       deletedAt: null,
+      ...eventAccessWhere(membership),
       ...(query
         ? {
             OR: [

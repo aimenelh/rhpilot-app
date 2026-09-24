@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { readTaskAttachment } from "@/lib/task-attachment-storage";
+import { taskAccessWhere } from "@/lib/accessPolicy";
 
 function safeFileName(name: string | null | undefined) {
   const cleaned = (name ?? "piece-rh")
@@ -21,6 +22,7 @@ export async function GET(
     where: {
       id: params.attachmentId,
       organizationId: membership.organizationId,
+      task: taskAccessWhere(membership),
     },
     select: {
       storageKey: true,

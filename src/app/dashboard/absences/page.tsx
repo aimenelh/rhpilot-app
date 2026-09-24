@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentMembership } from "@/lib/auth";
+import { isOrganizationAdmin } from "@/lib/accessPolicy";
 import { prisma } from "@/lib/prisma";
 import AbsencesWorkspace, { type AbsenceWorkspaceItem } from "./AbsencesWorkspace";
 
@@ -12,6 +13,7 @@ function isAdmin(role: string) {
 export default async function AbsencesPage() {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
+  if (!isOrganizationAdmin(membership)) redirect("/dashboard");
 
   const [employees, absences] = await Promise.all([
     prisma.employee.findMany({

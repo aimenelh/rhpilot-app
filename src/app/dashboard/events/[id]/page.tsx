@@ -20,8 +20,18 @@ import { AddCustomTaskForm } from "./AddCustomTaskForm";
 import { CustomTaskActions } from "./CustomTaskActions";
 import { TaskAttachmentUploadForm } from "./TaskAttachmentUploadForm";
 import { deleteTaskAttachment } from "../attachmentActions";
+import { eventAccessWhere, isOrganizationAdmin } from "@/lib/accessPolicy";
 
 export const dynamic = "force-dynamic";
+
+const TASK_STATUS_LABELS: Record<string, string> = {
+  TO_PREPARE: "À préparer",
+  TODO: "À faire",
+  IN_PROGRESS: "En cours",
+  WAITING_EXTERNAL: "En attente (externe)",
+  DONE: "Fait",
+  CANCELLED: "Annulée",
+};
 
 const RESOLUTION_ROLE_LABELS: Record<string, string> = {
   RH: "RH",
@@ -45,7 +55,7 @@ export default async function EventDetailPage({
 
   const [employeeEvent, members] = await Promise.all([
     prisma.employeeEvent.findFirst({
-      where: { id: params.id, organizationId: membership.organizationId, deletedAt: null },
+      where: { id: params.id, organizationId: membership.organizationId, deletedAt: null, ...eventAccessWhere(membership) },
       include: {
         employee: true,
         eventTemplate: true,
@@ -77,6 +87,7 @@ export default async function EventDetailPage({
 
   if (!employeeEvent) notFound();
 
+  const canManageStructure = isOrganizationAdmin(membership);
   const doneCount = employeeEvent.tasks.filter((task) => task.status === "DONE").length;
   const missingProofCount = employeeEvent.tasks.filter(task => task.proofRequired && task.status !== "CANCELLED" && task.attachments.length === 0).length;
   const isFullyCompleted = employeeEvent.tasks.length > 0 && doneCount === employeeEvent.tasks.length;
@@ -104,9 +115,9 @@ export default async function EventDetailPage({
         <ProgressBar value={doneCount} max={employeeEvent.tasks.length} />
       </div>
 
-      <div className="mt-3">
+      {canManageStructure && <div className="mt-3">
         <ArchiveEventButton eventId={employeeEvent.id} />
-      </div>
+      </div>}
 
       {missingProofCount > 0 && (
         <Card className="mt-4 border-accent-amber/30 bg-accent-amber/5">
@@ -129,14 +140,15 @@ export default async function EventDetailPage({
         </Card>
       )}
 
-      <div className="mt-6">
+      {canManageStructure && <div className="mt-6">
         <AddCustomTaskForm employeeEventId={employeeEvent.id} members={members} />
-      </div>
+      </div>}
 
       <div className="mt-4">
         <Card className="flex flex-col">
           {employeeEvent.tasks.map((task: (typeof employeeEvent.tasks)[number], index: number) => {
             const overdue = isOverdue(task.dueDate, task.status);
+            const canActOnTask = canManageStructure || task.assignedMembershipId === membership.id || employeeEvent.employee.managerMembershipId === membership.id;
             const isLast = index === employeeEvent.tasks.length - 1;
             return (
               <div
@@ -181,7 +193,7 @@ export default async function EventDetailPage({
                         {task.assignedMembership ? (
                           <>
                             {getUserDisplayName(task.assignedMembership.user)}
-                            {task.status !== "DONE" && task.status !== "CANCELLED" && (
+                            {canActOnTask && task.status !== "DONE" && task.status !== "CANCELLED" && (
                               <form action={sendManualReminder.bind(null, task.id)}>
                                 <button
                                   type="submit"
@@ -193,7 +205,7 @@ export default async function EventDetailPage({
                               </form>
                             )}
                           </>
-                        ) : (
+                        ) : canManageStructure ? (
                           <span className="flex flex-1 items-center gap-2">
                             <span className="text-ink-faint">{RESOLUTION_ROLE_LABELS[task.resolutionRole]}</span>
                             <Badge tone="neutral">À assigner</Badge>
@@ -223,6 +235,8 @@ export default async function EventDetailPage({
                               </button>
                             </form>
                           </span>
+                        ) : (
+                          <span className="text-ink-faint">{RESOLUTION_ROLE_LABELS[task.resolutionRole]} · à assigner</span>
                         )}
                       </div>
                       {task.proofLabel && (
@@ -250,9 +264,9 @@ export default async function EventDetailPage({
                             <div className="mt-2 flex flex-col gap-1.5">
                               {task.attachments.map((attachment) => {
                                 const canDeleteAttachment =
-                                  membership.accessRole === "OWNER" ||
-                                  membership.accessRole === "ADMIN" ||
-                                  attachment.uploadedByMembershipId === membership.id;
+                                  canActOnTask && (
+                                    canManageStructure || attachment.uploadedByMembershipId === membership.id
+                                  );
 
                                 return (
                                   <div
@@ -289,7 +303,7 @@ export default async function EventDetailPage({
                             </div>
                           )}
 
-                          {task.status !== "CANCELLED" && (
+                          {canActOnTask && task.status !== "CANCELLED" && (
                             <TaskAttachmentUploadForm taskId={task.id} />
                           )}
                         </div>
@@ -299,7 +313,7 @@ export default async function EventDetailPage({
                           Étape ajoutée manuellement
                         </p>
                       )}
-                      <CustomTaskActions
+                      {canManageStructure && <CustomTaskActions
                         task={{
                           id: task.id,
                           label: task.label,
@@ -308,10 +322,10 @@ export default async function EventDetailPage({
                           taskTemplateId: task.taskTemplateId,
                         }}
                         members={members}
-                      />
+                      />}
                     </div>
                     <div className="flex shrink-0 items-center gap-2">
-                      <div className="flex flex-col overflow-hidden rounded-lg border border-surface-border">
+                      {canManageStructure && <div className="flex flex-col overflow-hidden rounded-lg border border-surface-border">
                         <form action={moveTask.bind(null, task.id, "up")}>
                           <button
                             type="submit"
@@ -337,11 +351,15 @@ export default async function EventDetailPage({
                             <ChevronDown size={16} />
                           </button>
                         </form>
-                      </div>
-                      <TaskStatusForm
-                        action={updateTaskStatus.bind(null, task.id)}
-                        currentStatus={task.status}
-                      />
+                      </div>}
+                      {canActOnTask ? (
+                        <TaskStatusForm
+                          action={updateTaskStatus.bind(null, task.id)}
+                          currentStatus={task.status}
+                        />
+                      ) : (
+                        <Badge tone="neutral">{TASK_STATUS_LABELS[task.status] ?? task.status}</Badge>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -36,6 +36,7 @@ export async function sendManualReminder(taskId: string) {
     taskId,
     organizationId: membership.organizationId,
     actorUserId: user.id,
+    requester: { id: membership.id, organizationId: membership.organizationId, accessRole: membership.accessRole },
   });
 
   const task = await prisma.task.findFirst({

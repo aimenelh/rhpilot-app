@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { storeTaskAttachment } from "@/lib/task-attachment-storage";
+import { taskAccessWhere } from "@/lib/accessPolicy";
 
 export type TaskAttachmentActionState =
   | { success?: string; error?: string }
@@ -26,6 +27,7 @@ export async function uploadTaskAttachment(
       id: taskId,
       organizationId: membership.organizationId,
       employeeEvent: { deletedAt: null, employee: { deletedAt: null } },
+      ...taskAccessWhere(membership),
     },
     select: {
       id: true,
@@ -105,6 +107,7 @@ export async function deleteTaskAttachment(attachmentId: string) {
     where: {
       id: attachmentId,
       organizationId: membership.organizationId,
+      task: taskAccessWhere(membership),
     },
     include: {
       task: { select: { id: true, employeeEventId: true } },

@@ -31,7 +31,10 @@ export default async function NotificationsPage() {
   if (!membership) redirect("/dashboard");
 
   const notifications = await prisma.notification.findMany({
-    where: { organizationId: membership.organizationId },
+    where: {
+      organizationId: membership.organizationId,
+      ...(membership.accessRole === "OWNER" || membership.accessRole === "ADMIN" ? {} : { recipientMembershipId: membership.id }),
+    },
     include: {
       recipientMembership: { include: { user: true } },
       sentByUser: true,

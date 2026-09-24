@@ -15,6 +15,7 @@ import { generateDemoOrganization, archiveAllEmployees } from "./demoActions";
 import { DemoOrgSubmitButton } from "./DemoOrgSubmitButton";
 import { ArchiveAllButton } from "@/components/employees/ArchiveAllButton";
 import { FlashToast } from "@/components/ui/FlashToast";
+import { employeeAccessWhere, isOrganizationAdmin } from "@/lib/accessPolicy";
 
 export const dynamic = "force-dynamic";
 
@@ -28,12 +29,13 @@ export default async function EmployeesPage({
 
   const status = searchParams.status === "archived" ? "archived" : "active";
   const query = searchParams.q?.trim() ?? "";
-  const canManageBulkData = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
+  const canManageBulkData = isOrganizationAdmin(membership);
 
   const employees = await prisma.employee.findMany({
     where: {
       organizationId: membership.organizationId,
       deletedAt: status === "archived" ? { not: null } : null,
+      ...employeeAccessWhere(membership),
       ...(query
         ? {
             OR: [
@@ -81,13 +83,15 @@ export default async function EmployeesPage({
               </Button>
             </Link>
           )}
-          <Link href="/dashboard/employees/new">
-            <Button data-tour="add-employee">
-              <span className="inline-flex items-center gap-1.5">
-                <Plus size={15} /> Ajouter un salarié
-              </span>
-            </Button>
-          </Link>
+          {canManageBulkData && (
+            <Link href="/dashboard/employees/new">
+              <Button data-tour="add-employee">
+                <span className="inline-flex items-center gap-1.5">
+                  <Plus size={15} /> Ajouter un salarié
+                </span>
+              </Button>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -141,9 +145,11 @@ export default async function EmployeesPage({
                 description="Les salariés que vous ajoutez apparaîtront ici. Chaque fiche pourra ensuite déclencher des parcours RH et leurs échéances."
                 action={
                   <div className="flex flex-wrap items-center justify-center gap-3">
-                    <Link href="/dashboard/employees/new">
-                      <Button data-tour="add-employee">Ajouter mon premier salarié</Button>
-                    </Link>
+                    {canManageBulkData && (
+                      <Link href="/dashboard/employees/new">
+                        <Button data-tour="add-employee">Ajouter mon premier salarié</Button>
+                      </Link>
+                    )}
                     {canManageBulkData && (
                       <>
                         <Link href="/dashboard/employees/import">
@@ -207,14 +213,14 @@ export default async function EmployeesPage({
                       </td>
                       {status === "archived" && (
                         <td className="px-5 py-4 text-right">
-                          <form action={reactivateEmployee.bind(null, employee.id)}>
+                          {canManageBulkData && <form action={reactivateEmployee.bind(null, employee.id)}> 
                             <button
                               type="submit"
                               className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-primary hover:underline"
                             >
                               <ArchiveRestore size={13} /> Réactiver
                             </button>
-                          </form>
+                          </form>}
                         </td>
                       )}
                     </tr>
