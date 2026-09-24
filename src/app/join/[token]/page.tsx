@@ -147,10 +147,20 @@ export default async function JoinPage({ params }: { params: { token: string } }
   }
 
   await prisma.$transaction(async (tx) => {
-    await tx.membership.create({
-      data: {
+    await tx.membership.upsert({
+      where: {
+        userId_organizationId: {
+          userId: user.id,
+          organizationId: invitation.organizationId,
+        },
+      },
+      create: {
         userId: user.id,
         organizationId: invitation.organizationId,
+        accessRole: invitation.accessRole,
+      },
+      update: {
+        deletedAt: null,
         accessRole: invitation.accessRole,
       },
     });
