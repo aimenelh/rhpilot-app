@@ -5,6 +5,7 @@ import { getUserDisplayName } from "@/lib/displayName";
 import { formatDate } from "@/lib/format";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
 import { getAppUrl } from "@/lib/appUrl";
+import { notificationDayWindow } from "@/lib/notificationSchedule";
 
 function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -13,8 +14,9 @@ function startOfDay(date: Date): Date {
 /**
  * Parcourt toutes les organisations ayant configuré au moins une règle
  * de relance. Une relance est considérée comme déjà faite uniquement
- * lorsqu'un email a réellement été délivré : un échec reste visible
- * dans l'historique et peut être retenté si le cron est relancé le même jour.
+ * lorsqu'un email a réellement été délivré pendant la journée courante :
+ * un échec reste visible et peut être retenté le même jour, tandis qu'une
+ * échéance déplacée pourra générer une nouvelle relance un autre jour.
  */
 export async function sendConfiguredReminders(): Promise<{
   sent: number;
@@ -29,6 +31,7 @@ export async function sendConfiguredReminders(): Promise<{
   let skipped = 0;
   let failed = 0;
   const appUrl = getAppUrl();
+  const deliveryWindow = notificationDayWindow();
 
   for (const rule of rules) {
     const targetDate = startOfDay(new Date());
@@ -96,6 +99,10 @@ export async function sendConfiguredReminders(): Promise<{
             taskId: task.id,
             type: `reminder_rule_${rule.id}`,
             delivered: true,
+            sentAt: {
+              gte: deliveryWindow.start,
+              lt: deliveryWindow.end,
+            },
           },
           select: { id: true },
         });
