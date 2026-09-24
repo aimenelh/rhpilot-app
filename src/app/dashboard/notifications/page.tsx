@@ -29,6 +29,8 @@ function formatDateTime(date: Date) {
 export default async function NotificationsPage() {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
+  const organizationWide =
+    membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
 
   const notifications = await prisma.notification.findMany({
     where: {
@@ -108,9 +110,10 @@ export default async function NotificationsPage() {
             <option value="OFF">Désactivé</option>
           </Select>
           <FieldHint>
-            Le résumé contient vos tâches directement assignées qui sont en retard, prévues
-            aujourd&apos;hui ou dans les 7 prochains jours. Les parcours et salariés archivés
-            sont toujours exclus.
+            {organizationWide
+              ? "Le résumé couvre toutes les tâches actives de l'organisation qui sont en retard, prévues aujourd'hui ou dans les 7 prochains jours, y compris les tâches encore non assignées."
+              : "Le résumé couvre les tâches qui vous sont assignées ou qui concernent les salariés que vous managez, lorsqu'elles sont en retard, prévues aujourd'hui ou dans les 7 prochains jours."}
+            {" "}Les parcours et salariés archivés sont toujours exclus.
           </FieldHint>
           <Button type="submit" className="mt-3">
             Enregistrer
