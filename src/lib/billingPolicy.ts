@@ -1,4 +1,5 @@
-const PRO_ACCESS_STATUSES = new Set(["active", "trialing", "past_due"]);
+export const PRO_ACCESS_STATUS_VALUES = ["active", "trialing", "past_due"] as const;
+const PRO_ACCESS_STATUSES = new Set<string>(PRO_ACCESS_STATUS_VALUES);
 const TERMINAL_SUBSCRIPTION_STATUSES = new Set(["canceled", "incomplete_expired"]);
 
 export const FREE_TIER_LIMIT = 3;
