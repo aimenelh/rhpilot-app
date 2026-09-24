@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMembership } from "@/lib/auth";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
+import { employeeAccessWhere, taskAccessWhere } from "@/lib/accessPolicy";
 
 const RESULTS_LIMIT = 6;
 
@@ -25,9 +26,14 @@ export async function GET(request: Request) {
       where: {
         organizationId: membership.organizationId,
         deletedAt: null,
-        OR: [
-          { firstName: { contains: query, mode: "insensitive" } },
-          { lastName: { contains: query, mode: "insensitive" } },
+        AND: [
+          employeeAccessWhere(membership),
+          {
+            OR: [
+              { firstName: { contains: query, mode: "insensitive" } },
+              { lastName: { contains: query, mode: "insensitive" } },
+            ],
+          },
         ],
       },
       select: { id: true, firstName: true, lastName: true, position: true },
@@ -38,7 +44,7 @@ export async function GET(request: Request) {
       where: {
         organizationId: membership.organizationId,
         label: { contains: query, mode: "insensitive" },
-        ...ACTIVE_TASK_SCOPE,
+        AND: [ACTIVE_TASK_SCOPE, taskAccessWhere(membership)],
       },
       select: {
         id: true,

@@ -24,18 +24,20 @@ import { DidYouKnowCard } from "@/components/DidYouKnowCard";
 import { AskAboutOrganization } from "@/components/AskAboutOrganization";
 import { isProbationHistoricalAtEntry } from "@/lib/probationTracking";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
+import { employeeAccessWhere, eventAccessWhere, isOrganizationAdmin, taskAccessWhere, type MembershipAccess } from "@/lib/accessPolicy";
 
 export const dynamic = "force-dynamic";
 
 type AttentionReason = "overdue" | "unassigned" | "soon";
 type OpenTask = Awaited<ReturnType<typeof getOpenTasks>>[number];
 
-async function getOpenTasks(organizationId: string) {
+async function getOpenTasks(membership: MembershipAccess) {
+  const organizationId = membership.organizationId;
   const tasks = await prisma.task.findMany({
     where: {
       organizationId,
       status: { notIn: ["DONE", "CANCELLED"] },
-      ...ACTIVE_TASK_SCOPE,
+      AND: [ACTIVE_TASK_SCOPE, taskAccessWhere(membership)],
     },
     include: {
       employeeEvent: { include: { employee: true, eventTemplate: true } },
@@ -107,27 +109,30 @@ export default async function DashboardPage({
   if (memberships.length === 0) return <CreateOrganizationForm />;
 
   const organizationId = memberships[0].organizationId;
-  const organization = memberships[0].organization;
+  const currentMembership = memberships[0];
+  const organization = currentMembership.organization;
   const view = searchParams.view === "tasks" ? "tasks" : "employee";
   const aiEnabled = Boolean(process.env.ANTHROPIC_API_KEY);
 
   const [employeeCount, eventCount, doneCount, openTasks, membersInOrgCount, recentActivity] =
     await Promise.all([
-      prisma.employee.count({ where: { organizationId, deletedAt: null } }),
+      prisma.employee.count({ where: { organizationId, deletedAt: null, ...employeeAccessWhere(currentMembership) } }),
       prisma.employeeEvent.count({
-        where: { organizationId, employee: { deletedAt: null }, deletedAt: null },
+        where: { organizationId, employee: { deletedAt: null }, deletedAt: null, ...eventAccessWhere(currentMembership) },
       }),
       prisma.task.count({
-        where: { organizationId, status: "DONE", ...ACTIVE_TASK_SCOPE },
+        where: { organizationId, status: "DONE", AND: [ACTIVE_TASK_SCOPE, taskAccessWhere(currentMembership)] },
       }),
-      getOpenTasks(organizationId),
+      getOpenTasks(currentMembership),
       prisma.membership.count({ where: { organizationId, deletedAt: null } }),
-      prisma.auditLog.findMany({
-        where: { organizationId },
-        include: { actor: true },
-        orderBy: { createdAt: "desc" },
-        take: 6,
-      }),
+      isOrganizationAdmin(currentMembership)
+        ? prisma.auditLog.findMany({
+            where: { organizationId },
+            include: { actor: true },
+            orderBy: { createdAt: "desc" },
+            take: 6,
+          })
+        : Promise.resolve([]),
     ]);
 
   const flagged = openTasks

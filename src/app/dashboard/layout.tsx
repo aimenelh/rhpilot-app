@@ -9,6 +9,7 @@ import { AppShell } from "@/components/AppShell";
 import { Logomark, Wordmark } from "@/components/Brand";
 import { InitializingScreen } from "@/components/InitializingScreen";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
+import { isOrganizationAdmin, taskAccessWhere } from "@/lib/accessPolicy";
 
 export default async function DashboardLayout({
   children,
@@ -56,10 +57,10 @@ export default async function DashboardLayout({
           organizationId: currentMembership.organizationId,
           status: { notIn: ["DONE", "CANCELLED"] },
           dueDate: { lt: startOfToday },
-          ...ACTIVE_TASK_SCOPE,
+          AND: [ACTIVE_TASK_SCOPE, taskAccessWhere(currentMembership)],
         },
       }),
-      getAnomalies(currentMembership.organizationId),
+      isOrganizationAdmin(currentMembership) ? getAnomalies(currentMembership.organizationId) : Promise.resolve([]),
       getRhNews(),
       // Salarié de démo le plus ancien encore actif — sert à calculer
       // la date de purge automatique (createdAt + 48h) pour la bannière.
