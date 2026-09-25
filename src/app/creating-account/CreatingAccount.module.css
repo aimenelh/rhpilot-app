@@ -1,0 +1,88 @@
+/* Création du compte : la fenêtre de l'inscription, au centre, qui se complète. */
+
+.drawn path {
+  stroke-dashoffset: 0;
+  animation: none;
+}
+.center {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 40px 24px;
+}
+.window {
+  width: min(520px, 100%);
+  margin-top: 0;
+}
+.steps {
+  position: relative;
+  margin: 18px 24px 0;
+  padding: 0;
+  list-style: none;
+}
+/* Un segment de fil relie chaque étape à la suivante ; il rougit quand la suivante est posée. */
+.steps li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 18px;
+  width: 2px;
+  height: 100%;
+  background: linear-gradient(#e8432e, #e8432e) no-repeat top / 100% 0%, #ece3da;
+  transition: background-size 0.55s cubic-bezier(0.65, 0, 0.35, 1);
+}
+.steps li[data-link="true"]::after {
+  background-size: 100% 100%;
+}
+.steps li {
+  position: relative;
+  display: grid;
+  grid-template-columns: 14px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  padding: 7px 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #b5aca1;
+  transition: color 0.4s;
+}
+.steps i {
+  position: relative;
+  z-index: 1;
+  width: 14px;
+  height: 14px;
+  margin-top: 4px;
+  box-sizing: border-box;
+  border: 2px solid #d9d0c5;
+  border-radius: 50%;
+  background: #fff;
+  transition:
+    border-color 0.3s,
+    background 0.3s,
+    transform 0.4s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.steps li[data-on="true"] {
+  color: #20211f;
+}
+.steps li[data-on="true"] i {
+  border-color: #e8432e;
+  background: #e8432e;
+  transform: scale(1.12);
+}
+.status {
+  margin: 16px 24px 22px;
+  padding-top: 12px;
+  border-top: 1px solid #f2ede6;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-style: italic;
+  font-size: 19px;
+  color: #b73927;
+}
+@media (prefers-reduced-motion: reduce) {
+  .steps li::after,
+  .steps li,
+  .steps i {
+    transition: none;
+  }
+}
