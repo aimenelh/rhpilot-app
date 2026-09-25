@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { SignIn } from "@clerk/nextjs";
-import { AuthLayout } from "@/components/landing/AuthLayout";
-import { AttentionPreview } from "@/components/landing/AttentionPreview";
+import { SignInStage } from "@/components/auth/SignInStage";
+import { authFormAppearance } from "@/components/auth/authAppearance";
 import { Mascot } from "@/components/Mascot";
 import { Button } from "@/components/ui/Button";
 
@@ -28,25 +28,9 @@ export default function SignInPage() {
       </div>
 
       <div className="hidden md:block">
-        <AuthLayout
-          title="Bon retour."
-          subtitle="Reconnectez-vous pour retrouver vos parcours RH et ce qui mérite votre attention aujourd'hui."
-          preview={<AttentionPreview />}
-          formTitle="Connectez-vous"
-          formSubtitle="Accédez à votre espace RH Pilot."
-        >
-          <SignIn
-            forceRedirectUrl="/entering"
-            appearance={{
-              elements: {
-                rootBox: "w-full max-w-md",
-                card: "shadow-none border-none bg-transparent w-full",
-                headerTitle: "hidden",
-                headerSubtitle: "hidden",
-              },
-            }}
-          />
-        </AuthLayout>
+        <SignInStage>
+          <SignIn forceRedirectUrl="/entering" appearance={authFormAppearance} />
+        </SignInStage>
       </div>
     </>
   );

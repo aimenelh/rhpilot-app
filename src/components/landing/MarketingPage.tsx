@@ -50,9 +50,13 @@ export function PageIntro({
 export function MarketingCTA({
   title = "Le prochain pas, à votre rythme.",
   text = "Découvrez le logiciel et préparez votre premier parcours RH.",
+  href = "/sign-up",
+  action = "Essayer gratuitement ↗",
 }: {
   title?: string;
   text?: string;
+  href?: string;
+  action?: string;
 }) {
   return (
     <section className={s.cta}>
@@ -61,8 +65,8 @@ export function MarketingCTA({
           <h2 className={s.title}>{title}</h2>
           <p>{text}</p>
         </div>
-        <Link href="/sign-up" className={s.primary}>
-          Essayer gratuitement ↗
+        <Link href={href} className={s.primary}>
+          {action}
         </Link>
       </div>
     </section>

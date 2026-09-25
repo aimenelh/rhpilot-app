@@ -15,16 +15,16 @@ const ANNOUNCEMENTS = [
   },
   {
     text: "Le Copilote RH Pilot répond à vos questions à partir des données de votre organisation.",
-    href: "/#copilote",
+    href: "/services#copilote",
     cta: "Voir comment",
   },
   {
     text: "IA et recrutement : ce que la CNIL contrôle vraiment en 2026.",
     href: "/ressources/ia-recrutement-cnil-2026",
-    cta: "Lire l'article",
+    cta: "Lire l’article",
   },
   {
-    text: "RH Pilot est gratuit jusqu'à 3 salariés.",
+    text: "RH Pilot est gratuit jusqu’à 3 salariés.",
     href: "/tarifs",
     cta: "Voir les tarifs",
   },
@@ -62,10 +62,13 @@ export function AnnouncementBar() {
   }
 
   return (
-    <div className="relative bg-ink px-4 py-2.5 text-center text-sm text-white">
-      <Link href={announcement.href} className="inline-flex items-center gap-1.5 hover:underline">
-        {announcement.text}
-        <span className="font-semibold text-brand-primary">{announcement.cta} →</span>
+    // Texte et lien dans le même flux : sur mobile, la phrase passe à la ligne
+    // et le lien reste d'un seul tenant ; la marge de droite garde la place de
+    // la croix.
+    <div className="relative bg-ink py-2.5 pl-4 pr-10 text-center text-[13px] leading-snug text-white sm:px-10 sm:text-sm">
+      <Link href={announcement.href} className="hover:underline">
+        {announcement.text}{" "}
+        <span className="whitespace-nowrap font-semibold text-brand-primary">{announcement.cta} →</span>
       </Link>
       <button
         type="button"

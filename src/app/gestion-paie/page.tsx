@@ -24,7 +24,7 @@ export default function GestionPaiePage() {
           <div className={s.inner}>
             <p className={s.kicker}>Gestion de la paie</p>
             <h1 id="payroll-title" className={s.title}>
-              Un bulletin qui se calcule
+              Un bulletin qui se&nbsp;calcule
               <em> devant vous.</em>
             </h1>
             <p className={s.intro}>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { SignUp } from "@clerk/nextjs";
 import { SignUpStage } from "@/components/auth/SignUpStage";
+import { authFormAppearance } from "@/components/auth/authAppearance";
 import { Mascot } from "@/components/Mascot";
 import { Button } from "@/components/ui/Button";
 
@@ -25,27 +26,7 @@ export default function SignUpPage() {
 
       <div className="hidden md:block">
         <SignUpStage>
-          <SignUp
-            forceRedirectUrl="/creating-account"
-            appearance={{
-              elements: {
-                rootBox: "w-full",
-                cardBox: "w-full shadow-none border-0 rounded-none",
-                card: "w-full shadow-none border-0 bg-transparent p-0 gap-5",
-                header: "hidden",
-                socialButtonsBlockButton: "h-12 rounded-xl border-[#e3ddd3] hover:bg-[#fbf8f3]",
-                dividerLine: "bg-[#eee8df]",
-                dividerText: "text-[#8a8178]",
-                formFieldLabel: "text-[13px] font-semibold text-[#615e58]",
-                formFieldInput:
-                  "h-12 rounded-xl border-[#d9d0c5] text-[15px] focus:border-[#e8432e] focus:ring-4 focus:ring-[rgba(232,67,46,0.12)]",
-                formButtonPrimary: "h-12 rounded-xl bg-[#20211f] text-[15px] font-semibold normal-case shadow-none hover:bg-black",
-                otpCodeFieldInput: "h-14 w-12 rounded-xl border-[#d9d0c5] text-xl font-semibold focus:border-[#e8432e]",
-                footer: "bg-transparent",
-                footerActionLink: "font-semibold text-[#b73927] hover:text-[#8f2c1e]",
-              },
-            }}
-          />
+          <SignUp forceRedirectUrl="/creating-account" appearance={authFormAppearance} />
         </SignUpStage>
       </div>
     </>

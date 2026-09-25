@@ -1,0 +1,85 @@
+/* Page Sécurité : compléments à la grille éditoriale (InnerPages, MarketingV2). */
+
+.rows h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.flag {
+  flex: none;
+  border-radius: 2px;
+}
+
+.narrow {
+  max-width: 620px;
+}
+.inline {
+  color: #20211f;
+  text-decoration: underline;
+  text-decoration-color: #e8432e;
+  text-underline-offset: 3px;
+}
+.inline:hover {
+  color: #b8321f;
+}
+
+.vendors {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin: 34px 0 0;
+  padding: 0;
+  list-style: none;
+}
+.vendors li {
+  display: flex;
+  min-height: 118px;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid #e9e4e1;
+  border-radius: 6px;
+  background: #fff;
+}
+.vendors li[data-dark="true"] {
+  border-color: #080909;
+  background: #080909;
+}
+.logo {
+  display: flex;
+  height: 30px;
+  align-items: center;
+}
+.logo img {
+  width: auto;
+  height: 100%;
+  object-fit: contain;
+}
+.role {
+  font-size: 13.5px;
+  color: #686862;
+}
+.vendors li[data-dark="true"] .role {
+  color: rgba(255, 255, 255, 0.66);
+}
+
+.link {
+  display: inline-block;
+  margin-top: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #20211f;
+  text-decoration: underline;
+  text-decoration-color: #e8432e;
+  text-underline-offset: 4px;
+}
+.link:hover {
+  color: #b8321f;
+}
+
+@media (max-width: 900px) {
+  .vendors {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
