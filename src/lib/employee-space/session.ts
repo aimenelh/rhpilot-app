@@ -35,13 +35,15 @@ export type EmployeeAccount = {
   activatedAt: Date;
   /** Fiche archivée par l'employeur : l'espace reste consultable, sans nouvelle demande. */
   employeeArchivedAt: Date | null;
+  /** Espace RH de l'employeur supprimé : documents consultables, aucune nouvelle demande. */
+  organizationClosedAt: Date | null;
 };
 
 export const getEmployeeAccountsForUser = cache(async function getEmployeeAccountsForUser(userId: string): Promise<EmployeeAccount[]> {
   return prisma.$queryRaw<EmployeeAccount[]>`
     SELECT a."id" AS "accountId", a."organizationId", o."name" AS "organizationName", a."employeeId",
            e."firstName", e."lastName", e."position", e."hireDate", e."contractEndDate",
-           e."paperPayslipSince", e."paperPayslipSource", u."email" AS "email", a."activatedAt", e."deletedAt" AS "employeeArchivedAt"
+           e."paperPayslipSince", e."paperPayslipSource", u."email" AS "email", a."activatedAt", e."deletedAt" AS "employeeArchivedAt", o."deletedAt" AS "organizationClosedAt"
     FROM "employee_accounts" a
     JOIN "organizations" o ON o."id" = a."organizationId"
     JOIN "employees" e ON e."id" = a."employeeId" AND e."organizationId" = a."organizationId"

@@ -32,7 +32,7 @@ export default async function EspacePreferencesPage() {
             ? `Vous recevez vos bulletins sur papier depuis le ${formatLongDate(account.paperPayslipSince)}${account.paperPayslipSource === "EMPLOYER" ? ", à la demande enregistrée par votre employeur" : ""}.`
             : "Vos bulletins vous sont remis sous forme électronique, dans cet espace. Vous pouvez vous y opposer à tout moment et les recevoir sur papier (article L3243-2 du Code du travail)."}
         </p>
-        <div className="mt-4"><PaperToggle paper={Boolean(account.paperPayslipSince)} /></div>
+        {account.organizationClosedAt ? null : <div className="mt-4"><PaperToggle paper={Boolean(account.paperPayslipSince)} /></div>}
       </section>
 
       <div className="flex flex-col gap-2 sm:flex-row">

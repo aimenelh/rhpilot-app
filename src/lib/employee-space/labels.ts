@@ -123,3 +123,22 @@ export function formatDateRange(start: Date, end: Date): string {
 export function calendarDays(start: Date, end: Date): number {
   return Math.round((Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()) - Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate())) / 86_400_000) + 1;
 }
+
+type RequestWindow = { employeeArchivedAt: Date | null; contractEndDate: Date | null; organizationClosedAt: Date | null };
+
+/**
+ * Pourquoi le salarié ne peut plus rien demander depuis son espace (absence,
+ * choix du papier) : l'employeur a fermé son espace RH, la fiche est archivée
+ * ou le contrat est terminé. La consultation des documents, elle, reste ouverte.
+ */
+export function requestsClosedReason(account: RequestWindow, now = new Date()): "employer-closed" | "contract-ended" | null {
+  if (account.organizationClosedAt) return "employer-closed";
+  if (account.employeeArchivedAt) return "contract-ended";
+  if (account.contractEndDate && account.contractEndDate.toISOString().slice(0, 10) < now.toISOString().slice(0, 10)) return "contract-ended";
+  return null;
+}
+
+export const REQUESTS_CLOSED_MESSAGES = {
+  "employer-closed": "Votre employeur n'utilise plus RH Pilot : les demandes sont fermées. Vos documents restent consultables.",
+  "contract-ended": "Votre contrat est terminé : les demandes d'absence sont fermées. Vos documents restent consultables.",
+} as const;

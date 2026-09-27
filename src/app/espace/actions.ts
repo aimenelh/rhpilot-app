@@ -13,7 +13,7 @@ import { storeAbsenceJustification } from "@/lib/absence-justification-storage";
 import { absenceRequestEmail } from "@/lib/employee-space/emails";
 import { activateEmployeeAccount, findInvitationByToken, findPendingInvitationsForEmail, invitationProblem } from "@/lib/employee-space/invitations";
 import { ESPACE_ACCOUNT_COOKIE, NEW_ORGANIZATION_COOKIE, employeeSessionOrError, getEmployeeAccountsForUser } from "@/lib/employee-space/session";
-import { EMPLOYEE_REQUEST_TYPES, canEmployeeCancelAbsence, formatDateRange, isEmployeeRequestType } from "@/lib/employee-space/labels";
+import { EMPLOYEE_REQUEST_TYPES, REQUESTS_CLOSED_MESSAGES, canEmployeeCancelAbsence, formatDateRange, isEmployeeRequestType, requestsClosedReason } from "@/lib/employee-space/labels";
 
 export type EspaceActionState = { error?: string; success?: string } | undefined;
 
@@ -69,7 +69,8 @@ export async function requestAbsence(_state: EspaceActionState, formData: FormDa
   const session = await employeeSessionOrError();
   if ("error" in session) return session;
   const { account, user } = session;
-  if (account.employeeArchivedAt || (account.contractEndDate && account.contractEndDate < new Date(Date.now() - 86_400_000))) return { error: "Votre contrat est terminé : les demandes d'absence ne sont plus ouvertes." };
+  const closed = requestsClosedReason(account);
+  if (closed) return { error: REQUESTS_CLOSED_MESSAGES[closed] };
 
   const type = String(formData.get("type") ?? "");
   if (!isEmployeeRequestType(type)) return { error: "Choisissez le type d'absence." };
@@ -140,6 +141,7 @@ export async function cancelAbsenceRequest(absenceId: string): Promise<EspaceAct
   const session = await employeeSessionOrError();
   if ("error" in session) return session;
   const { account, user } = session;
+  if (account.organizationClosedAt) return { error: REQUESTS_CLOSED_MESSAGES["employer-closed"] };
   const absence = await prisma.absence.findFirst({ where: { id: absenceId, organizationId: account.organizationId, employeeId: account.employeeId }, select: { id: true, status: true, payrollImpactStatus: true, type: true } });
   if (!absence) return { error: "Demande introuvable." };
   const requestedByEmployee = await prisma.auditLog.findFirst({ where: { organizationId: account.organizationId, action: "absence.requested_by_employee", entityType: "Absence", entityId: absence.id, actorUserId: user.id, metadata: { path: ["employeeId"], equals: account.employeeId } }, select: { id: true } });
@@ -159,6 +161,7 @@ export async function setPaperPayslipPreference(paper: boolean): Promise<EspaceA
   const session = await employeeSessionOrError();
   if ("error" in session) return session;
   const { account, user } = session;
+  if (account.organizationClosedAt) return { error: REQUESTS_CLOSED_MESSAGES["employer-closed"] };
   if (paper) {
     await prisma.$executeRaw`UPDATE "employees" SET "paperPayslipSince" = ${new Date()}, "paperPayslipSource" = 'EMPLOYEE' WHERE "id" = ${account.employeeId} AND "organizationId" = ${account.organizationId} AND "paperPayslipSince" IS NULL`;
   } else {

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { computePayslip } from "@/lib/payroll/bulletin/compute";
 import { FULL_TIME_SCHEDULE } from "@/lib/payroll/bulletin/calendar";
 import { buildFinalSettlementItems, ofJob, renderFinalSettlementPdf, renderWorkCertificatePdf, type ExitEmployee, type ExitEmployer } from "./exit-documents";
-import { calendarDays, canEmployeeCancelAbsence, formatDateRange, ofMonthLabel, payslipFileName, payslipTitle, safeFileName } from "./labels";
+import { calendarDays, canEmployeeCancelAbsence, formatDateRange, ofMonthLabel, payslipFileName, payslipTitle, requestsClosedReason, safeFileName } from "./labels";
 import { addOneMonth, electronicPayslipReadiness, renderElectronicPayslipNoticePdf } from "./notice";
 import { hashInviteToken, isPlausibleInviteToken, newInviteToken, normalizeEmail, safeEspaceRedirect } from "./tokens";
 
@@ -95,5 +95,24 @@ describe("espace salarié", () => {
     const pdf = await renderElectronicPayslipNoticePdf({ employer, employee: { civility: "MME", firstName: "Léa", lastName: "Martin" }, issuedAt: "2026-09-27" }, { compress: false });
     expect(pdf.toString("latin1").startsWith("%PDF-")).toBe(true);
     expect(pdf.toString("latin1").match(/\/Type \/Page\b/g)?.length).toBe(1);
+  });
+});
+
+describe("espace salarié — nouvelles demandes", () => {
+  const now = new Date("2026-10-15T10:00:00Z");
+  const open = { employeeArchivedAt: null, contractEndDate: null, organizationClosedAt: null };
+
+  it("restent ouvertes pendant le contrat, jusqu'au dernier jour inclus", () => {
+    expect(requestsClosedReason(open, now)).toBeNull();
+    expect(requestsClosedReason({ ...open, contractEndDate: new Date("2026-10-15T00:00:00Z") }, now)).toBeNull();
+  });
+
+  it("se ferment après le contrat ou à l'archivage de la fiche", () => {
+    expect(requestsClosedReason({ ...open, contractEndDate: new Date("2026-10-14T00:00:00Z") }, now)).toBe("contract-ended");
+    expect(requestsClosedReason({ ...open, employeeArchivedAt: new Date("2026-10-01") }, now)).toBe("contract-ended");
+  });
+
+  it("se ferment quand l'employeur a supprimé son espace RH, même en cours de contrat", () => {
+    expect(requestsClosedReason({ ...open, organizationClosedAt: new Date("2026-10-10") }, now)).toBe("employer-closed");
   });
 });

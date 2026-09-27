@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { requireEmployeeSession } from "@/lib/employee-space/session";
-import { ABSENCE_STATUS_LABELS, ABSENCE_TYPE_LABELS, calendarDays, canEmployeeCancelAbsence, formatDateRange } from "@/lib/employee-space/labels";
+import { ABSENCE_STATUS_LABELS, ABSENCE_TYPE_LABELS, REQUESTS_CLOSED_MESSAGES, calendarDays, canEmployeeCancelAbsence, formatDateRange, requestsClosedReason } from "@/lib/employee-space/labels";
 import { AbsenceRequestForm } from "./AbsenceRequestForm";
 import { CancelRequestButton } from "./CancelRequestButton";
 
@@ -27,7 +27,8 @@ export default async function EspaceAbsencesPage() {
     select: { entityId: true },
   })).map((row) => row.entityId));
   const todayIso = new Date().toISOString().slice(0, 10);
-  const ended = Boolean(account.employeeArchivedAt || (account.contractEndDate && account.contractEndDate.toISOString().slice(0, 10) < todayIso));
+  const closed = requestsClosedReason(account);
+  const ended = closed !== null;
 
   return (
     <div className="space-y-5">
@@ -37,7 +38,7 @@ export default async function EspaceAbsencesPage() {
       </div>
 
       {ended ? (
-        <div className="rounded-2xl border border-surface-border bg-white px-4 py-3.5 text-sm text-ink-soft">Votre contrat est terminé : les demandes d&apos;absence sont fermées. Vos documents restent consultables.</div>
+        <div className="rounded-2xl border border-surface-border bg-white px-4 py-3.5 text-sm text-ink-soft">{REQUESTS_CLOSED_MESSAGES[closed ?? "contract-ended"]}</div>
       ) : (
         <AbsenceRequestForm today={todayIso} />
       )}
