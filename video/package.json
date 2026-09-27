@@ -1,0 +1,23 @@
+{
+  "name": "rhpilot-video",
+  "private": true,
+  "description": "Film de présentation de RH Pilot, animé en code avec Remotion.",
+  "scripts": {
+    "studio": "remotion studio",
+    "music": "node scripts/compose.mjs",
+    "render": "node scripts/compose.mjs && remotion render RHPilot out/rh-pilot.mp4",
+    "still": "remotion still"
+  },
+  "dependencies": {
+    "@fontsource/dm-sans": "5.2.8",
+    "@fontsource/fraunces": "5.2.9",
+    "@remotion/cli": "4.0.529",
+    "react": "18.3.1",
+    "react-dom": "18.3.1",
+    "remotion": "4.0.529"
+  },
+  "devDependencies": {
+    "@types/react": "18.3.12",
+    "typescript": "5.6.3"
+  }
+}
