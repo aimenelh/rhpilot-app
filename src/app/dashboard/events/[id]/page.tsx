@@ -97,7 +97,7 @@ export default async function EventDetailPage({
   const isFullyCompleted = employeeEvent.tasks.length > 0 && doneCount === employeeEvent.tasks.length;
 
   return (
-    <div className="max-w-3xl">
+    <div className="max-w-4xl">
       <Link
         href={`/dashboard/employees/${employeeEvent.employeeId}`}
         className="text-sm text-ink-soft hover:text-ink"
@@ -180,9 +180,9 @@ export default async function EventDetailPage({
                     <span className="h-1.5 w-1.5 rounded-full bg-current" />
                   )}
                 </span>
-                <div className="flex-1">
-                  <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
-                    <div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
+                    <div className="min-w-0 flex-1">
                       <p className="text-[11px] font-medium uppercase tracking-wide text-ink-faint">
                         Étape {task.stepOrder}
                       </p>
