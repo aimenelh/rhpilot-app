@@ -105,8 +105,19 @@ function TerminationForm({ periodId, employee, readOnly }: { periodId: string; e
   );
 }
 
-export default function PayrollTerminationSection({ periodId, employees, readOnly }: { periodId: string; employees: LeavingEmployee[]; readOnly: boolean }) {
+export default function PayrollTerminationSection({ periodId, employees, readOnly, embedded = false }: { periodId: string; employees: LeavingEmployee[]; readOnly: boolean; embedded?: boolean }) {
   if (employees.length === 0) return null;
+  if (embedded) {
+    return (
+      <div>
+        <h3 className="text-sm font-semibold text-ink">Départs</h3>
+        <p className="mt-1 text-sm text-ink-soft">Le solde de tout compte est calculé avec le dernier bulletin : indemnités de congés, de préavis, de fin de contrat et de rupture, avec leur régime social et fiscal.</p>
+        <div className="mt-3 space-y-4">
+          {employees.map((employee) => <TerminationForm key={employee.id} periodId={periodId} employee={employee} readOnly={readOnly} />)}
+        </div>
+      </div>
+    );
+  }
   return (
     <section className="mt-5 overflow-hidden rounded-2xl border border-surface-border bg-white">
       <div className="border-b border-surface-border px-5 py-4">

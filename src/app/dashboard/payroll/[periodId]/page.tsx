@@ -1,352 +1,401 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import {
-  AlertTriangle,
-  ArrowLeft,
-  Check,
-  CheckCircle2,
-  FileText,
-  LockKeyhole,
-  ReceiptText,
-  ShieldCheck,
-  Users,
-} from "lucide-react";
+import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, ExternalLink, FileText } from "lucide-react";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { checkPayrollPeriodReadiness } from "@/lib/payroll/period-preflight";
-import PayrollVariablesSection from "../PayrollVariablesSection";
-import PayrollCalculateButton from "../PayrollCalculateButton";
-import PayrollReviewButton from "../PayrollReviewButton";
-import PayrollValidateButton from "../PayrollValidateButton";
-import PayrollLockButton from "../PayrollLockButton";
-import PayrollReopenButton from "../PayrollReopenButton";
-import PayrollPayslipGenerateButton from "../PayrollPayslipGenerateButton";
-import PayrollTerminationSection, { type LeavingEmployee } from "../PayrollTerminationSection";
 import { loadTerminations } from "@/lib/payroll/bulletin/period-loader";
 import { bulletinFromSnapshot } from "@/lib/payroll/bulletin/prior-state";
+import { cellValues, type EntryTab } from "@/lib/payroll/entry-grid";
+import PayrollPayslipGenerateButton from "../PayrollPayslipGenerateButton";
+import PayrollReopenButton from "../PayrollReopenButton";
+import MinimumSalaryControlSection from "../MinimumSalaryControlSection";
+import PayrollTerminationSection, { type LeavingEmployee } from "../PayrollTerminationSection";
+import PayrollEntryGrid, { type GridEmployee } from "./PayrollEntryGrid";
+import PayrollAbsencesPanel, { type PeriodAbsenceRow } from "./PayrollAbsencesPanel";
+import PayslipReview, { type PayslipReviewRow } from "./PayslipReview";
+import { BackToEntryButton, ClosePeriodButton, RunCalculationButton } from "./PeriodActions";
 
-const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+export const dynamic = "force-dynamic";
 
-const STATUS_LABELS: Record<string, string> = {
-  DRAFT: "À préparer",
-  CALCULATED: "Calculée",
-  REVIEW: "À contrôler",
-  VALIDATED: "Prête à clôturer",
-  LOCKED: "Clôturée",
-};
-
-const STEPS = [
-  ["DRAFT", "Préparer"],
-  ["CALCULATED", "Calculer"],
-  ["REVIEW", "Contrôler"],
-  ["VALIDATED", "Valider"],
-  ["LOCKED", "Clôturer"],
+const MONTHS = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août", "septembre", "octobre", "novembre", "décembre"];
+const TABS = [
+  ["saisie", "Saisie"],
+  ["controle", "Contrôle"],
+  ["bulletins", "Bulletins"],
+  ["declaration", "Déclaration"],
 ] as const;
+type Tab = (typeof TABS)[number][0];
+const SUB_TABS = [
+  ["heures", "Heures"],
+  ["variables", "Primes et variables"],
+  ["absences", "Absences"],
+  ["mouvements", "Entrées et sorties"],
+] as const;
+type SubTab = (typeof SUB_TABS)[number][0];
 
-function formatEuros(cents: number | null | undefined) {
-  if (cents === null || cents === undefined) return "—";
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(Number(cents) / 100);
+const ABSENCE_LABELS: Record<string, string> = {
+  PAID_LEAVE: "Congés payés", RTT: "RTT", SICK_LEAVE: "Maladie", WORK_ACCIDENT: "Accident du travail", UNPAID_LEAVE: "Sans solde",
+  FAMILY_EVENT: "Événement familial", MATERNITY: "Maternité", PATERNITY: "Paternité", OTHER: "Autre",
+};
+const IJSS_TYPES = new Set(["SICK_LEAVE", "WORK_ACCIDENT", "MATERNITY", "PATERNITY"]);
+
+const frDate = (date: Date) => date.toISOString().slice(0, 10).split("-").reverse().join("/");
+const capitalize = (value: string) => value.charAt(0).toLocaleUpperCase("fr-FR") + value.slice(1);
+
+/** Où corriger ce que signale une remarque du calcul. */
+function warningLink(periodId: string, employeeId: string, warning: string): { href: string; label: string } | null {
+  const text = warning.toLowerCase();
+  if (text.includes("ijss")) return { href: `/dashboard/payroll/${periodId}?tab=saisie&sub=absences`, label: "Saisir les IJSS" };
+  if (text.includes("fiche de sortie") || text.includes("fin de contrat")) return { href: `/dashboard/payroll/${periodId}?tab=saisie&sub=mouvements`, label: "Ouvrir la fiche de sortie" };
+  if (text.includes("compteurs") || text.includes("cumul") || text.includes("reprise") || text.includes("horaire") || text.includes("taux personnalisé")) return { href: `/dashboard/employees/${employeeId}`, label: "Ouvrir la fiche salarié" };
+  return null;
 }
 
-function formatPayrollEuros(value: unknown) {
-  if (value === null || value === undefined) return "—";
-  const amount = Number(value);
-  if (!Number.isFinite(amount)) return "—";
-  return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
-}
-
-function sum(values: unknown[]): number {
-  return values.reduce<number>((total, value) => {
-    const amount = Number(value);
-    return Number.isFinite(amount) ? total + amount : total;
-  }, 0);
-}
-
-function statusIndex(status: string) {
-  const index = STEPS.findIndex(([code]) => code === status);
-  return index < 0 ? 0 : index;
-}
-
-function nextActionLabel(status: string) {
-  if (status === "DRAFT") return "Calculer la période";
-  if (status === "CALCULATED") return "Passer au contrôle";
-  if (status === "REVIEW") return "Valider les résultats";
-  if (status === "VALIDATED") return "Clôturer la période";
-  return "Période clôturée";
-}
-
-export default async function PayrollPeriodPage({ params }: { params: { periodId: string } }) {
+export default async function PayrollPeriodPage({ params, searchParams }: { params: { periodId: string }; searchParams: { tab?: string; sub?: string; focus?: string; absence?: string } }) {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");
+  const organizationId = membership.organizationId;
 
-  const period = await prisma.payrollPeriod.findFirst({ where: { id: params.periodId, organizationId: membership.organizationId } });
+  const period = await prisma.payrollPeriod.findFirst({ where: { id: params.periodId, organizationId } });
   if (!period) notFound();
 
-  const periodStart = new Date(period.year, period.month - 1, 1);
-  const periodEnd = new Date(period.year, period.month, 0);
-  periodStart.setHours(0, 0, 0, 0);
-  periodEnd.setHours(23, 59, 59, 999);
-  const calculationDate = new Date(period.year, period.month - 1, 1, 12, 0, 0, 0);
+  const periodStart = new Date(Date.UTC(period.year, period.month - 1, 1));
+  const periodEnd = new Date(Date.UTC(period.year, period.month, 0, 23, 59, 59, 999));
+  const calculationDate = new Date(Date.UTC(period.year, period.month - 1, 1, 12));
+  const periodFirstIso = periodStart.toISOString().slice(0, 10);
+  const periodLastIso = periodEnd.toISOString().slice(0, 10);
 
-  const [employees, profiles, calculations, variables, validatedRules] = await Promise.all([
+  const [employees, profiles, calculations, variables, validatedRules, absences, pendingAbsences, payslips, terminations, reviewRows] = await Promise.all([
     prisma.employee.findMany({
-      where: { organizationId: membership.organizationId, deletedAt: null, hireDate: { lte: periodEnd }, OR: [{ contractEndDate: null }, { contractEndDate: { gte: periodStart } }] },
+      where: { organizationId, deletedAt: null, hireDate: { lte: periodEnd }, OR: [{ contractEndDate: null }, { contractEndDate: { gte: periodStart } }] },
       select: { id: true, firstName: true, lastName: true, position: true, contractType: true, hireDate: true, contractEndDate: true },
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     }),
     prisma.payrollProfile.findMany({
-      where: { organizationId: membership.organizationId, effectiveFrom: { lte: periodEnd }, OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: periodStart } }] },
+      where: { organizationId, effectiveFrom: { lte: periodEnd }, OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: periodStart } }] },
       select: { employeeId: true, baseSalaryCents: true, monthlyHours: true, effectiveFrom: true },
       orderBy: { effectiveFrom: "desc" },
     }),
-    prisma.payrollCalculation.findMany({
-      where: { organizationId: membership.organizationId, payrollPeriodId: period.id },
-      select: { employeeId: true, grossAmount: true, employeeContributions: true, employerContributions: true, netBeforeTax: true, withholdingTax: true, netPaid: true, calculationSnapshot: true },
-    }),
-    prisma.payrollVariable.findMany({
-      where: { organizationId: membership.organizationId, payrollPeriodId: period.id },
-      select: { id: true, employeeId: true, code: true, label: true, amount: true, unit: true, source: true, reference: true },
-      orderBy: [{ employeeId: "asc" }, { createdAt: "asc" }],
-    }),
+    prisma.payrollCalculation.findMany({ where: { organizationId, payrollPeriodId: period.id }, select: { employeeId: true, calculationSnapshot: true } }),
+    prisma.payrollVariable.findMany({ where: { organizationId, payrollPeriodId: period.id }, select: { employeeId: true, code: true, amount: true, reference: true } }),
     prisma.payrollRuleVersion.findMany({
       where: { status: "VALIDATED", validFrom: { lte: calculationDate }, OR: [{ validUntil: null }, { validUntil: { gte: calculationDate } }] },
-      select: { id: true, code: true, version: true, scope: true, sourceName: true, sourceUrl: true },
+      select: { id: true, code: true, version: true, scope: true, sourceName: true },
       orderBy: [{ code: "asc" }, { scope: "asc" }, { version: "desc" }],
     }),
+    prisma.absence.findMany({ where: { organizationId, status: "VALIDATED", startDate: { lte: periodEnd }, endDate: { gte: periodStart } }, select: { id: true, employeeId: true, type: true, startDate: true, endDate: true }, orderBy: [{ startDate: "asc" }] }),
+    prisma.absence.count({ where: { organizationId, status: { in: ["TO_VALIDATE", "TO_PROVIDE_JUSTIFICATION", "TO_REVIEW_JUSTIFICATION"] }, startDate: { lte: periodEnd }, endDate: { gte: periodStart } } }),
+    prisma.payslip.findMany({ where: { organizationId, payrollPeriodId: period.id }, select: { id: true, employeeId: true, documentStatus: true } }),
+    loadTerminations(organizationId, period.id).catch(() => new Map<string, never>()),
+    prisma.$queryRaw<Array<{ employeeId: string }>>`SELECT "employeeId" FROM "payroll_entry_reviews" WHERE "organizationId" = ${organizationId} AND "payrollPeriodId" = ${period.id}`.catch(() => [] as Array<{ employeeId: string }>),
   ]);
 
-  const [terminations, sickAbsences] = await Promise.all([
-    loadTerminations(membership.organizationId, period.id).catch(() => new Map<string, never>()),
-    prisma.absence.findMany({
-      where: { organizationId: membership.organizationId, status: "VALIDATED", type: { in: ["SICK_LEAVE", "WORK_ACCIDENT", "MATERNITY", "PATERNITY"] }, startDate: { lte: periodEnd }, endDate: { gte: periodStart } },
-      select: { id: true, employeeId: true, type: true, startDate: true, endDate: true },
-      orderBy: { startDate: "asc" },
-    }),
-  ]);
-  const periodFirstIso = `${period.year}-${String(period.month).padStart(2, "0")}-01`;
-  const periodLastIso = new Date(Date.UTC(period.year, period.month, 0)).toISOString().slice(0, 10);
-  const leavingEmployees: LeavingEmployee[] = employees
-    .filter((employee) => {
-      const exit = employee.contractEndDate?.toISOString().slice(0, 10);
-      return Boolean(exit && exit >= periodFirstIso && exit <= periodLastIso);
-    })
-    .map((employee) => {
-      const stored = terminations.get(employee.id);
-      return {
-        id: employee.id,
-        name: `${employee.firstName} ${employee.lastName}`.trim(),
-        contractType: employee.contractType,
-        exitDate: employee.contractEndDate!.toISOString().slice(0, 10),
-        termination: stored ? { reason: stored.reason, noticeCompensation: stored.noticeCompensation, severanceAmount: stored.severanceAmount, severanceLegalMinimum: stored.severanceLegalMinimum, previousYearGross: stored.previousYearGross, eligibleForFullPension: stored.eligibleForFullPension, cddEndAllowanceMode: stored.cddEndAllowanceMode, cddEndAllowanceAmount: stored.cddEndAllowanceAmount, cddEndAllowanceRate: stored.cddEndAllowanceRate, paidLeaveCompensationAmount: stored.paidLeaveCompensationAmount } : null,
-      };
-    });
-  const ABSENCE_TYPE_LABELS: Record<string, string> = { SICK_LEAVE: "Maladie", WORK_ACCIDENT: "Accident du travail", MATERNITY: "Maternité", PATERNITY: "Paternité" };
-  const ijssAbsences = sickAbsences.map((absence) => ({ id: absence.id, employeeId: absence.employeeId, label: `${ABSENCE_TYPE_LABELS[absence.type] ?? absence.type} du ${absence.startDate.toISOString().slice(0, 10).split("-").reverse().join("/")} au ${absence.endDate.toISOString().slice(0, 10).split("-").reverse().join("/")}` }));
-  const paidLeaveRows = calculations.flatMap((calculation) => {
-    const leave = bulletinFromSnapshot(calculation.calculationSnapshot)?.paidLeave;
-    if (!leave) return [];
-    const b = leave.balancesAfter;
-    return [{ employeeId: calculation.employeeId, previousAcquired: b.previousAcquired, previousTaken: b.previousTaken, currentAcquired: b.currentAcquired, currentTaken: b.currentTaken, daysTaken: leave.daysTaken, acquiredThisMonth: leave.acquiredThisMonth, compensatedDays: leave.compensatedDays ?? null, method: leave.indemnityMethod }];
-  });
-  const calculationWarnings = calculations.flatMap((calculation) => {
-    const bulletin = bulletinFromSnapshot(calculation.calculationSnapshot);
-    return bulletin ? bulletin.warnings.map((warning) => ({ employeeId: calculation.employeeId, warning })) : [];
-  });
-
+  const activeIds = new Set(employees.map((employee) => employee.id));
   const profileByEmployee = new Map<string, (typeof profiles)[number]>();
   for (const profile of profiles) if (!profileByEmployee.has(profile.employeeId)) profileByEmployee.set(profile.employeeId, profile);
-  const calculationByEmployee = new Map<string, (typeof calculations)[number]>();
-  for (const calculation of calculations) calculationByEmployee.set(calculation.employeeId, calculation);
+  const reviewedIds = new Set(reviewRows.map((row) => row.employeeId).filter((id) => activeIds.has(id)));
+  const employeeName = (id: string) => { const employee = employees.find((candidate) => candidate.id === id); return employee ? `${employee.firstName} ${employee.lastName}`.trim() : "Salarié"; };
 
-  const configuredCount = employees.filter((employee) => profileByEmployee.has(employee.id)).length;
-  const calculatedCount = employees.filter((employee) => calculationByEmployee.has(employee.id)).length;
+  const gridEmployees: GridEmployee[] = employees.map((employee) => {
+    const profile = profileByEmployee.get(employee.id);
+    const hours = profile?.monthlyHours == null ? null : Number(profile.monthlyHours);
+    const partTime = hours !== null && hours < 151.66;
+    const hint = hours === null ? "Profil paie à compléter" : `${partTime ? "Temps partiel" : "Temps plein"} · ${hours.toFixed(2).replace(".", ",")} h`;
+    return { id: employee.id, name: `${employee.firstName} ${employee.lastName}`.trim(), hint, partTime, reviewed: reviewedIds.has(employee.id) };
+  });
+  const values = Object.fromEntries(cellValues(variables.map((variable) => ({ employeeId: variable.employeeId, code: variable.code, amount: Number(variable.amount), reference: variable.reference }))));
+
   const readiness = checkPayrollPeriodReadiness(employees.map((employee) => {
     const profile = profileByEmployee.get(employee.id);
     return {
+      employeeId: employee.id, firstName: employee.firstName, lastName: employee.lastName,
+      baseSalaryCents: profile?.baseSalaryCents, monthlyHours: profile?.monthlyHours == null ? null : Number(profile.monthlyHours),
+      hireDate: employee.hireDate, contractEndDate: employee.contractEndDate,
+      profileCount: profiles.filter((row) => row.employeeId === employee.id).length,
       hasTermination: terminations.has(employee.id),
-      hireDate: employee.hireDate,
-      contractEndDate: employee.contractEndDate,
-      profileCount: profiles.filter((profileRow) => profileRow.employeeId === employee.id).length,
-      employeeId: employee.id,
-      firstName: employee.firstName,
-      lastName: employee.lastName,
-      baseSalaryCents: profile?.baseSalaryCents,
-      monthlyHours: profile?.monthlyHours == null ? null : Number(profile.monthlyHours),
     };
   }), { year: period.year, month: period.month }, { bulletinEngine: true });
 
-  const variableRows = variables.map((variable) => ({ id: variable.id, employeeId: variable.employeeId, code: variable.code, label: variable.label, amount: String(variable.amount), unit: variable.unit, source: variable.source, reference: variable.reference ?? null }));
-  const calculatedRows = employees.map((employee) => calculationByEmployee.get(employee.id)).filter((calculation): calculation is (typeof calculations)[number] => Boolean(calculation));
   const calculationRule = validatedRules.find((rule) => rule.code !== "FR.SMIC.MONTHLY_GROSS") ?? null;
-  const hasValidatedRule = calculationRule !== null;
-  const isOwner = membership.accessRole === "OWNER";
-  const calculationDisabled = !isOwner || period.status !== "DRAFT" || !readiness.ready || !hasValidatedRule;
-  const reviewDisabled = !isOwner || period.status !== "CALCULATED" || calculatedCount !== employees.length || employees.length === 0;
-  const validationDisabled = !isOwner || period.status !== "REVIEW" || calculatedCount !== employees.length || employees.length === 0;
-  const lockDisabled = !isOwner || period.status !== "VALIDATED" || calculatedCount !== employees.length || employees.length === 0;
+  const isAdmin = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
+  const editable = isAdmin && period.status === "DRAFT";
+  const calculatedCount = calculations.filter((calculation) => activeIds.has(calculation.employeeId)).length;
+  const hasResults = calculatedCount > 0;
+  const resultsComplete = employees.length > 0 && calculatedCount === employees.length;
 
-  const grossTotal = sum(calculatedRows.map((calculation) => calculation.grossAmount));
-  const employeeContributionsTotal = sum(calculatedRows.map((calculation) => calculation.employeeContributions));
-  const employerContributionsTotal = sum(calculatedRows.map((calculation) => calculation.employerContributions));
-  const netBeforeTaxTotal = sum(calculatedRows.map((calculation) => calculation.netBeforeTax));
-  const withholdingTaxTotal = sum(calculatedRows.map((calculation) => calculation.withholdingTax));
-  const netPaidTotal = sum(calculatedRows.map((calculation) => calculation.netPaid));
-  const currentStep = statusIndex(period.status);
+  const payslipByEmployee = new Map(payslips.map((payslip) => [payslip.employeeId, payslip]));
+  const reviewRowsData: PayslipReviewRow[] = employees.flatMap((employee) => {
+    const calculation = calculations.find((candidate) => candidate.employeeId === employee.id);
+    const bulletin = calculation ? bulletinFromSnapshot(calculation.calculationSnapshot) : null;
+    if (!bulletin) return [];
+    const payslip = payslipByEmployee.get(employee.id);
+    return [{
+      employeeId: employee.id,
+      name: `${employee.firstName} ${employee.lastName}`.trim(),
+      position: employee.position ?? "",
+      grossTotal: bulletin.totals.grossTotal,
+      employeeContributions: bulletin.totals.employeeContributions,
+      employerContributions: bulletin.totals.employerContributions,
+      netBeforeTax: bulletin.totals.netBeforeTax,
+      netTaxable: bulletin.totals.netTaxable,
+      withholdingTax: bulletin.totals.withholdingTax,
+      withholdingRate: bulletin.totals.withholdingRate,
+      withholdingMode: bulletin.withholding.mode,
+      netPaid: bulletin.totals.netPaid,
+      netSocial: bulletin.totals.netSocial,
+      employerCost: bulletin.totals.employerCost,
+      warnings: bulletin.warnings,
+      payslipId: payslip && (payslip.documentStatus === "GENERATED" || payslip.documentStatus === "PUBLISHED") ? payslip.id : null,
+      lines: bulletin.lines.map((line) => ({ code: line.code, label: line.label, section: line.section, base: line.base, quantity: line.quantity, unit: line.unit, rate: line.rate, employerRate: line.employerRate, amount: line.amount, employerAmount: line.employerAmount })),
+    }];
+  });
+  const warningItems = reviewRowsData.flatMap((row) => row.warnings.map((warning) => ({ employeeId: row.employeeId, name: row.name, warning })));
+  const generatedCount = payslips.filter((payslip) => payslip.documentStatus === "GENERATED" || payslip.documentStatus === "PUBLISHED").length;
 
-  if (period.status === "LOCKED") {
-    return (
-      <div className="mx-auto max-w-7xl">
-        <Link href="/dashboard/payroll" className="inline-flex items-center gap-2 text-sm font-medium text-ink-soft transition hover:text-ink"><ArrowLeft size={16} /> Retour au centre de paie</Link>
+  const defaultTab: Tab = period.status === "DRAFT" ? "saisie" : period.status === "LOCKED" ? "bulletins" : "controle";
+  const tab: Tab = (TABS.map(([code]) => code) as readonly string[]).includes(searchParams.tab ?? "") ? (searchParams.tab as Tab) : defaultTab;
+  const sub: SubTab = (SUB_TABS.map(([code]) => code) as readonly string[]).includes(searchParams.sub ?? "") ? (searchParams.sub as SubTab) : "heures";
+  const href = (next: { tab?: Tab; sub?: SubTab }) => `/dashboard/payroll/${period.id}?tab=${next.tab ?? tab}${(next.tab ?? tab) === "saisie" ? `&sub=${next.sub ?? sub}` : ""}`;
 
-        <header className="mt-5 rounded-2xl border border-surface-border bg-white p-6 md:p-7">
-          <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-            <div>
-              <div className="flex items-center gap-2"><span className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent-teal/10 text-accent-teal"><LockKeyhole size={16} /></span><p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent-teal">Période clôturée</p></div>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink">{MONTHS[period.month - 1]} {period.year}</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-soft">Le calcul est verrouillé. Cette vue ne propose plus de saisie : elle donne accès aux résultats, aux bulletins et à la réouverture contrôlée.</p>
-            </div>
-            <span className="w-fit rounded-full bg-accent-teal/10 px-3 py-1.5 text-xs font-semibold text-accent-teal">Clôturée</span>
-          </div>
-        </header>
+  const tabDone: Record<Tab, boolean> = {
+    saisie: period.status !== "DRAFT",
+    controle: period.status === "LOCKED",
+    bulletins: period.status === "LOCKED" && generatedCount === employees.length && employees.length > 0,
+    declaration: false,
+  };
+  const monthLabel = `${capitalize(MONTHS[period.month - 1])} ${period.year}`;
+  const statusLine = period.status === "DRAFT"
+    ? `Saisie en cours · ${reviewedIds.size}/${employees.length} salarié${employees.length > 1 ? "s" : ""} vérifié${reviewedIds.size > 1 ? "s" : ""}`
+    : period.status === "LOCKED"
+      ? `Clôturé${period.lockedAt ? ` le ${frDate(period.lockedAt)}` : ""} · ${generatedCount}/${employees.length} bulletin${employees.length > 1 ? "s" : ""} produit${generatedCount > 1 ? "s" : ""}`
+      : "Paie calculée : relisez les bulletins puis validez";
 
-        <section className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {[
-            ["Brut total", formatPayrollEuros(grossTotal)],
-            ["Cotisations salariales", formatPayrollEuros(employeeContributionsTotal)],
-            ["Cotisations employeur", formatPayrollEuros(employerContributionsTotal)],
-            ["Net payé", formatPayrollEuros(netPaidTotal)],
-          ].map(([label, value]) => <div key={label} className="rounded-xl border border-surface-border bg-white p-5"><p className="text-xs text-ink-faint">{label}</p><p className="mt-2 text-xl font-semibold text-ink">{value}</p></div>)}
-        </section>
+  // Absences du mois.
+  const ijssByAbsence = new Map(variables.filter((variable) => variable.code === "IJSS_GROSS" && variable.reference).map((variable) => [variable.reference!, Number(variable.amount)]));
+  const absenceRows: PeriodAbsenceRow[] = absences.filter((absence) => activeIds.has(absence.employeeId)).map((absence) => {
+    const start = absence.startDate > periodStart ? absence.startDate : periodStart;
+    const end = absence.endDate < periodEnd ? absence.endDate : periodEnd;
+    const daysInMonth = Math.round((Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), end.getUTCDate()) - Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate())) / 86_400_000) + 1;
+    return {
+      id: absence.id, employeeId: absence.employeeId, employeeName: employeeName(absence.employeeId),
+      typeLabel: ABSENCE_LABELS[absence.type] ?? absence.type,
+      dates: absence.startDate.getTime() === absence.endDate.getTime() ? `le ${frDate(absence.startDate)}` : `du ${frDate(absence.startDate)} au ${frDate(absence.endDate)}`,
+      daysInMonth, ijssEligible: IJSS_TYPES.has(absence.type), ijssAmount: ijssByAbsence.get(absence.id) ?? null,
+    };
+  });
 
-        <section className="mt-5 grid gap-5 lg:grid-cols-[1.2fr_.8fr]">
-          <div className="rounded-2xl border border-surface-border bg-white p-5 md:p-6">
-            <div className="flex items-center gap-2"><FileText size={17} className="text-brand-primary" /><h2 className="font-semibold text-ink">Bulletins de salaire</h2></div>
-            <p className="mt-1 text-sm text-ink-soft">Générez les documents à partir du calcul verrouillé, sans recalculer la période.</p>
-            <div className="mt-4"><PayrollPayslipGenerateButton periodId={period.id} /></div>
-          </div>
-          <div className="rounded-2xl border border-surface-border bg-white p-5 md:p-6">
-            <h2 className="font-semibold text-ink">Correction exceptionnelle</h2>
-            <p className="mt-1 text-sm leading-6 text-ink-soft">La réouverture remet le mois dans un nouveau cycle de contrôle. Elle ne doit être utilisée que lorsqu'une correction est réellement nécessaire.</p>
-            <div className="mt-4"><PayrollReopenButton periodId={period.id} disabled={!isOwner} /></div>
-          </div>
-        </section>
-      </div>
-    );
-  }
+  // Entrées et sorties.
+  const arrivals = employees.filter((employee) => { const hire = employee.hireDate.toISOString().slice(0, 10); return hire >= periodFirstIso && hire <= periodLastIso; });
+  const leaving: LeavingEmployee[] = employees
+    .filter((employee) => { const exit = employee.contractEndDate?.toISOString().slice(0, 10); return Boolean(exit && exit >= periodFirstIso && exit <= periodLastIso); })
+    .map((employee) => {
+      const stored = terminations.get(employee.id);
+      return {
+        id: employee.id, name: `${employee.firstName} ${employee.lastName}`.trim(), contractType: employee.contractType, exitDate: employee.contractEndDate!.toISOString().slice(0, 10),
+        termination: stored ? { reason: stored.reason, noticeCompensation: stored.noticeCompensation, severanceAmount: stored.severanceAmount, severanceLegalMinimum: stored.severanceLegalMinimum, previousYearGross: stored.previousYearGross, eligibleForFullPension: stored.eligibleForFullPension, cddEndAllowanceMode: stored.cddEndAllowanceMode, cddEndAllowanceAmount: stored.cddEndAllowanceAmount, cddEndAllowanceRate: stored.cddEndAllowanceRate, paidLeaveCompensationAmount: stored.paidLeaveCompensationAmount } : null,
+      };
+    });
+  const subCounts: Record<SubTab, number> = {
+    heures: Object.keys(values).filter((key) => ["OVERTIME_25", "OVERTIME_50", "COMPLEMENTARY_10", "COMPLEMENTARY_25", "NIGHT_WORK", "SUNDAY_WORK", "PUBLIC_HOLIDAY_WORK", "ON_CALL"].includes(key.split(":")[1])).length,
+    variables: 0,
+    absences: absenceRows.length,
+    mouvements: arrivals.length + leaving.length,
+  };
+  subCounts.variables = Object.keys(values).length - subCounts.heures;
+
+  // Congés payés après calcul (panneau Détails).
+  const leaveRows = calculations.flatMap((calculation) => {
+    const leave = bulletinFromSnapshot(calculation.calculationSnapshot)?.paidLeave;
+    if (!leave || !activeIds.has(calculation.employeeId)) return [];
+    return [{ employeeId: calculation.employeeId, leave }];
+  });
 
   return (
     <div className="mx-auto max-w-7xl">
-      <Link href="/dashboard/payroll" className="inline-flex items-center gap-2 text-sm font-medium text-ink-soft transition hover:text-ink"><ArrowLeft size={16} /> Retour au centre de paie</Link>
+      <Link href="/dashboard/payroll" className="inline-flex items-center gap-2 text-sm font-medium text-ink-soft transition hover:text-ink"><ArrowLeft size={16} /> Paie</Link>
 
-      <header className="mt-5 overflow-hidden rounded-2xl border border-surface-border bg-white">
-        <div className="flex flex-col gap-5 px-6 py-6 lg:flex-row lg:items-start lg:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">Dossier de paie</p>
-            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">{MONTHS[period.month - 1]} {period.year}</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-ink-soft">Travaillez par étape. L'écran met en avant la prochaine action et garde les détails techniques dans des zones dédiées.</p>
-          </div>
-          <div className="text-left lg:text-right"><span className="inline-flex w-fit rounded-full bg-surface-subtle px-3 py-1.5 text-xs font-semibold text-ink-soft">{STATUS_LABELS[period.status] ?? period.status}</span><p className="mt-2 text-xs text-ink-faint">Prochaine action : {nextActionLabel(period.status)}</p></div>
+      <header className="mt-4 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <h1 className="text-3xl font-semibold tracking-tight text-ink">Paie de {monthLabel.toLocaleLowerCase("fr-FR")}</h1>
+          <p className="mt-1.5 text-sm text-ink-soft">{statusLine}</p>
         </div>
-
-        <div className="overflow-x-auto border-t border-surface-border bg-surface-subtle/25 px-5 py-4">
-          <div className="flex min-w-[680px] items-center">
-            {STEPS.map(([code, label], index) => {
-              const done = index < currentStep;
-              const active = index === currentStep;
-              return (
-                <div key={code} className="flex flex-1 items-center last:flex-none">
-                  <div className="flex items-center gap-2.5">
-                    <span className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold ${done ? "bg-accent-teal text-white" : active ? "bg-brand-primary text-white" : "border border-surface-border bg-white text-ink-faint"}`}>{done ? <Check size={15} /> : index + 1}</span>
-                    <span className={`text-xs font-semibold ${active ? "text-ink" : done ? "text-accent-teal" : "text-ink-faint"}`}>{label}</span>
-                  </div>
-                  {index < STEPS.length - 1 ? <div className={`mx-4 h-px min-w-10 flex-1 ${done ? "bg-accent-teal/40" : "bg-surface-border"}`} /> : null}
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        <nav aria-label="Étapes du mois" className="flex overflow-x-auto rounded-xl border border-surface-border bg-white p-1">
+          {TABS.map(([code, label]) => {
+            const active = tab === code;
+            return (
+              <Link key={code} href={href({ tab: code })} aria-current={active ? "page" : undefined} className={`inline-flex min-h-[40px] shrink-0 items-center gap-1.5 rounded-lg px-4 text-sm font-semibold transition ${active ? "bg-ink text-white" : "text-ink-soft hover:bg-surface-subtle hover:text-ink"}`}>
+                {tabDone[code] && !active ? <CheckCircle2 size={15} className="text-accent-teal" /> : null}{label}
+              </Link>
+            );
+          })}
+        </nav>
       </header>
 
-      <section className="mt-5 grid gap-3 sm:grid-cols-3">
-        <div className="rounded-xl border border-surface-border bg-white p-5"><div className="flex items-center justify-between"><p className="text-xs text-ink-faint">Salariés du mois</p><Users size={16} className="text-ink-faint" /></div><p className="mt-2 text-2xl font-semibold text-ink">{employees.length}</p></div>
-        <div className="rounded-xl border border-surface-border bg-white p-5"><div className="flex items-center justify-between"><p className="text-xs text-ink-faint">Profils prêts</p><ShieldCheck size={16} className="text-ink-faint" /></div><p className="mt-2 text-2xl font-semibold text-ink">{configuredCount}/{employees.length}</p></div>
-        <div className="rounded-xl border border-surface-border bg-white p-5"><div className="flex items-center justify-between"><p className="text-xs text-ink-faint">Calculs enregistrés</p><ReceiptText size={16} className="text-ink-faint" /></div><p className="mt-2 text-2xl font-semibold text-ink">{calculatedCount}/{employees.length}</p></div>
-      </section>
-
-      <div className="mt-5 grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">
-        <aside className="space-y-5">
-          <section className={`rounded-2xl border p-5 ${readiness.ready ? "border-accent-teal/25 bg-accent-teal/[0.035]" : "border-accent-amber/30 bg-accent-amber/5"}`}>
-            <div className="flex items-start gap-3">
-              <span className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${readiness.ready ? "bg-accent-teal/10 text-accent-teal" : "bg-accent-amber/10 text-accent-amber"}`}>{readiness.ready ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}</span>
-              <div><p className="text-sm font-semibold text-ink">{readiness.ready ? "Préparation de base prête" : "Préparation à terminer"}</p><p className="mt-1 text-xs leading-5 text-ink-soft">{readiness.ready ? "Les contrôles préalables actuellement disponibles sont satisfaits." : `${readiness.issues.length} point${readiness.issues.length > 1 ? "s" : ""} bloque${readiness.issues.length > 1 ? "nt" : ""} le calcul.`}</p></div>
-            </div>
-            {!readiness.ready ? <div className="mt-4 space-y-2">{readiness.issues.map((issue, index) => <div key={`${issue.code}-${issue.employeeId ?? "period"}-${index}`} className="rounded-lg bg-white/75 px-3 py-2 text-xs leading-5 text-ink-soft">{issue.message}{issue.employeeId ? <div><Link className="font-semibold text-brand-primary hover:underline" href={`/dashboard/employees/${issue.employeeId}`}>Ouvrir le dossier salarié</Link></div> : null}</div>)}</div> : null}
-          </section>
-
-          <details className="group overflow-hidden rounded-2xl border border-surface-border bg-white">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 marker:hidden"><div><p className="text-sm font-semibold text-ink">Salariés de la période</p><p className="mt-1 text-xs text-ink-faint">{employees.length} dossier{employees.length > 1 ? "s" : ""}</p></div><span className="text-xs font-semibold text-ink-faint group-open:text-ink">Afficher</span></summary>
-            <div className="max-h-[420px] overflow-y-auto border-t border-surface-border divide-y divide-surface-border">
-              {employees.map((employee) => {
-                const profile = profileByEmployee.get(employee.id);
-                const calculation = calculationByEmployee.get(employee.id);
-                return <div key={employee.id} className="px-4 py-3"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-sm font-medium text-ink">{employee.firstName} {employee.lastName}</p><p className="mt-0.5 truncate text-xs text-ink-faint">{employee.position || employee.contractType || "Dossier salarié"}</p></div><span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${calculation ? "bg-accent-teal/10 text-accent-teal" : "bg-surface-subtle text-ink-faint"}`}>{calculation ? "Calculé" : "À calculer"}</span></div><p className="mt-2 text-xs text-ink-soft">{formatEuros(profile?.baseSalaryCents)} · {profile?.monthlyHours == null ? "—" : String(profile.monthlyHours)} h</p></div>;
+      {tab === "saisie" ? (
+        <section className="mt-5 overflow-hidden rounded-2xl border border-surface-border bg-white">
+          <div className="flex flex-col gap-3 border-b border-surface-border px-3 pt-3 sm:flex-row sm:items-end sm:justify-between">
+            <nav aria-label="Saisie" className="flex overflow-x-auto">
+              {SUB_TABS.map(([code, label]) => {
+                const active = sub === code;
+                return (
+                  <Link key={code} href={href({ tab: "saisie", sub: code })} aria-current={active ? "page" : undefined} className={`-mb-px inline-flex shrink-0 items-center gap-2 border-b-2 px-4 pb-3 pt-1.5 text-sm font-semibold transition ${active ? "border-brand-primary text-ink" : "border-transparent text-ink-soft hover:text-ink"}`}>
+                    {label}{subCounts[code] > 0 ? <span className="text-xs font-medium text-ink-faint">{subCounts[code]}</span> : null}
+                  </Link>
+                );
               })}
+            </nav>
+            {!editable && period.status !== "LOCKED" && isAdmin ? <div className="pb-3 pr-2"><BackToEntryButton periodId={period.id} entryHref={href({ tab: "saisie" })} /></div> : null}
+          </div>
+
+          {employees.length === 0 ? <p className="px-5 py-10 text-center text-sm text-ink-soft">Aucun salarié n&apos;est sous contrat sur ce mois.</p> : null}
+          {employees.length > 0 && (sub === "heures" || sub === "variables") ? (
+            <PayrollEntryGrid periodId={period.id} tab={sub as EntryTab} employees={gridEmployees} values={values} editable={editable} focusCell={searchParams.focus ?? null} />
+          ) : null}
+          {sub === "absences" ? <PayrollAbsencesPanel periodId={period.id} rows={absenceRows} pendingCount={pendingAbsences} editable={editable} focusAbsenceId={searchParams.absence ?? null} /> : null}
+          {sub === "mouvements" ? (
+            <div className="p-5">
+              {arrivals.length === 0 && leaving.length === 0 ? <p className="py-6 text-center text-sm text-ink-soft">Aucune arrivée ni aucun départ ce mois-ci.</p> : null}
+              {arrivals.length > 0 ? (
+                <div className="mb-5">
+                  <h3 className="text-sm font-semibold text-ink">Arrivées</h3>
+                  <ul className="mt-2 divide-y divide-surface-border rounded-xl border border-surface-border">
+                    {arrivals.map((employee) => <li key={employee.id} className="flex flex-col gap-1 px-4 py-3 sm:flex-row sm:items-center sm:justify-between"><span className="font-medium text-ink">{employee.firstName} {employee.lastName}</span><span className="text-sm text-ink-soft">Arrivée le {frDate(employee.hireDate)} : le salaire du mois est proratisé sur son horaire réel.</span></li>)}
+                  </ul>
+                </div>
+              ) : null}
+              {leaving.length > 0 ? <PayrollTerminationSection periodId={period.id} employees={leaving} readOnly={!editable} embedded /> : null}
             </div>
-          </details>
-
-          <details className="group overflow-hidden rounded-2xl border border-surface-border bg-white">
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 marker:hidden"><div><p className="text-sm font-semibold text-ink">Référentiel utilisé</p><p className="mt-1 text-xs text-ink-faint">{validatedRules.length} version{validatedRules.length > 1 ? "s" : ""} disponible{validatedRules.length > 1 ? "s" : ""}</p></div><span className="text-xs font-semibold text-ink-faint group-open:text-ink">Afficher</span></summary>
-            <div className="border-t border-surface-border p-4 text-xs text-ink-soft">{validatedRules.length === 0 ? <p>Aucune règle validée disponible pour cette date.</p> : <div className="space-y-2">{validatedRules.map((rule) => <div key={rule.id} className="rounded-lg bg-surface-subtle/40 px-3 py-2"><p className="font-medium text-ink">{rule.code} · v{rule.version}</p><p className="mt-0.5 text-ink-faint">{rule.scope} · {rule.sourceName}</p></div>)}</div>}</div>
-          </details>
-        </aside>
-
-        <main className="min-w-0">
-          <section className="rounded-2xl border border-surface-border bg-white p-5 md:p-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-              <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-primary">Action requise</p><h2 className="mt-1 text-xl font-semibold text-ink">{nextActionLabel(period.status)}</h2><p className="mt-1 max-w-2xl text-sm leading-6 text-ink-soft">RH Pilot n'enchaîne aucune étape automatiquement. Vous gardez la main sur chaque passage du cycle.</p></div>
-              <span className="w-fit rounded-full bg-surface-subtle px-3 py-1 text-xs font-semibold text-ink-faint">Étape {currentStep + 1}/5</span>
-            </div>
-
-            {period.status === "DRAFT" ? (
-              <div className="mt-5 border-t border-surface-border pt-5">
-                {hasValidatedRule ? <PayrollCalculateButton periodId={period.id} disabled={calculationDisabled} ruleCode={calculationRule!.code} ruleScope={calculationRule!.scope} /> : <div className="rounded-xl border border-accent-amber/30 bg-accent-amber/5 px-4 py-3 text-sm text-accent-amber">Aucune version de règle de paie validée n'est disponible pour cette période.</div>}
-              </div>
-            ) : null}
-            {period.status === "CALCULATED" ? <PayrollReviewButton periodId={period.id} disabled={reviewDisabled} /> : null}
-            {period.status === "REVIEW" ? <PayrollValidateButton periodId={period.id} disabled={validationDisabled} /> : null}
-            {period.status === "VALIDATED" ? <PayrollLockButton periodId={period.id} disabled={lockDisabled} /> : null}
-          </section>
-
-          {calculatedRows.length > 0 ? (
-            <section className="mt-5 overflow-hidden rounded-2xl border border-surface-border bg-white">
-              <div className="flex flex-col gap-2 border-b border-surface-border px-5 py-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent-teal">Résultat enregistré</p><h2 className="mt-1 text-lg font-semibold text-ink">Synthèse de la période</h2></div><span className="text-xs font-semibold text-ink-faint">{calculatedRows.length}/{employees.length} salariés calculés</span></div>
-              <div className="grid gap-3 p-5 sm:grid-cols-2 xl:grid-cols-5">
-                {[["Brut", grossTotal], ["Cotisations salarié", employeeContributionsTotal], ["Net avant impôt", netBeforeTaxTotal], ["PAS", withholdingTaxTotal], ["Net payé", netPaidTotal]].map(([label, value]) => <div key={String(label)} className="rounded-xl bg-surface-subtle/45 p-4"><p className="text-xs text-ink-faint">{label}</p><p className="mt-1.5 text-lg font-semibold text-ink">{formatPayrollEuros(value)}</p></div>)}
-              </div>
-              <details className="group border-t border-surface-border">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 marker:hidden"><div><p className="text-sm font-semibold text-ink">Détail par salarié</p><p className="mt-1 text-xs text-ink-faint">Ouvrir uniquement pour contrôler les résultats individuels.</p></div><span className="text-xs font-semibold text-ink-faint group-open:text-ink">Afficher</span></summary>
-                <div className="overflow-x-auto border-t border-surface-border"><table className="min-w-[900px] w-full text-sm"><thead><tr className="bg-surface-subtle/40 text-left text-xs font-semibold text-ink-faint"><th className="px-5 py-3">Salarié</th><th className="px-5 py-3">Brut</th><th className="px-5 py-3">Cotisations</th><th className="px-5 py-3">Net avant impôt</th><th className="px-5 py-3">PAS</th><th className="px-5 py-3">Net payé</th></tr></thead><tbody className="divide-y divide-surface-border">{employees.map((employee) => { const calculation = calculationByEmployee.get(employee.id); if (!calculation) return null; return <tr key={employee.id}><td className="px-5 py-3.5"><p className="font-medium text-ink">{employee.firstName} {employee.lastName}</p><p className="mt-0.5 text-xs text-ink-faint">{employee.position || "Poste non renseigné"}</p></td><td className="px-5 py-3.5 font-medium text-ink">{formatPayrollEuros(calculation.grossAmount)}</td><td className="px-5 py-3.5 text-ink-soft">{formatPayrollEuros(calculation.employeeContributions)}</td><td className="px-5 py-3.5 text-ink">{formatPayrollEuros(calculation.netBeforeTax)}</td><td className="px-5 py-3.5 text-ink-soft">{formatPayrollEuros(calculation.withholdingTax)}</td><td className="px-5 py-3.5 font-semibold text-ink">{formatPayrollEuros(calculation.netPaid)}</td></tr>; })}</tbody></table></div>
-              </details>
-            </section>
           ) : null}
 
-          {calculationWarnings.length > 0 ? (
-            <details className="group mt-5 overflow-hidden rounded-2xl border border-accent-amber/30 bg-accent-amber/[0.04]">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 marker:hidden"><div className="flex items-center gap-2"><AlertTriangle size={16} className="text-accent-amber" /><div><p className="text-sm font-semibold text-ink">Points d&apos;attention du calcul</p><p className="mt-0.5 text-xs text-ink-faint">{calculationWarnings.length} remarque{calculationWarnings.length > 1 ? "s" : ""} à vérifier avant validation</p></div></div><span className="text-xs font-semibold text-ink-faint group-open:text-ink">Afficher</span></summary>
-              <ul className="divide-y divide-accent-amber/15 border-t border-accent-amber/20">
-                {calculationWarnings.map((item, index) => {
-                  const employee = employees.find((candidate) => candidate.id === item.employeeId);
-                  return <li key={`${item.employeeId}-${index}`} className="px-5 py-3 text-sm leading-6 text-ink-soft"><span className="font-medium text-ink">{employee ? `${employee.firstName} ${employee.lastName}` : "Salarié"} :</span> {item.warning}</li>;
+          <div className="flex flex-col gap-3 border-t border-surface-border bg-surface-subtle/30 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-ink-soft">{reviewedIds.size}/{employees.length} salarié{employees.length > 1 ? "s" : ""} vérifié{reviewedIds.size > 1 ? "s" : ""}. Cochez « Vérifié » quand un salarié est complet, même s&apos;il n&apos;a rien ce mois-ci.</p>
+            <Link href={href({ tab: "controle" })} className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-ink px-4 py-2.5 text-sm font-semibold text-white hover:bg-ink/90">Passer au contrôle <ArrowRight size={16} /></Link>
+          </div>
+        </section>
+      ) : null}
+
+      {tab === "controle" ? (
+        <section className="mt-5 space-y-5">
+          <div className="rounded-2xl border border-surface-border bg-white p-5 md:p-6">
+            <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+              <div className="max-w-2xl">
+                <h2 className="text-lg font-semibold text-ink">{hasResults ? "Paie calculée" : "Calculer la paie du mois"}</h2>
+                <p className="mt-1 text-sm leading-6 text-ink-soft">
+                  {period.status === "LOCKED" ? "Le mois est clôturé : les résultats ne changent plus." : hasResults && period.status === "DRAFT" ? "La saisie a été rouverte depuis le dernier calcul : recalculez pour tenir compte de vos modifications." : hasResults ? "Relisez les remarques ci-dessous, puis les bulletins." : "RH Pilot calcule chaque bulletin à partir des contrats, des absences validées et de votre saisie."}
+                </p>
+              </div>
+              {isAdmin && period.status !== "LOCKED" && calculationRule ? (
+                <RunCalculationButton periodId={period.id} ruleCode={calculationRule.code} ruleScope={calculationRule.scope} alreadyCalculated={hasResults} disabled={!readiness.ready || membership.accessRole !== "OWNER"} nextHref={href({ tab: "controle" })} />
+              ) : null}
+            </div>
+            {!calculationRule ? <p className="mt-4 rounded-lg border border-accent-amber/30 bg-accent-amber/5 px-3 py-2 text-sm text-ink-soft">Aucune version de règle de paie validée n&apos;est disponible pour ce mois.</p> : null}
+          </div>
+
+          {!readiness.ready ? (
+            <div className="rounded-2xl border border-accent-amber/30 bg-white">
+              <div className="flex items-center gap-2 border-b border-accent-amber/20 px-5 py-3"><AlertTriangle size={16} className="text-accent-amber" /><h3 className="text-sm font-semibold text-ink">À régler avant de calculer</h3></div>
+              <ul className="divide-y divide-surface-border">
+                {readiness.issues.map((issue, index) => {
+                  const link = issue.code === "EXIT_WITHOUT_TERMINATION" ? { href: href({ tab: "saisie", sub: "mouvements" }), label: "Ouvrir la fiche de sortie" } : issue.employeeId ? { href: `/dashboard/employees/${issue.employeeId}`, label: "Ouvrir la fiche salarié" } : null;
+                  return <li key={`${issue.code}-${index}`} className="flex flex-col gap-1 px-5 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"><span className="text-ink-soft">{issue.message}</span>{link ? <Link href={link.href} className="shrink-0 font-semibold text-brand-primary hover:underline">{link.label}</Link> : null}</li>;
                 })}
               </ul>
-            </details>
+            </div>
           ) : null}
 
-          <PayrollTerminationSection periodId={period.id} employees={leavingEmployees} readOnly={!isOwner || period.status !== "DRAFT"} />
+          {hasResults ? (
+            <div className="rounded-2xl border border-surface-border bg-white">
+              <div className="flex flex-col gap-1 border-b border-surface-border px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+                <h3 className="text-sm font-semibold text-ink">{warningItems.length === 0 ? "Aucune remarque" : `${warningItems.length} remarque${warningItems.length > 1 ? "s" : ""} à vérifier`}</h3>
+                <span className="text-xs text-ink-faint">{calculatedCount}/{employees.length} salariés calculés</span>
+              </div>
+              {warningItems.length === 0 ? (
+                <p className="px-5 py-6 text-sm text-ink-soft">Le calcul n&apos;a rien relevé d&apos;anormal. Relisez les bulletins avant de valider.</p>
+              ) : (
+                <ul className="divide-y divide-surface-border">
+                  {warningItems.map((item, index) => {
+                    const link = warningLink(period.id, item.employeeId, item.warning);
+                    return <li key={`${item.employeeId}-${index}`} className="flex flex-col gap-1.5 px-5 py-3 text-sm sm:flex-row sm:items-start sm:justify-between sm:gap-6"><p className="leading-6 text-ink-soft"><span className="font-medium text-ink">{item.name} :</span> {item.warning}</p>{link ? <Link href={link.href} className="shrink-0 font-semibold text-brand-primary hover:underline">{link.label}</Link> : null}</li>;
+                  })}
+                </ul>
+              )}
+              <div className="flex justify-end border-t border-surface-border px-5 py-4">
+                <Link href={href({ tab: "bulletins" })} className="inline-flex items-center gap-2 rounded-lg bg-ink px-4 py-2.5 text-sm font-semibold text-white hover:bg-ink/90">Relire les bulletins <ArrowRight size={16} /></Link>
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
 
-          <PayrollVariablesSection periodId={period.id} employees={employees.map((employee) => ({ id: employee.id, firstName: employee.firstName, lastName: employee.lastName }))} variables={variableRows} ijssAbsences={ijssAbsences} paidLeaveRows={paidLeaveRows} readOnly={!isOwner || period.status !== "DRAFT"} />
-        </main>
-      </div>
+      {tab === "bulletins" ? (
+        <section className="mt-5 space-y-5">
+          {!hasResults ? (
+            <div className="rounded-2xl border border-surface-border bg-white px-5 py-10 text-center"><FileText size={22} className="mx-auto text-ink-faint" /><p className="mt-2 text-sm font-medium text-ink">Pas encore de bulletin</p><p className="mt-1 text-sm text-ink-soft">Calculez la paie dans l&apos;onglet <Link href={href({ tab: "controle" })} className="font-semibold text-brand-primary hover:underline">Contrôle</Link>.</p></div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-surface-border bg-white">
+              <div className="border-b border-surface-border px-5 py-3"><p className="text-sm text-ink-soft">Cliquez sur un salarié pour ouvrir son bulletin ; les flèches du clavier passent au suivant.</p></div>
+              <PayslipReview rows={reviewRowsData} periodLabel={monthLabel} />
+            </div>
+          )}
+
+          {hasResults && period.status === "DRAFT" ? <p className="rounded-xl border border-accent-amber/30 bg-accent-amber/5 px-4 py-3 text-sm text-ink-soft">La saisie a été rouverte : recalculez la paie dans l&apos;onglet Contrôle avant de la valider.</p> : null}
+
+          {isAdmin && resultsComplete && ["CALCULATED", "REVIEW", "VALIDATED"].includes(period.status) ? (
+            <div className="grid gap-5 rounded-2xl border border-surface-border bg-white p-5 md:grid-cols-[1fr_auto] md:items-end md:p-6">
+              <div>
+                <h3 className="font-semibold text-ink">Valider le mois</h3>
+                <p className="mt-1 text-sm leading-6 text-ink-soft">La clôture fige les calculs. Vous pourrez ensuite produire les PDF et les mettre à disposition des salariés.</p>
+                <div className="mt-4"><ClosePeriodButton periodId={period.id} employeeCount={employees.length} /></div>
+              </div>
+              <BackToEntryButton periodId={period.id} entryHref={href({ tab: "saisie" })} />
+            </div>
+          ) : null}
+
+          {period.status === "LOCKED" && isAdmin ? (
+            <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+              <PayrollPayslipGenerateButton periodId={period.id} />
+              <div className="rounded-2xl border border-surface-border bg-white p-5">
+                <h3 className="font-semibold text-ink">Corriger un mois clôturé</h3>
+                <p className="mt-1 text-sm leading-6 text-ink-soft">La réouverture exige un motif et n&apos;est possible qu&apos;avant la production des bulletins.</p>
+                <div className="mt-4"><PayrollReopenButton periodId={period.id} disabled={membership.accessRole !== "OWNER" || payslips.length > 0} /></div>
+              </div>
+            </div>
+          ) : null}
+        </section>
+      ) : null}
+
+      {tab === "declaration" ? (
+        <section className="mt-5 rounded-2xl border border-surface-border bg-white p-5 md:p-6">
+          <h2 className="text-lg font-semibold text-ink">Déclaration sociale nominative</h2>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-soft">{period.status === "LOCKED" ? "Le mois est clôturé : vous pouvez préparer le fichier DSN de pré-contrôle à partir des calculs figés." : "La DSN se prépare une fois le mois validé et clôturé dans l'onglet Bulletins."}</p>
+          <Link href="/dashboard/payroll/dsn" className="mt-4 inline-flex items-center gap-2 rounded-lg border border-surface-border bg-white px-4 py-2.5 text-sm font-semibold text-ink hover:bg-surface-subtle">Ouvrir l&apos;espace DSN <ExternalLink size={15} /></Link>
+        </section>
+      ) : null}
+
+      <details className="group mt-8 overflow-hidden rounded-2xl border border-surface-border bg-white">
+        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 marker:hidden"><span className="text-sm font-semibold text-ink-soft">Détails du mois</span><span className="text-xs text-ink-faint group-open:hidden">Congés, salaire minimum, référentiel</span></summary>
+        <div className="space-y-6 border-t border-surface-border p-5">
+          <div>
+            <h3 className="text-sm font-semibold text-ink">Compteurs de congés payés après calcul</h3>
+            {leaveRows.length === 0 ? <p className="mt-2 text-sm text-ink-faint">Disponibles après le calcul du mois.</p> : (
+              <div className="mt-3 overflow-x-auto rounded-xl border border-surface-border">
+                <table className="w-full min-w-[640px] text-sm">
+                  <thead><tr className="bg-surface-subtle/40 text-left text-xs font-semibold text-ink-faint"><th className="px-4 py-2">Salarié</th><th className="px-3 py-2 text-right">N-1 acquis</th><th className="px-3 py-2 text-right">N-1 pris</th><th className="px-3 py-2 text-right">N acquis</th><th className="px-3 py-2 text-right">N pris</th><th className="px-3 py-2 text-right">Pris ce mois</th></tr></thead>
+                  <tbody className="divide-y divide-surface-border">
+                    {leaveRows.map(({ employeeId, leave }) => <tr key={employeeId}><td className="px-4 py-2 font-medium text-ink">{employeeName(employeeId)}</td><td className="px-3 py-2 text-right tabular-nums">{leave.balancesAfter.previousAcquired.toFixed(2).replace(".", ",")}</td><td className="px-3 py-2 text-right tabular-nums">{leave.balancesAfter.previousTaken.toFixed(2).replace(".", ",")}</td><td className="px-3 py-2 text-right tabular-nums">{leave.balancesAfter.currentAcquired.toFixed(2).replace(".", ",")}</td><td className="px-3 py-2 text-right tabular-nums">{leave.balancesAfter.currentTaken.toFixed(2).replace(".", ",")}</td><td className="px-3 py-2 text-right tabular-nums">{leave.daysTaken.toFixed(2).replace(".", ",")}</td></tr>)}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+          <MinimumSalaryControlSection periodId={period.id} employees={employees.map((employee) => ({ id: employee.id, firstName: employee.firstName, lastName: employee.lastName }))} />
+          <div>
+            <h3 className="text-sm font-semibold text-ink">Référentiel</h3>
+            <p className="mt-1 text-sm text-ink-soft">Moteur de bulletin RH Pilot, paramètres 2026 datés et sourcés.{calculationRule ? ` Règle de cycle : ${calculationRule.code} v${calculationRule.version}.` : ""}</p>
+          </div>
+        </div>
+      </details>
     </div>
   );
 }

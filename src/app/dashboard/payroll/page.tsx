@@ -1,17 +1,6 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
-import {
-  ArrowRight,
-  CalendarPlus,
-  CheckCircle2,
-  ChevronRight,
-  FileText,
-  FlaskConical,
-  Settings2,
-  ShieldCheck,
-  Users,
-  WalletCards,
-} from "lucide-react";
+import { ArrowRight, CalendarPlus, ChevronRight, FileText, FlaskConical } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMemberships } from "@/lib/auth";
 import PayrollReopenInlineButton from "./PayrollReopenInlineButton";
@@ -20,11 +9,11 @@ import { DemoPayrollSetupButton } from "./DemoPayrollSetupButton";
 
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 const PAYROLL_STATUS_LABELS: Record<string, string> = {
-  DRAFT: "À préparer",
-  CALCULATED: "Calculée",
-  REVIEW: "À contrôler",
-  VALIDATED: "À clôturer",
-  LOCKED: "Clôturée",
+  DRAFT: "Saisie",
+  CALCULATED: "À valider",
+  REVIEW: "À valider",
+  VALIDATED: "À valider",
+  LOCKED: "Clôturé",
 };
 
 async function createPayrollPeriod(formData: FormData) {
@@ -109,99 +98,89 @@ export default async function PayrollPage() {
   const configuredCount = employees.filter((employee) => profileByEmployee.has(employee.id)).length;
   const demoOnly = employees.length > 0 && employees.every((employee) => employee.isDemoData);
   const now = new Date();
-  const activePeriod = periods.find((period) => period.status !== "LOCKED") ?? periods[0] ?? null;
-  const closedCount = periods.filter((period) => period.status === "LOCKED").length;
-  const configurationRate = employees.length === 0 ? 0 : Math.round((configuredCount / employees.length) * 100);
+  const activePeriod = periods.find((period) => period.status !== "LOCKED") ?? null;
+
+  // Avancement du mois en cours : salariés sous contrat et saisies vérifiées.
+  let activeEmployeeCount = 0;
+  let reviewedCount = 0;
+  if (activePeriod) {
+    const start = new Date(Date.UTC(activePeriod.year, activePeriod.month - 1, 1));
+    const end = new Date(Date.UTC(activePeriod.year, activePeriod.month, 0, 23, 59, 59, 999));
+    const activeEmployees = await prisma.employee.findMany({ where: { organizationId: membership.organizationId, deletedAt: null, hireDate: { lte: end }, OR: [{ contractEndDate: null }, { contractEndDate: { gte: start } }] }, select: { id: true } });
+    activeEmployeeCount = activeEmployees.length;
+    const reviews = await prisma.$queryRaw<Array<{ employeeId: string }>>`SELECT "employeeId" FROM "payroll_entry_reviews" WHERE "organizationId" = ${membership.organizationId} AND "payrollPeriodId" = ${activePeriod.id}`.catch(() => [] as Array<{ employeeId: string }>);
+    const ids = new Set(activeEmployees.map((employee) => employee.id));
+    reviewedCount = reviews.filter((review) => ids.has(review.employeeId)).length;
+  }
+  const activeLine = !activePeriod
+    ? ""
+    : activePeriod.status === "DRAFT"
+      ? `Saisie en cours · ${reviewedCount}/${activeEmployeeCount} salarié${activeEmployeeCount > 1 ? "s" : ""} vérifié${reviewedCount > 1 ? "s" : ""}`
+      : "Paie calculée : bulletins à relire et à valider";
 
   return (
     <div className="mx-auto max-w-7xl">
       <header className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-primary/10 text-brand-primary"><WalletCards size={17} /></span>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-brand-primary">Centre de paie</p>
-          </div>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink">Piloter la paie sans se perdre dans les écrans</h1>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-ink-soft">Une période, une prochaine action claire et des contrôles regroupés. Le moteur reste en construction : cet espace sert à tester le parcours avant ouverture aux autres utilisateurs.</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-ink">Paie</h1>
+          <p className="mt-1.5 max-w-3xl text-sm leading-6 text-ink-soft">Un mois se prépare en quatre temps : saisie, contrôle, bulletins, déclaration.</p>
         </div>
         <Link href="/dashboard/payroll/dsn" className="inline-flex min-h-[42px] items-center gap-2 rounded-lg border border-surface-border bg-white px-4 py-2.5 text-sm font-semibold text-ink shadow-sm hover:bg-surface-subtle">
-          <FlaskConical size={16} /> Laboratoire DSN
+          <FlaskConical size={16} /> Espace DSN
         </Link>
       </header>
 
-      <section className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-xl border border-surface-border bg-white p-5">
-          <div className="flex items-center justify-between"><span className="text-xs text-ink-faint">Salariés actifs</span><Users size={16} className="text-ink-faint" /></div>
-          <p className="mt-2 text-2xl font-semibold text-ink">{employees.length}</p>
-        </div>
-        <div className="rounded-xl border border-surface-border bg-white p-5">
-          <div className="flex items-center justify-between"><span className="text-xs text-ink-faint">Profils configurés</span><Settings2 size={16} className="text-ink-faint" /></div>
-          <p className="mt-2 text-2xl font-semibold text-ink">{configuredCount}/{employees.length}</p>
-          <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-subtle"><div className="h-full rounded-full bg-brand-primary" style={{ width: `${configurationRate}%` }} /></div>
-        </div>
-        <div className="rounded-xl border border-surface-border bg-white p-5">
-          <div className="flex items-center justify-between"><span className="text-xs text-ink-faint">Périodes clôturées</span><CheckCircle2 size={16} className="text-ink-faint" /></div>
-          <p className="mt-2 text-2xl font-semibold text-ink">{closedCount}</p>
-        </div>
-        <div className="rounded-xl border border-surface-border bg-white p-5">
-          <div className="flex items-center justify-between"><span className="text-xs text-ink-faint">Période à traiter</span><ShieldCheck size={16} className="text-ink-faint" /></div>
-          <p className="mt-2 truncate text-lg font-semibold text-ink">{activePeriod ? `${MONTHS[activePeriod.month - 1]} ${activePeriod.year}` : "Aucune"}</p>
-          <p className="mt-1 text-xs text-ink-faint">{activePeriod ? PAYROLL_STATUS_LABELS[activePeriod.status] ?? activePeriod.status : "Ouvrez une période pour commencer"}</p>
-        </div>
-      </section>
-
       <section className="mt-6 grid gap-5 xl:grid-cols-[1.45fr_.8fr]">
         <div className="rounded-2xl border border-surface-border bg-white p-5 md:p-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand-primary">Prochaine action</p>
-              <h2 className="mt-1 text-xl font-semibold text-ink">{activePeriod ? `Continuer ${MONTHS[activePeriod.month - 1]} ${activePeriod.year}` : "Créer la première période"}</h2>
-              <p className="mt-1 max-w-xl text-sm leading-6 text-ink-soft">{activePeriod ? "Reprenez exactement là où le cycle s'est arrêté. Les données de préparation, variables, contrôles et résultats restent regroupés dans la période." : "Ouvrez un mois de paie pour démarrer le parcours de test."}</p>
-            </div>
-            {activePeriod ? (
-              <Link href={`/dashboard/payroll/${activePeriod.id}`} className="inline-flex min-h-[42px] items-center gap-2 rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-95">
-                Ouvrir la période <ArrowRight size={16} />
-              </Link>
-            ) : null}
-          </div>
           {activePeriod ? (
-            <div className="mt-5 flex flex-wrap items-center gap-2 border-t border-surface-border pt-4">
-              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${statusClasses(activePeriod.status)}`}>{PAYROLL_STATUS_LABELS[activePeriod.status] ?? activePeriod.status}</span>
-              <span className="text-xs text-ink-faint">Le statut sert uniquement à guider le parcours ; les contrôles métier restent ceux du moteur.</span>
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-ink">{MONTHS[activePeriod.month - 1]} {activePeriod.year}</h2>
+                <p className="mt-1 text-sm text-ink-soft">{activeLine}</p>
+                {activePeriod.status === "DRAFT" && activeEmployeeCount > 0 ? <div className="mt-3 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-surface-subtle"><div className="h-full rounded-full bg-brand-primary" style={{ width: `${Math.round((reviewedCount / activeEmployeeCount) * 100)}%` }} /></div> : null}
+              </div>
+              <Link href={`/dashboard/payroll/${activePeriod.id}`} className="inline-flex min-h-[44px] shrink-0 items-center gap-2 rounded-lg bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-95">
+                Continuer <ArrowRight size={16} />
+              </Link>
             </div>
-          ) : null}
+          ) : (
+            <div>
+              <h2 className="text-xl font-semibold text-ink">Aucun mois en cours</h2>
+              <p className="mt-1 text-sm text-ink-soft">{periods.length > 0 ? "Tous les mois ouverts sont clôturés. Ouvrez le mois suivant pour continuer." : "Ouvrez votre premier mois de paie pour commencer la saisie."}</p>
+            </div>
+          )}
+          {configuredCount < employees.length ? <p className="mt-5 border-t border-surface-border pt-4 text-sm text-ink-soft">{employees.length - configuredCount} salarié{employees.length - configuredCount > 1 ? "s n'ont" : " n'a"} pas encore de profil paie (salaire et horaire) : complétez-{employees.length - configuredCount > 1 ? "les" : "le"} plus bas ou depuis la fiche salarié.</p> : null}
         </div>
 
         <div className="rounded-2xl border border-surface-border bg-white p-5 md:p-6">
-          <div className="flex items-center gap-2"><CalendarPlus size={17} className="text-brand-primary" /><h2 className="font-semibold text-ink">Ouvrir une période</h2></div>
-          <p className="mt-1 text-xs leading-5 text-ink-faint">Crée le dossier du mois sans lancer aucun calcul automatiquement.</p>
+          <div className="flex items-center gap-2"><CalendarPlus size={17} className="text-brand-primary" /><h2 className="font-semibold text-ink">Ouvrir un mois</h2></div>
           <form action={createPayrollPeriod} className="mt-4 grid grid-cols-[1fr_100px] gap-2">
             <select name="month" defaultValue={String(now.getMonth() + 1)} className="rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10">{MONTHS.map((month, index) => <option key={month} value={index + 1}>{month}</option>)}</select>
             <input name="year" type="number" defaultValue={now.getFullYear()} min="2000" max="2100" className="rounded-lg border border-surface-border px-3 py-2.5 text-sm text-ink outline-none focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10" />
-            <button type="submit" className="col-span-2 rounded-lg bg-ink px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-ink/90">Créer le dossier de paie</button>
+            <button type="submit" className="col-span-2 rounded-lg bg-ink px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-ink/90">Ouvrir le mois</button>
           </form>
         </div>
       </section>
 
       {demoOnly ? (
         <section className="mt-5 flex flex-col gap-3 rounded-xl border border-surface-border bg-surface-subtle/40 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div><p className="text-sm font-medium text-ink">Données de démonstration détectées</p><p className="mt-1 text-xs text-ink-faint">Préparez les profils et une période de test sans calcul automatique.</p></div>
+          <div><p className="text-sm font-medium text-ink">Entreprise de démonstration</p><p className="mt-1 text-xs text-ink-faint">Prépare les profils, les paramètres de paie et le mois en cours pour essayer le parcours.</p></div>
           <form action={prepareDemoPayrollData}><DemoPayrollSetupButton /></form>
         </section>
       ) : null}
 
       <section className="mt-6 overflow-hidden rounded-2xl border border-surface-border bg-white">
         <div className="flex flex-col gap-2 border-b border-surface-border px-5 py-5 sm:flex-row sm:items-end sm:justify-between">
-          <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Historique</p><h2 className="mt-1 text-lg font-semibold text-ink">Périodes de paie</h2><p className="mt-1 text-sm text-ink-soft">Une liste compacte pour retrouver un mois, son état et l'action disponible.</p></div>
-          <span className="text-xs font-medium text-ink-faint">{periods.length} période{periods.length > 1 ? "s" : ""}</span>
+          <div><h2 className="text-lg font-semibold text-ink">Historique</h2></div>
+          <span className="text-xs font-medium text-ink-faint">{periods.length} mois</span>
         </div>
         <div className="divide-y divide-surface-border">
-          {periods.length === 0 ? <div className="px-5 py-10 text-center"><FileText className="mx-auto text-ink-faint" size={22} /><p className="mt-2 text-sm font-medium text-ink">Aucune période créée</p><p className="mt-1 text-xs text-ink-faint">Utilisez le panneau « Ouvrir une période » pour démarrer.</p></div> : null}
+          {periods.length === 0 ? <div className="px-5 py-10 text-center"><FileText className="mx-auto text-ink-faint" size={22} /><p className="mt-2 text-sm font-medium text-ink">Aucun mois ouvert</p></div> : null}
           {periods.map((period) => (
             <div key={period.id} className="flex flex-col gap-3 px-5 py-4 transition hover:bg-surface-subtle/35 sm:flex-row sm:items-center sm:justify-between">
               <Link href={`/dashboard/payroll/${period.id}`} className="group flex min-w-0 flex-1 items-center gap-3">
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-surface-subtle text-sm font-semibold text-ink">{String(period.month).padStart(2, "0")}</span>
-                <div className="min-w-0"><p className="truncate font-medium text-ink">{MONTHS[period.month - 1]} {period.year}</p><p className="mt-0.5 text-xs text-ink-faint">Ouvrir le dossier de la période</p></div>
+                <div className="min-w-0"><p className="truncate font-medium text-ink">{MONTHS[period.month - 1]} {period.year}</p></div>
                 <ChevronRight size={16} className="ml-1 text-ink-faint transition group-hover:translate-x-0.5 group-hover:text-ink" />
               </Link>
               <div className="flex items-center gap-3">
@@ -215,7 +194,7 @@ export default async function PayrollPage() {
 
       <details className="group mt-6 overflow-hidden rounded-2xl border border-surface-border bg-white">
         <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-5 marker:hidden">
-          <div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-ink-faint">Configuration</p><h2 className="mt-1 text-lg font-semibold text-ink">Profils de paie</h2><p className="mt-1 text-sm text-ink-soft">Masqué par défaut pour garder l'écran centré sur les périodes. Ouvrez uniquement quand un salaire ou un horaire doit être configuré.</p></div>
+          <div><h2 className="text-lg font-semibold text-ink">Profils de paie</h2><p className="mt-1 text-sm text-ink-soft">Salaire et horaire de chaque salarié. Le détail (horaire hebdomadaire, reprise des compteurs) se règle dans la fiche salarié.</p></div>
           <div className="flex items-center gap-3"><span className="rounded-full bg-surface-subtle px-3 py-1 text-xs font-semibold text-ink-soft">{configuredCount}/{employees.length}</span><ChevronRight size={18} className="text-ink-faint transition group-open:rotate-90" /></div>
         </summary>
         <div className="border-t border-surface-border">
