@@ -307,7 +307,7 @@ export default async function EmployeeDetailPage({
               <p className="mt-2 text-sm text-ink-faint">Aucun parcours en cours pour {employee.firstName}.</p>
             )}
             {canManageEmployee && (
-              <div className="mt-4">
+              <div id="lancer-parcours" className="mt-4 scroll-mt-24">
                 <TriggerEventForm
                   action={triggerEventForEmployee}
                   eventTemplates={eventTemplates.map((t) => ({ key: t.key, label: t.label }))}

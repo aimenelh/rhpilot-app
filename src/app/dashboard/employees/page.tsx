@@ -10,10 +10,11 @@ import { Input } from "@/components/ui/Field";
 import { Mascot } from "@/components/Mascot";
 import { getUserDisplayName } from "@/lib/displayName";
 import { formatDate } from "@/lib/format";
-import { reactivateEmployee } from "./actions";
+import { archiveEmployee, reactivateEmployee } from "./actions";
 import { generateDemoOrganization, archiveAllEmployees } from "./demoActions";
 import { DemoOrgSubmitButton } from "./DemoOrgSubmitButton";
 import { ArchiveAllButton } from "@/components/employees/ArchiveAllButton";
+import { EmployeeRowMenu } from "@/components/employees/EmployeeRowMenu";
 import { FlashToast } from "@/components/ui/FlashToast";
 import { employeeAccessWhere, isOrganizationAdmin } from "@/lib/accessPolicy";
 
@@ -177,7 +178,11 @@ export default async function EmployeesPage({
                       {status === "archived" ? "Archivé le" : "Date d'embauche"}
                     </th>
                     <th className="px-5 py-3.5 font-medium">Manager direct</th>
-                    {status === "archived" && <th className="px-5 py-3.5 font-medium" />}
+                    {(status === "archived" || canManageBulkData) && (
+                      <th className="w-14 px-5 py-3.5 font-medium">
+                        <span className="sr-only">Actions</span>
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-surface-border">
@@ -221,6 +226,15 @@ export default async function EmployeesPage({
                               <ArchiveRestore size={13} /> Réactiver
                             </button>
                           </form>}
+                        </td>
+                      )}
+                      {status === "active" && canManageBulkData && (
+                        <td className="px-3 py-4 text-right">
+                          <EmployeeRowMenu
+                            employeeId={employee.id}
+                            employeeName={`${employee.firstName} ${employee.lastName}`}
+                            archiveAction={archiveEmployee.bind(null, employee.id)}
+                          />
                         </td>
                       )}
                     </tr>
