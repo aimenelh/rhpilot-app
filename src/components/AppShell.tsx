@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
@@ -31,6 +31,7 @@ import { RhNewsToast } from "./RhNewsToast";
 import type { RhNewsItem } from "@/lib/rhNews";
 import { IosInstallHint } from "./IosInstallHint";
 import "./AppWorkspace.css";
+import { NavigationProgress } from "@/components/app/NavigationProgress";
 
 type NavItem = {
   href: string;
@@ -306,6 +307,9 @@ export function AppShell({
         </main>
       </div>
 
+      <Suspense fallback={null}>
+        <NavigationProgress />
+      </Suspense>
       <FlashToast />
       <AppCopilote summary={assistantSummary} aiEnabled={aiEnabled} />
       <TourGuide />

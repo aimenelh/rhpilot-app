@@ -192,3 +192,53 @@ h3 {
     transform: translateY(-58px);
   }
 }
+
+/* Fil de chargement entre deux pages de l'application. */
+.nav-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 80;
+  height: 2px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease 0.1s;
+}
+.nav-progress[data-visible="true"],
+.nav-progress[data-visible="done"] {
+  opacity: 1;
+  transition: none;
+}
+.nav-progress[data-visible="done"] {
+  opacity: 0;
+  transition: opacity 0.25s ease 0.12s;
+}
+.nav-progress > span {
+  display: block;
+  height: 100%;
+  background: #e8432e;
+  box-shadow: 0 0 10px rgba(232, 67, 46, 0.45);
+  transform-origin: left center;
+  transition: transform 0.2s ease-out;
+}
+
+/* Squelette de page : n'apparaît qu'après 180 ms pour ne pas clignoter. */
+@keyframes skeleton-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes skeleton-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: -100% 0; }
+}
+.page-skeleton { animation: skeleton-appear 0.25s ease-out 0.18s both; }
+.skeleton-block {
+  border-radius: 6px;
+  background: linear-gradient(90deg, #eef0f4 0%, #f7f8fa 45%, #eef0f4 90%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-progress > span { transition: none; }
+  .skeleton-block { animation: none; }
+}
