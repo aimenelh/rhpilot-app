@@ -3,9 +3,11 @@
 import { useState, useTransition } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Copy, FileUp } from "lucide-react";
+import { NOTICE_METHODS, noticeMethodLabel, type ElectronicReadiness } from "@/lib/employee-space/notice";
 import {
   generateExitDocument,
   inviteToEmployeeSpace,
+  recordElectronicNotice,
   revokeEmployeeSpace,
   saveEmployeeSpaceSettings,
   uploadEmployeeDocument,
@@ -22,6 +24,7 @@ export type EmployeeSpaceSummary = {
   paperSince: string | null;
   paperSource: "EMPLOYEE" | "EMPLOYER" | null;
   account: { status: EmployeeAccountStatus; email: string | null; invitedAt: string | null; activatedAt: string | null };
+  notice: { at: string | null; method: string | null; readiness: ElectronicReadiness };
 };
 
 export type AdminDocumentRow = {
@@ -96,9 +99,6 @@ export function EmployeeSpaceCard({ summary }: { summary: EmployeeSpaceSummary }
       <p className="mt-1 text-sm leading-6 text-ink-faint">
         {summary.firstName} y retrouve ses bulletins, ses congés, ses demandes d&apos;absence et ses documents, depuis son téléphone. Le compte salarié ne donne aucun accès à RH Pilot et n&apos;est pas facturé.
       </p>
-      <p className="mt-1 text-xs leading-5 text-ink-faint">
-        Le salarié doit être informé de son droit de refuser le bulletin électronique à l&apos;embauche ou un mois avant le premier bulletin électronique (C. trav. art. D3243-7) : l&apos;e-mail d&apos;invitation le lui indique, et sa date reste dans le journal.
-      </p>
 
       {!summary.isDemo ? (
         <form action={settingsAction} className="mt-4 grid gap-4 md:grid-cols-[1fr_auto] md:items-end">
@@ -126,6 +126,8 @@ export function EmployeeSpaceCard({ summary }: { summary: EmployeeSpaceSummary }
       ) : null}
       <Message state={settingsState} />
 
+      {!summary.isDemo && !summary.paperSince ? <ElectronicNoticeBlock summary={summary} /> : null}
+
       <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-surface-border pt-4">
         {canInvite ? (
           <button type="button" disabled={pending || !summary.personalEmail} onClick={() => run(() => inviteToEmployeeSpace(summary.employeeId))} className="rounded-lg bg-brand-primary px-3.5 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-40">
@@ -136,7 +138,7 @@ export function EmployeeSpaceCard({ summary }: { summary: EmployeeSpaceSummary }
         {account.status === "ACTIVE" || account.status === "INVITED" ? (
           confirmRevoke ? (
             <span className="flex flex-wrap items-center gap-2 text-sm">
-              <span className="text-ink-soft">Le salarié ne pourra plus télécharger ses documents : remettez-lui une copie.</span>
+              <span className="text-ink-soft">À réserver aux erreurs (mauvaise adresse, fiche en double) : le salarié ne pourra plus télécharger ses documents. Remettez-lui d&apos;abord l&apos;archive ZIP de « Documents publiés ».</span>
               <button type="button" disabled={pending} onClick={() => run(() => revokeEmployeeSpace(summary.employeeId))} className="rounded-lg border border-accent-rose/40 px-3 py-1.5 font-semibold text-accent-rose hover:bg-accent-rose/5">Retirer l&apos;accès</button>
               <button type="button" onClick={() => setConfirmRevoke(false)} className="rounded-lg px-2 py-1.5 text-ink-soft hover:bg-surface-subtle">Annuler</button>
             </span>
@@ -236,6 +238,62 @@ export function ExitDocumentButtons({ employeeId, finalSettlementReady, finalSet
         </div>
         <Message state={settlementState} />
       </form>
+    </div>
+  );
+}
+
+const ISO_DATE = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+const isoDay = (iso: string) => ISO_DATE.format(new Date(`${iso.slice(0, 10)}T00:00:00Z`));
+
+/**
+ * Information préalable du salarié (C. trav. art. D3243-7) : note à faire
+ * signer, puis date et mode de remise. Sans elle, ses bulletins ne sont pas
+ * publiés en ligne (sauf s'il en a déjà reçu).
+ */
+function ElectronicNoticeBlock({ summary }: { summary: EmployeeSpaceSummary }) {
+  const [state, action] = useFormState(recordElectronicNotice.bind(null, summary.employeeId), undefined);
+  const [editing, setEditing] = useState(!summary.notice.at);
+  const { readiness } = summary.notice;
+  const today = new Date().toISOString().slice(0, 10);
+  const status = summary.notice.at
+    ? `Note remise le ${isoDay(summary.notice.at)} (${noticeMethodLabel(summary.notice.method).toLowerCase()}).`
+    : readiness.ready ? "A déjà reçu des bulletins électroniques." : "Note pas encore remise.";
+  const consequence = readiness.ready
+    ? "Ses bulletins peuvent être publiés dans son espace."
+    : readiness.reason === "WAITING"
+      ? `Ses bulletins seront publiés en ligne à partir du ${isoDay(readiness.availableFrom)} ; d'ici là, remettez-les sur papier.`
+      : "Tant que la note n'est pas remise, ses bulletins ne sont pas publiés en ligne : remettez-les sur papier.";
+
+  return (
+    <div className="mt-4 rounded-xl border border-surface-border bg-surface-subtle/30 p-4">
+      <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+        <p className="text-sm font-semibold text-ink">Information sur le bulletin électronique</p>
+        <p className={`text-sm ${readiness.ready ? "text-ink-soft" : "text-accent-amber"}`}>{status}</p>
+      </div>
+      <p className="mt-1 text-xs leading-5 text-ink-faint">
+        Le salarié doit être informé de son droit de refuser le bulletin électronique un mois avant le premier bulletin électronique, ou à l&apos;embauche, par un moyen qui donne date certaine (C. trav. art. D3243-7). {consequence}
+      </p>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <a href={`/api/employee-space/notice/${summary.employeeId}`} target="_blank" rel="noopener" className="inline-flex items-center rounded-lg border border-surface-border bg-white px-3 py-2 text-sm font-semibold text-ink hover:bg-surface-subtle">Note à faire signer (PDF)</a>
+        {!editing ? <button type="button" onClick={() => setEditing(true)} className="text-sm font-semibold text-brand-primary hover:underline">Modifier la date de remise</button> : null}
+      </div>
+      {editing ? (
+        <form action={action} className="mt-3 flex flex-col gap-3 md:flex-row md:items-end">
+          <label className="block text-sm font-medium text-ink">
+            Remise le
+            <input type="date" name="noticeAt" required max={today} defaultValue={summary.notice.at?.slice(0, 10) ?? today} className="mt-1 block h-10 rounded-lg border border-surface-border bg-white px-2.5 text-sm text-ink" />
+          </label>
+          <label className="block text-sm font-medium text-ink">
+            Mode de remise
+            <select name="noticeMethod" required defaultValue={summary.notice.method ?? "HAND_DELIVERY"} className="mt-1 block h-10 rounded-lg border border-surface-border bg-white px-2.5 text-sm text-ink">
+              {NOTICE_METHODS.map((method) => <option key={method.value} value={method.value}>{method.label}</option>)}
+            </select>
+          </label>
+          <Submit variant="secondary">Enregistrer la remise</Submit>
+        </form>
+      ) : null}
+      <Message state={state} />
+      <p className="mt-2 text-xs leading-5 text-ink-faint">Gardez l&apos;exemplaire signé ou l&apos;accusé de réception : vous pouvez le déposer ci-dessous dans « Documents publiés », en « Autre document ».</p>
     </div>
   );
 }

@@ -8,16 +8,18 @@ import { readPayslipDocument } from "@/lib/payroll/payslip-storage";
 import { publishVaultDocument } from "@/lib/employee-space/vault";
 import { notifyEmployeesInBatch, type DocumentNotice } from "@/lib/employee-space/notify";
 import { payslipFileName, payslipTitle } from "@/lib/employee-space/labels";
+import { electronicPayslipReadiness } from "@/lib/employee-space/notice";
 
 export type PublishPayslipsResult =
   | { error: string }
-  | { ok: true; published: number; replaced: number; unchanged: number; notified: number; withoutSpace: number; failedEmails: number; paper: number; failed: number };
+  | { ok: true; published: number; replaced: number; unchanged: number; notified: number; withoutSpace: number; failedEmails: number; paper: number; failed: number; notInformed: number };
 
 /**
  * Met les bulletins d'un mois clôturé à disposition des salariés : copie dans
  * leur espace (jamais modifiée ensuite), journal, e-mail sans pièce jointe.
- * Les salariés qui ont choisi le papier et les fiches de démonstration sont
- * laissés de côté.
+ * Sont laissés de côté : les salariés qui ont choisi le papier, ceux qui n'ont
+ * pas encore été informés du bulletin électronique (ou depuis moins d'un mois)
+ * et les fiches de démonstration.
  */
 export async function publishPayslipsAction(periodId: string): Promise<PublishPayslipsResult> {
   const membership = await getCurrentMembership();
@@ -36,8 +38,12 @@ export async function publishPayslipsAction(periodId: string): Promise<PublishPa
   });
   if (payslips.length === 0) return { error: "Générez d'abord les bulletins PDF." };
 
-  const employees = await prisma.$queryRaw<Array<{ id: string; isDemoData: boolean; paperPayslipSince: Date | null }>>`
-    SELECT "id", "isDemoData", "paperPayslipSince" FROM "employees" WHERE "organizationId" = ${organizationId} AND "id" = ANY(${payslips.map((payslip) => payslip.employeeId)}::text[])`;
+  const employees = await prisma.$queryRaw<Array<{ id: string; isDemoData: boolean; paperPayslipSince: Date | null; noticeAt: string | null; noticeMethod: string | null; hasElectronicPayslip: boolean }>>`
+    SELECT e."id", e."isDemoData", e."paperPayslipSince",
+           to_char(e."electronicPayslipNoticeAt", 'YYYY-MM-DD') AS "noticeAt", e."electronicPayslipNoticeMethod" AS "noticeMethod",
+           EXISTS (SELECT 1 FROM "employee_documents" d WHERE d."organizationId" = e."organizationId" AND d."employeeId" = e."id" AND d."kind" = 'PAYSLIP') AS "hasElectronicPayslip"
+    FROM "employees" e WHERE e."organizationId" = ${organizationId} AND e."id" = ANY(${payslips.map((payslip) => payslip.employeeId)}::text[])`;
+  const today = new Date().toISOString().slice(0, 10);
   const byId = new Map(employees.map((employee) => [employee.id, employee]));
 
   const title = payslipTitle(period.year, period.month);
@@ -47,12 +53,15 @@ export async function publishPayslipsAction(periodId: string): Promise<PublishPa
   let replaced = 0;
   let unchanged = 0;
   let paper = 0;
+  let notInformed = 0;
 
   const failures: string[] = [];
   for (const payslip of payslips) {
     const employee = byId.get(payslip.employeeId);
     if (!employee || employee.isDemoData) continue;
     if (employee.paperPayslipSince) { paper += 1; continue; }
+    // Premier bulletin électronique : le salarié doit avoir été informé (D3243-7).
+    if (!electronicPayslipReadiness({ noticeAt: employee.noticeAt, method: employee.noticeMethod, alreadyReceivedElectronic: employee.hasElectronicPayslip, today }).ready) { notInformed += 1; continue; }
     try {
       const pdf = readPayslipDocument(payslip.storageKey!);
       const outcome = await prisma.$transaction(async (tx) => {
@@ -91,9 +100,9 @@ export async function publishPayslipsAction(periodId: string): Promise<PublishPa
   }
 
   await prisma.auditLog.create({
-    data: { id: randomUUID(), organizationId, actorUserId: user.id, action: "payroll.payslips.published", entityType: "PayrollPeriod", entityId: period.id, metadata: { published, replaced, unchanged, paper, failed: failures.length, ...counts } },
+    data: { id: randomUUID(), organizationId, actorUserId: user.id, action: "payroll.payslips.published", entityType: "PayrollPeriod", entityId: period.id, metadata: { published, replaced, unchanged, paper, notInformed, failed: failures.length, ...counts } },
   });
   revalidatePath(`/dashboard/payroll/${period.id}`);
   revalidatePath("/dashboard/payroll");
-  return { ok: true, published, replaced, unchanged, paper, failed: failures.length, ...counts };
+  return { ok: true, published, replaced, unchanged, paper, notInformed, failed: failures.length, ...counts };
 }

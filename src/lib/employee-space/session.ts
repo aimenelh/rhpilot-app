@@ -3,9 +3,10 @@
  *
  * Un compte salarié relie un utilisateur (identité Clerk) à une fiche salarié.
  * Ce n'est pas un Membership : il ne donne aucun accès au tableau de bord RH.
- * L'accès reste ouvert après la fin du contrat, pour que l'ancien salarié
- * retrouve ses bulletins et ses documents de sortie ; seul un retrait
- * explicite par l'employeur le ferme.
+ * L'accès reste ouvert après la fin du contrat, après la résiliation de
+ * l'abonnement de l'employeur et même si son organisation est supprimée :
+ * l'ancien salarié retrouve ses bulletins et ses documents de sortie (C. trav.
+ * art. D3243-8). Seul un retrait explicite par l'employeur le ferme.
  */
 import { cache } from "react";
 import { cookies } from "next/headers";
@@ -45,7 +46,7 @@ export const getEmployeeAccountsForUser = cache(async function getEmployeeAccoun
     JOIN "organizations" o ON o."id" = a."organizationId"
     JOIN "employees" e ON e."id" = a."employeeId" AND e."organizationId" = a."organizationId"
     JOIN "users" u ON u."id" = a."userId"
-    WHERE a."userId" = ${userId} AND a."activatedAt" IS NOT NULL AND a."revokedAt" IS NULL AND o."deletedAt" IS NULL
+    WHERE a."userId" = ${userId} AND a."activatedAt" IS NOT NULL AND a."revokedAt" IS NULL
     ORDER BY a."activatedAt" DESC
   `;
 });

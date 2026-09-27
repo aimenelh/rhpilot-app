@@ -4,6 +4,7 @@ import { computePayslip } from "@/lib/payroll/bulletin/compute";
 import { FULL_TIME_SCHEDULE } from "@/lib/payroll/bulletin/calendar";
 import { buildFinalSettlementItems, ofJob, renderFinalSettlementPdf, renderWorkCertificatePdf, type ExitEmployee, type ExitEmployer } from "./exit-documents";
 import { calendarDays, canEmployeeCancelAbsence, formatDateRange, ofMonthLabel, payslipFileName, payslipTitle, safeFileName } from "./labels";
+import { addOneMonth, electronicPayslipReadiness, renderElectronicPayslipNoticePdf } from "./notice";
 import { hashInviteToken, isPlausibleInviteToken, newInviteToken, normalizeEmail, safeEspaceRedirect } from "./tokens";
 
 const employer: ExitEmployer = { name: "Atelier Martin", siret: "12345678900012", address: "12 rue des Lilas", postalCode: "69003", city: "Lyon" };
@@ -78,5 +79,21 @@ describe("espace salarié", () => {
     expect(text.startsWith("%PDF-")).toBe(true);
     expect(text.match(/\/Type \/Page\b/g)?.length).toBe(1);
     await expect(Promise.resolve().then(() => renderWorkCertificatePdf({ employer, employee: { ...employee, exitDate: "" }, issuedAt: "2026-10-31", healthCoverage: false }))).rejects.toThrow(/date de fin/);
+  });
+
+  it("n'autorise le premier bulletin électronique qu'un mois après la note d'information, ou à l'embauche", async () => {
+    expect(addOneMonth("2026-09-12")).toBe("2026-10-12");
+    expect(addOneMonth("2026-01-31")).toBe("2026-02-28");
+    expect(addOneMonth("2026-12-15")).toBe("2027-01-15");
+    const base = { alreadyReceivedElectronic: false, today: "2026-10-01" };
+    expect(electronicPayslipReadiness({ ...base, noticeAt: null, method: null })).toEqual({ ready: false, reason: "NOT_INFORMED" });
+    expect(electronicPayslipReadiness({ ...base, noticeAt: "2026-09-12", method: "HAND_DELIVERY" })).toEqual({ ready: false, reason: "WAITING", availableFrom: "2026-10-12" });
+    expect(electronicPayslipReadiness({ ...base, noticeAt: "2026-09-01", method: "REGISTERED_MAIL" })).toEqual({ ready: true });
+    expect(electronicPayslipReadiness({ ...base, noticeAt: "2026-09-28", method: "AT_HIRING" })).toEqual({ ready: true });
+    expect(electronicPayslipReadiness({ ...base, noticeAt: null, method: null, alreadyReceivedElectronic: true })).toEqual({ ready: true });
+
+    const pdf = await renderElectronicPayslipNoticePdf({ employer, employee: { civility: "MME", firstName: "Léa", lastName: "Martin" }, issuedAt: "2026-09-27" }, { compress: false });
+    expect(pdf.toString("latin1").startsWith("%PDF-")).toBe(true);
+    expect(pdf.toString("latin1").match(/\/Type \/Page\b/g)?.length).toBe(1);
   });
 });

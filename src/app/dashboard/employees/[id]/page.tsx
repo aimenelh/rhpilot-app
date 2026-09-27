@@ -27,6 +27,8 @@ import { PayrollProfileSection } from "../../payroll/PayrollProfileSection";
 import { EmployeeDocumentsTable, EmployeeSpaceCard, ExitDocumentButtons, UploadEmployeeDocumentForm } from "../EmployeeSpaceSection";
 import { loadAdminDocuments, loadSpaceStatuses } from "@/lib/employee-space/admin-summary";
 import { loadExitContext } from "@/lib/employee-space/exit-context";
+import { electronicPayslipReadiness } from "@/lib/employee-space/notice";
+import { employeeArchiveParts } from "@/lib/employee-space/archive-server";
 import { employeeAccessWhere, eventAccessWhere, isOrganizationAdmin, taskAccessWhere } from "@/lib/accessPolicy";
 
 export const dynamic = "force-dynamic";
@@ -139,6 +141,7 @@ export default async function EmployeeDetailPage({
       ])
     : [new Map(), [], null] as const;
   const spaceStatus = spaceStatuses.get(employee.id);
+  const archiveParts = canManageEmployee && spaceDocuments.length > 0 ? await employeeArchiveParts(membership.organizationId, employee.id).catch(() => []) : [];
   const exitReady = exitContext && !("error" in exitContext) ? exitContext : null;
   const exitMonthLabel = employee.contractEndDate ? new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" }).format(employee.contractEndDate) : "";
 
@@ -350,6 +353,11 @@ export default async function EmployeeDetailPage({
               paperSince: spaceStatus?.paperSince?.toISOString() ?? null,
               paperSource: spaceStatus?.paperSource ?? null,
               account: { status: spaceStatus?.status ?? "NONE", email: spaceStatus?.email ?? null, invitedAt: spaceStatus?.invitedAt?.toISOString() ?? null, activatedAt: spaceStatus?.activatedAt?.toISOString() ?? null },
+              notice: {
+                at: spaceStatus?.noticeAt ?? null,
+                method: spaceStatus?.noticeMethod ?? null,
+                readiness: electronicPayslipReadiness({ noticeAt: spaceStatus?.noticeAt ?? null, method: spaceStatus?.noticeMethod ?? null, alreadyReceivedElectronic: spaceStatus?.hasElectronicPayslip ?? false, today: new Date().toISOString().slice(0, 10) }),
+              },
             }}
           />
           {employee.contractEndDate && !employee.isDemoData ? (
@@ -369,7 +377,14 @@ export default async function EmployeeDetailPage({
           ) : null}
           {!employee.isDemoData ? (
             <div className="overflow-hidden rounded-2xl border border-surface-border bg-white">
-              <div className="border-b border-surface-border px-5 py-3"><h3 className="font-semibold text-ink">Documents publiés</h3></div>
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-surface-border px-5 py-3">
+                <h3 className="font-semibold text-ink">Documents publiés</h3>
+                {archiveParts.length > 0 ? (
+                  <span className="flex flex-wrap gap-3 text-sm">
+                    {archiveParts.map((part) => <a key={part.index} href={`/api/employee-documents/archive/${employee.id}?partie=${part.index}`} className="font-semibold text-brand-primary hover:underline">{archiveParts.length === 1 ? "Tout télécharger (ZIP)" : `ZIP ${part.label}`}</a>)}
+                  </span>
+                ) : null}
+              </div>
               <EmployeeDocumentsTable documents={spaceDocuments.map((document) => ({ ...document, publishedAt: document.publishedAt.toISOString(), employeeOpenedAt: document.employeeOpenedAt?.toISOString() ?? null }))} />
               <div className="border-t border-surface-border p-5"><UploadEmployeeDocumentForm employeeId={employee.id} defaultKind={employee.contractEndDate ? "FRANCE_TRAVAIL" : "OTHER"} compact /></div>
             </div>

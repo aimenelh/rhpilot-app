@@ -15,6 +15,7 @@ import PublishPayslipsPanel, { type PublishPanelData } from "./PublishPayslipsPa
 import { ExitDocumentButtons, UploadEmployeeDocumentForm } from "../../employees/EmployeeSpaceSection";
 import { loadAdminDocuments, loadSpaceStatuses } from "@/lib/employee-space/admin-summary";
 import { EXIT_DOCUMENT_KINDS } from "@/lib/employee-space/labels";
+import { electronicPayslipReadiness } from "@/lib/employee-space/notice";
 import PayrollEntryGrid, { type GridEmployee } from "./PayrollEntryGrid";
 import PayrollAbsencesPanel, { type PeriodAbsenceRow } from "./PayrollAbsencesPanel";
 import PayslipReview, { type PayslipReviewRow } from "./PayslipReview";
@@ -215,7 +216,13 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
     loadAdminDocuments(organizationId, leaving.map((employee) => employee.id), { kinds: EXIT_DOCUMENT_KINDS }),
   ]);
   const generatedIds = new Set(payslips.filter((payslip) => payslip.documentStatus === "GENERATED" || payslip.documentStatus === "PUBLISHED").map((payslip) => payslip.employeeId));
-  const publishable = realEmployees.filter((employee) => generatedIds.has(employee.id) && !spaceStatuses.get(employee.id)?.paperSince);
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const readinessOf = (employeeId: string) => {
+    const space = spaceStatuses.get(employeeId);
+    return electronicPayslipReadiness({ noticeAt: space?.noticeAt ?? null, method: space?.noticeMethod ?? null, alreadyReceivedElectronic: space?.hasElectronicPayslip ?? false, today: todayIso });
+  };
+  const electronicCandidates = realEmployees.filter((employee) => generatedIds.has(employee.id) && !spaceStatuses.get(employee.id)?.paperSince);
+  const publishable = electronicCandidates.filter((employee) => readinessOf(employee.id).ready);
   // Un bulletin régénéré à l'identique a la même empreinte que celui déjà publié : rien à republier.
   const upToDate = period.status === "LOCKED" && generatedIds.size > 0
     ? new Set((await prisma.$queryRaw<Array<{ employeeId: string }>>`
@@ -234,6 +241,10 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
     withSpace: publishable.filter((employee) => spaceStatuses.get(employee.id)?.status === "ACTIVE").length,
     withoutSpace: publishable.filter((employee) => spaceStatuses.get(employee.id)?.status !== "ACTIVE").map((employee) => ({ id: employee.id, name: `${employee.firstName} ${employee.lastName}`.trim(), invited: spaceStatuses.get(employee.id)?.status === "INVITED" })),
     paper: realEmployees.filter((employee) => generatedIds.has(employee.id) && spaceStatuses.get(employee.id)?.paperSince).map((employee) => ({ id: employee.id, name: `${employee.firstName} ${employee.lastName}`.trim() })),
+    notInformed: electronicCandidates.flatMap((employee) => {
+      const readiness = readinessOf(employee.id);
+      return readiness.ready ? [] : [{ id: employee.id, name: `${employee.firstName} ${employee.lastName}`.trim(), availableFrom: readiness.reason === "WAITING" ? readiness.availableFrom : null }];
+    }),
     bundleUrl: `/api/payroll/periods/${encodeURIComponent(period.id)}/payslips`,
   };
   const leavingIsDemo = new Set(employees.filter((employee) => employee.isDemoData).map((employee) => employee.id));

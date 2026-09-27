@@ -14,6 +14,8 @@ import { notifyEmployeeOfDocuments } from "@/lib/employee-space/notify";
 import { loadExitContext } from "@/lib/employee-space/exit-context";
 import { buildFinalSettlementItems, renderFinalSettlementPdf, renderWorkCertificatePdf } from "@/lib/employee-space/exit-documents";
 import { DOCUMENT_KIND_LABELS, isVaultDocumentKind, safeFileName, type VaultDocumentKind } from "@/lib/employee-space/labels";
+import { isNoticeMethod, noticeMethodLabel } from "@/lib/employee-space/notice";
+import { parseIsoDateOnly } from "@/lib/dateOnly";
 
 export type EmployeeSpaceActionState = { error?: string; success?: string; manualUrl?: string } | undefined;
 
@@ -206,6 +208,28 @@ export async function generateExitDocument(employeeId: string, kind: "WORK_CERTI
     await audit(organizationId, userId, "employee_space.document.generated", employee.id, { kind, documentId: outcome.documentId, status: outcome.status, notified });
     refresh(employee.id);
     return { success: `${title} ${outcome.status === "REPLACED" ? "mis à jour" : "publié"} dans l'espace du salarié${notified === "NOTIFIED" ? ", qui est prévenu par e-mail" : ""}.` };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+/** Enregistre la remise de la note d'information sur le bulletin électronique (C. trav. art. D3243-7). */
+export async function recordElectronicNotice(employeeId: string, _state: EmployeeSpaceActionState, formData: FormData): Promise<EmployeeSpaceActionState> {
+  try {
+    const { organizationId, userId } = await adminContext();
+    const employee = await findEmployee(organizationId, employeeId);
+    if (!employee || employee.deletedAt) return { error: "Salarié introuvable." };
+    const rawDate = String(formData.get("noticeAt") ?? "");
+    const noticeAt = parseIsoDateOnly(rawDate);
+    const method = formData.get("noticeMethod");
+    if (!noticeAt) return { error: "Indiquez la date de remise." };
+    if (rawDate > new Date().toISOString().slice(0, 10)) return { error: "La date de remise ne peut pas être dans le futur." };
+    if (noticeAt.getUTCFullYear() < 2017) return { error: "Date de remise invraisemblable." };
+    if (!isNoticeMethod(method)) return { error: "Choisissez le mode de remise." };
+    await prisma.$executeRaw`UPDATE "employees" SET "electronicPayslipNoticeAt" = ${noticeAt}::date, "electronicPayslipNoticeMethod" = ${method} WHERE "id" = ${employee.id} AND "organizationId" = ${organizationId}`;
+    await audit(organizationId, userId, "employee_space.electronic_notice.recorded", employee.id, { noticeAt: rawDate, method });
+    refresh(employee.id);
+    return { success: `Remise enregistrée : ${noticeMethodLabel(method).toLowerCase()}, le ${noticeAt.toLocaleDateString("fr-FR", { timeZone: "UTC" })}.` };
   } catch (error) {
     return failure(error);
   }

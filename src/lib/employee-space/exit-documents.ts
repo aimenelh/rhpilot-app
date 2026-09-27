@@ -62,24 +62,24 @@ export function buildFinalSettlementItems(bulletin: PayslipResult): { items: Set
 
 const MARGIN = 64;
 const INK = "#14151A";
-const SOFT = "#4A4A4D";
+export const SOFT = "#4A4A4D";
 const FAINT = "#8C8C90";
 const BORDER = "#D9D9DE";
 
 const EUR = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
 /** pdfkit (Helvetica, WinAnsi) n'a pas l'espace fine insécable utilisée par Intl. */
-const money = (value: number) => EUR.format(value).replace(/[  ]/g, " ");
+export const money = (value: number) => EUR.format(value).replace(/[  ]/g, " ");
 const isoToDate = (iso: string) => new Date(`${iso.slice(0, 10)}T00:00:00.000Z`);
-const longDate = (iso: string) => formatLongDate(isoToDate(iso));
+export const longDate = (iso: string) => formatLongDate(isoToDate(iso));
 
-function civilityName(employee: ExitEmployee): string {
+export function civilityName(employee: ExitEmployee): string {
   const name = `${employee.firstName} ${employee.lastName}`.trim();
   if (employee.civility === "MME") return `Madame ${name}`;
   if (employee.civility === "M") return `Monsieur ${name}`;
   return name;
 }
 
-function agreed(employee: ExitEmployee, masculine: string, feminine: string): string {
+export function agreed(employee: ExitEmployee, masculine: string, feminine: string): string {
   if (employee.civility === "MME") return feminine;
   if (employee.civility === "M") return masculine;
   return `${masculine}(e)`;
@@ -92,12 +92,12 @@ export function ofJob(title: string): string {
   return /^[aeiouyàâéèêëîïôûh]/i.test(text) ? `d'${text}` : `de ${text}`;
 }
 
-function employerLine(employer: ExitEmployer): string {
+export function employerLine(employer: ExitEmployer): string {
   const place = [employer.address, `${employer.postalCode} ${employer.city}`.trim()].filter(Boolean).join(", ");
   return place;
 }
 
-function render(title: string, info: { employer: ExitEmployer; employee: ExitEmployee; issuedAt: string }, draw: (doc: PDFKit.PDFDocument, width: number) => void, options: { compress?: boolean } = {}): Promise<Buffer> {
+export function render(title: string, info: { employer: ExitEmployer; employee: ExitEmployee; issuedAt: string }, draw: (doc: PDFKit.PDFDocument, width: number) => void, options: { compress?: boolean } = {}): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ size: "A4", margin: MARGIN, compress: options.compress ?? true, info: { Title: `${title}, ${info.employee.firstName} ${info.employee.lastName}`, Author: info.employer.name, Creator: "RH Pilot", CreationDate: isoToDate(info.issuedAt) } });
     const chunks: Buffer[] = [];
@@ -122,12 +122,12 @@ function render(title: string, info: { employer: ExitEmployer; employee: ExitEmp
   });
 }
 
-function paragraph(doc: PDFKit.PDFDocument, text: string, width: number, options: { gap?: number; color?: string; size?: number } = {}) {
+export function paragraph(doc: PDFKit.PDFDocument, text: string, width: number, options: { gap?: number; color?: string; size?: number } = {}) {
   doc.font("Helvetica").fontSize(options.size ?? 10.5).fillColor(options.color ?? INK).text(text, MARGIN, doc.y, { width, align: "justify", lineGap: 3 });
   doc.moveDown(options.gap ?? 1);
 }
 
-function signature(doc: PDFKit.PDFDocument, width: number, left: { label: string; lines: string[] }, right?: { label: string; lines: string[] }) {
+export function signature(doc: PDFKit.PDFDocument, width: number, left: { label: string; lines: string[] }, right?: { label: string; lines: string[] }) {
   doc.moveDown(1.5);
   const top = doc.y;
   const column = right ? width / 2 - 12 : width;
