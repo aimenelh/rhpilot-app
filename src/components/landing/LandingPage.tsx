@@ -5,10 +5,9 @@ import Link from "next/link";
 import { MarketingHeader } from "./MarketingHeader";
 import { MarketingFooter } from "./MarketingFooter";
 import s from "./MarketingV2.module.css";
-import { LiveMonth } from "./LiveMonth";
 import { ProductStory } from "./ProductStory";
+import { ModulesOverview } from "./ModulesOverview";
 import { ClosingCta } from "./ClosingCta";
-import { TutorialFirstVisitPrompt } from "./TutorialFirstVisitPrompt";
 
 export function LandingPage() {
   return (
@@ -18,23 +17,8 @@ export function LandingPage() {
       <MarketingHeader />
       <main id="main-content">
         <ArrivalHero />
-        <LiveMonth />
+        <ModulesOverview />
         <ProductStory />
-        <section className={s.payroll}>
-          <div className={`${s.wrap} ${s.payrollInner}`}>
-            <div>
-              <h2>Et la paie ?</h2>
-            </div>
-            <p>
-              Profils salariés, variables et calculs : découvrez le périmètre du
-              module paie et son fonctionnement. Son développement et sa
-              validation se poursuivent.
-            </p>
-            <Link href="/gestion-paie" className={s.secondary}>
-              Découvrir le module →
-            </Link>
-          </div>
-        </section>
         <section className={s.section}>
           <div className={`${s.wrap} ${s.storyGrid}`}>
             <div>
@@ -107,6 +91,18 @@ export function LandingPage() {
                 </Link>
               </details>
               <details>
+                <summary>Mes salariés ont-ils accès à leurs bulletins ?</summary>
+                <p>
+                  Oui : chaque salarié a son espace, sur téléphone ou
+                  ordinateur, avec ses bulletins, ses congés, ses demandes
+                  d’absence et ses documents. Il est inclus, sans coût par
+                  compte.
+                </p>
+                <Link href="/espace-salarie" className={s.textLink}>
+                  Découvrir l’espace salarié →
+                </Link>
+              </details>
+              <details>
                 <summary>Que comprend l’offre gratuite ?</summary>
                 <p>
                   Les fonctionnalités et les limites de chaque offre sont
@@ -133,7 +129,6 @@ export function LandingPage() {
         </section>
         <ClosingCta />
       </main>
-      <TutorialFirstVisitPrompt />
       <MarketingFooter />
     </div>
   );

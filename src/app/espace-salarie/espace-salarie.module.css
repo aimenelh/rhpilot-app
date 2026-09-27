@@ -1,0 +1,195 @@
+/* Page vitrine de l'espace salarié : captures réelles, présentées dans des
+   cadres de téléphone sobres (pas de maquette d'appareil). */
+
+.hero {
+  background: #f6f4ee;
+  border-bottom: 1px solid #e9e4e1;
+  padding: 72px 0 0;
+  overflow: hidden;
+}
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  gap: 56px;
+  align-items: end;
+}
+.heroCopy {
+  padding-bottom: 72px;
+}
+.heroTitle {
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 500;
+  font-size: clamp(40px, 4.4vw, 62px);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  margin: 0 0 24px;
+  max-width: 620px;
+}
+.heroTitle em {
+  font-style: italic;
+  color: #ba3827;
+}
+.heroNote {
+  margin-top: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #77776f;
+  max-width: 460px;
+}
+.heroPhones {
+  position: relative;
+  height: 520px;
+}
+.heroPhones .phone {
+  position: absolute;
+  bottom: -40px;
+}
+.heroPhones .phone:first-child {
+  left: 6%;
+  transform: rotate(-3deg);
+  z-index: 1;
+}
+.heroPhones .phone:last-child {
+  right: 4%;
+  bottom: -80px;
+  transform: rotate(2.5deg);
+}
+
+.phone {
+  width: 250px;
+  border-radius: 30px;
+  border: 1px solid #ddd6cc;
+  background: #fff;
+  padding: 8px;
+  box-shadow: 0 30px 60px -30px rgba(32, 33, 31, 0.35), 0 2px 6px rgba(32, 33, 31, 0.06);
+}
+.phone img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 23px;
+}
+
+.screens {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 40px;
+  margin-top: 48px;
+}
+.screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: left;
+}
+.screen .phone {
+  width: min(260px, 100%);
+}
+.screen h3 {
+  align-self: stretch;
+  margin-top: 26px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #20211f;
+}
+.screen p {
+  align-self: stretch;
+  margin-top: 8px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #606168;
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  gap: 64px;
+  align-items: start;
+}
+.shot {
+  border: 1px solid #e3ddd3;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 24px 50px -32px rgba(32, 33, 31, 0.3);
+}
+.shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.caption {
+  margin-top: 12px;
+  font-size: 12px;
+  color: #8a8a83;
+}
+
+.law {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 56px;
+  margin-top: 40px;
+  border-top: 1px solid #dedbd7;
+}
+.law div {
+  padding: 26px 0;
+  border-bottom: 1px solid #dedbd7;
+}
+.law h3 {
+  font-size: 17px;
+  font-weight: 600;
+  color: #20211f;
+}
+.law .ref {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #8a8a83;
+}
+.law p {
+  margin-top: 10px;
+  font-size: 15px;
+  line-height: 1.75;
+  color: #606168;
+}
+
+@media (max-width: 960px) {
+  .heroGrid,
+  .split {
+    grid-template-columns: 1fr;
+    gap: 36px;
+  }
+  .heroCopy {
+    padding-bottom: 0;
+  }
+  .heroPhones {
+    height: 420px;
+  }
+  .screens {
+    gap: 28px;
+  }
+}
+@media (max-width: 700px) {
+  .hero {
+    padding-top: 44px;
+  }
+  .heroPhones {
+    height: 360px;
+  }
+  .heroPhones .phone {
+    width: 200px;
+  }
+  .heroPhones .phone:first-child {
+    left: 0;
+  }
+  .heroPhones .phone:last-child {
+    right: 0;
+  }
+  .screens,
+  .law {
+    grid-template-columns: 1fr;
+  }
+  .screens {
+    gap: 44px;
+  }
+}

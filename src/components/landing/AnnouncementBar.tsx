@@ -9,6 +9,11 @@ import { X } from "lucide-react";
 // voit jamais en pratique pour un même visiteur qui navigue le site.
 const ANNOUNCEMENTS = [
   {
+    text: "Nouveau : l’espace salarié. Bulletins, congés et documents sur le téléphone de vos salariés.",
+    href: "/espace-salarie",
+    cta: "Découvrir",
+  },
+  {
     text: "Le module Paie arrive sur RH Pilot, disponible sur le palier Pro.",
     href: "/tarifs",
     cta: "En savoir plus",

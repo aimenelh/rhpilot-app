@@ -52,11 +52,13 @@ export default function CguPage() {
                     et de bénéficier de rappels et de suggestions proactives.
                   </p>
                   <p className="mt-2">
-                    RH Pilot n&apos;est pas un logiciel de paie, ne fournit
-                    aucun conseil juridique, et ne garantit la conformité légale
-                    d&apos;aucune échéance. Les échéances suggérées sont des
-                    recommandations organisationnelles, jamais des calculs
-                    juridiques certifiés.
+                    RH Pilot comprend un module de paie qui calcule les bulletins
+                    à partir des données saisies par le Client. Le Client reste
+                    responsable de l&apos;exactitude de ces données, de la
+                    vérification des bulletins avant leur validation et de ses
+                    déclarations sociales. RH Pilot ne fournit aucun conseil
+                    juridique. Les échéances suggérées sont des recommandations
+                    organisationnelles, jamais des calculs juridiques certifiés.
                   </p>
                 </section>
 
@@ -65,11 +67,24 @@ export default function CguPage() {
                     3. Disponibilité et conservation des données
                   </h2>
                   <p className="mt-2">
-                    Les conditions tarifaires sont présentées sur la page Tarifs. Aucun engagement de disponibilité continue ni de
-                    conservation à long terme des données n&apos;est garanti à
-                    ce stade. Les utilisateurs sont invités à ne pas
-                    y enregistrer de données qu&apos;ils ne pourraient se
-                    permettre de perdre.
+                    Les bulletins de paie et documents mis à disposition des
+                    salariés dans leur espace salarié sont conservés pendant
+                    cinquante ans à compter de leur émission. Ils restent
+                    accessibles au salarié après la fin de son contrat, ainsi
+                    qu&apos;après la résiliation de l&apos;abonnement du Client
+                    ou la suppression de son compte. Chaque salarié peut à tout
+                    moment télécharger l&apos;intégralité de ses documents en une
+                    seule fois, au format PDF.
+                  </p>
+                  <p className="mt-2">
+                    En cas de fermeture du service, les Clients et les salariés
+                    disposant d&apos;un espace en sont informés au moins trois
+                    mois à l&apos;avance, afin de récupérer leurs documents.
+                  </p>
+                  <p className="mt-2">
+                    Les autres données du Client sont conservées pendant la durée
+                    de son abonnement ; il peut les exporter à tout moment. Les
+                    conditions tarifaires sont présentées sur la page Tarifs.
                   </p>
                 </section>
 
@@ -89,21 +104,37 @@ export default function CguPage() {
 
                 <section>
                   <h2 className="text-base font-semibold text-ink">
-                    5. Limitation de responsabilité
+                    5. Espace salarié
                   </h2>
                   <p className="mt-2">
-                    RH Pilot est un outil d&apos;aide à l&apos;organisation RH.
-                    Il ne remplace pas un conseil juridique, un
-                    expert-comptable, un service de paie, ou la médecine du
-                    travail. L&apos;exactitude juridique des échéances reste
-                    sous la seule responsabilité du Client, qui doit vérifier
-                    les délais légaux applicables à sa situation.
+                    Le Client peut ouvrir à ses salariés un espace personnel
+                    gratuit, qui ne donne aucun accès aux données de
+                    l&apos;organisation. Il lui appartient d&apos;informer chaque
+                    salarié de son droit de refuser le bulletin électronique,
+                    dans les conditions prévues par l&apos;article D3243-7 du
+                    Code du travail ; RH Pilot fournit la note d&apos;information
+                    et en conserve la date de remise. Le salarié peut refuser le
+                    format électronique à tout moment depuis son espace.
                   </p>
                 </section>
 
                 <section>
                   <h2 className="text-base font-semibold text-ink">
-                    6. Contact
+                    6. Limitation de responsabilité
+                  </h2>
+                  <p className="mt-2">
+                    RH Pilot est un outil d&apos;aide à l&apos;organisation RH et
+                    à la paie. Il ne remplace pas un conseil juridique, un
+                    expert-comptable ou la médecine du travail. L&apos;exactitude
+                    juridique des échéances et des bulletins validés reste sous
+                    la responsabilité du Client, qui doit vérifier les règles
+                    applicables à sa situation.
+                  </p>
+                </section>
+
+                <section>
+                  <h2 className="text-base font-semibold text-ink">
+                    7. Contact
                   </h2>
                   <p className="mt-2">
                     Pour toute question relative à ces conditions,

@@ -16,6 +16,7 @@ const GROUPS = [
       { href: "/services#salaries", label: "Dossiers salariés" },
       { href: "/services#parcours", label: "Parcours RH & documents" },
       { href: "/services#echeances", label: "Calendrier & rappels" },
+      { href: "/espace-salarie", label: "Espace salarié" },
       { href: "/services#copilote", label: "Copilote RH" },
       { href: "/services#demo", label: "Voir une démonstration" },
     ],
