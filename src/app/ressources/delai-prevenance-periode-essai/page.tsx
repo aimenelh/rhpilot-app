@@ -90,7 +90,7 @@ export default function Article() {
         <Link href="/sign-up">
           <Button className="px-6 py-2.5 text-sm">
             <span className="inline-flex items-center gap-2">
-              Essayer gratuitement <ArrowRight size={14} />
+              Créer mon espace, gratuit jusqu’à 3 salariés <ArrowRight size={14} />
             </span>
           </Button>
         </Link>

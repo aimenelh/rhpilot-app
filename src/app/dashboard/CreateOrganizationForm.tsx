@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Input, Label, FieldHint } from "@/components/ui/Field";
 import { Card } from "@/components/ui/Card";
+import { checkSiret } from "@/lib/siret";
 
 type SiretResult = { name: string; address: string | null; city: string | null; apeCode: string | null };
 
@@ -48,6 +49,18 @@ export function CreateOrganizationForm() {
     }
   }
 
+  // Dès que les 14 chiffres sont saisis et valides, l'entreprise est
+  // recherchée d'elle-même dans la base publique pour pré-remplir le nom.
+  const lastLookup = useRef("");
+  useEffect(() => {
+    if (siret.length !== 14 || !checkSiret(siret).ok || lastLookup.current === siret) return;
+    lastLookup.current = siret;
+    void handleSiretLookup();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [siret]);
+
+  const siretStatus = siret.length === 14 ? checkSiret(siret) : null;
+
   async function handleSiretLookup() {
     setError(null);
     setLookupResult(null);
@@ -73,13 +86,18 @@ export function CreateOrganizationForm() {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
+    const check = checkSiret(siret);
+    if (!check.ok) {
+      setError(check.error);
+      return;
+    }
     setIsSubmitting(true);
 
     try {
       const response = await fetch("/api/organizations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, siret: siret || null }),
+        body: JSON.stringify({ name, siret }),
       });
 
       if (!response.ok) {
@@ -160,12 +178,12 @@ export function CreateOrganizationForm() {
         <>
           <h1 className="mt-6 text-lg font-semibold text-ink">Créez votre espace RH Pilot</h1>
           <p className="mt-1.5 text-sm text-ink-soft">
-            Vous n&apos;appartenez encore à aucune organisation. Donnez-lui un nom pour commencer.
+            Commencez par le SIRET de votre entreprise : nous retrouvons son nom pour vous. RH Pilot est gratuit jusqu&apos;à 3 salariés.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
             <div>
-              <Label htmlFor="org-siret">SIRET (facultatif)</Label>
+              <Label htmlFor="org-siret">SIRET de l&apos;entreprise</Label>
               <div className="flex gap-2">
                 <Input
                   id="org-siret"
@@ -174,6 +192,9 @@ export function CreateOrganizationForm() {
                   value={siret}
                   onChange={(event) => setSiret(event.target.value.replace(/\D/g, "").slice(0, 14))}
                   placeholder="14 chiffres"
+                  required
+                  aria-invalid={siretStatus ? !siretStatus.ok : undefined}
+                  autoComplete="off"
                   disabled={isSubmitting}
                 />
                 <Button
@@ -188,9 +209,9 @@ export function CreateOrganizationForm() {
                 </Button>
               </div>
               <FieldHint>
-                Permet de pré-remplir automatiquement le nom de votre entreprise. Totalement
-                facultatif, vous pouvez créer votre espace sans, y compris pour un test avec un
-                nom fictif.
+                {siretStatus && !siretStatus.ok
+                  ? siretStatus.error
+                  : "Il figure sur votre Kbis, votre avis de situation Insee ou un bulletin de paie. Pour découvrir RH Pilot sans entreprise, les tutoriels et les données de démonstration suffisent."}
               </FieldHint>
               {lookupResult && (
                 <p className="mt-2 rounded-lg bg-brand-primary/5 px-3 py-2 text-xs text-ink-soft">
@@ -226,8 +247,8 @@ export function CreateOrganizationForm() {
               </p>
             )}
 
-            <Button type="submit" disabled={isSubmitting} className="w-full">
-              {isSubmitting ? "Création..." : "Créer mon organisation"}
+            <Button type="submit" disabled={isSubmitting || !siretStatus?.ok} className="w-full">
+              {isSubmitting ? "Création..." : "Créer mon espace RH"}
             </Button>
           </form>
         </>

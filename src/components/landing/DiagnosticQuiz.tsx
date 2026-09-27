@@ -265,7 +265,7 @@ export function DiagnosticQuiz() {
             <Link href="/sign-up">
               <Button className="px-6 py-3 text-base">
                 <span className="inline-flex items-center gap-2">
-                  Essayer RH Pilot gratuitement <ArrowRight size={16} />
+                  Créer mon espace RH Pilot <ArrowRight size={16} />
                 </span>
               </Button>
             </Link>

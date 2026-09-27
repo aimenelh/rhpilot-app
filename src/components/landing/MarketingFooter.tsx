@@ -11,7 +11,7 @@ const PRODUCT_LINKS = [
   { href: "/pourquoi", label: "À propos" },
   { href: "/questions", label: "Questions fréquentes" },
   { href: "/diagnostic", label: "Diagnostic RH" },
-  { href: "/sign-up", label: "Essayer gratuitement" },
+  { href: "/sign-up", label: "Créer mon espace" },
   { href: "/sign-in", label: "Se connecter" },
 ];
 

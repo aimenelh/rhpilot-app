@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { checkSiret } from "@/lib/siret";
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -26,8 +27,13 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => null);
   const name = typeof body?.name === "string" ? body.name.trim() : "";
-  const siretRaw = typeof body?.siret === "string" ? body.siret.trim() : null;
-  const siret = siretRaw && /^\d{14}$/.test(siretRaw) ? siretRaw : null;
+  // SIRET obligatoire : les tests passent par les données de démonstration
+  // et les tutoriels, un espace RH correspond toujours à une vraie entreprise.
+  const siretCheck = checkSiret(body?.siret);
+  if (!siretCheck.ok) {
+    return NextResponse.json({ error: siretCheck.error }, { status: 400 });
+  }
+  const siret = siretCheck.siret;
 
   if (!name || name.length < 2) {
     return NextResponse.json(

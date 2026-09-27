@@ -83,8 +83,8 @@ export function LandingPage() {
                 <summary>Comment découvrir le logiciel ?</summary>
                 <p>
                   La démonstration guidée présente un exemple de suivi, sans
-                  création de compte. Vous pouvez ensuite créer votre espace
-                  pour essayer RH Pilot.
+                  création de compte. Vous créez ensuite votre espace avec le
+                  SIRET de votre entreprise : il est gratuit jusqu’à 3 salariés.
                 </p>
                 <Link href="/services#demo" className={s.textLink}>
                   Ouvrir la démonstration →

@@ -199,7 +199,7 @@ export function InteractiveDemo() {
               {phase === "welcome" ? (
                 <button type="button" onClick={start} className={s.start}>Démarrer le tour <ArrowRight size={16} /></button>
               ) : (
-                <><Link href="/sign-up" className={s.start}>Essayer RH Pilot <ArrowRight size={16} /></Link><button type="button" onClick={start} className={s.replay}><RotateCcw size={14} /> Revoir la démonstration</button></>
+                <><Link href="/sign-up" className={s.start}>Créer mon espace <ArrowRight size={16} /></Link><button type="button" onClick={start} className={s.replay}><RotateCcw size={14} /> Revoir la démonstration</button></>
               )}
             </div>
           </div>

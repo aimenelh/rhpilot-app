@@ -43,7 +43,7 @@ export default function GestionPaiePage() {
         title="Votre prochaine paie se prépare déjà."
         accent="Autant la voir venir."
         text="Créez votre espace, ajoutez vos salariés et lancez votre première période."
-        action="Essayer RH Pilot"
+        action="Créer mon espace"
       />
       <MarketingFooter />
     </div>

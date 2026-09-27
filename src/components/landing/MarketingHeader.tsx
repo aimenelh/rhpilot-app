@@ -236,7 +236,7 @@ export function MarketingHeader() {
               Connexion
             </Link>
             <Link href="/sign-up" className={action}>
-              Essayer gratuitement
+              Créer mon espace
             </Link>
           </div>
           <button
@@ -329,7 +329,7 @@ export function MarketingHeader() {
               onClick={close}
               className={`${action} w-full`}
             >
-              Essayer gratuitement
+              Créer mon espace
             </Link>
           </nav>
         )}

@@ -72,7 +72,7 @@ export default function EmployeeSpaceMarketingPage() {
             </p>
             <div className={s.actions}>
               <Link href="/sign-up" className={s.primary}>
-                Essayer gratuitement
+                Créer mon espace
               </Link>
               <Link href="/tarifs" className={s.secondary}>
                 Voir les tarifs

@@ -574,7 +574,7 @@ export function ServicesExperience() {
 
               <div className="mt-9 flex flex-col items-center gap-3">
                 <Link href="/sign-up">
-                  <Button className="press-fx px-6 py-3 text-base">Essayer RH Pilot gratuitement</Button>
+                  <Button className="press-fx px-6 py-3 text-base">Créer mon espace RH Pilot</Button>
                 </Link>
                 <button type="button" onClick={restart} className="flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink">
                   <RotateCcw size={12} /> Revoir l&apos;expérience
