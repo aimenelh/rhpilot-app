@@ -447,32 +447,35 @@ export function EmployeeForm({
         <div>
           <Label htmlFor="probationDuration">Durée de la période d&apos;essai</Label>
           <div className="flex gap-2">
-            <Input
-              id="probationDuration"
-              name="probationDuration"
-              type="number"
-              min={0}
-              max={365}
-              className="w-28"
-              value={probationDuration}
-              onChange={(event) => {
-                setProbationDuration(event.target.value);
-                setProbationTouched(true);
-              }}
-            />
-            <Select
-              name="probationDurationUnit"
-              value={probationDurationUnit}
-              onChange={(event) => {
-                setProbationDurationUnit(event.target.value);
-                setProbationTouched(true);
-              }}
-              className="flex-1"
-            >
-              <option value="DAYS">Jours</option>
-              <option value="WEEKS">Semaines</option>
-              <option value="MONTHS">Mois</option>
-            </Select>
+            {/* Chaque champ dans son conteneur : le w-full de base d'Input écraserait une largeur fixe. */}
+            <div className="w-28 shrink-0">
+              <Input
+                id="probationDuration"
+                name="probationDuration"
+                type="number"
+                min={0}
+                max={365}
+                value={probationDuration}
+                onChange={(event) => {
+                  setProbationDuration(event.target.value);
+                  setProbationTouched(true);
+                }}
+              />
+            </div>
+            <div className="min-w-0 flex-1">
+              <Select
+                name="probationDurationUnit"
+                value={probationDurationUnit}
+                onChange={(event) => {
+                  setProbationDurationUnit(event.target.value);
+                  setProbationTouched(true);
+                }}
+              >
+                <option value="DAYS">Jours</option>
+                <option value="WEEKS">Semaines</option>
+                <option value="MONTHS">Mois</option>
+              </Select>
+            </div>
           </div>
           {rawLegalSuggestion && !probationSuggestionRelevant ? (
             <FieldHint>
