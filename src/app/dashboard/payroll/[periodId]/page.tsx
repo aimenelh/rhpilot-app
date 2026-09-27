@@ -53,7 +53,7 @@ function warningLink(periodId: string, employeeId: string, warning: string): { h
   const text = warning.toLowerCase();
   if (text.includes("ijss")) return { href: `/dashboard/payroll/${periodId}?tab=saisie&sub=absences`, label: "Saisir les IJSS" };
   if (text.includes("fiche de sortie") || text.includes("fin de contrat")) return { href: `/dashboard/payroll/${periodId}?tab=saisie&sub=mouvements`, label: "Ouvrir la fiche de sortie" };
-  if (text.includes("compteurs") || text.includes("cumul") || text.includes("reprise") || text.includes("horaire") || text.includes("taux personnalisé")) return { href: `/dashboard/employees/${employeeId}`, label: "Ouvrir la fiche salarié" };
+  if (text.includes("compteurs") || text.includes("cumul") || text.includes("reprise") || text.includes("horaire") || text.includes("taux personnalisé")) return { href: `/dashboard/employees/${employeeId}?onglet=paie`, label: "Ouvrir la paie du salarié" };
   return null;
 }
 
@@ -323,7 +323,7 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
                         <div key={employee.id} className="rounded-xl border border-surface-border p-4">
                           <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
                             <p className="font-medium text-ink">{employee.name} <span className="text-sm font-normal text-ink-soft">· sortie le {frDate(new Date(`${employee.exitDate}T00:00:00Z`))}</span></p>
-                            <Link href={`/dashboard/employees/${employee.id}#espace-salarie`} className="text-sm font-semibold text-brand-primary hover:underline">{space?.status === "ACTIVE" ? "Espace salarié activé" : "Inviter à l'espace salarié"}</Link>
+                            <Link href={`/dashboard/employees/${employee.id}?onglet=espace`} className="text-sm font-semibold text-brand-primary hover:underline">{space?.status === "ACTIVE" ? "Espace salarié activé" : "Inviter à l'espace salarié"}</Link>
                           </div>
                           <ExitDocumentButtons
                             employeeId={employee.id}
@@ -376,7 +376,7 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
               <div className="flex items-center gap-2 border-b border-accent-amber/20 px-5 py-3"><AlertTriangle size={16} className="text-accent-amber" /><h3 className="text-sm font-semibold text-ink">À régler avant de calculer</h3></div>
               <ul className="divide-y divide-surface-border">
                 {readiness.issues.map((issue, index) => {
-                  const link = issue.code === "EXIT_WITHOUT_TERMINATION" ? { href: href({ tab: "saisie", sub: "mouvements" }), label: "Ouvrir la fiche de sortie" } : issue.employeeId ? { href: `/dashboard/employees/${issue.employeeId}`, label: "Ouvrir la fiche salarié" } : null;
+                  const link = issue.code === "EXIT_WITHOUT_TERMINATION" ? { href: href({ tab: "saisie", sub: "mouvements" }), label: "Ouvrir la fiche de sortie" } : issue.employeeId ? { href: `/dashboard/employees/${issue.employeeId}?onglet=paie`, label: "Ouvrir la paie du salarié" } : null;
                   return <li key={`${issue.code}-${index}`} className="flex flex-col gap-1 px-5 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"><span className="text-ink-soft">{issue.message}</span>{link ? <Link href={link.href} className="shrink-0 font-semibold text-brand-primary hover:underline">{link.label}</Link> : null}</li>;
                 })}
               </ul>

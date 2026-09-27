@@ -67,14 +67,14 @@ export default function PublishPayslipsPanel({ data }: { data: PublishPanelData 
         {data.withoutSpace.length > 0 ? (
           <li>
             Sans espace activé : {data.withoutSpace.map((employee, index) => (
-              <span key={employee.id}>{index > 0 ? ", " : ""}<Link href={`/dashboard/employees/${employee.id}#espace-salarie`} className="font-medium text-ink hover:underline">{employee.name}</Link>{employee.invited ? " (invité)" : ""}</span>
+              <span key={employee.id}>{index > 0 ? ", " : ""}<Link href={`/dashboard/employees/${employee.id}?onglet=espace`} className="font-medium text-ink hover:underline">{employee.name}</Link>{employee.invited ? " (invité)" : ""}</span>
             ))}. Leurs bulletins les attendront dans leur espace ; d&apos;ici là, remettez-les autrement.
           </li>
         ) : null}
         {data.notInformed.length > 0 ? (
           <li>
             Note d&apos;information pas encore remise, ou remise il y a moins d&apos;un mois : {data.notInformed.map((employee, index) => (
-              <span key={employee.id}>{index > 0 ? ", " : ""}<Link href={`/dashboard/employees/${employee.id}#espace-salarie`} className="font-medium text-ink hover:underline">{employee.name}</Link>{employee.availableFrom ? ` (en ligne à partir du ${dayLabel(employee.availableFrom)})` : ""}</span>
+              <span key={employee.id}>{index > 0 ? ", " : ""}<Link href={`/dashboard/employees/${employee.id}?onglet=espace`} className="font-medium text-ink hover:underline">{employee.name}</Link>{employee.availableFrom ? ` (en ligne à partir du ${dayLabel(employee.availableFrom)})` : ""}</span>
             ))}. Le premier bulletin électronique suit d&apos;un mois la remise de la note (C. trav. art. D3243-7) : ce mois-ci, <a href={data.bundleUrl} className="font-semibold text-brand-primary hover:underline">remettez-le sur papier</a>.
           </li>
         ) : null}
