@@ -76,7 +76,8 @@ export async function prepareDemoPayrollDataForOrganization(organizationId: stri
       UPDATE "organizations"
       SET "legalCategory" = 'SAS', "atmpRate" = 1.00, "healthPlanMonthlyAmount" = 30.00,
           "healthPlanEmployerRate" = 50.00, "companyCreationDate" = ${new Date(2020, 0, 1)},
-          "payrollDepartment" = '30'
+          "payrollDepartment" = '30', "payrollHeadcount" = ${DEMO_PAYROLL_DATA.length}, "mobilityRate" = 0,
+          "ijssSubrogation" = true, "paidLeaveMethod" = 'OUVRABLES', "mealVoucherFaceValue" = 10.00, "mealVoucherEmployerShare" = 0.5
       WHERE "id" = ${organizationId}
     `;
 
@@ -101,6 +102,20 @@ export async function prepareDemoPayrollDataForOrganization(organizationId: stri
       if (profile) await tx.payrollProfile.update({ where: { id: profile.id }, data: profileData });
       else await tx.payrollProfile.create({ data: { id: randomUUID(), organizationId, employeeId: employee.id, ...profileData, effectiveFrom: periodStart } });
 
+      // Reprise des compteurs arrêtés à la fin du mois précédent : N acquis depuis le 1er juin jusqu'à ce mois-là.
+      // En juin, les compteurs de mai portent encore sur l'ancienne période : ils basculent au calcul.
+      const referenceYear = periodStart.getMonth() + 1 >= 6 ? periodStart.getFullYear() : periodStart.getFullYear() - 1;
+      const monthsSinceJune = periodStart.getMonth() + 1 === 6 ? 12 : (periodStart.getFullYear() - referenceYear) * 12 + periodStart.getMonth() - 5;
+      const asOf = new Date(Date.UTC(periodStart.getFullYear(), periodStart.getMonth(), 1));
+      await tx.$executeRaw`
+        DELETE FROM "employee_paid_leave_openings" WHERE "organizationId" = ${organizationId} AND "employeeId" = ${employee.id} AND "asOf" = ${asOf}
+      `;
+      await tx.$executeRaw`
+        INSERT INTO "employee_paid_leave_openings"
+          ("id", "organizationId", "employeeId", "asOf", "previousAcquired", "previousTaken", "currentAcquired", "currentTaken", "referenceGross", "referenceAcquiredDays", "currentReferenceGross", "createdAt", "updatedAt")
+        VALUES
+          (${randomUUID()}, ${organizationId}, ${employee.id}, ${asOf}, 30, ${monthsSinceJune === 12 ? 30 : 18}, ${monthsSinceJune * 2.5}, 0, ${row.salaryEuros * 12}, 30, ${row.salaryEuros * monthsSinceJune}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+      `;
       const pasValidFrom = new Date(2020, 0, 1);
       await tx.$executeRaw`
         DELETE FROM "employee_withholding_tax_profiles"

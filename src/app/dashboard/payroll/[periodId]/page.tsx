@@ -21,6 +21,9 @@ import PayrollValidateButton from "../PayrollValidateButton";
 import PayrollLockButton from "../PayrollLockButton";
 import PayrollReopenButton from "../PayrollReopenButton";
 import PayrollPayslipGenerateButton from "../PayrollPayslipGenerateButton";
+import PayrollTerminationSection, { type LeavingEmployee } from "../PayrollTerminationSection";
+import { loadTerminations } from "@/lib/payroll/bulletin/period-loader";
+import { bulletinFromSnapshot } from "@/lib/payroll/bulletin/prior-state";
 
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
@@ -98,11 +101,11 @@ export default async function PayrollPeriodPage({ params }: { params: { periodId
     }),
     prisma.payrollCalculation.findMany({
       where: { organizationId: membership.organizationId, payrollPeriodId: period.id },
-      select: { employeeId: true, grossAmount: true, employeeContributions: true, employerContributions: true, netBeforeTax: true, withholdingTax: true, netPaid: true },
+      select: { employeeId: true, grossAmount: true, employeeContributions: true, employerContributions: true, netBeforeTax: true, withholdingTax: true, netPaid: true, calculationSnapshot: true },
     }),
     prisma.payrollVariable.findMany({
       where: { organizationId: membership.organizationId, payrollPeriodId: period.id },
-      select: { id: true, employeeId: true, code: true, label: true, amount: true, unit: true, source: true },
+      select: { id: true, employeeId: true, code: true, label: true, amount: true, unit: true, source: true, reference: true },
       orderBy: [{ employeeId: "asc" }, { createdAt: "asc" }],
     }),
     prisma.payrollRuleVersion.findMany({
@@ -111,6 +114,44 @@ export default async function PayrollPeriodPage({ params }: { params: { periodId
       orderBy: [{ code: "asc" }, { scope: "asc" }, { version: "desc" }],
     }),
   ]);
+
+  const [terminations, sickAbsences] = await Promise.all([
+    loadTerminations(membership.organizationId, period.id).catch(() => new Map<string, never>()),
+    prisma.absence.findMany({
+      where: { organizationId: membership.organizationId, status: "VALIDATED", type: { in: ["SICK_LEAVE", "WORK_ACCIDENT", "MATERNITY", "PATERNITY"] }, startDate: { lte: periodEnd }, endDate: { gte: periodStart } },
+      select: { id: true, employeeId: true, type: true, startDate: true, endDate: true },
+      orderBy: { startDate: "asc" },
+    }),
+  ]);
+  const periodFirstIso = `${period.year}-${String(period.month).padStart(2, "0")}-01`;
+  const periodLastIso = new Date(Date.UTC(period.year, period.month, 0)).toISOString().slice(0, 10);
+  const leavingEmployees: LeavingEmployee[] = employees
+    .filter((employee) => {
+      const exit = employee.contractEndDate?.toISOString().slice(0, 10);
+      return Boolean(exit && exit >= periodFirstIso && exit <= periodLastIso);
+    })
+    .map((employee) => {
+      const stored = terminations.get(employee.id);
+      return {
+        id: employee.id,
+        name: `${employee.firstName} ${employee.lastName}`.trim(),
+        contractType: employee.contractType,
+        exitDate: employee.contractEndDate!.toISOString().slice(0, 10),
+        termination: stored ? { reason: stored.reason, noticeCompensation: stored.noticeCompensation, severanceAmount: stored.severanceAmount, severanceLegalMinimum: stored.severanceLegalMinimum, previousYearGross: stored.previousYearGross, eligibleForFullPension: stored.eligibleForFullPension, cddEndAllowanceMode: stored.cddEndAllowanceMode, cddEndAllowanceAmount: stored.cddEndAllowanceAmount, cddEndAllowanceRate: stored.cddEndAllowanceRate, paidLeaveCompensationAmount: stored.paidLeaveCompensationAmount } : null,
+      };
+    });
+  const ABSENCE_TYPE_LABELS: Record<string, string> = { SICK_LEAVE: "Maladie", WORK_ACCIDENT: "Accident du travail", MATERNITY: "Maternité", PATERNITY: "Paternité" };
+  const ijssAbsences = sickAbsences.map((absence) => ({ id: absence.id, employeeId: absence.employeeId, label: `${ABSENCE_TYPE_LABELS[absence.type] ?? absence.type} du ${absence.startDate.toISOString().slice(0, 10).split("-").reverse().join("/")} au ${absence.endDate.toISOString().slice(0, 10).split("-").reverse().join("/")}` }));
+  const paidLeaveRows = calculations.flatMap((calculation) => {
+    const leave = bulletinFromSnapshot(calculation.calculationSnapshot)?.paidLeave;
+    if (!leave) return [];
+    const b = leave.balancesAfter;
+    return [{ employeeId: calculation.employeeId, previousAcquired: b.previousAcquired, previousTaken: b.previousTaken, currentAcquired: b.currentAcquired, currentTaken: b.currentTaken, daysTaken: leave.daysTaken, acquiredThisMonth: leave.acquiredThisMonth, compensatedDays: leave.compensatedDays ?? null, method: leave.indemnityMethod }];
+  });
+  const calculationWarnings = calculations.flatMap((calculation) => {
+    const bulletin = bulletinFromSnapshot(calculation.calculationSnapshot);
+    return bulletin ? bulletin.warnings.map((warning) => ({ employeeId: calculation.employeeId, warning })) : [];
+  });
 
   const profileByEmployee = new Map<string, (typeof profiles)[number]>();
   for (const profile of profiles) if (!profileByEmployee.has(profile.employeeId)) profileByEmployee.set(profile.employeeId, profile);
@@ -121,9 +162,8 @@ export default async function PayrollPeriodPage({ params }: { params: { periodId
   const calculatedCount = employees.filter((employee) => calculationByEmployee.has(employee.id)).length;
   const readiness = checkPayrollPeriodReadiness(employees.map((employee) => {
     const profile = profileByEmployee.get(employee.id);
-    const adjustments = variables.filter((variable) => variable.employeeId === employee.id && variable.code === "INCOMPLETE_MONTH");
     return {
-      hasIncompleteMonthAdjustment: adjustments.length === 1 && adjustments[0].unit === "EUR",
+      hasTermination: terminations.has(employee.id),
       hireDate: employee.hireDate,
       contractEndDate: employee.contractEndDate,
       profileCount: profiles.filter((profileRow) => profileRow.employeeId === employee.id).length,
@@ -133,9 +173,9 @@ export default async function PayrollPeriodPage({ params }: { params: { periodId
       baseSalaryCents: profile?.baseSalaryCents,
       monthlyHours: profile?.monthlyHours == null ? null : Number(profile.monthlyHours),
     };
-  }), { year: period.year, month: period.month });
+  }), { year: period.year, month: period.month }, { bulletinEngine: true });
 
-  const variableRows = variables.map((variable) => ({ id: variable.id, employeeId: variable.employeeId, code: variable.code, label: variable.label, amount: String(variable.amount), unit: variable.unit, source: variable.source }));
+  const variableRows = variables.map((variable) => ({ id: variable.id, employeeId: variable.employeeId, code: variable.code, label: variable.label, amount: String(variable.amount), unit: variable.unit, source: variable.source, reference: variable.reference ?? null }));
   const calculatedRows = employees.map((employee) => calculationByEmployee.get(employee.id)).filter((calculation): calculation is (typeof calculations)[number] => Boolean(calculation));
   const calculationRule = validatedRules.find((rule) => rule.code !== "FR.SMIC.MONTHLY_GROSS") ?? null;
   const hasValidatedRule = calculationRule !== null;
@@ -290,7 +330,21 @@ export default async function PayrollPeriodPage({ params }: { params: { periodId
             </section>
           ) : null}
 
-          <PayrollVariablesSection periodId={period.id} employees={employees.map((employee) => ({ id: employee.id, firstName: employee.firstName, lastName: employee.lastName }))} variables={variableRows} readOnly={!isOwner || period.status !== "DRAFT"} />
+          {calculationWarnings.length > 0 ? (
+            <details className="group mt-5 overflow-hidden rounded-2xl border border-accent-amber/30 bg-accent-amber/[0.04]">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-5 py-4 marker:hidden"><div className="flex items-center gap-2"><AlertTriangle size={16} className="text-accent-amber" /><div><p className="text-sm font-semibold text-ink">Points d&apos;attention du calcul</p><p className="mt-0.5 text-xs text-ink-faint">{calculationWarnings.length} remarque{calculationWarnings.length > 1 ? "s" : ""} à vérifier avant validation</p></div></div><span className="text-xs font-semibold text-ink-faint group-open:text-ink">Afficher</span></summary>
+              <ul className="divide-y divide-accent-amber/15 border-t border-accent-amber/20">
+                {calculationWarnings.map((item, index) => {
+                  const employee = employees.find((candidate) => candidate.id === item.employeeId);
+                  return <li key={`${item.employeeId}-${index}`} className="px-5 py-3 text-sm leading-6 text-ink-soft"><span className="font-medium text-ink">{employee ? `${employee.firstName} ${employee.lastName}` : "Salarié"} :</span> {item.warning}</li>;
+                })}
+              </ul>
+            </details>
+          ) : null}
+
+          <PayrollTerminationSection periodId={period.id} employees={leavingEmployees} readOnly={!isOwner || period.status !== "DRAFT"} />
+
+          <PayrollVariablesSection periodId={period.id} employees={employees.map((employee) => ({ id: employee.id, firstName: employee.firstName, lastName: employee.lastName }))} variables={variableRows} ijssAbsences={ijssAbsences} paidLeaveRows={paidLeaveRows} readOnly={!isOwner || period.status !== "DRAFT"} />
         </main>
       </div>
     </div>

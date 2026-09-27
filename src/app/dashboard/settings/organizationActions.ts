@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentMembership } from "@/lib/auth";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
 import { isParisDayAfter } from "@/lib/parisDate";
+import { parsePayrollSettingsForm } from "@/lib/payroll/bulletin/settings-form";
 
 const LEGAL_CATEGORIES = ["EI", "SARL", "SAS", "SELARL", "SELAS", "association", "autre"] as const;
 const KNOWN_CONVENTIONS = [
@@ -93,11 +94,15 @@ export async function updateOrganizationSettings(formData: FormData) {
     if (healthPlanEmployerRate !== null && (!Number.isFinite(healthPlanEmployerRate) || healthPlanEmployerRate < 50 || healthPlanEmployerRate > 100)) throw new Error("La part employeur de la complémentaire santé doit être comprise entre 50 % et 100 %.");
     const payrollDepartment = String(formData.get("payrollDepartment") ?? "").trim();
     const collectiveAgreement = await resolveCollectiveAgreement(formData);
+    const payrollSettings = formData.has("paidLeaveMethod") ? parsePayrollSettingsForm((name) => formData.get(name)) : null;
 
     await prisma.$transaction(async (tx) => {
       await tx.membership.update({ where: { id: membership.id }, data: { functionalRole } });
       await tx.organization.update({ where: { id: membership.organizationId }, data: { conventionCollective: collectiveAgreement?.name ?? null, collectiveAgreementId: collectiveAgreement?.id ?? null, payrollCity: payrollCity || null } });
       await tx.$executeRaw`UPDATE "organizations" SET "legalCategory" = ${legalCategory}, "companyCreationDate" = ${companyCreationDate}, "atmpRate" = ${atmpRate}, "payrollDepartment" = ${payrollDepartment || null}, "healthPlanMonthlyAmount" = ${healthPlanMonthlyAmount}, "healthPlanEmployerRate" = ${healthPlanEmployerRate} WHERE "id" = ${membership.organizationId}`;
+      if (payrollSettings) {
+        await tx.$executeRaw`UPDATE "organizations" SET "payrollHeadcount" = ${payrollSettings.payrollHeadcount}, "mobilityRate" = ${payrollSettings.mobilityRate}, "paidLeaveMethod" = ${payrollSettings.paidLeaveMethod}, "ijssSubrogation" = ${payrollSettings.ijssSubrogation}, "workedSolidarityDay" = ${payrollSettings.workedSolidarityDay}, "mealVoucherFaceValue" = ${payrollSettings.mealVoucherFaceValue}, "mealVoucherEmployerShare" = ${payrollSettings.mealVoucherEmployerShare}, "transportEmployerShare" = ${payrollSettings.transportEmployerShare}, "prevoyanceRates" = ${payrollSettings.prevoyanceRates === null ? null : JSON.stringify(payrollSettings.prevoyanceRates)}::jsonb WHERE "id" = ${membership.organizationId}`;
+      }
     });
   } else {
     await prisma.membership.update({ where: { id: membership.id }, data: { functionalRole } });

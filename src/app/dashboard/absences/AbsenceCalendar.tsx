@@ -18,6 +18,8 @@ const TYPE_STYLES: Record<string, { label: string; dot: string; bg: string; text
   WORK_ACCIDENT: { label: "Accident du travail", dot: "bg-red-500", bg: "bg-red-50", text: "text-red-800", border: "border-red-100" },
   UNPAID_LEAVE: { label: "Sans solde", dot: "bg-slate-500", bg: "bg-slate-50", text: "text-slate-800", border: "border-slate-200" },
   FAMILY_EVENT: { label: "Événement familial", dot: "bg-emerald-500", bg: "bg-emerald-50", text: "text-emerald-800", border: "border-emerald-100" },
+  MATERNITY: { label: "Maternité", dot: "bg-pink-500", bg: "bg-pink-50", text: "text-pink-800", border: "border-pink-100" },
+  PATERNITY: { label: "Paternité", dot: "bg-sky-500", bg: "bg-sky-50", text: "text-sky-800", border: "border-sky-100" },
   OTHER: { label: "Autre", dot: "bg-gray-500", bg: "bg-gray-50", text: "text-gray-800", border: "border-gray-200" },
 };
 

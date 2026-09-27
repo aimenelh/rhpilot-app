@@ -13,6 +13,8 @@ const TYPE_LABELS: Record<string, string> = {
   WORK_ACCIDENT: "Accident du travail",
   UNPAID_LEAVE: "Absence sans solde",
   FAMILY_EVENT: "Événement familial",
+  MATERNITY: "Congé maternité",
+  PATERNITY: "Congé paternité et d'accueil de l'enfant",
   OTHER: "Autre",
 };
 

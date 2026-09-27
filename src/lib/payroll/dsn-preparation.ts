@@ -9,7 +9,7 @@ import type { WithholdingTaxProfile } from "./withholding-tax-profile";
 export type DsnPreparationResult = { content: string; fileName: string; normVersion: "P26V01"; employeeCount: number; warnings: string[] };
 
 type SnapshotWithholdingTax = { rate: number; amount: number; validFrom: string; validUntil: string | null; source: string; sourceReference: string | null };
-type CalculationSnapshot = { profile?: { id?: string; baseSalaryCents?: number; monthlyHours?: string | null; collectiveAgreementId?: string | null }; variables?: unknown[]; validatedAbsences?: unknown[]; withholdingTax?: Partial<SnapshotWithholdingTax>; socialEngine?: { employerCost?: number } };
+type CalculationSnapshot = { profile?: { id?: string; baseSalaryCents?: number; monthlyHours?: string | null; collectiveAgreementId?: string | null }; variables?: unknown[]; validatedAbsences?: unknown[]; withholdingTax?: Partial<SnapshotWithholdingTax>; socialEngine?: { employerCost?: number }; bulletin?: { lines?: Array<{ code?: string }> } };
 
 type OrganizationDsnRow = {
   id: string; name: string; siret: string | null; payrollAddress: string | null; payrollPostalCode: string | null; payrollCity: string | null;
@@ -44,7 +44,12 @@ function snapshotWithholdingTax(snapshot: CalculationSnapshot, employeeId: strin
   return { rate, validFrom, validUntil, source: requiredString(withholding.source, `la provenance du PAS du salarié ${employeeId}`), sourceReference: withholding.sourceReference?.trim() || null };
 }
 
+const DSN_UNMAPPED_BULLETIN_LINES = new Set(["ENTRY_EXIT", "SEVERANCE", "PAID_LEAVE_COMPENSATION", "NOTICE_COMPENSATION", "CDD_END_ALLOWANCE"]);
+
 function assertSimpleDsnScope(snapshot: CalculationSnapshot, employeeId: string): void {
+  // Entrées, sorties et indemnités de rupture exigent les blocs de fin de contrat et d'indemnités, pas encore émis.
+  const unmapped = (snapshot.bulletin?.lines ?? []).find((line) => line.code && DSN_UNMAPPED_BULLETIN_LINES.has(line.code));
+  if (unmapped) throw new Error(`DSN bloquée pour le salarié ${employeeId} : les entrées, sorties et indemnités de fin de contrat nécessitent encore les blocs de fin de contrat (S21.G00.62) et d'indemnités avant export.`);
   if ((snapshot.variables?.length ?? 0) > 0) throw new Error(`DSN bloquée pour le salarié ${employeeId} : les variables de paie nécessitent encore leur ventilation NEODeS en blocs prime/autre revenu avant export.`);
   if ((snapshot.validatedAbsences?.length ?? 0) > 0) throw new Error(`DSN bloquée pour le salarié ${employeeId} : les absences nécessitent encore leur ventilation détaillée d'activité/événement avant export.`);
 }

@@ -5,6 +5,7 @@ import { useFormState, useFormStatus } from "react-dom";
 import { saveEmployeePayrollProfile, type PayrollProfileFormState } from "./employeeActions";
 import { AlternanceProfileSection } from "../employees/AlternanceProfileSection";
 import { WithholdingTaxSection } from "../employees/WithholdingTaxSection";
+import { PayrollOpeningSection, type PaidLeaveOpeningView, type PayrollOpeningView } from "./PayrollOpeningSection";
 
 type AgreementOption = { id: string; idcc: string; name: string };
 type PayrollProfileView = {
@@ -17,7 +18,13 @@ type PayrollProfileView = {
   coefficient: string | null;
   seniorityDate: string | null;
   effectiveFrom: string;
+  weeklySchedule?: number[] | null;
+  structuralOvertimeHours?: string | null;
+  structuralOvertimeRate?: string | null;
+  healthPlanWaiver?: boolean;
 };
+
+const WEEK_DAYS = ["Lun.", "Mar.", "Mer.", "Jeu.", "Ven.", "Sam.", "Dim."];
 
 function formatSalary(cents: number | null) {
   if (cents === null) return "Non renseigné";
@@ -43,12 +50,16 @@ export function PayrollProfileSection({
   profile,
   agreements,
   canEdit,
+  paidLeaveOpening = null,
+  payrollOpening = null,
 }: {
   employeeId: string;
   firstName: string;
   profile: PayrollProfileView | null;
   agreements: AgreementOption[];
   canEdit: boolean;
+  paidLeaveOpening?: PaidLeaveOpeningView;
+  payrollOpening?: PayrollOpeningView;
 }) {
   const action = saveEmployeePayrollProfile.bind(null, employeeId);
   const [state, formAction] = useFormState<PayrollProfileFormState, FormData>(action, undefined);
@@ -87,6 +98,27 @@ export function PayrollProfileSection({
           <details className="group rounded-lg border border-surface-border bg-surface-muted/40 px-4 py-3">
             <summary className="cursor-pointer list-none text-sm font-semibold text-ink marker:hidden">
               <span className="flex items-center justify-between gap-3">
+                Horaire de travail et complémentaire santé
+                <span className="text-xs font-normal text-ink-faint group-open:hidden">Afficher</span>
+                <span className="hidden text-xs font-normal text-ink-faint group-open:inline">Masquer</span>
+              </span>
+            </summary>
+            <p className="mt-3 text-xs leading-5 text-ink-faint">Heures prévues chaque jour. Elles servent à valoriser les absences, les entrées et les sorties au réel. Laissez vide pour un temps plein du lundi au vendredi.</p>
+            <div className="mt-3 grid grid-cols-7 gap-2">
+              {WEEK_DAYS.map((day, index) => (
+                <label key={day} className="block text-center"><span className="text-[11px] font-medium text-ink-soft">{day}</span><input name={`schedule.${index}`} type="number" min="0" max="12" step="0.25" inputMode="decimal" defaultValue={profile?.weeklySchedule ? String(profile.weeklySchedule[index] ?? 0) : ""} placeholder={index < 5 ? "7" : "0"} className="mt-1 w-full rounded-lg border border-surface-border px-2 py-2 text-center text-sm text-ink" /></label>
+              ))}
+            </div>
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <label className="block"><span className="text-xs font-medium text-ink-soft">Heures supplémentaires structurelles par mois</span><input name="structuralOvertimeHours" type="number" min="0" step="0.01" defaultValue={profile?.structuralOvertimeHours ?? ""} placeholder="17,33 pour un contrat de 39 h" className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2 text-sm text-ink" /><span className="mt-1 block text-xs text-ink-faint">Heures comprises dans l&apos;horaire mensuel et dans le salaire au-delà de 35 h par semaine.</span></label>
+              <label className="block"><span className="text-xs font-medium text-ink-soft">Majoration de ces heures (%)</span><input name="structuralOvertimeRate" type="number" min="10" max="100" step="0.01" defaultValue={profile?.structuralOvertimeRate ?? ""} placeholder="25" className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2 text-sm text-ink" /></label>
+            </div>
+            <label className="mt-4 flex items-start gap-2 text-sm text-ink"><input type="checkbox" name="healthPlanWaiver" defaultChecked={profile?.healthPlanWaiver ?? false} className="mt-1" /><span>Dispensé d&apos;adhésion à la complémentaire santé<span className="block text-xs text-ink-faint">Cas de dispense prévu par la loi ou l&apos;acte de mise en place, justificatif conservé par l&apos;entreprise.</span></span></label>
+          </details>
+
+          <details className="group rounded-lg border border-surface-border bg-surface-muted/40 px-4 py-3">
+            <summary className="cursor-pointer list-none text-sm font-semibold text-ink marker:hidden">
+              <span className="flex items-center justify-between gap-3">
                 Paramètres conventionnels et classification
                 <span className="text-xs font-normal text-ink-faint group-open:hidden">Afficher</span>
                 <span className="hidden text-xs font-normal text-ink-faint group-open:inline">Masquer</span>
@@ -111,6 +143,7 @@ export function PayrollProfileSection({
       <div className="border-t border-surface-border px-5 pb-5">
         <AlternanceProfileSection employeeId={employeeId} canEdit={canEdit} embedded />
         <WithholdingTaxSection employeeId={employeeId} canEdit={canEdit} />
+        {canEdit ? <PayrollOpeningSection employeeId={employeeId} paidLeave={paidLeaveOpening} cumuls={payrollOpening} /> : null}
       </div>
     </section>
   );

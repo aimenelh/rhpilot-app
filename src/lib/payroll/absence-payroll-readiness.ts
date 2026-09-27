@@ -40,6 +40,8 @@ export function formatAbsencePayrollTreatmentGap(absenceTypes: string[]): string
     WORK_ACCIDENT: "accident du travail",
     UNPAID_LEAVE: "absence sans solde",
     FAMILY_EVENT: "événement familial",
+    MATERNITY: "congé maternité",
+    PATERNITY: "congé paternité",
     OTHER: "autre absence",
   };
 

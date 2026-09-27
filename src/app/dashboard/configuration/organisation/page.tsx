@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Input, Label, Select, FieldHint } from "@/components/ui/Field";
 import { updateOrganizationSettings } from "../../settings/organizationActions";
 import { CollectiveAgreementFields } from "./CollectiveAgreementFields";
+import { PayrollSettingsFields, type PayrollSettingsValues } from "./PayrollSettingsFields";
 
 export const dynamic = "force-dynamic";
 
@@ -21,7 +22,43 @@ type SocialRow = {
   healthPlanEmployerRate: unknown;
   companyCreationDate: Date | null;
   payrollDepartment: string | null;
+  payrollHeadcount: unknown;
+  mobilityRate: unknown;
+  paidLeaveMethod: string | null;
+  ijssSubrogation: boolean | null;
+  workedSolidarityDay: boolean | null;
+  prevoyanceRates: unknown;
+  mealVoucherFaceValue: unknown;
+  mealVoucherEmployerShare: unknown;
+  transportEmployerShare: unknown;
 };
+
+function asText(value: unknown, scale = 1): string {
+  if (value === null || value === undefined || value === "") return "";
+  const number = Number(value);
+  return Number.isFinite(number) ? String(Math.round(number * scale * 100000) / 100000) : "";
+}
+
+function payrollSettingsValues(row: SocialRow | undefined): PayrollSettingsValues {
+  const rates = (row?.prevoyanceRates ?? {}) as Record<string, Record<string, unknown> | undefined>;
+  const population = (key: "cadre" | "nonCadre") => ({
+    employeeT1: asText(rates[key]?.employeeT1, 100),
+    employerT1: asText(rates[key]?.employerT1, 100),
+    employeeT2: asText(rates[key]?.employeeT2, 100),
+    employerT2: asText(rates[key]?.employerT2, 100),
+  });
+  return {
+    payrollHeadcount: asText(row?.payrollHeadcount),
+    mobilityRate: asText(row?.mobilityRate),
+    paidLeaveMethod: row?.paidLeaveMethod === "OUVRES" ? "OUVRES" : "OUVRABLES",
+    ijssSubrogation: row?.ijssSubrogation !== false,
+    workedSolidarityDay: row?.workedSolidarityDay === true,
+    mealVoucherFaceValue: asText(row?.mealVoucherFaceValue),
+    mealVoucherEmployerShare: asText(row?.mealVoucherEmployerShare, 100),
+    transportEmployerShare: asText(row?.transportEmployerShare ?? 0.5, 100),
+    prevoyance: { cadre: population("cadre"), nonCadre: population("nonCadre") },
+  };
+}
 
 export default async function OrganisationConfigPage({ searchParams }: OrganisationConfigPageProps) {
   const membership = await getCurrentMembership();
@@ -50,7 +87,7 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
         select: { id: true, idcc: true, name: true },
         orderBy: { name: "asc" },
       }),
-      prisma.$queryRaw<SocialRow[]>`SELECT "legalCategory", "atmpRate", "healthPlanMonthlyAmount", "healthPlanEmployerRate", "companyCreationDate", "payrollDepartment" FROM "organizations" WHERE "id" = ${membership.organizationId} LIMIT 1`,
+      prisma.$queryRaw<SocialRow[]>`SELECT "legalCategory", "atmpRate", "healthPlanMonthlyAmount", "healthPlanEmployerRate", "companyCreationDate", "payrollDepartment", "payrollHeadcount", "mobilityRate", "paidLeaveMethod", "ijssSubrogation", "workedSolidarityDay", "prevoyanceRates", "mealVoucherFaceValue", "mealVoucherEmployerShare", "transportEmployerShare" FROM "organizations" WHERE "id" = ${membership.organizationId} LIMIT 1`,
     ]);
   }
   const legalCategory = socialRows[0]?.legalCategory ?? "";
@@ -84,6 +121,7 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
             <div className="mt-6"><Label htmlFor="payrollDepartment">Département de l&apos;établissement</Label><Input id="payrollDepartment" name="payrollDepartment" defaultValue={payrollDepartment} placeholder="Ex. Gard" /><FieldHint>Renseignez le département de l&apos;établissement. RH Pilot ne le déduit pas du nom de la commune.</FieldHint></div>
             <div className="mt-6"><Label htmlFor="healthPlanMonthlyAmount">Montant mensuel de la complémentaire santé (€)</Label><Input id="healthPlanMonthlyAmount" name="healthPlanMonthlyAmount" type="number" min="0.01" max="10000" step="0.01" defaultValue={healthPlanMonthlyAmount} placeholder="Ex. 40" /><FieldHint>Indiquez le montant mensuel prévu par le contrat de complémentaire santé de l&apos;organisation.</FieldHint><Label htmlFor="healthPlanEmployerRate" className="mt-4">Part employeur (%)</Label><Input id="healthPlanEmployerRate" name="healthPlanEmployerRate" type="number" min="50" max="100" step="0.01" defaultValue={healthPlanEmployerRate} placeholder="Ex. 50" /><FieldHint>La part employeur de la complémentaire santé doit être d&apos;au moins 50 %.</FieldHint></div>
           </Card>
+          <PayrollSettingsFields values={payrollSettingsValues(socialRows[0])} />
           <Card className="mt-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="text-sm font-semibold text-ink">Convention collective</h2><p className="mt-1 text-sm text-ink-soft">Associez la convention applicable à l&apos;organisation par son IDCC. C&apos;est cette référence structurée qui servira ensuite aux règles conventionnelles de paie.</p></div><Link href="https://code.travail.gouv.fr/outils/convention-collective/entreprise" target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-brand-primary hover:underline"><ExternalLink size={13} /> Vérifier l&apos;IDCC</Link></div>
             <div className="mt-4"><CollectiveAgreementFields agreements={collectiveAgreements} defaultIdcc={organization?.collectiveAgreement?.idcc ?? ""} defaultName={organization?.collectiveAgreement?.name ?? organization?.conventionCollective ?? ""} /></div>

@@ -112,6 +112,21 @@ export default async function EmployeeDetailPage({
       : Promise.resolve([]),
   ]);
 
+  type ProfileExtrasRow = { weeklySchedule: unknown; structuralOvertimeHours: unknown; structuralOvertimeRate: unknown; healthPlanWaiver: boolean | null };
+  type LeaveOpeningRow = { asOf: Date; previousAcquired: unknown; previousTaken: unknown; currentAcquired: unknown; currentTaken: unknown; referenceGross: unknown; referenceAcquiredDays: unknown; currentReferenceGross: unknown };
+  type PayrollOpeningRow = { year: number; throughMonth: number; cumuls: unknown; sickPayHistory: unknown };
+  const toNullableNumber = (value: unknown) => (value === null || value === undefined ? null : Number(value));
+  const [profileExtrasRows, leaveOpeningRows, payrollOpeningRows] = canManageEmployee
+    ? await Promise.all([
+        payrollProfile ? prisma.$queryRaw<ProfileExtrasRow[]>`SELECT "weeklySchedule", "structuralOvertimeHours", "structuralOvertimeRate", "healthPlanWaiver" FROM "payroll_profiles" WHERE "id" = ${payrollProfile.id}` : Promise.resolve([] as ProfileExtrasRow[]),
+        prisma.$queryRaw<LeaveOpeningRow[]>`SELECT "asOf", "previousAcquired", "previousTaken", "currentAcquired", "currentTaken", "referenceGross", "referenceAcquiredDays", "currentReferenceGross" FROM "employee_paid_leave_openings" WHERE "organizationId" = ${membership.organizationId} AND "employeeId" = ${employee.id} ORDER BY "asOf" DESC LIMIT 1`,
+        prisma.$queryRaw<PayrollOpeningRow[]>`SELECT "year", "throughMonth", "cumuls", "sickPayHistory" FROM "employee_payroll_openings" WHERE "organizationId" = ${membership.organizationId} AND "employeeId" = ${employee.id} ORDER BY "year" DESC LIMIT 1`,
+      ]).catch(() => [[], [], []] as [ProfileExtrasRow[], LeaveOpeningRow[], PayrollOpeningRow[]])
+    : [[], [], []] as [ProfileExtrasRow[], LeaveOpeningRow[], PayrollOpeningRow[]];
+  const profileExtras = profileExtrasRows[0];
+  const leaveOpening = leaveOpeningRows[0];
+  const payrollOpeningRow = payrollOpeningRows[0];
+
   const potentialManagers = memberships.map((m) => ({
     id: m.id,
     label: `${getUserDisplayName(m.user)} (${m.user.email})`,
@@ -287,10 +302,25 @@ export default async function EmployeeDetailPage({
                 coefficient: payrollProfile.coefficient,
                 seniorityDate: payrollProfile.seniorityDate?.toISOString() ?? null,
                 effectiveFrom: payrollProfile.effectiveFrom.toISOString(),
+                weeklySchedule: Array.isArray(profileExtras?.weeklySchedule) ? (profileExtras.weeklySchedule as number[]) : null,
+                structuralOvertimeHours: profileExtras?.structuralOvertimeHours == null ? null : String(profileExtras.structuralOvertimeHours),
+                structuralOvertimeRate: profileExtras?.structuralOvertimeRate == null ? null : String(Math.round(Number(profileExtras.structuralOvertimeRate) * 10000) / 100),
+                healthPlanWaiver: profileExtras?.healthPlanWaiver === true,
               }
             : null
         }
         agreements={collectiveAgreements}
+        paidLeaveOpening={leaveOpening ? {
+          asOf: leaveOpening.asOf.toISOString().slice(0, 10),
+          previousAcquired: Number(leaveOpening.previousAcquired),
+          previousTaken: Number(leaveOpening.previousTaken),
+          currentAcquired: Number(leaveOpening.currentAcquired),
+          currentTaken: Number(leaveOpening.currentTaken),
+          referenceGross: toNullableNumber(leaveOpening.referenceGross),
+          referenceAcquiredDays: toNullableNumber(leaveOpening.referenceAcquiredDays),
+          currentReferenceGross: toNullableNumber(leaveOpening.currentReferenceGross),
+        } : null}
+        payrollOpening={payrollOpeningRow ? { year: Number(payrollOpeningRow.year), throughMonth: Number(payrollOpeningRow.throughMonth), cumuls: (payrollOpeningRow.cumuls ?? {}) as Record<string, number>, sickPayHistory: (payrollOpeningRow.sickPayHistory ?? null) as Record<string, number> | null } : null}
       />}
 
       <div className="mt-8">

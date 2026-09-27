@@ -5,8 +5,9 @@ import { revalidatePath } from "next/cache";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calculatePayrollPeriod } from "@/lib/payroll/payroll-period-calculation";
+import { ENGINE_COMPUTED_VARIABLES, getBulletinVariable } from "@/lib/payroll/bulletin/variables";
 
-const VARIABLE_UNITS = ["EUR", "DAYS", "HOURS", "PERCENT"] as const;
+const VARIABLE_UNITS = ["EUR", "DAYS", "HOURS", "PERCENT", "UNITS"] as const;
 type VariableUnit = (typeof VARIABLE_UNITS)[number];
 export type PayrollVariableFormState = { error: string } | undefined;
 export type PayrollCalculationFormState = { error: string } | undefined;
@@ -73,10 +74,23 @@ export async function addPayrollVariable(periodId: string, _prevState: PayrollVa
   if (amount === null || amount < 0) return { error: "Le montant de la variable doit être positif ou nul." };
   if (Math.abs(amount) > 100000000) return { error: "La valeur de la variable est trop élevée." };
   if (!unit) return { error: "L'unité de la variable est invalide." };
+  if (ENGINE_COMPUTED_VARIABLES[code]) return { error: `Cet élément n'est plus saisi à la main : ${ENGINE_COMPUTED_VARIABLES[code]}.` };
+  const definition = getBulletinVariable(code);
+  if (!definition) return { error: "Cet élément de paie n'est pas pris en charge." };
+  if (unit !== definition.unit) return { error: "L'unité ne correspond pas à l'élément de paie choisi." };
+  if (definition.unit === "UNITS" && !Number.isInteger(amount)) return { error: "Le nombre de titres doit être un nombre entier." };
+  if (definition.unit === "HOURS" && amount > 200) return { error: "Le nombre d'heures saisi est invraisemblable." };
   const employee = await prisma.employee.findFirst({ where: { id: employeeId, ...activeEmployeeWhere(membership.organizationId, period.year, period.month) }, select: { id: true } });
   if (!employee) return { error: "Salarié introuvable ou hors de cette période de paie." };
+  const referenceRaw = String(formData.get("reference") ?? "").trim();
+  let reference: string | null = null;
+  if (definition.kind === "IJSS_GROSS" && referenceRaw) {
+    const absence = await prisma.absence.findFirst({ where: { id: referenceRaw, organizationId: membership.organizationId, employeeId: employee.id, status: "VALIDATED" }, select: { id: true } });
+    if (!absence) return { error: "L'arrêt sélectionné est introuvable pour ce salarié." };
+    reference = absence.id;
+  }
   await prisma.$transaction(async (tx) => {
-    await tx.payrollVariable.create({ data: { id: randomUUID(), organizationId: membership.organizationId, payrollPeriodId: period.id, employeeId: employee.id, code, label, amount, unit, source: "MANUAL" } });
+    await tx.payrollVariable.create({ data: { id: randomUUID(), organizationId: membership.organizationId, payrollPeriodId: period.id, employeeId: employee.id, code, label: definition.label, amount, unit, source: "MANUAL", reference } });
     await tx.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.variable.created", entityType: "PayrollVariable", entityId: period.id, metadata: { employeeId, code, unit } } });
   });
   revalidatePath(`/dashboard/payroll/${periodId}`);

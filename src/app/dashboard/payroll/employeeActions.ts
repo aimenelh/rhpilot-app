@@ -58,6 +58,26 @@ export async function saveEmployeePayrollProfile(
     return { error: "La date d'ancienneté est invalide." };
   }
 
+  // Horaire hebdomadaire (heures par jour, du lundi au dimanche) et heures supplémentaires structurelles.
+  let weeklySchedule: number[] | null = null;
+  if (formData.has("schedule.0")) {
+    const days = Array.from({ length: 7 }, (_, index) => String(formData.get(`schedule.${index}`) ?? "").trim().replace(",", "."));
+    if (days.some((value) => value !== "")) {
+      weeklySchedule = days.map((value) => (value === "" ? 0 : Number(value)));
+      if (weeklySchedule.some((hours) => !Number.isFinite(hours) || hours < 0 || hours > 12)) return { error: "Chaque jour de l'horaire hebdomadaire doit compter entre 0 et 12 heures." };
+      const weekly = weeklySchedule.reduce((total, hours) => total + hours, 0);
+      if (weekly <= 0) return { error: "L'horaire hebdomadaire ne prévoit aucune heure de travail." };
+      const expectedWeekly = (monthlyHours * 12) / 52;
+      if (Math.abs(weekly - expectedWeekly) > 0.05) return { error: `L'horaire hebdomadaire (${weekly.toFixed(2)} h) ne correspond pas aux heures mensuelles (${monthlyHours} h, soit ${expectedWeekly.toFixed(2)} h par semaine).` };
+    }
+  }
+  const structuralRaw = String(formData.get("structuralOvertimeHours") ?? "").trim().replace(",", ".");
+  const structuralOvertimeHours = structuralRaw === "" ? null : Number(structuralRaw);
+  if (structuralOvertimeHours !== null && (!Number.isFinite(structuralOvertimeHours) || structuralOvertimeHours < 0 || structuralOvertimeHours >= monthlyHours)) return { error: "Les heures supplémentaires structurelles sont invalides." };
+  const structuralRateRaw = String(formData.get("structuralOvertimeRate") ?? "").trim().replace(",", ".");
+  const structuralOvertimeRate = structuralRateRaw === "" ? null : Number(structuralRateRaw) / 100;
+  if (structuralOvertimeRate !== null && (!Number.isFinite(structuralOvertimeRate) || structuralOvertimeRate < 0.1 || structuralOvertimeRate > 1)) return { error: "La majoration des heures supplémentaires structurelles doit être d'au moins 10 %." };
+
   const effectiveFrom = new Date(effectiveFromRaw);
   effectiveFrom.setHours(0, 0, 0, 0);
   const seniorityDate = seniorityDateRaw ? new Date(seniorityDateRaw) : null;
@@ -92,7 +112,7 @@ export async function saveEmployeePayrollProfile(
       });
     }
 
-    await tx.payrollProfile.upsert({
+    const savedProfile = await tx.payrollProfile.upsert({
       where: {
         organizationId_employeeId_effectiveFrom: {
           organizationId: membership.organizationId,
@@ -127,7 +147,10 @@ export async function saveEmployeePayrollProfile(
         seniorityDate,
         updatedAt: new Date(),
       },
+      select: { id: true },
     });
+    const healthPlanWaiver = formData.get("healthPlanWaiver") === "on";
+    await tx.$executeRaw`UPDATE "payroll_profiles" SET "weeklySchedule" = ${weeklySchedule === null ? null : JSON.stringify(weeklySchedule)}::jsonb, "structuralOvertimeHours" = ${structuralOvertimeHours}, "structuralOvertimeRate" = ${structuralOvertimeRate}, "healthPlanWaiver" = ${healthPlanWaiver} WHERE "id" = ${savedProfile.id}`;
 
     await tx.auditLog.create({
       data: {

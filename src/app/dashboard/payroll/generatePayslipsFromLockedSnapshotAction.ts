@@ -12,6 +12,10 @@ import {
 import { readPayslipDocument, storePayslipDocument } from "@/lib/payroll/payslip-storage";
 import { resolveLockedAnnualCumuls } from "@/lib/payroll/payroll-history";
 import { assertPayrollOutputConsistency } from "@/lib/payroll/payroll-output-consistency";
+import { bulletinFromSnapshot } from "@/lib/payroll/bulletin/prior-state";
+import { BulletinPdfPrerequisiteError, renderBulletinPdf } from "@/lib/payroll/bulletin/pdf";
+import { PAS_DEFAULT_GRIDS, pasBracketRate, valueAt } from "@/lib/payroll/bulletin/params";
+import type { PayslipResult } from "@/lib/payroll/bulletin/types";
 
 export type PayrollPayslipGenerationFormState = { error: string } | undefined;
 
@@ -371,6 +375,26 @@ function reconcileLockedSnapshot(input: {
   return { contributionDetails, withholdingTaxRate, modelVersion, employerCost };
 }
 
+/** Contrôle qu'un bulletin détaillé verrouillé correspond toujours aux totaux enregistrés et à la date de paiement. */
+function reconcileBulletin(bulletin: PayslipResult, calculation: { grossAmount: unknown; employeeContributions: unknown; employerContributions: unknown; netBeforeTax: unknown; withholdingTax: unknown; netPaid: unknown; netTaxableAmount: unknown; netSocialAmount: unknown }, paymentDate: string, territory: "METROPOLE" | "ANTILLES_REUNION" | "GUYANE_MAYOTTE" = "METROPOLE"): void {
+  const totals = bulletin.totals;
+  assertClose("le brut", Number(calculation.grossAmount), totals.grossTotal);
+  assertClose("les cotisations salariales", Number(calculation.employeeContributions), totals.employeeContributions);
+  assertClose("les cotisations patronales", Number(calculation.employerContributions), totals.employerContributions);
+  assertClose("le net avant impôt", Number(calculation.netBeforeTax), totals.netBeforeTax);
+  assertClose("le prélèvement à la source", Number(calculation.withholdingTax), totals.withholdingTax);
+  assertClose("le net payé", Number(calculation.netPaid), totals.netPaid);
+  assertClose("le net imposable", Number(calculation.netTaxableAmount), totals.netTaxable);
+  assertClose("le montant net social", Number(calculation.netSocialAmount), totals.netSocial);
+  if (bulletin.withholding.mode === "DEFAULT_GRID" && bulletin.period.paymentDate !== paymentDate) {
+    const grid = valueAt(PAS_DEFAULT_GRIDS, new Date(`${paymentDate}T00:00:00.000Z`), "grille de taux par défaut du prélèvement à la source");
+    const rate = pasBracketRate(grid.value[territory], bulletin.withholding.base);
+    if (Math.abs(rate - bulletin.withholding.rate) > 1e-9) {
+      throw new Error(`Génération bloquée : ${bulletin.employee.displayName} relève de la grille de taux par défaut, qui change avec la date de paiement choisie. Rouvrez la période et recalculez-la avec cette date de paiement.`);
+    }
+  }
+}
+
 export async function generatePayslipsFromLockedSnapshotAction(
   _prevState: PayrollPayslipGenerationFormState,
   formData: FormData,
@@ -442,6 +466,7 @@ export async function generatePayslipsFromLockedSnapshotAction(
         lastName: true,
         position: true,
         hireDate: true,
+        contractEndDate: true,
         isDemoData: true,
       },
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
@@ -500,6 +525,53 @@ export async function generatePayslipsFromLockedSnapshotAction(
       if (!employee) throw new Error("Génération impossible : salarié verrouillé introuvable.");
 
       const snapshot = normalizeSnapshot(calculation.calculationSnapshot);
+      const bulletin = bulletinFromSnapshot(calculation.calculationSnapshot);
+      if (bulletin) {
+        reconcileBulletin(bulletin, calculation, paymentDate);
+        modelVersions.add(bulletin.engineVersion);
+        const lockedProfileId = asString(snapshot.profile?.id);
+        const profile = (lockedProfileId ? profileById.get(lockedProfileId) : undefined) ?? latestProfileByEmployee.get(employee.id);
+        if (!profile) return { error: `Données de bulletin incomplètes pour ${employee.firstName} ${employee.lastName}.` };
+        const existing = payslipByEmployee.get(employee.id);
+        if (!employee.isDemoData && existing?.documentStatus === "GENERATED" && existing.storageKey) {
+          try {
+            readPayslipDocument(existing.storageKey);
+            continue;
+          } catch {
+            // Le fichier stocké est indisponible : il est reconstruit depuis le calcul verrouillé.
+          }
+        }
+        const agreementId = asString(snapshot.profile?.collectiveAgreementId) || profile.collectiveAgreementId || organization.collectiveAgreementId || null;
+        const agreement = agreementId ? agreementById.get(agreementId) : null;
+        const classificationLabel = asString(snapshot.profile?.classificationLabel) || profile.classificationLabel;
+        const classificationCode = asString(snapshot.profile?.classificationCode) || profile.classificationCode;
+        const coefficient = asString(snapshot.profile?.coefficient) || profile.coefficient || undefined;
+        const pdf = await renderBulletinPdf({
+          result: bulletin,
+          employer: { name: organization.name, address: employerAddress, siret: organization.siret ?? "", nafCode: organization.payrollNafCode ?? "", urssafReference: organization.payrollUrssafReference ?? "" },
+          employee: {
+            name: `${toDisplayName(employee.firstName)} ${toDisplayName(employee.lastName)}`.trim(),
+            address: profile.employeeAddress ?? "",
+            position: employee.position ?? "",
+            classification: toDisplayClassification(classificationLabel, classificationCode),
+            ...(coefficient ? { coefficient } : {}),
+            hireDate: employee.hireDate.toISOString().slice(0, 10),
+            seniority: formatSeniority(profile.seniorityDate ?? employee.hireDate, periodEnd),
+            exitDate: employee.contractEndDate && employee.contractEndDate.toISOString().slice(0, 10) <= bulletin.period.last ? employee.contractEndDate.toISOString().slice(0, 10) : null,
+          },
+          collectiveAgreement: agreement ? `${agreement.name} (IDCC ${agreement.idcc})` : "Code du travail",
+          paymentDate,
+          contractMonthlyHours: asNumber(snapshot.profile?.monthlyHours ?? profile.monthlyHours),
+        });
+        const stored = storePayslipDocument(pdf);
+        const generatedAt = new Date();
+        await prisma.payslip.upsert({
+          where: { calculationId: calculation.id },
+          create: { id: existing?.id ?? randomUUID(), organizationId: membership.organizationId, payrollPeriodId: period.id, employeeId: employee.id, calculationId: calculation.id, documentStatus: "GENERATED", storageKey: stored.storageKey, generatedAt },
+          update: { documentStatus: "GENERATED", storageKey: stored.storageKey, generatedAt },
+        });
+        continue;
+      }
       const locked = reconcileLockedSnapshot({ snapshot, calculation });
       modelVersions.add(locked.modelVersion);
 
@@ -618,7 +690,7 @@ export async function generatePayslipsFromLockedSnapshotAction(
       });
     }
   } catch (error) {
-    if (error instanceof PayslipPdfPrerequisiteError) {
+    if (error instanceof PayslipPdfPrerequisiteError || error instanceof BulletinPdfPrerequisiteError) {
       return { error: `Génération bloquée. Données manquantes : ${error.missing.join(", ")}.` };
     }
     return { error: error instanceof Error ? error.message : "La génération des bulletins a échoué." };

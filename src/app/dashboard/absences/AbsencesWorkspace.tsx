@@ -86,6 +86,8 @@ const TYPE_META: Record<string, { label: string; short: string; pill: string; ba
   WORK_ACCIDENT: { label: "Accident du travail", short: "AT", pill: "bg-red-50 text-red-700", bar: "border-red-200 bg-red-100 text-red-800", dot: "bg-red-500" },
   UNPAID_LEAVE: { label: "Sans solde", short: "SS", pill: "bg-slate-100 text-slate-700", bar: "border-slate-200 bg-slate-100 text-slate-700", dot: "bg-slate-500" },
   FAMILY_EVENT: { label: "Événement familial", short: "EF", pill: "bg-emerald-50 text-emerald-700", bar: "border-emerald-200 bg-emerald-100 text-emerald-800", dot: "bg-emerald-500" },
+  MATERNITY: { label: "Maternité", short: "MAT", pill: "bg-pink-50 text-pink-700", bar: "border-pink-200 bg-pink-100 text-pink-800", dot: "bg-pink-500" },
+  PATERNITY: { label: "Paternité", short: "PAT", pill: "bg-sky-50 text-sky-700", bar: "border-sky-200 bg-sky-100 text-sky-800", dot: "bg-sky-500" },
   OTHER: { label: "Autre", short: "AUT", pill: "bg-gray-100 text-gray-700", bar: "border-gray-200 bg-gray-100 text-gray-700", dot: "bg-gray-500" },
 };
 

@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { storeAbsenceJustification } from "@/lib/absence-justification-storage";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
 
-const ABSENCE_TYPES = ["PAID_LEAVE", "RTT", "SICK_LEAVE", "WORK_ACCIDENT", "UNPAID_LEAVE", "FAMILY_EVENT", "OTHER"] as const;
+const ABSENCE_TYPES = ["PAID_LEAVE", "RTT", "SICK_LEAVE", "WORK_ACCIDENT", "UNPAID_LEAVE", "FAMILY_EVENT", "MATERNITY", "PATERNITY", "OTHER"] as const;
 type AbsenceTypeValue = (typeof ABSENCE_TYPES)[number];
 export type AbsenceActionState = { error?: string; success?: string } | undefined;
 
