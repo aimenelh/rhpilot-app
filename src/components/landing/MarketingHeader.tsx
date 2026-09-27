@@ -82,7 +82,14 @@ export function MarketingHeader() {
           ref={root}
           className="border-b border-surface-border bg-white"
         onBlur={(event) => {
-          if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+          // Ne fermer que si le focus part vraiment ailleurs (navigation au
+          // clavier). Safari, sur iPhone comme sur Mac, ne donne pas le focus à
+          // un lien qu'on touche : le focus part vers « rien » (relatedTarget
+          // nul) juste avant le clic. Fermer à ce moment retirait le lien de la
+          // page et le toucher ne menait nulle part. Un appui hors du menu
+          // reste géré par l'écouteur pointerdown.
+          const next = event.relatedTarget as Node | null;
+          if (next && !event.currentTarget.contains(next)) {
             setGroup(null);
             setMobile(false);
           }
