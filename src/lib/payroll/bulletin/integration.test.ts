@@ -227,6 +227,9 @@ describe("sorties du bulletin : cotisations, ledger et PDF", () => {
     const pdf = await renderBulletinPdf({ result, employer: { name: "Atelier Nord", address: "12 rue des Tanneurs, 59000 Lille", siret: "12345678900021", nafCode: "6201Z" }, employee: { name: "Léa Martin", address: "", position: "Assistante", classification: "Employée", hireDate: "2022-04-01" }, collectiveAgreement: "Code du travail", paymentDate: "2026-03-31", contractMonthlyHours: 151.67 });
     expect(pdf.subarray(0, 4).toString()).toBe("%PDF");
     expect((pdf.toString("latin1").match(/\/Type \/Page\b/g) ?? []).length).toBe(1);
+    // Rendu reproductible : l'espace salarié ne republie pas un bulletin identique.
+    const again = await renderBulletinPdf({ result, employer: { name: "Atelier Nord", address: "12 rue des Tanneurs, 59000 Lille", siret: "12345678900021", nafCode: "6201Z" }, employee: { name: "Léa Martin", address: "", position: "Assistante", classification: "Employée", hireDate: "2022-04-01" }, collectiveAgreement: "Code du travail", paymentDate: "2026-03-31", contractMonthlyHours: 151.67 });
+    expect(again.equals(pdf)).toBe(true);
   });
 
   it("refuse d'éditer un bulletin sans les mentions obligatoires", () => {

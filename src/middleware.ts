@@ -22,6 +22,11 @@ const isPublicRoute = createRouteMatcher([
   "/welcome",
   "/sign-in(.*)",
   "/sign-up(.*)",
+  // Espace salarié : chaque page vérifie elle-même la session et renvoie vers
+  // /espace/connexion, la connexion salarié qui s'affiche aussi sur téléphone.
+  "/espace",
+  "/espace/(.*)",
+  "/api/espace/(.*)",
   "/api/webhooks/clerk",
   "/api/webhooks/stripe",
   "/api/cron/reminders",

@@ -23,7 +23,7 @@ export function ConfirmArchiveButton({
           </Button>
         }
         title="Archiver ce salarié ?"
-        description={`${employeeName} disparaîtra des listes actives mais restera consultable dans l'historique. Rien n'est supprimé définitivement.`}
+        description={`${employeeName} disparaîtra des listes actives mais restera consultable dans l'historique. Rien n'est supprimé définitivement. S'il a activé son espace salarié, il garde l'accès à ses bulletins et documents ; pour le lui retirer, faites-le avant d'archiver.`}
         confirmLabel="Archiver"
         onConfirm={() => formRef.current?.requestSubmit()}
       />

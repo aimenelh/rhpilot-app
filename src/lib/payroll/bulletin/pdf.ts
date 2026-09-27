@@ -381,11 +381,21 @@ function drawFooter(doc: PDFKit.PDFDocument, pageNumber: number, count: number, 
   doc.text(`Établi avec RH Pilot (${engineVersion})`, MARGIN, y + 15, { width: WIDTH, align: "right", lineBreak: false });
 }
 
+/**
+ * Date de création figée sur la date de paiement : deux rendus du même
+ * bulletin donnent le même fichier (même empreinte), ce qui évite de
+ * republier comme « corrigé » un bulletin identique.
+ */
+function documentDate(paymentDate: string): Date {
+  const date = new Date(`${paymentDate.slice(0, 10)}T12:00:00.000Z`);
+  return Number.isNaN(date.getTime()) ? new Date(0) : date;
+}
+
 export function renderBulletinPdf(input: BulletinPdfInput): Promise<Buffer> {
   const missing = missingFields(input);
   if (missing.length > 0) throw new BulletinPdfPrerequisiteError(missing);
   return new Promise((resolve, reject) => {
-    const doc = new PDFDocument({ size: "A4", margin: MARGIN, bufferPages: true, info: { Title: `Bulletin de paie ${String(input.result.period.month).padStart(2, "0")}/${input.result.period.year}`, Author: input.employer.name, Creator: "RH Pilot" } });
+    const doc = new PDFDocument({ size: "A4", margin: MARGIN, bufferPages: true, info: { Title: `Bulletin de paie ${String(input.result.period.month).padStart(2, "0")}/${input.result.period.year}`, Author: input.employer.name, Creator: "RH Pilot", CreationDate: documentDate(input.paymentDate) } });
     const chunks: Buffer[] = [];
     doc.on("data", (chunk: Buffer) => chunks.push(chunk));
     doc.on("end", () => resolve(Buffer.concat(chunks)));

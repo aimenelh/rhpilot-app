@@ -11,6 +11,10 @@ import PayrollPayslipGenerateButton from "../PayrollPayslipGenerateButton";
 import PayrollReopenButton from "../PayrollReopenButton";
 import MinimumSalaryControlSection from "../MinimumSalaryControlSection";
 import PayrollTerminationSection, { type LeavingEmployee } from "../PayrollTerminationSection";
+import PublishPayslipsPanel, { type PublishPanelData } from "./PublishPayslipsPanel";
+import { ExitDocumentButtons, UploadEmployeeDocumentForm } from "../../employees/EmployeeSpaceSection";
+import { loadAdminDocuments, loadSpaceStatuses } from "@/lib/employee-space/admin-summary";
+import { EXIT_DOCUMENT_KINDS } from "@/lib/employee-space/labels";
 import PayrollEntryGrid, { type GridEmployee } from "./PayrollEntryGrid";
 import PayrollAbsencesPanel, { type PeriodAbsenceRow } from "./PayrollAbsencesPanel";
 import PayslipReview, { type PayslipReviewRow } from "./PayslipReview";
@@ -69,7 +73,7 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
   const [employees, profiles, calculations, variables, validatedRules, absences, pendingAbsences, payslips, terminations, reviewRows] = await Promise.all([
     prisma.employee.findMany({
       where: { organizationId, deletedAt: null, hireDate: { lte: periodEnd }, OR: [{ contractEndDate: null }, { contractEndDate: { gte: periodStart } }] },
-      select: { id: true, firstName: true, lastName: true, position: true, contractType: true, hireDate: true, contractEndDate: true },
+      select: { id: true, firstName: true, lastName: true, position: true, contractType: true, hireDate: true, contractEndDate: true, isDemoData: true },
       orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
     }),
     prisma.payrollProfile.findMany({
@@ -204,6 +208,37 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
   };
   subCounts.variables = Object.keys(values).length - subCounts.heures;
 
+  // Espace salarié : mise à disposition des bulletins et documents de sortie.
+  const realEmployees = employees.filter((employee) => !employee.isDemoData);
+  const [spaceStatuses, exitDocuments] = await Promise.all([
+    loadSpaceStatuses(organizationId, realEmployees.map((employee) => employee.id)),
+    loadAdminDocuments(organizationId, leaving.map((employee) => employee.id), { kinds: EXIT_DOCUMENT_KINDS }),
+  ]);
+  const generatedIds = new Set(payslips.filter((payslip) => payslip.documentStatus === "GENERATED" || payslip.documentStatus === "PUBLISHED").map((payslip) => payslip.employeeId));
+  const publishable = realEmployees.filter((employee) => generatedIds.has(employee.id) && !spaceStatuses.get(employee.id)?.paperSince);
+  // Un bulletin régénéré à l'identique a la même empreinte que celui déjà publié : rien à republier.
+  const upToDate = period.status === "LOCKED" && generatedIds.size > 0
+    ? new Set((await prisma.$queryRaw<Array<{ employeeId: string }>>`
+        SELECT p."employeeId" FROM "payslips" p
+        JOIN "employee_documents" d ON d."organizationId" = p."organizationId" AND d."employeeId" = p."employeeId"
+          AND d."kind" = 'PAYSLIP' AND d."periodYear" = ${period.year} AND d."periodMonth" = ${period.month} AND d."replacedAt" IS NULL
+        WHERE p."organizationId" = ${organizationId} AND p."payrollPeriodId" = ${period.id}
+          AND p."storageKey" LIKE 'inline-db-v1:%' AND substring(p."storageKey" from 14 for 64) = d."sha256"
+      `.catch(() => [] as Array<{ employeeId: string }>)).map((row) => row.employeeId))
+    : new Set<string>();
+  const publishData: PublishPanelData = {
+    periodId: period.id,
+    generated: generatedIds.size,
+    toPublish: publishable.filter((employee) => !upToDate.has(employee.id)).length,
+    published: publishable.filter((employee) => upToDate.has(employee.id)).length,
+    withSpace: publishable.filter((employee) => spaceStatuses.get(employee.id)?.status === "ACTIVE").length,
+    withoutSpace: publishable.filter((employee) => spaceStatuses.get(employee.id)?.status !== "ACTIVE").map((employee) => ({ id: employee.id, name: `${employee.firstName} ${employee.lastName}`.trim(), invited: spaceStatuses.get(employee.id)?.status === "INVITED" })),
+    paper: realEmployees.filter((employee) => generatedIds.has(employee.id) && spaceStatuses.get(employee.id)?.paperSince).map((employee) => ({ id: employee.id, name: `${employee.firstName} ${employee.lastName}`.trim() })),
+    bundleUrl: `/api/payroll/periods/${encodeURIComponent(period.id)}/payslips`,
+  };
+  const leavingIsDemo = new Set(employees.filter((employee) => employee.isDemoData).map((employee) => employee.id));
+  const healthCoverageByEmployee = new Map(calculations.map((calculation) => [calculation.employeeId, Boolean(bulletinFromSnapshot(calculation.calculationSnapshot)?.lines.some((line) => line.code === "SANTE" || line.code.startsWith("PREVOYANCE")))]));
+
   // Congés payés après calcul (panneau Détails).
   const leaveRows = calculations.flatMap((calculation) => {
     const leave = bulletinFromSnapshot(calculation.calculationSnapshot)?.paidLeave;
@@ -265,6 +300,39 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
                 </div>
               ) : null}
               {leaving.length > 0 ? <PayrollTerminationSection periodId={period.id} employees={leaving} readOnly={!editable} embedded /> : null}
+              {leaving.filter((employee) => !leavingIsDemo.has(employee.id)).length > 0 && isAdmin ? (
+                <div className="mt-6">
+                  <h3 className="text-sm font-semibold text-ink">Documents de sortie</h3>
+                  <p className="mt-1 text-sm text-ink-soft">Publiés dans l&apos;espace du salarié, qui les garde après son départ. Le reçu pour solde de tout compte reprend le bulletin de sortie : il se produit une fois le mois clôturé.</p>
+                  <div className="mt-3 space-y-4">
+                    {leaving.filter((employee) => !leavingIsDemo.has(employee.id)).map((employee) => {
+                      const documents = exitDocuments.filter((document) => document.employeeId === employee.id && !document.replaced);
+                      const space = spaceStatuses.get(employee.id);
+                      return (
+                        <div key={employee.id} className="rounded-xl border border-surface-border p-4">
+                          <div className="mb-3 flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+                            <p className="font-medium text-ink">{employee.name} <span className="text-sm font-normal text-ink-soft">· sortie le {frDate(new Date(`${employee.exitDate}T00:00:00Z`))}</span></p>
+                            <Link href={`/dashboard/employees/${employee.id}#espace-salarie`} className="text-sm font-semibold text-brand-primary hover:underline">{space?.status === "ACTIVE" ? "Espace salarié activé" : "Inviter à l'espace salarié"}</Link>
+                          </div>
+                          <ExitDocumentButtons
+                            employeeId={employee.id}
+                            finalSettlementReady={period.status === "LOCKED" && calculations.some((calculation) => calculation.employeeId === employee.id)}
+                            finalSettlementHint={period.status === "LOCKED" ? "Inventaire des sommes versées, repris du bulletin de sortie clôturé. À signer en deux exemplaires." : "Disponible une fois la paie du mois calculée et clôturée."}
+                            healthCoverageDetected={healthCoverageByEmployee.get(employee.id) ?? false}
+                            existingKinds={documents.map((document) => document.kind)}
+                          />
+                          <div className="mt-3"><UploadEmployeeDocumentForm employeeId={employee.id} defaultKind="FRANCE_TRAVAIL" /></div>
+                          {documents.length > 0 ? (
+                            <ul className="mt-3 space-y-1 text-sm">
+                              {documents.map((document) => <li key={document.id} className="flex flex-wrap items-baseline gap-x-2"><a href={`/api/employee-documents/${document.id}`} target="_blank" rel="noopener" className="font-medium text-ink hover:underline">{document.title}</a><span className="text-xs text-ink-faint">publié le {frDate(document.publishedAt)}{document.employeeOpenedAt ? `, ouvert le ${frDate(document.employeeOpenedAt)}` : ""}</span></li>)}
+                            </ul>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
             </div>
           ) : null}
 
@@ -354,7 +422,10 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
 
           {period.status === "LOCKED" && isAdmin ? (
             <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
-              <PayrollPayslipGenerateButton periodId={period.id} />
+              <div className="space-y-5">
+                <PayrollPayslipGenerateButton periodId={period.id} />
+                {generatedCount > 0 ? <PublishPayslipsPanel data={publishData} /> : null}
+              </div>
               <div className="rounded-2xl border border-surface-border bg-white p-5">
                 <h3 className="font-semibold text-ink">Corriger un mois clôturé</h3>
                 <p className="mt-1 text-sm leading-6 text-ink-soft">La réouverture exige un motif et n&apos;est possible qu&apos;avant la production des bulletins.</p>

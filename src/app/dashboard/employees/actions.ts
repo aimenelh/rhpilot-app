@@ -292,6 +292,13 @@ export async function archiveEmployee(employeeId: string) {
     }),
   ]);
 
+  // Une invitation à l'espace salarié encore en attente tombe avec l'archivage ;
+  // un espace déjà activé reste ouvert : l'ancien salarié garde ses documents.
+  await prisma.$executeRaw`
+    UPDATE "employee_accounts" SET "inviteTokenHash" = NULL, "revokedAt" = ${new Date()}, "updatedAt" = ${new Date()}
+    WHERE "organizationId" = ${membership.organizationId} AND "employeeId" = ${employeeId} AND "activatedAt" IS NULL AND "revokedAt" IS NULL
+  `.catch(() => 0);
+
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/employees");
   redirect(

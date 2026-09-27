@@ -1,4 +1,7 @@
+import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { UserButton } from "@clerk/nextjs";
+import { NEW_ORGANIZATION_COOKIE, hasEmployeeSpace } from "@/lib/employee-space/session";
 import { getCurrentMemberships } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getAnomalies } from "@/lib/anomalies";
@@ -30,6 +33,8 @@ export default async function DashboardLayout({
   // doit rester accessible, sinon un utilisateur qui veut changer de
   // compte reste bloqué ici sans issue (bug remonté en test réel).
   if (memberships.length === 0) {
+    // Un salarié invité n'a pas d'organisation à piloter : direction son espace.
+    if (cookies().get(NEW_ORGANIZATION_COOKIE)?.value !== "1" && (await hasEmployeeSpace(user.id))) redirect("/espace");
     return (
       <div className="relative flex min-h-screen flex-col items-center justify-center bg-surface-subtle px-6">
         <div className="absolute right-6 top-6 flex items-center gap-2">

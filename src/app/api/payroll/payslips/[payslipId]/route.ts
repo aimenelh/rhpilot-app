@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { isOrganizationAdmin } from "@/lib/accessPolicy";
 import { prisma } from "@/lib/prisma";
 import { readPayslipDocument } from "@/lib/payroll/payslip-storage";
 
@@ -12,6 +13,8 @@ export async function GET(_request: Request, { params }: { params: { payslipId: 
   const membership = await getCurrentMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return new NextResponse("Non autorisé", { status: 401 });
+  // Les bulletins de tous les salariés : réservé aux administrateurs, comme la paie.
+  if (!isOrganizationAdmin(membership)) return new NextResponse("Accès réservé aux administrateurs", { status: 403 });
 
   const payslip = await prisma.payslip.findFirst({
     where: { id: params.payslipId, organizationId: membership.organizationId },

@@ -127,3 +127,40 @@ export function renderNotificationEmail({
     <p style="color: #8C8C90; font-size: 12px; margin-top: 32px;">RH Pilot, votre copilote d'organisation RH</p>
   </div>`;
 }
+
+/**
+ * Envoi groupé (API batch de Resend, 100 messages par appel) : évite la
+ * limite de débit quand une paie met d'un coup les bulletins à disposition.
+ */
+export async function sendEmailBatch(
+  messages: ReadonlyArray<{ to: string; subject: string; html: string }>
+): Promise<SendEmailResult[]> {
+  if (messages.length === 0) return [];
+  const apiKey = process.env.RESEND_API_KEY;
+  const from = process.env.RESEND_FROM_EMAIL;
+  if (!apiKey || !from) {
+    const message = "RESEND_API_KEY ou RESEND_FROM_EMAIL manquant dans .env : emails non envoyés.";
+    console.error(message);
+    return messages.map(() => ({ ok: false as const, error: message }));
+  }
+
+  const resend = new Resend(apiKey);
+  const results: SendEmailResult[] = [];
+  for (let index = 0; index < messages.length; index += 100) {
+    const chunk = messages.slice(index, index + 100);
+    try {
+      const { error } = await resend.batch.send(chunk.map((message) => ({ from, to: message.to, subject: message.subject, html: message.html })));
+      if (error) {
+        console.error("Échec d'envoi groupé Resend :", error);
+        results.push(...chunk.map(() => ({ ok: false as const, error: error.message })));
+      } else {
+        results.push(...chunk.map(() => ({ ok: true as const })));
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erreur d'envoi inconnue";
+      console.error("Échec d'envoi groupé :", message);
+      results.push(...chunk.map(() => ({ ok: false as const, error: message })));
+    }
+  }
+  return results;
+}

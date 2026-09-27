@@ -24,6 +24,9 @@ import { getEventTemplateDotColor } from "@/lib/eventTemplateStyle";
 import { summarizeParcours } from "@/lib/parcoursSummary";
 import { CcnHint } from "@/components/CcnHint";
 import { PayrollProfileSection } from "../../payroll/PayrollProfileSection";
+import { EmployeeDocumentsTable, EmployeeSpaceCard, ExitDocumentButtons, UploadEmployeeDocumentForm } from "../EmployeeSpaceSection";
+import { loadAdminDocuments, loadSpaceStatuses } from "@/lib/employee-space/admin-summary";
+import { loadExitContext } from "@/lib/employee-space/exit-context";
 import { employeeAccessWhere, eventAccessWhere, isOrganizationAdmin, taskAccessWhere } from "@/lib/accessPolicy";
 
 export const dynamic = "force-dynamic";
@@ -126,6 +129,18 @@ export default async function EmployeeDetailPage({
   const profileExtras = profileExtrasRows[0];
   const leaveOpening = leaveOpeningRows[0];
   const payrollOpeningRow = payrollOpeningRows[0];
+
+  // Espace salarié : accès, documents publiés et documents de sortie.
+  const [spaceStatuses, spaceDocuments, exitContext] = canManageEmployee
+    ? await Promise.all([
+        loadSpaceStatuses(membership.organizationId, [employee.id]),
+        loadAdminDocuments(membership.organizationId, [employee.id]),
+        employee.contractEndDate ? loadExitContext(membership.organizationId, employee.id).catch(() => null) : Promise.resolve(null),
+      ])
+    : [new Map(), [], null] as const;
+  const spaceStatus = spaceStatuses.get(employee.id);
+  const exitReady = exitContext && !("error" in exitContext) ? exitContext : null;
+  const exitMonthLabel = employee.contractEndDate ? new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" }).format(employee.contractEndDate) : "";
 
   const potentialManagers = memberships.map((m) => ({
     id: m.id,
@@ -322,6 +337,45 @@ export default async function EmployeeDetailPage({
         } : null}
         payrollOpening={payrollOpeningRow ? { year: Number(payrollOpeningRow.year), throughMonth: Number(payrollOpeningRow.throughMonth), cumuls: (payrollOpeningRow.cumuls ?? {}) as Record<string, number>, sickPayHistory: (payrollOpeningRow.sickPayHistory ?? null) as Record<string, number> | null } : null}
       />}
+
+      {canManageEmployee && (
+        <section id="espace-salarie" className="mt-8 scroll-mt-6 space-y-4">
+          <h2 className="text-sm font-semibold text-ink">Espace salarié et documents</h2>
+          <EmployeeSpaceCard
+            summary={{
+              employeeId: employee.id,
+              firstName: employee.firstName,
+              isDemo: employee.isDemoData,
+              personalEmail: spaceStatus?.personalEmail ?? null,
+              paperSince: spaceStatus?.paperSince?.toISOString() ?? null,
+              paperSource: spaceStatus?.paperSource ?? null,
+              account: { status: spaceStatus?.status ?? "NONE", email: spaceStatus?.email ?? null, invitedAt: spaceStatus?.invitedAt?.toISOString() ?? null, activatedAt: spaceStatus?.activatedAt?.toISOString() ?? null },
+            }}
+          />
+          {employee.contractEndDate && !employee.isDemoData ? (
+            <div className="rounded-2xl border border-surface-border bg-white p-5">
+              <h3 className="font-semibold text-ink">Documents de fin de contrat</h3>
+              <p className="mt-1 text-sm text-ink-soft">Contrat terminé le {formatDate(employee.contractEndDate)}. Les documents publiés restent accessibles au salarié après son départ.</p>
+              <div className="mt-4">
+                <ExitDocumentButtons
+                  employeeId={employee.id}
+                  finalSettlementReady={Boolean(exitReady?.finalBulletin)}
+                  finalSettlementHint={exitReady?.finalBulletin ? "Inventaire des sommes versées, repris du bulletin de sortie clôturé. À signer en deux exemplaires." : `Disponible une fois la paie de ${exitMonthLabel} calculée et clôturée : l'inventaire reprend le bulletin de sortie.`}
+                  healthCoverageDetected={exitReady?.healthCoverageDetected ?? false}
+                  existingKinds={spaceDocuments.filter((document) => !document.replaced).map((document) => document.kind)}
+                />
+              </div>
+            </div>
+          ) : null}
+          {!employee.isDemoData ? (
+            <div className="overflow-hidden rounded-2xl border border-surface-border bg-white">
+              <div className="border-b border-surface-border px-5 py-3"><h3 className="font-semibold text-ink">Documents publiés</h3></div>
+              <EmployeeDocumentsTable documents={spaceDocuments.map((document) => ({ ...document, publishedAt: document.publishedAt.toISOString(), employeeOpenedAt: document.employeeOpenedAt?.toISOString() ?? null }))} />
+              <div className="border-t border-surface-border p-5"><UploadEmployeeDocumentForm employeeId={employee.id} defaultKind={employee.contractEndDate ? "FRANCE_TRAVAIL" : "OTHER"} compact /></div>
+            </div>
+          ) : null}
+        </section>
+      )}
 
       <div className="mt-8">
         <h2 className="text-sm font-semibold text-ink">Parcours RH de {employee.firstName}</h2>
