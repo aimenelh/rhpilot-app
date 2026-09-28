@@ -14,7 +14,7 @@ import { notifyEmployeeOfDocuments } from "@/lib/employee-space/notify";
 import { loadExitContext } from "@/lib/employee-space/exit-context";
 import { buildFinalSettlementItems, renderFinalSettlementPdf, renderWorkCertificatePdf } from "@/lib/employee-space/exit-documents";
 import { DOCUMENT_KIND_LABELS, isVaultDocumentKind, safeFileName, type VaultDocumentKind } from "@/lib/employee-space/labels";
-import { isNoticeMethod, noticeMethodLabel } from "@/lib/employee-space/notice";
+import { isNoticeMethod, noticeMethodLabel } from "@/lib/employee-space/notice-rules";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
 
 export type EmployeeSpaceActionState = { error?: string; success?: string; manualUrl?: string } | undefined;

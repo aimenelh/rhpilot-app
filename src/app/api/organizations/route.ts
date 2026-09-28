@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 import { checkSiret } from "@/lib/siret";
+import { syncOrganizationFromRegistry } from "@/lib/organization-registry-sync";
 
 export async function POST(request: Request) {
   const user = await getCurrentUser();
@@ -66,6 +67,15 @@ export async function POST(request: Request) {
 
     return org;
   });
+
+  // Paramétrage automatique depuis le SIRET (forme juridique, APE, adresse,
+  // convention collective, versement mobilité). Un registre indisponible ne
+  // doit jamais empêcher la création : le calcul de paie réessaiera.
+  try {
+    await syncOrganizationFromRegistry(organization.id, "FILL_BLANKS");
+  } catch (error) {
+    console.error("Reprise des données Sirene à la création impossible :", error);
+  }
 
   return NextResponse.json({ organization }, { status: 201 });
 }

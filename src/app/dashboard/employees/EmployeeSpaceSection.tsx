@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { Copy, FileUp } from "lucide-react";
-import { NOTICE_METHODS, noticeMethodLabel, type ElectronicReadiness } from "@/lib/employee-space/notice";
+import { NOTICE_METHODS, noticeMethodLabel, type ElectronicReadiness } from "@/lib/employee-space/notice-rules";
 import {
   generateExitDocument,
   inviteToEmployeeSpace,

@@ -8,7 +8,16 @@ import { Input, Label, FieldHint } from "@/components/ui/Field";
 import { Card } from "@/components/ui/Card";
 import { checkSiret } from "@/lib/siret";
 
-type SiretResult = { name: string; address: string | null; city: string | null; apeCode: string | null };
+type SiretResult = {
+  name: string;
+  address: string | null;
+  postalCode: string | null;
+  city: string | null;
+  apeCode: string | null;
+  legalCategory: string | null;
+  conventions: Array<{ idcc: string; title: string | null }>;
+  active: boolean;
+};
 
 export function CreateOrganizationForm() {
   const router = useRouter();
@@ -214,16 +223,26 @@ export function CreateOrganizationForm() {
                   : "Il figure sur votre Kbis, votre avis de situation Insee ou un bulletin de paie. Pour découvrir RH Pilot sans entreprise, les tutoriels et les données de démonstration suffisent."}
               </FieldHint>
               {lookupResult && (
-                <p className="mt-2 rounded-lg bg-brand-primary/5 px-3 py-2 text-xs text-ink-soft">
-                  <strong className="text-ink">{lookupResult.name}</strong>
-                  {lookupResult.address && <>, {lookupResult.address}</>}
-                  {lookupResult.city && <>, {lookupResult.city}</>}
-                  {lookupResult.apeCode && <> · APE {lookupResult.apeCode}</>}
-                  <br />
-                  <span className="text-ink-faint">
-                    Ces informations proviennent de la base publique de l&apos;État.
-                  </span>
-                </p>
+                <div className="mt-2 rounded-lg bg-brand-primary/5 px-3 py-2 text-xs leading-5 text-ink-soft">
+                  <p>
+                    <strong className="text-ink">{lookupResult.name}</strong>
+                    {lookupResult.address && <>, {lookupResult.address}</>}
+                    {(lookupResult.postalCode || lookupResult.city) && <>, {[lookupResult.postalCode, lookupResult.city].filter(Boolean).join(" ")}</>}
+                  </p>
+                  <p>
+                    {[lookupResult.legalCategory && lookupResult.legalCategory !== "autre" ? lookupResult.legalCategory : null, lookupResult.apeCode ? `APE ${lookupResult.apeCode}` : null].filter(Boolean).join(" · ")}
+                  </p>
+                  {lookupResult.conventions.length > 0 ? (
+                    <p>
+                      Convention collective : {lookupResult.conventions[0].title ? `${lookupResult.conventions[0].title} (IDCC ${lookupResult.conventions[0].idcc})` : `IDCC ${lookupResult.conventions[0].idcc}`}
+                      {lookupResult.conventions.length > 1 && <> et {lookupResult.conventions.length - 1} autre{lookupResult.conventions.length > 2 ? "s" : ""}</>}
+                    </p>
+                  ) : null}
+                  {!lookupResult.active && <p className="text-accent-rose">Le répertoire Sirene indique que cet établissement est fermé.</p>}
+                  <p className="mt-1 text-ink-faint">
+                    Repris du répertoire Sirene de l&apos;Insee. Nous paramétrons la paie avec ces informations, vous n&apos;aurez pas à les saisir.
+                  </p>
+                </div>
               )}
             </div>
 

@@ -2,8 +2,13 @@ import { Card } from "@/components/ui/Card";
 import { FieldHint, Input, Label, Select } from "@/components/ui/Field";
 
 export type PayrollSettingsValues = {
+  /** Effectif saisi par l'entreprise (vide : calcul automatique). */
   payrollHeadcount: string;
+  automaticHeadcount: string;
+  /** Taux saisi par l'entreprise (vide : barème Urssaf). */
   mobilityRate: string;
+  mobilityAutomatic: { rate: string; detail: string | null; checkedAt: string | null } | null;
+  mobilityCommuneKnown: boolean;
   paidLeaveMethod: "OUVRABLES" | "OUVRES";
   ijssSubrogation: boolean;
   workedSolidarityDay: boolean;
@@ -30,14 +35,25 @@ export function PayrollSettingsFields({ values }: { values: PayrollSettingsValue
 
       <div className="mt-4 grid gap-5 sm:grid-cols-2">
         <div>
-          <Label htmlFor="payrollHeadcount">Effectif moyen annuel</Label>
-          <Input id="payrollHeadcount" name="payrollHeadcount" type="number" min="1" step="1" defaultValue={values.payrollHeadcount} placeholder="Ex. 14" />
-          <FieldHint>Effectif de l&apos;année précédente au sens de la sécurité sociale. Il fixe le FNAL, la formation professionnelle, le versement mobilité, le forfait social et la RGDU.</FieldHint>
+          <Label htmlFor="payrollHeadcount">Effectif pour les seuils de cotisations</Label>
+          <p className="mt-1 text-sm text-ink">Calculé automatiquement : {values.automaticHeadcount} salarié{values.automaticHeadcount === "0" || values.automaticHeadcount === "1" ? "" : "s"} ce mois-ci</p>
+          <Input id="payrollHeadcount" name="payrollHeadcount" type="number" min="1" step="1" defaultValue={values.payrollHeadcount} placeholder="Laisser vide" className="mt-2" />
+          <FieldHint>RH Pilot compte chaque mois vos salariés, hors apprentis et contrats de professionnalisation, temps partiels au prorata. Ne saisissez un effectif que si l&apos;Urssaf en retient un autre, par exemple si vous avez franchi le seuil de 11 ou de 50 salariés depuis moins de 5 ans (règle de la loi Pacte).</FieldHint>
         </div>
         <div>
-          <Label htmlFor="mobilityRate">Taux de versement mobilité (%)</Label>
-          <Input id="mobilityRate" name="mobilityRate" type="number" min="0" max="3.2" step="0.001" defaultValue={values.mobilityRate} placeholder="Ex. 1,8" />
-          <FieldHint>Dû à partir de 11 salariés selon la commune de l&apos;établissement. Indiquez 0 si l&apos;établissement n&apos;y est pas assujetti.</FieldHint>
+          <Label htmlFor="mobilityRate">Versement mobilité</Label>
+          <p className="mt-1 text-sm text-ink">
+            {values.mobilityRate
+              ? <>Taux saisi par vous : {values.mobilityRate.replace(".", ",")} %</>
+              : values.mobilityAutomatic
+                ? <>Automatique : {values.mobilityAutomatic.rate} %</>
+                : values.mobilityCommuneKnown
+                  ? <>Automatique, vérifié à chaque calcul de paie</>
+                  : <>Automatique dès que la commune de l&apos;établissement est connue</>}
+          </p>
+          {!values.mobilityRate && values.mobilityAutomatic?.detail ? <p className="mt-0.5 text-xs text-ink-faint">{values.mobilityAutomatic.detail}{values.mobilityAutomatic.checkedAt ? ` Vérifié le ${values.mobilityAutomatic.checkedAt}.` : ""}</p> : null}
+          <Input id="mobilityRate" name="mobilityRate" type="number" min="0" max="3.2" step="0.001" defaultValue={values.mobilityRate} placeholder="Laisser vide" className="mt-2" />
+          <FieldHint>Le taux vient du barème officiel de l&apos;Urssaf pour la commune de l&apos;établissement et n&apos;est dû qu&apos;à partir de 11 salariés. Videz ce champ pour revenir au barème si vous aviez saisi un taux.</FieldHint>
         </div>
         <div>
           <Label htmlFor="paidLeaveMethod">Décompte des congés payés</Label>

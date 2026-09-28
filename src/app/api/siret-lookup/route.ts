@@ -1,60 +1,35 @@
 import { NextResponse } from "next/server";
+import { checkSiret } from "@/lib/siret";
+import { lookupCompanyBySiret } from "@/lib/company-registry";
 
-// Appelle l'API publique gratuite de l'État français (aucune clé
-// requise, données Sirene/INSEE en temps réel). Volontairement un
-// simple confort de saisie : ne prouve jamais qu'un utilisateur
-// appartient réellement à l'entreprise trouvée — un SIRET est une
-// donnée publique, pas une preuve d'identité.
+// Appelle les API publiques gratuites de l'État (répertoire Sirene de
+// l'Insee, conventions collectives des ministères sociaux). Volontairement
+// un confort de saisie : ne prouve jamais qu'un utilisateur appartient
+// réellement à l'entreprise trouvée, un SIRET est une donnée publique.
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const siretRaw = searchParams.get("siret")?.replace(/\s/g, "") ?? "";
-
-  if (!/^\d{14}$/.test(siretRaw)) {
-    return NextResponse.json(
-      { error: "Le SIRET doit contenir exactement 14 chiffres." },
-      { status: 400 }
-    );
-  }
+  const check = checkSiret(searchParams.get("siret"));
+  if (!check.ok) return NextResponse.json({ error: check.error }, { status: 400 });
 
   try {
-    // Confirmé par test réel : le préfixe "siren:" documenté ne
-    // fonctionne plus (renvoie 0 résultat même pour un SIREN connu et
-    // valide). Une recherche en texte brut sur le SIREN, en revanche,
-    // fonctionne — l'API le retrouve via la recherche plein texte.
-    const siren = siretRaw.slice(0, 9);
-    const response = await fetch(
-      `https://recherche-entreprises.api.gouv.fr/search?q=${siren}`,
-      { headers: { Accept: "application/json" } }
-    );
+    const lookup = await lookupCompanyBySiret(check.siret);
+    if (lookup.status === "NOT_FOUND") return NextResponse.json({ error: "Aucune entreprise trouvée pour ce SIRET." }, { status: 404 });
+    if (lookup.status === "UNAVAILABLE") return NextResponse.json({ error: "Le service de recherche d'entreprises est momentanément indisponible." }, { status: 502 });
 
-    if (!response.ok) {
-      return NextResponse.json(
-        { error: "Le service de recherche d'entreprises est momentanément indisponible." },
-        { status: 502 }
-      );
-    }
-
-    const data = await response.json();
-    const result = data.results?.[0];
-
-    if (!result) {
-      return NextResponse.json(
-        { error: "Aucune entreprise trouvée pour ce SIRET." },
-        { status: 404 }
-      );
-    }
-
+    const { record } = lookup;
     return NextResponse.json({
-      name: result.nom_complet ?? result.nom_raison_sociale ?? null,
-      address: result.siege?.adresse ?? null,
-      city: result.siege?.libelle_commune ?? null,
-      apeCode: result.activite_principale ?? null,
+      name: record.name,
+      address: record.address,
+      postalCode: record.postalCode,
+      city: record.city,
+      apeCode: record.nafCode,
+      legalCategory: record.legalCategory,
+      conventions: record.conventions,
+      establishmentMatched: record.establishmentMatched,
+      active: record.active,
     });
   } catch (error) {
     console.error("Erreur lors de la recherche SIRET :", error);
-    return NextResponse.json(
-      { error: "Impossible de contacter le service de recherche d'entreprises." },
-      { status: 502 }
-    );
+    return NextResponse.json({ error: "Impossible de contacter le service de recherche d'entreprises." }, { status: 502 });
   }
 }

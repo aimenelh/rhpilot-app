@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { ProfessionalCategory } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentMemberships } from "@/lib/auth";
+import { refreshMobilityRateFromUrssaf, syncOrganizationFromRegistry } from "@/lib/organization-registry-sync";
 
 const DEMO_PAYROLL_DATA = [
   { firstName: "Antoine", professionalCategory: ProfessionalCategory.OUVRIER, classificationCode: "DEMO-OUV", classificationLabel: "Ouvrier", salaryEuros: 2250, pasRate: 0.03 },
@@ -35,7 +36,7 @@ function startOfCurrentMonth() {
   return new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
 }
 
-export async function prepareDemoPayrollDataForOrganization(organizationId: string) {
+async function prepareDemoPayrollDataForOrganization(organizationId: string) {
   const employees = await prisma.employee.findMany({
     where: { organizationId, deletedAt: null },
     select: { id: true, firstName: true, isDemoData: true },
@@ -59,24 +60,32 @@ export async function prepareDemoPayrollDataForOrganization(organizationId: stri
     throw new Error("La période de paie de démonstration existe déjà et n'est plus en préparation. Elle ne sera pas écrasée.");
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.organization.update({
-      where: { id: organizationId },
-      data: {
-        siret: "99999999999999",
-        payrollAddress: "10 rue de la Démonstration",
-        payrollPostalCode: "30000",
-        payrollCity: "Nîmes",
-        payrollNafCode: "6201Z",
-        payrollUrssafReference: "DEMO-URSSAF",
-      },
-    });
+  // Identité : celle du vrai SIRET de l'organisation, reprise du répertoire Sirene (jamais remplacée
+  // par des valeurs fictives). Les valeurs de démonstration ne comblent que ce qui manque encore.
+  try {
+    await syncOrganizationFromRegistry(organizationId, "FILL_BLANKS");
+  } catch (error) {
+    console.error("Reprise des données Sirene impossible pour la démonstration :", error);
+  }
 
+  await prisma.$transaction(async (tx) => {
+    // Les expressions de SET lisent les valeurs d'avant la mise à jour.
     await tx.$executeRaw`
       UPDATE "organizations"
-      SET "legalCategory" = 'SAS', "atmpRate" = 1.00, "healthPlanMonthlyAmount" = 30.00,
-          "healthPlanEmployerRate" = 50.00, "companyCreationDate" = ${new Date(2020, 0, 1)},
-          "payrollDepartment" = '30', "payrollHeadcount" = ${DEMO_PAYROLL_DATA.length}, "mobilityRate" = 0,
+      SET "payrollAddress" = COALESCE(NULLIF("payrollAddress", ''), '10 rue de la Démonstration'),
+          "payrollPostalCode" = COALESCE(NULLIF("payrollPostalCode", ''), '30000'),
+          "payrollCity" = COALESCE(NULLIF("payrollCity", ''), 'Nîmes'),
+          "payrollCommuneCode" = CASE WHEN NULLIF("payrollCity", '') IS NULL THEN '30189' ELSE "payrollCommuneCode" END,
+          "payrollDepartment" = COALESCE(NULLIF("payrollDepartment", ''), '30'),
+          "payrollNafCode" = COALESCE(NULLIF("payrollNafCode", ''), '6201Z'),
+          "payrollUrssafReference" = COALESCE(NULLIF("payrollUrssafReference", ''), 'DEMO-URSSAF'),
+          "legalCategory" = COALESCE("legalCategory", 'SAS'),
+          "companyCreationDate" = COALESCE("companyCreationDate", ${new Date(Date.UTC(2020, 0, 1))}),
+          "atmpRate" = COALESCE("atmpRate", 1.00),
+          "healthPlanMonthlyAmount" = COALESCE("healthPlanMonthlyAmount", 30.00),
+          "healthPlanEmployerRate" = COALESCE("healthPlanEmployerRate", 50.00),
+          "payrollHeadcount" = NULL,
+          "mobilityRate" = NULL, "mobilityRateSource" = NULL, "mobilityRateCheckedAt" = NULL, "mobilityRateDetail" = NULL,
           "ijssSubrogation" = true, "paidLeaveMethod" = 'OUVRABLES', "mealVoucherFaceValue" = 10.00, "mealVoucherEmployerShare" = 0.5
       WHERE "id" = ${organizationId}
     `;
@@ -153,6 +162,14 @@ export async function prepareDemoPayrollDataForOrganization(organizationId: stri
     });
     await tx.payrollVariable.deleteMany({ where: { organizationId, payrollPeriodId: period.id } });
   }, { timeout: 30000, maxWait: 10000 });
+
+  // Versement mobilité : barème Urssaf de la commune. Hors ligne, un taux nul provisoire évite de bloquer la
+  // démonstration ; le calcul réinterroge l'Urssaf et le remplace dès qu'elle répond.
+  const [place] = await prisma.$queryRaw<Array<{ payrollCommuneCode: string | null }>>`SELECT "payrollCommuneCode" FROM "organizations" WHERE "id" = ${organizationId} LIMIT 1`;
+  const refreshed = place?.payrollCommuneCode ? await refreshMobilityRateFromUrssaf(organizationId, place.payrollCommuneCode, new Date().toISOString().slice(0, 10)).catch(() => null) : null;
+  if (!refreshed) {
+    await prisma.$executeRaw`UPDATE "organizations" SET "mobilityRate" = 0, "mobilityRateSource" = 'DEMO', "mobilityRateCheckedAt" = NULL, "mobilityRateDetail" = 'Taux provisoire de démonstration : le barème Urssaf n''a pas pu être consulté.' WHERE "id" = ${organizationId}`;
+  }
 
   revalidatePath("/dashboard/payroll");
   if (existingPeriod) revalidatePath(`/dashboard/payroll/${existingPeriod.id}`);

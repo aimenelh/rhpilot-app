@@ -8,7 +8,7 @@ import { readPayslipDocument } from "@/lib/payroll/payslip-storage";
 import { publishVaultDocument } from "@/lib/employee-space/vault";
 import { notifyEmployeesInBatch, type DocumentNotice } from "@/lib/employee-space/notify";
 import { payslipFileName, payslipTitle } from "@/lib/employee-space/labels";
-import { electronicPayslipReadiness } from "@/lib/employee-space/notice";
+import { electronicPayslipReadiness } from "@/lib/employee-space/notice-rules";
 
 export type PublishPayslipsResult =
   | { error: string }

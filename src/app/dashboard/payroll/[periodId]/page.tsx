@@ -15,7 +15,7 @@ import PublishPayslipsPanel, { type PublishPanelData } from "./PublishPayslipsPa
 import { ExitDocumentButtons, UploadEmployeeDocumentForm } from "../../employees/EmployeeSpaceSection";
 import { loadAdminDocuments, loadSpaceStatuses } from "@/lib/employee-space/admin-summary";
 import { EXIT_DOCUMENT_KINDS } from "@/lib/employee-space/labels";
-import { electronicPayslipReadiness } from "@/lib/employee-space/notice";
+import { electronicPayslipReadiness } from "@/lib/employee-space/notice-rules";
 import PayrollEntryGrid, { type GridEmployee } from "./PayrollEntryGrid";
 import PayrollAbsencesPanel, { type PeriodAbsenceRow } from "./PayrollAbsencesPanel";
 import PayslipReview, { type PayslipReviewRow } from "./PayslipReview";

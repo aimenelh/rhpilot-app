@@ -26,7 +26,7 @@ import { PayrollProfileSection } from "../../payroll/PayrollProfileSection";
 import { EmployeeDocumentsTable, EmployeeSpaceCard, ExitDocumentButtons, UploadEmployeeDocumentForm } from "../EmployeeSpaceSection";
 import { loadAdminDocuments, loadSpaceStatuses } from "@/lib/employee-space/admin-summary";
 import { loadExitContext } from "@/lib/employee-space/exit-context";
-import { electronicPayslipReadiness } from "@/lib/employee-space/notice";
+import { electronicPayslipReadiness } from "@/lib/employee-space/notice-rules";
 import { employeeArchiveParts } from "@/lib/employee-space/archive-server";
 import { employeeAccessWhere, eventAccessWhere, isOrganizationAdmin, taskAccessWhere } from "@/lib/accessPolicy";
 
