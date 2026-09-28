@@ -47,7 +47,7 @@ export default async function DsnEmployeeSetupPage({ params }: { params: { emplo
     postalCode: row?.postalCode ?? "", city: row?.city ?? "", countryCode: row?.countryCode ?? "", contractNumber: row?.contractNumber ?? "",
     contractNatureCode: row?.contractNatureCode ?? safeContractNature, publicPolicyCode: row?.publicPolicyCode ?? safePublicPolicy, pcsEsecCode: row?.pcsEsecCode ?? "",
     conventionalStatusCode: row?.conventionalStatusCode ?? "", retirementStatusCode: row?.retirementStatusCode ?? "", workUnitCode: row?.workUnitCode ?? (monthlyHours ? "10" : ""),
-    referenceWorkQuota: row ? String(row.referenceWorkQuota) : monthlyHours, contractWorkQuota: row ? String(row.contractWorkQuota) : monthlyHours,
+    referenceWorkQuota: row?.referenceWorkQuota != null ? String(row.referenceWorkQuota) : monthlyHours, contractWorkQuota: row?.contractWorkQuota != null ? String(row.contractWorkQuota) : monthlyHours,
     workModalityCode: row?.workModalityCode ?? "", baseSchemeSupplementCode: row?.baseSchemeSupplementCode ?? "99", sicknessRegimeCode: row?.sicknessRegimeCode ?? "200",
     workLocationId: row?.workLocationId ?? organization?.siret ?? "", oldAgeRegimeCode: row?.oldAgeRegimeCode ?? "200", foreignWorkerCode: row?.foreignWorkerCode ?? "99",
     employmentStatusCode: row?.employmentStatusCode ?? "99", multipleJobsCode: row?.multipleJobsCode ?? "01", multipleEmployersCode: row?.multipleEmployersCode ?? "01",
