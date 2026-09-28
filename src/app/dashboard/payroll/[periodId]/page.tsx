@@ -432,15 +432,20 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
           ) : null}
 
           {period.status === "LOCKED" && isAdmin ? (
-            <div className="grid gap-5 lg:grid-cols-[1.4fr_1fr]">
+            <div className="grid gap-5 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
               <div className="space-y-5">
                 <PayrollPayslipGenerateButton periodId={period.id} />
                 {generatedCount > 0 ? <PublishPayslipsPanel data={publishData} /> : null}
               </div>
-              <div className="rounded-2xl border border-surface-border bg-white p-5">
+              <div className="min-w-0 rounded-2xl border border-surface-border bg-white p-5">
                 <h3 className="font-semibold text-ink">Corriger un mois clôturé</h3>
-                <p className="mt-1 text-sm leading-6 text-ink-soft">La réouverture exige un motif et n&apos;est possible qu&apos;avant la production des bulletins.</p>
-                <div className="mt-4"><PayrollReopenButton periodId={period.id} disabled={membership.accessRole !== "OWNER" || payslips.length > 0} /></div>
+                <p className="mt-1 text-sm leading-6 text-ink-soft">Possible tant que les bulletins n&apos;ont pas été produits.</p>
+                <div className="mt-4">
+                  <PayrollReopenButton
+                    periodId={period.id}
+                    disabledReason={payslips.length > 0 ? "Les bulletins de ce mois ont été produits : il ne peut plus être rouvert. Une erreur se corrige par une régularisation sur la paie du mois suivant." : null}
+                  />
+                </div>
               </div>
             </div>
           ) : null}

@@ -90,6 +90,29 @@ class Page {
 
 type Row = { label: string; base?: string; rate?: string; amount?: string; employerRate?: string; employerAmount?: string; style?: "heading" | "total" | "strong" | "muted" | "normal"; indent?: boolean };
 
+/**
+ * Tronque un texte pour qu'il tienne sur une ligne dans la police courante.
+ * pdfkit revient à la ligne dès qu'une largeur est donnée, même avec
+ * lineBreak: false ; sans cette coupe, un libellé long chevauche la ligne suivante.
+ */
+function fit(doc: PDFKit.PDFDocument, text: string, width: number): string {
+  if (doc.widthOfString(text) <= width) return text;
+  let end = text.length;
+  while (end > 1 && doc.widthOfString(`${text.slice(0, end).trimEnd()}…`) > width) end -= 1;
+  return `${text.slice(0, end).trimEnd()}…`;
+}
+
+/** Limite un texte à quelques lignes (coupe au mot, points de suspension), en gardant la fin donnée intacte. */
+function clampLines(doc: PDFKit.PDFDocument, text: string, width: number, maxLines: number, lineGap: number, keepEnd = ""): string {
+  const maxHeight = maxLines * (doc.currentLineHeight(true) + lineGap) + 0.5;
+  if (doc.heightOfString(text, { width, lineGap }) <= maxHeight) return text;
+  const body = keepEnd && text.endsWith(keepEnd) ? text.slice(0, -keepEnd.length).trimEnd() : text;
+  const end = body === text ? "" : ` ${keepEnd.trim()}`;
+  const words = body.split(" ");
+  while (words.length > 1 && doc.heightOfString(`${words.join(" ")}…${end}`, { width, lineGap }) > maxHeight) words.pop();
+  return `${words.join(" ")}…${end}`;
+}
+
 function drawTableHeader(page: Page) {
   const { doc } = page;
   doc.rect(MARGIN, page.y, WIDTH, 17).fill(INK);
@@ -113,7 +136,8 @@ function drawRow(page: Page, row: Row, zebra: boolean) {
   const size = style === "total" ? 7.2 : 6.4;
   const textY = page.y + (style === "total" ? 3.5 : 1.5);
   doc.font(bold ? "Helvetica-Bold" : "Helvetica").fontSize(size).fillColor(style === "muted" ? SOFT : INK);
-  doc.text(row.label, COL.label.x + (row.indent ? 8 : 0), textY, { width: COL.label.w - (row.indent ? 8 : 0), lineBreak: false, ellipsis: true });
+  const labelWidth = COL.label.w - (row.indent ? 8 : 0);
+  doc.text(fit(doc, row.label, labelWidth), COL.label.x + (row.indent ? 8 : 0), textY, { width: labelWidth, lineBreak: false });
   const cell = (text: string | undefined, col: { x: number; w: number }, color = INK) => { if (text) doc.fillColor(color).text(text, col.x, textY, { width: col.w, align: "right", lineBreak: false }); };
   cell(row.base, COL.base, SOFT);
   cell(row.rate, COL.rate, SOFT);
@@ -189,28 +213,48 @@ function drawBulletin(doc: PDFKit.PDFDocument, input: BulletinPdfInput) {
   doc.rect(MARGIN, page.y, 4, 50).fill(ACCENT);
   doc.font("Helvetica-Bold").fontSize(15).fillColor("white").text("BULLETIN DE PAIE", MARGIN + 14, page.y + 10);
   doc.font("Helvetica").fontSize(7.2).fillColor("#D9D7D3").text(`${MONTHS[result.period.month - 1]} ${result.period.year} : du ${frDate(result.period.first)} au ${frDate(result.period.last)}  ·  payé le ${frDate(input.paymentDate)}`, MARGIN + 14, page.y + 32);
-  doc.font("Helvetica-Bold").fontSize(9.5).fillColor("white").text(input.employer.name, MARGIN, page.y + 11, { width: WIDTH - 14, align: "right" });
+  doc.font("Helvetica-Bold").fontSize(9.5).fillColor("white");
+  doc.text(fit(doc, input.employer.name, 280), MARGIN, page.y + 11, { width: WIDTH - 14, align: "right", lineBreak: false });
   doc.font("Helvetica").fontSize(6.4).fillColor("#D9D7D3").text(`SIRET ${input.employer.siret}  ·  APE ${input.employer.nafCode}`, MARGIN, page.y + 27, { width: WIDTH - 14, align: "right" });
   page.y += 58;
 
-  // Identification
+  // Identification. La colonne employeur s'allonge si la convention tient sur deux lignes,
+  // et le cadre suit : aucun texte ne se superpose.
   const top = page.y;
+  const LEFT_WIDTH = 245;
+  const RIGHT_WIDTH = 255;
+  const STEP = 11;
   doc.font("Helvetica-Bold").fontSize(6.2).fillColor(ACCENT).text("EMPLOYEUR", MARGIN + 10, top + 8);
-  doc.font("Helvetica").fontSize(6.8).fillColor(INK).text(input.employer.address, MARGIN + 10, top + 19, { width: 240, lineBreak: false, ellipsis: true });
-  if (input.employer.urssafReference?.trim()) doc.fillColor(SOFT).text(`Cotisations versées à l'Urssaf, compte ${input.employer.urssafReference}`, MARGIN + 10, top + 30, { width: 240, lineBreak: false, ellipsis: true });
-  doc.fillColor(SOFT).text(`Convention : ${input.collectiveAgreement}`, MARGIN + 10, top + 41, { width: 240, lineBreak: false, ellipsis: true });
-  doc.text(`Horaire contractuel : ${input.contractMonthlyHours.toFixed(2).replace(".", ",")} h par mois`, MARGIN + 10, top + 52, { width: 240, lineBreak: false });
+  let leftY = top + 19;
+  doc.font("Helvetica").fontSize(6.8).fillColor(INK).text(fit(doc, input.employer.address, LEFT_WIDTH), MARGIN + 10, leftY, { width: LEFT_WIDTH, lineBreak: false });
+  leftY += STEP;
+  if (input.employer.urssafReference?.trim()) {
+    doc.fillColor(SOFT).text(fit(doc, `Cotisations versées à l'Urssaf, compte ${input.employer.urssafReference}`, LEFT_WIDTH), MARGIN + 10, leftY, { width: LEFT_WIDTH, lineBreak: false });
+    leftY += STEP;
+  }
+  const conventionGap = 1.4;
+  // Si l'intitulé est trop long, on coupe le milieu mais on garde le numéro IDCC.
+  const conventionText = `Convention : ${input.collectiveAgreement}`;
+  const convention = clampLines(doc, conventionText, LEFT_WIDTH, 2, conventionGap, /\(IDCC \d{4}\)$/.exec(conventionText)?.[0] ?? "");
+  doc.fillColor(SOFT).text(convention, MARGIN + 10, leftY, { width: LEFT_WIDTH, lineGap: conventionGap });
+  leftY += doc.heightOfString(convention, { width: LEFT_WIDTH, lineGap: conventionGap }) + (STEP - doc.currentLineHeight(true) - conventionGap);
+  doc.text(`Horaire contractuel : ${input.contractMonthlyHours.toFixed(2).replace(".", ",")} h par mois`, MARGIN + 10, leftY, { width: LEFT_WIDTH, lineBreak: false });
+  const leftBottom = leftY + doc.currentLineHeight(true);
 
   const right = MARGIN + 272;
   doc.font("Helvetica-Bold").fontSize(6.2).fillColor(ACCENT).text("SALARIÉ", right, top + 8);
-  doc.font("Helvetica-Bold").fontSize(8.2).fillColor(INK).text(input.employee.name, right, top + 18, { width: 255, lineBreak: false, ellipsis: true });
-  doc.font("Helvetica").fontSize(6.8).fillColor(SOFT).text(input.employee.address || " ", right, top + 30, { width: 255, lineBreak: false, ellipsis: true });
+  doc.font("Helvetica-Bold").fontSize(8.2).fillColor(INK);
+  doc.text(fit(doc, input.employee.name, RIGHT_WIDTH), right, top + 18, { width: RIGHT_WIDTH, lineBreak: false });
+  doc.font("Helvetica").fontSize(6.8).fillColor(SOFT).text(fit(doc, input.employee.address || " ", RIGHT_WIDTH), right, top + 30, { width: RIGHT_WIDTH, lineBreak: false });
   const classification = [input.employee.position, input.employee.classification, input.employee.coefficient ? `coefficient ${input.employee.coefficient}` : ""].filter(Boolean).join("  ·  ");
-  doc.fillColor(INK).text(classification, right, top + 41, { width: 255, lineBreak: false, ellipsis: true });
+  doc.fillColor(INK).text(fit(doc, classification, RIGHT_WIDTH), right, top + 41, { width: RIGHT_WIDTH, lineBreak: false });
   const dates = [`Entrée le ${frDate(input.employee.hireDate)}`, input.employee.seniority ? `ancienneté ${input.employee.seniority}` : "", input.employee.exitDate ? `sortie le ${frDate(input.employee.exitDate)}` : "", input.employee.socialSecurityNumber ? `n° SS ${input.employee.socialSecurityNumber}` : ""].filter(Boolean).join("  ·  ");
-  doc.fillColor(SOFT).text(dates, right, top + 52, { width: 255, lineBreak: false, ellipsis: true });
-  doc.roundedRect(MARGIN, top, WIDTH, 68, 3).lineWidth(0.6).strokeColor(BORDER).stroke();
-  page.y = top + 76;
+  doc.fillColor(SOFT).text(fit(doc, dates, RIGHT_WIDTH), right, top + 52, { width: RIGHT_WIDTH, lineBreak: false });
+  const rightBottom = top + 52 + doc.currentLineHeight(true);
+
+  const partiesHeight = Math.max(68, Math.ceil(Math.max(leftBottom, rightBottom) - top + 8));
+  doc.roundedRect(MARGIN, top, WIDTH, partiesHeight, 3).lineWidth(0.6).strokeColor(BORDER).stroke();
+  page.y = top + partiesHeight + 8;
 
   drawTableHeader(page);
 
@@ -348,7 +392,8 @@ function drawBulletin(doc: PDFKit.PDFDocument, input: BulletinPdfInput) {
       `${days(leave.acquiredThisMonth)} j acquis ce mois`,
       leave.compensatedDays ? `${days(leave.compensatedDays)} j soldés en indemnité compensatrice` : "",
     ].filter(Boolean).join("  ·  ");
-    doc.font("Helvetica").fontSize(5.8).fillColor(SOFT).text(notes, MARGIN + 8, boxTop + 45, { width: leftWidth - 16, lineBreak: false, ellipsis: true });
+    doc.font("Helvetica").fontSize(5.8).fillColor(SOFT);
+    doc.text(fit(doc, notes, leftWidth - 16), MARGIN + 8, boxTop + 45, { width: leftWidth - 16, lineBreak: false });
   } else {
     doc.font("Helvetica").fontSize(6).fillColor(SOFT).text("Compteurs non suivis pour ce salarié.", MARGIN + 8, boxTop + 20);
   }
