@@ -242,3 +242,75 @@ h3 {
   .nav-progress > span { transition: none; }
   .skeleton-block { animation: none; }
 }
+
+/* ------------------------------------------------------------------
+   Visite de découverte (DiscoveryTour) : chaque élément part d'un état
+   « from » et finit à son style normal, pour qu'en mouvement réduit tout
+   s'affiche directement dans son état final.
+   ------------------------------------------------------------------ */
+@keyframes dz-backdrop { from { opacity: 0; } }
+@keyframes dz-card { from { opacity: 0; transform: translateY(18px) scale(0.975); } }
+@keyframes dz-in-next { from { opacity: 0; transform: translateX(28px); filter: blur(4px); } }
+@keyframes dz-in-prev { from { opacity: 0; transform: translateX(-28px); filter: blur(4px); } }
+@keyframes dz-rise { from { opacity: 0; transform: translateY(14px); filter: blur(3px); } }
+@keyframes dz-pop { 0% { opacity: 0; transform: scale(0.6); } 70% { transform: scale(1.06); } }
+@keyframes dz-slide-left { from { opacity: 0; transform: translateX(34px); } }
+@keyframes dz-drop { from { opacity: 0; transform: translateY(-46px); } }
+@keyframes dz-grow-x { from { transform: scaleX(0); } }
+@keyframes dz-draw { from { stroke-dashoffset: 1; } }
+@keyframes dz-fill { from { opacity: 0; transform: scale(0.85); background-color: rgba(232, 67, 46, 0.18); } }
+@keyframes dz-float { 50% { transform: translateY(-6px); } }
+@keyframes dz-pulse { 0% { box-shadow: 0 0 0 0 rgba(232, 67, 46, 0.45); } 100% { box-shadow: 0 0 0 12px rgba(232, 67, 46, 0); } }
+@keyframes dz-blink { 50% { opacity: 0; } }
+@keyframes dz-dots { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+@keyframes dz-stamp { 0% { opacity: 0; transform: rotate(-8deg) scale(1.9); } 60% { transform: rotate(-8deg) scale(0.94); } 100% { transform: rotate(-8deg) scale(1); } }
+
+.dz-backdrop { animation: dz-backdrop 0.35s ease-out both; }
+.dz-card { animation: dz-card 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.dz-in-next { animation: dz-in-next 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.dz-in-prev { animation: dz-in-prev 0.5s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.dz-rise { animation: dz-rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.dz-pop { animation: dz-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.dz-slide-left { animation: dz-slide-left 0.55s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.dz-drop { animation: dz-drop 0.6s cubic-bezier(0.34, 1.4, 0.64, 1) both; }
+.dz-grow-x { transform-origin: left center; animation: dz-grow-x 0.8s cubic-bezier(0.65, 0, 0.35, 1) both; }
+.dz-draw { stroke-dasharray: 1; animation: dz-draw 1.6s cubic-bezier(0.65, 0, 0.35, 1) both; }
+.dz-fill { animation: dz-fill 0.35s ease-out both; }
+.dz-float { animation: dz-float 4s ease-in-out infinite; }
+.dz-pulse { animation: dz-pulse 1.6s ease-out infinite; }
+.dz-caret { animation: dz-blink 1s steps(1) infinite; }
+.dz-dot { animation: dz-dots 1s ease-in-out infinite; }
+.dz-stamp { animation: dz-stamp 0.45s cubic-bezier(0.34, 1.4, 0.64, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dz-backdrop, .dz-card, .dz-in-next, .dz-in-prev, .dz-rise, .dz-pop, .dz-slide-left, .dz-drop,
+  .dz-grow-x, .dz-draw, .dz-fill, .dz-float, .dz-pulse, .dz-caret, .dz-dot, .dz-stamp { animation: none !important; }
+}
+
+/* La notification descend, reste lisible, puis remonte pour dévoiler l'écran. */
+@keyframes dz-notify {
+  0% { opacity: 0; transform: translateY(-46px); }
+  12% { opacity: 1; transform: translateY(0); }
+  70% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-46px); }
+}
+.dz-notify { animation: dz-notify 3.4s cubic-bezier(0.34, 1.2, 0.64, 1) 0.6s both; }
+
+/* Illustration : pleine taille sur ordinateur, composition fixe réduite sur mobile. */
+.dz-visual-box { position: absolute; inset: 0; }
+@media (max-width: 767px) {
+  .dz-visual-box {
+    inset: auto;
+    left: 50%;
+    top: 50%;
+    width: 480px;
+    height: 440px;
+    margin-left: -240px;
+    margin-top: -220px;
+    transform: scale(0.56);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dz-notify { animation: none !important; opacity: 0; }
+}

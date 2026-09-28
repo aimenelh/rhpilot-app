@@ -25,7 +25,7 @@ import {
 import { Logomark, Wordmark } from "./Brand";
 import { FlashToast } from "./ui/FlashToast";
 import { AppCopilote } from "./AppCopilote";
-import { TourGuide } from "./tour/TourGuide";
+import { DiscoveryTour } from "./tour/DiscoveryTour";
 import { GlobalSearch } from "./GlobalSearch";
 import { RhNewsToast } from "./RhNewsToast";
 import type { RhNewsItem } from "@/lib/rhNews";
@@ -312,7 +312,7 @@ export function AppShell({
       </Suspense>
       <FlashToast />
       <AppCopilote summary={assistantSummary} aiEnabled={aiEnabled} />
-      <TourGuide />
+      <DiscoveryTour accessRole={accessRole} userName={assistantSummary.userDisplayName} />
       <RhNewsToast items={rhNews} />
       <IosInstallHint />
     </div>

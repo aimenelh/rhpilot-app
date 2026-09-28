@@ -2,14 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { X, CheckCheck } from "lucide-react";
 import { Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { Logomark } from "@/components/Brand";
-import { Mascot } from "@/components/Mascot";
 import { askAboutOrganizationAction, type AskAboutOrganizationState } from "@/app/dashboard/aiActions";
-import { TOUR_STORAGE_KEY, TOUR_DONE_VALUE, WELCOME_SEEN_KEY } from "@/lib/tourStorage";
 
 // Un exemple de question sur les données, un sur le fonctionnement du
 // site : ça montre tout de suite que le Copilote répond aux deux
@@ -125,9 +123,7 @@ function TypingIndicator() {
 
 export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; aiEnabled?: boolean }) {
   const pathname = usePathname();
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
-  const [showWelcome, setShowWelcome] = useState(false);
   const [state, formAction] = useFormState<AskAboutOrganizationState, FormData>(
     askAboutOrganizationAction,
     undefined
@@ -136,7 +132,6 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
   const [messages, setMessages] = useState<Message[]>([]);
   const lastHandled = useRef<AskAboutOrganizationState>(undefined);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const hasCheckedWelcome = useRef(false);
 
   useEffect(() => {
     if (!state || state === lastHandled.current) return;
@@ -155,57 +150,12 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  // Repris tel quel de l'ancien Assistant : à la toute première visite
-  // du tableau de bord, propose l'accueil plutôt que d'attendre une
-  // question. Une seule fois, jamais imposé à nouveau ensuite.
-  useEffect(() => {
-    if (hasCheckedWelcome.current || pathname !== "/dashboard") return;
-    hasCheckedWelcome.current = true;
-    let alreadySeen = true;
-    try {
-      alreadySeen = Boolean(localStorage.getItem(WELCOME_SEEN_KEY));
-    } catch {
-      // Stockage indisponible — on considère l'accueil déjà "vu".
-    }
-    if (!alreadySeen) {
-      setShowWelcome(true);
-      setIsOpen(true);
-    }
-  }, [pathname]);
-
-  function markWelcomeSeen() {
-    try {
-      localStorage.setItem(WELCOME_SEEN_KEY, "1");
-    } catch {
-      // Sans conséquence grave si ça échoue.
-    }
-  }
-
-  function startTour() {
-    markWelcomeSeen();
-    setShowWelcome(false);
-    setIsOpen(false);
-    router.push("/dashboard/employees");
-  }
-
-  function exploreFreely() {
-    markWelcomeSeen();
-    // Puisque la personne choisit explicitement d'explorer seule, le
-    // parcours guidé ne doit plus jamais s'imposer non plus.
-    try {
-      localStorage.setItem(TOUR_STORAGE_KEY, TOUR_DONE_VALUE);
-    } catch {
-      // Sans conséquence grave si ça échoue.
-    }
-    setShowWelcome(false);
-  }
-
   // Masquée sur /dashboard pour éviter le doublon avec le chat plein
   // écran (AskAboutOrganization) — mais l'écran de bienvenue reste
   // affiché même là, car ce n'est pas un chat, seulement un onboarding
   // ponctuel. Sinon un nouvel utilisateur qui atterrit directement sur
   // /dashboard ne verrait jamais la bulle avant d'avoir navigué ailleurs.
-  if (HIDDEN_ON_PATHS.includes(pathname ?? "") && !showWelcome) return null;
+  if (HIDDEN_ON_PATHS.includes(pathname ?? "")) return null;
 
   return (
     <div className="fixed bottom-6 right-6 z-40">
@@ -245,7 +195,7 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
             </div>
             <button
               type="button"
-              onClick={showWelcome ? exploreFreely : () => setIsOpen(false)}
+              onClick={() => setIsOpen(false)}
               aria-label="Fermer le Copilote"
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-ink-faint hover:bg-surface-subtle"
             >
@@ -253,34 +203,7 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
             </button>
           </div>
 
-          {showWelcome ? (
-            <div className="flex flex-1 flex-col justify-between p-5">
-              <div>
-                <Mascot pose="copilot" className="mx-auto mb-3 h-24 w-auto" />
-                <p className="text-sm font-medium text-ink">
-                  {renderGreeting(`${timeGreeting()} 👋 Bienvenue sur RH Pilot.`)}
-                </p>
-                <p className="mt-3 text-sm leading-relaxed text-ink-soft">
-                  Bienvenue dans RH Pilot ! Je peux vous accompagner pendant moins
-                  d&apos;une minute pour découvrir comment RH Pilot fonctionne : créer un
-                  salarié, déclencher un premier parcours RH, et voir les tâches apparaître
-                  automatiquement.
-                </p>
-              </div>
-              <div className="flex flex-col gap-2">
-                <Button onClick={startTour} className="w-full">
-                  Commencer la découverte
-                </Button>
-                <button
-                  onClick={exploreFreely}
-                  className="w-full py-2 text-center text-sm font-medium text-ink-faint hover:text-ink-soft"
-                >
-                  Je préfère explorer seul
-                </button>
-              </div>
-            </div>
-          ) : (
-            <form action={formAction} className="flex flex-1 flex-col overflow-hidden px-4 py-3">
+          <form action={formAction} className="flex flex-1 flex-col overflow-hidden px-4 py-3">
               <div ref={scrollRef} className="flex flex-1 flex-col gap-3 overflow-y-auto pr-1">
                 {messages.length === 0 && (
                   <div className="flex items-end gap-2">
@@ -355,7 +278,6 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
                 <SubmitButton disabled={!aiEnabled} />
               </div>
             </form>
-          )}
         </div>
       )}
 
