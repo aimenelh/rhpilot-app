@@ -9,6 +9,7 @@ import { resolveApprenticeshipMinimum, resolveProfessionalisationMinimum } from 
 import { calculateAgeAtDate } from "@/lib/payroll/alternance-profile";
 import { resolveSmicMinimumFromPrisma } from "@/lib/payroll/minimum-wage-prisma";
 import { getPayrollMembership } from "@/lib/payrollAccess";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type AlternanceProfileFormState = { error: string } | undefined;
 
@@ -208,7 +209,7 @@ export async function saveAlternanceProfile(
     validFrom = parseDate(validFromRaw, "La date de prise d'effet");
     if (validUntilRaw) validUntil = parseDate(validUntilRaw, "La date de fin de validité");
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Une date n'est pas valide." };
+    return { error: userFacingError(error, "Une date n'est pas valide.") };
   }
   if (birthDate >= validFrom) return { error: "La date de naissance doit être antérieure à la prise d'effet du profil." };
   if (validUntil && validUntil < validFrom) return { error: "La fin de validité doit être postérieure ou égale à la prise d'effet." };
@@ -279,7 +280,7 @@ export async function saveAlternanceProfile(
       });
     });
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Impossible d'enregistrer le profil alternance." };
+    return { error: userFacingError(error, "Impossible d'enregistrer le profil alternance.") };
   }
 
   revalidatePath(`/dashboard/employees/${employeeId}`);

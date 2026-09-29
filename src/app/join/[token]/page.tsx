@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { invitationTokenWhere } from "@/lib/invitationToken";
 import { getCurrentUser } from "@/lib/auth";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -37,8 +38,8 @@ export default async function JoinPage({ params }: { params: { token: string } }
     redirect(`/sign-up?redirect_url=${encodeURIComponent(`/join/${params.token}`)}`);
   }
 
-  const invitation = await prisma.invitation.findUnique({
-    where: { token: params.token },
+  const invitation = await prisma.invitation.findFirst({
+    where: invitationTokenWhere(params.token),
     include: { organization: true },
   });
 

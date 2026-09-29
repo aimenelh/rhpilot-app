@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { mergePayslipPdfs } from "@/lib/payroll/payslip-pdf-merge";
 import { readPayslipDocument } from "@/lib/payroll/payslip-storage";
 import { getPayrollMembership } from "@/lib/payrollAccess";
+import { userFacingError } from "@/lib/userFacingError";
 
 export async function GET(_request: Request, { params }: { params: { periodId: string } }) {
   const membership = await getPayrollMembership();
@@ -48,6 +49,6 @@ export async function GET(_request: Request, { params }: { params: { periodId: s
       },
     });
   } catch (error) {
-    return NextResponse.json({ error: error instanceof Error ? error.message : "Impossible d'assembler les bulletins PDF." }, { status: 500 });
+    return NextResponse.json({ error: userFacingError(error, "Impossible d'assembler les bulletins PDF.") }, { status: 500 });
   }
 }

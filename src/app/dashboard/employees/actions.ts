@@ -353,3 +353,49 @@ export async function reactivateEmployee(employeeId: string) {
     `/dashboard/employees?flash=${encodeURIComponent("Salarié réactivé")}`
   );
 }
+
+/**
+ * Anonymisation d'un salarié archivé (RGPD, droit à l'effacement et fin des durées de conservation).
+ * Supprime l'identité, les coordonnées et les données de santé (justificatifs d'arrêt, pièces
+ * jointes), l'identité déclarative DSN (NIR, naissance, adresse) et le profil alternance.
+ * Conserve ce que la loi impose de garder : historique de paie, bulletins et coffre-fort
+ * (C. trav. art. L3243-4 et D3243-8), écritures comptables. Irréversible.
+ */
+export async function anonymizeEmployee(employeeId: string) {
+  const membership = await getCurrentMembership();
+  const user = await getCurrentUser();
+  if (!membership || !user) throw new Error("Non authentifié ou aucune organisation active");
+  if (!isOrganizationAdmin(membership)) throw new Error("Seuls les propriétaires et administrateurs peuvent anonymiser un salarié.");
+
+  const organizationId = membership.organizationId;
+  const employee = await prisma.employee.findFirst({ where: { id: employeeId, organizationId, deletedAt: { not: null } }, select: { id: true } });
+  if (!employee) throw new Error("Seul un salarié archivé peut être anonymisé.");
+  const activeAccount = await prisma.employee_accounts.findFirst({ where: { organizationId, employeeId, activatedAt: { not: null }, revokedAt: null }, select: { id: true } });
+  if (activeAccount) {
+    redirect(`/dashboard/employees?status=archived&flash=${encodeURIComponent("Retirez d'abord son accès à l'espace salarié avant de l'anonymiser.")}`);
+  }
+
+  const label = `anonymisé ${employeeId.slice(0, 6)}`;
+  await prisma.$transaction(async (tx) => {
+    await tx.employee.update({
+      where: { id: employeeId },
+      data: { firstName: "Salarié", lastName: label, civility: null, position: null, personalEmail: null, managerMembershipId: null, nextMedicalVisitDate: null },
+    });
+    const absences = await tx.absence.findMany({ where: { organizationId, employeeId }, select: { id: true } });
+    const absenceIds = absences.map((absence) => absence.id);
+    if (absenceIds.length > 0) {
+      await tx.absenceJustification.updateMany({ where: { absenceId: { in: absenceIds } }, data: { storageKey: null, fileName: null, mimeType: null, sizeBytes: null, rejectionReason: null } });
+      await tx.absence.updateMany({ where: { id: { in: absenceIds } }, data: { notes: null, rejectedReason: null } });
+    }
+    await tx.attachment.deleteMany({ where: { organizationId, task: { employeeEvent: { employeeId } } } });
+    await tx.dsn_employee_profiles.deleteMany({ where: { organizationId, employeeId } });
+    await tx.employee_alternance_profiles.deleteMany({ where: { organizationId, employeeId } });
+    await tx.employee_accounts.deleteMany({ where: { organizationId, employeeId } });
+    await tx.auditLog.create({
+      data: { id: randomUUID(), organizationId, actorUserId: user.id, action: "employee.anonymized", entityType: "Employee", entityId: employeeId },
+    });
+  });
+
+  revalidatePath("/dashboard/employees");
+  redirect(`/dashboard/employees?status=archived&flash=${encodeURIComponent("Salarié anonymisé")}`);
+}

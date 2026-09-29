@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 
 import { parseIsoDateOnly } from "@/lib/dateOnly";
 import { getPayrollMembership } from "@/lib/payrollAccess";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type WithholdingTaxFormState = { error: string } | undefined;
 
@@ -120,7 +121,7 @@ export async function saveWithholdingTaxRate(
       `;
     });
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Une erreur est survenue lors de l'enregistrement du taux." };
+    return { error: userFacingError(error, "Une erreur est survenue lors de l'enregistrement du taux.") };
   }
 
   revalidatePath(`/dashboard/employees/${employeeId}`);

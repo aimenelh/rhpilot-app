@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPayrollMembership } from "@/lib/payrollAccess";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type TerminationFormState = { error?: string; saved?: boolean } | undefined;
 
@@ -72,6 +73,6 @@ export async function saveTermination(periodId: string, employeeId: string, _pre
     revalidatePath(`/dashboard/payroll/${period.id}`);
     return { saved: true };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "La fiche de sortie n'a pas pu être enregistrée." };
+    return { error: userFacingError(error, "La fiche de sortie n'a pas pu être enregistrée.") };
   }
 }

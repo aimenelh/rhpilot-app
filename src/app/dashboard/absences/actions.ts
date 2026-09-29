@@ -6,6 +6,7 @@ import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { storeAbsenceJustification } from "@/lib/absence-justification-storage";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
+import { userFacingError } from "@/lib/userFacingError";
 
 const ABSENCE_TYPES = ["PAID_LEAVE", "RTT", "SICK_LEAVE", "WORK_ACCIDENT", "UNPAID_LEAVE", "FAMILY_EVENT", "MATERNITY", "PATERNITY", "OTHER"] as const;
 type AbsenceTypeValue = (typeof ABSENCE_TYPES)[number];
@@ -323,7 +324,7 @@ export async function uploadAbsenceJustification(formData: FormData): Promise<Ab
       });
     });
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Le justificatif n'a pas pu être enregistré." };
+    return { error: userFacingError(error, "Le justificatif n'a pas pu être enregistré.") };
   }
   revalidateAbsenceViews();
   return { success: "Justificatif reçu. Il doit maintenant être vérifié." };

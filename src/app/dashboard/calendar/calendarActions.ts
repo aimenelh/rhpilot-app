@@ -1,6 +1,9 @@
 "use server";
 
+import { randomUUID } from "node:crypto";
 import { getCurrentMembership } from "@/lib/auth";
+import { taskAccessWhere } from "@/lib/accessPolicy";
+import { COPILOT_REQUESTS_PER_HOUR, isCopilotRateLimited } from "@/lib/copilotPolicy";
 import { prisma } from "@/lib/prisma";
 import { askAboutOrganization } from "@/lib/ai";
 import { formatDate } from "@/lib/format";
@@ -37,6 +40,14 @@ export async function summarizeMonthAction(
     return { summary: "", error: "Mois invalide." };
   }
 
+  // Même plafond que le Copilote : chaque résumé est un appel payant à l'IA.
+  const recentRequests = await prisma.auditLog.count({
+    where: { organizationId: membership.organizationId, actorUserId: membership.userId, action: { in: ["copilot.question", "calendar.summary"] }, createdAt: { gte: new Date(Date.now() - 60 * 60 * 1000) } },
+  });
+  if (isCopilotRateLimited(recentRequests)) {
+    return { summary: "", error: `Limite de ${COPILOT_REQUESTS_PER_HOUR} demandes à l'IA par heure atteinte. Réessayez un peu plus tard.` };
+  }
+
   const start = new Date(year, month, 1);
   const end = new Date(year, month + 1, 1);
 
@@ -47,6 +58,7 @@ export async function summarizeMonthAction(
         status: { not: "CANCELLED" },
         dueDate: { gte: start, lt: end },
         employeeEvent: { deletedAt: null, employee: { deletedAt: null } },
+        AND: [taskAccessWhere(membership)],
       },
       include: { employeeEvent: { include: { employee: true, eventTemplate: true } } },
       orderBy: { dueDate: "asc" },
@@ -58,6 +70,7 @@ export async function summarizeMonthAction(
         status: { not: "CANCELLED" },
         dueDate: { gte: start, lt: end },
         employeeEvent: { deletedAt: null, employee: { deletedAt: null } },
+        AND: [taskAccessWhere(membership)],
       },
     }),
   ]);
@@ -79,6 +92,7 @@ export async function summarizeMonthAction(
   }
 
   try {
+    await prisma.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: membership.userId, action: "calendar.summary", entityType: "Membership", entityId: membership.id } });
     const summary = await askAboutOrganization(
       "Fais un résumé synthétique et actionnable de ce mois, en 3 à 4 phrases maximum : la charge globale, la ou les semaines les plus chargées si tu peux le déduire des dates, et les points de vigilance particuliers.",
       lines.join("\n")

@@ -14,6 +14,7 @@ import { absenceRequestEmail } from "@/lib/employee-space/emails";
 import { activateEmployeeAccount, findInvitationByToken, findPendingInvitationsForEmail, invitationProblem } from "@/lib/employee-space/invitations";
 import { ESPACE_ACCOUNT_COOKIE, NEW_ORGANIZATION_COOKIE, employeeSessionOrError, getEmployeeAccountsForUser } from "@/lib/employee-space/session";
 import { EMPLOYEE_REQUEST_TYPES, REQUESTS_CLOSED_MESSAGES, canEmployeeCancelAbsence, formatDateRange, isEmployeeRequestType, requestsClosedReason } from "@/lib/employee-space/labels";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type EspaceActionState = { error?: string; success?: string } | undefined;
 
@@ -91,7 +92,7 @@ export async function requestAbsence(_state: EspaceActionState, formData: FormDa
     try {
       stored = storeAbsenceJustification(Buffer.from(await (file as File).arrayBuffer()), (file as File).type);
     } catch (error) {
-      return { error: error instanceof Error ? error.message : "Le justificatif n'a pas pu être lu." };
+      return { error: userFacingError(error, "Le justificatif n'a pas pu être lu.") };
     }
   }
 

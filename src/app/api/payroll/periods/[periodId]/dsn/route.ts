@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { prepareDsnP26V01 } from "@/lib/payroll/dsn-preparation";
 import { getPayrollMembership } from "@/lib/payrollAccess";
+import { userFacingError } from "@/lib/userFacingError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -55,7 +56,7 @@ export async function GET(request: Request, { params }: { params: { periodId: st
       },
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Impossible de préparer le fichier DSN.";
+    const message = userFacingError(error, "Impossible de préparer le fichier DSN.");
     const status = message.startsWith("DSN bloquée") || message.startsWith("Contrôle paie bloquant") ? 409 : 500;
     return NextResponse.json({ error: message }, { status });
   }

@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/Field";
 import { Mascot } from "@/components/Mascot";
 import { getUserDisplayName } from "@/lib/displayName";
 import { formatDate } from "@/lib/format";
-import { archiveEmployee, reactivateEmployee } from "./actions";
+import { anonymizeEmployee, archiveEmployee, reactivateEmployee } from "./actions";
+import { AnonymizeEmployeeButton } from "@/components/employees/AnonymizeEmployeeButton";
 import { generateDemoOrganization, archiveAllEmployees } from "./demoActions";
 import { DemoOrgSubmitButton } from "./DemoOrgSubmitButton";
 import { ArchiveAllButton } from "@/components/employees/ArchiveAllButton";
@@ -221,14 +222,24 @@ export default async function EmployeesPage({
                       </td>
                       {status === "archived" && (
                         <td className="px-5 py-4 text-right">
-                          {canManageBulkData && <form action={reactivateEmployee.bind(null, employee.id)}> 
-                            <button
-                              type="submit"
-                              className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-primary hover:underline"
-                            >
-                              <ArchiveRestore size={13} /> Réactiver
-                            </button>
-                          </form>}
+                          {canManageBulkData && (
+                            <div className="flex items-center justify-end gap-4">
+                              <form action={reactivateEmployee.bind(null, employee.id)}>
+                                <button
+                                  type="submit"
+                                  className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-primary hover:underline"
+                                >
+                                  <ArchiveRestore size={13} /> Réactiver
+                                </button>
+                              </form>
+                              {employee.firstName !== "Salarié" || !employee.lastName.startsWith("anonymisé") ? (
+                                <AnonymizeEmployeeButton
+                                  action={anonymizeEmployee.bind(null, employee.id)}
+                                  employeeName={`${employee.firstName} ${employee.lastName}`}
+                                />
+                              ) : null}
+                            </div>
+                          )}
                         </td>
                       )}
                       {status === "active" && canManageBulkData && (

@@ -17,6 +17,7 @@ import { BulletinPdfPrerequisiteError, renderBulletinPdf } from "@/lib/payroll/b
 import { PAS_DEFAULT_GRIDS, pasBracketRate, valueAt } from "@/lib/payroll/bulletin/params";
 import type { PayslipResult } from "@/lib/payroll/bulletin/types";
 import { getPayrollMembership } from "@/lib/payrollAccess";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type PayrollPayslipGenerationFormState = { error: string } | undefined;
 
@@ -694,7 +695,7 @@ export async function generatePayslipsFromLockedSnapshotAction(
     if (error instanceof PayslipPdfPrerequisiteError || error instanceof BulletinPdfPrerequisiteError) {
       return { error: `Génération bloquée. Données manquantes : ${error.missing.join(", ")}.` };
     }
-    return { error: error instanceof Error ? error.message : "La génération des bulletins a échoué." };
+    return { error: userFacingError(error, "La génération des bulletins a échoué.") };
   }
 
   await prisma.auditLog.create({

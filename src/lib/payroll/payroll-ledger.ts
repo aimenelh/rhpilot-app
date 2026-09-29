@@ -8,7 +8,7 @@
  * du salaire versé.
  */
 
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 
 export type PayrollLedgerKind =
   | "ADD_TO_GROSS"
@@ -203,22 +203,23 @@ export async function persistPayrollLedger(
     WHERE "calculation_id" = ${calculationId}
   `;
 
-  for (const [index, entry] of prepared.entries()) {
-    await tx.$executeRaw`
-      INSERT INTO "payroll_ledger_entries" (
-        "id", "calculation_id", "line_order", "code", "label", "category",
-        "kind", "amount", "gross_delta", "taxable_delta", "social_delta",
-        "net_delta", "cash_delta", "rule_version_id", "source_name",
-        "source_url", "source_reference", "metadata"
-      ) VALUES (
-        ${crypto.randomUUID()}, ${calculationId}, ${index + 1}, ${entry.code},
-        ${entry.label}, ${entry.category}, ${entry.kind}, ${entry.amount},
-        ${entry.grossDelta}, ${entry.taxableDelta}, ${entry.socialDelta},
-        ${entry.netDelta}, ${entry.cashImpact}, ${entry.ruleVersionId ?? null},
-        ${entry.sourceName ?? null}, ${entry.sourceUrl ?? null},
-        ${entry.sourceReference ?? null},
-        ${entry.metadata ? JSON.stringify(entry.metadata) : null}::jsonb
-      )
-    `;
-  }
+  if (prepared.length === 0) return;
+  // Une seule insertion multi-lignes pour tout le bulletin, au lieu d'une requête par écriture.
+  const rows = prepared.map((entry, index) => Prisma.sql`(
+    ${crypto.randomUUID()}, ${calculationId}, ${index + 1}, ${entry.code},
+    ${entry.label}, ${entry.category}, ${entry.kind}, ${entry.amount},
+    ${entry.grossDelta}, ${entry.taxableDelta}, ${entry.socialDelta},
+    ${entry.netDelta}, ${entry.cashImpact}, ${entry.ruleVersionId ?? null},
+    ${entry.sourceName ?? null}, ${entry.sourceUrl ?? null},
+    ${entry.sourceReference ?? null},
+    ${entry.metadata ? JSON.stringify(entry.metadata) : null}::jsonb
+  )`);
+  await tx.$executeRaw`
+    INSERT INTO "payroll_ledger_entries" (
+      "id", "calculation_id", "line_order", "code", "label", "category",
+      "kind", "amount", "gross_delta", "taxable_delta", "social_delta",
+      "net_delta", "cash_delta", "rule_version_id", "source_name",
+      "source_url", "source_reference", "metadata"
+    ) VALUES ${Prisma.join(rows)}
+  `;
 }

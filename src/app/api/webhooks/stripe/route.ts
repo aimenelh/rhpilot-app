@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import type Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
+import { userFacingError } from "@/lib/userFacingError";
 
 // Depuis la version d'API "Basil" de Stripe (31 mars 2025),
 // current_period_end n'existe plus sur l'abonnement lui-même, il vit
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
     event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET!);
   } catch (err) {
     return NextResponse.json(
-      { error: `Signature invalide : ${err instanceof Error ? err.message : "inconnue"}` },
+      { error: `Signature invalide : ${userFacingError(err, "inconnue")}` },
       { status: 400 }
     );
   }

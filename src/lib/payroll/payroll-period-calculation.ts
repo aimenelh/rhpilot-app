@@ -399,8 +399,9 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
         select: { id: true },
       });
       await tx.payrollContribution.deleteMany({ where: { calculationId: calculation.id } });
-      for (const detail of contributionDetails) {
-        await tx.payrollContribution.create({ data: { id: crypto.randomUUID(), calculationId: calculation.id, code: detail.code, label: detail.label, side: detail.side, baseAmount: detail.baseAmount ?? 0, rate: detail.rate ?? 0, amount: detail.amount, ruleVersionId: rules.ruleVersionId } });
+      // Une insertion groupée par salarié plutôt qu'une par ligne de cotisation.
+      if (contributionDetails.length > 0) {
+        await tx.payrollContribution.createMany({ data: contributionDetails.map((detail) => ({ id: crypto.randomUUID(), calculationId: calculation.id, code: detail.code, label: detail.label, side: detail.side, baseAmount: detail.baseAmount ?? 0, rate: detail.rate ?? 0, amount: detail.amount, ruleVersionId: rules.ruleVersionId })) });
       }
       await persistPayrollLedger(tx, calculation.id, buildBulletinLedger(result, rules.ruleVersionId));
     }

@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { assertNirFormat, encryptDsnSensitiveValue } from "@/lib/payroll/dsn-pii";
 import { getPayrollMembership } from "@/lib/payrollAccess";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type DsnFormState = { error?: string; success?: string } | undefined;
 
@@ -106,7 +107,7 @@ export async function saveDsnOrganizationSettings(
     revalidatePath("/dashboard/payroll/dsn");
     return { success: "Configuration DSN enregistrée. Le mode dépôt réel reste volontairement désactivé." };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Impossible d'enregistrer la configuration DSN." };
+    return { error: userFacingError(error, "Impossible d'enregistrer la configuration DSN.") };
   }
 }
 
@@ -249,6 +250,6 @@ export async function saveDsnEmployeeProfile(
     revalidatePath(`/dashboard/payroll/dsn/employees/${employee.id}`);
     return { success: `Profil DSN de ${employee.firstName} ${employee.lastName} enregistré.` };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Impossible d'enregistrer le profil DSN." };
+    return { error: userFacingError(error, "Impossible d'enregistrer le profil DSN.") };
   }
 }

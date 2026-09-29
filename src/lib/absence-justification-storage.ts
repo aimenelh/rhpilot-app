@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { openDocumentPayload, sealDocumentPayload } from "@/lib/document-crypto";
 
 const PREFIX = "inline-db-absence-v1:";
 const MAX_BYTES = 4 * 1024 * 1024;
@@ -28,7 +29,7 @@ export function storeAbsenceJustification(
 
   const sha256 = createHash("sha256").update(bytes).digest("hex");
   return {
-    storageKey: `${PREFIX}${sha256}:${bytes.toString("base64")}`,
+    storageKey: `${PREFIX}${sha256}:${sealDocumentPayload(bytes)}`,
     sha256,
     sizeBytes: bytes.length,
     mimeType: mimeType as (typeof ALLOWED_JUSTIFICATION_TYPES)[number],
@@ -45,7 +46,7 @@ export function readAbsenceJustification(storageKey: string): Buffer {
   const payload = value.slice(separator + 1);
   if (!/^[a-f0-9]{64}$/.test(expectedHash) || !payload) throw new Error("Clé de stockage invalide.");
 
-  const bytes = Buffer.from(payload, "base64");
+  const bytes = openDocumentPayload(payload);
   const actualHash = createHash("sha256").update(bytes).digest("hex");
   if (actualHash !== expectedHash) throw new Error("Intégrité du document invalide.");
   if (bytes.length > MAX_BYTES) throw new Error("Document trop volumineux.");

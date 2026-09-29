@@ -3,6 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { invitationTokenWhere } from "@/lib/invitationToken";
 import { getCurrentUser } from "@/lib/auth";
 import { releaseMembershipResponsibilities } from "@/lib/membershipLifecycle";
 import { hasOpenStripeSubscription } from "@/lib/billingPolicy";
@@ -20,8 +21,8 @@ export async function switchOrganization(token: string) {
   const user = await getCurrentUser();
   if (!user) throw new Error("Non authentifié.");
 
-  const invitation = await prisma.invitation.findUnique({
-    where: { token },
+  const invitation = await prisma.invitation.findFirst({
+    where: invitationTokenWhere(token),
     include: { organization: true },
   });
   if (!invitation) throw new Error("Invitation introuvable.");

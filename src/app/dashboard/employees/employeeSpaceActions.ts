@@ -16,6 +16,7 @@ import { buildFinalSettlementItems, renderFinalSettlementPdf, renderWorkCertific
 import { DOCUMENT_KIND_LABELS, isVaultDocumentKind, safeFileName, type VaultDocumentKind } from "@/lib/employee-space/labels";
 import { isNoticeMethod, noticeMethodLabel } from "@/lib/employee-space/notice-rules";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type EmployeeSpaceActionState = { error?: string; success?: string; manualUrl?: string } | undefined;
 
@@ -46,7 +47,7 @@ async function audit(organizationId: string, userId: string, action: string, ent
   await prisma.auditLog.create({ data: { id: randomUUID(), organizationId, actorUserId: userId, action, entityType: "Employee", entityId, metadata: metadata as object } });
 }
 
-const failure = (error: unknown): EmployeeSpaceActionState => ({ error: error instanceof Error ? error.message : "L'opération a échoué." });
+const failure = (error: unknown): EmployeeSpaceActionState => ({ error: userFacingError(error, "L'opération a échoué.") });
 
 /** Adresse personnelle et choix du bulletin papier, depuis la fiche salarié. */
 export async function saveEmployeeSpaceSettings(employeeId: string, _state: EmployeeSpaceActionState, formData: FormData): Promise<EmployeeSpaceActionState> {

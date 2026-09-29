@@ -9,6 +9,7 @@ import {
   type PayrollPayslipGenerationFormState,
 } from "./generatePayslipsFromLockedSnapshotAction";
 import { getPayrollMembership } from "@/lib/payrollAccess";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type { PayrollPayslipGenerationFormState } from "./generatePayslipsFromLockedSnapshotAction";
 
@@ -156,6 +157,6 @@ export async function regeneratePayslipsWithPaymentDateAction(
       // Keep the original error: it explains why generation failed. A restore
       // failure will also be visible in runtime logs and must be investigated.
     }
-    return { error: error instanceof Error ? error.message : "La régénération des bulletins a échoué." };
+    return { error: userFacingError(error, "La régénération des bulletins a échoué.") };
   }
 }

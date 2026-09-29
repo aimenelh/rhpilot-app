@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { storeTaskAttachment } from "@/lib/task-attachment-storage";
 import { taskAccessWhere } from "@/lib/accessPolicy";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type TaskAttachmentActionState =
   | { success?: string; error?: string }
@@ -53,7 +54,7 @@ export async function uploadTaskAttachment(
     stored = storeTaskAttachment(Buffer.from(await file.arrayBuffer()), file.type);
   } catch (error) {
     return {
-      error: error instanceof Error ? error.message : "Le document n'a pas pu être enregistré.",
+      error: userFacingError(error, "Le document n'a pas pu être enregistré."),
     };
   }
 

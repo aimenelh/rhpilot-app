@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { calculatePayrollPeriod } from "@/lib/payroll/payroll-period-calculation";
 import { ENGINE_COMPUTED_VARIABLES, getBulletinVariable } from "@/lib/payroll/bulletin/variables";
 import { getPayrollMembership } from "@/lib/payrollAccess";
+import { userFacingError } from "@/lib/userFacingError";
 
 const VARIABLE_UNITS = ["EUR", "DAYS", "HOURS", "PERCENT", "UNITS"] as const;
 type VariableUnit = (typeof VARIABLE_UNITS)[number];
@@ -132,7 +133,7 @@ export async function calculatePayrollPeriodAction(_prevState: PayrollCalculatio
     if (result.employeeCount === 0) return { error: "Aucun salarié actif n'est disponible pour cette période." };
     return undefined;
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Le calcul de la période a échoué." };
+    return { error: userFacingError(error, "Le calcul de la période a échoué.") };
   }
 }
 

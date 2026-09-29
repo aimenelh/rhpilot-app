@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPayrollMembership } from "@/lib/payrollAccess";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type PayrollOpeningFormState = { error?: string; saved?: boolean } | undefined;
 
@@ -59,7 +60,7 @@ export async function savePaidLeaveOpening(employeeId: string, _prev: PayrollOpe
     revalidatePath(`/dashboard/employees/${employee.id}`);
     return { saved: true };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "La reprise n'a pas pu être enregistrée." };
+    return { error: userFacingError(error, "La reprise n'a pas pu être enregistrée.") };
   }
 }
 
@@ -112,6 +113,6 @@ export async function savePayrollOpening(employeeId: string, _prev: PayrollOpeni
     revalidatePath(`/dashboard/employees/${employee.id}`);
     return { saved: true };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "La reprise n'a pas pu être enregistrée." };
+    return { error: userFacingError(error, "La reprise n'a pas pu être enregistrée.") };
   }
 }
