@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { authState } from "@/test/mockAuth";
@@ -52,7 +53,7 @@ async function createFixtures() {
   });
 
   const employeeEventA = await prisma.employeeEvent.create({
-    data: { organizationId: orgA.id, employeeId: employeeA.id, eventTemplateId: eventTemplate.id, triggerDate: new Date() },
+    data: { id: randomUUID(), organizationId: orgA.id, employeeId: employeeA.id, eventTemplateId: eventTemplate.id, triggerDate: new Date() },
   });
 
   const taskA = await prisma.task.create({

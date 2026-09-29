@@ -158,7 +158,7 @@ describe("DSN P26V01 builder", () => {
 
   it("requires an AT/MP rate when the risk code is known", () => {
     const invalid = input();
-    invalid.employees[0].contract.workAccidentRate = null;
+    (invalid.employees[0].contract as { workAccidentRate: number | null }).workAccidentRate = null;
     expect(() => buildDsnP26V01Monthly(invalid)).toThrow(/taux AT\/MP/i);
   });
 });

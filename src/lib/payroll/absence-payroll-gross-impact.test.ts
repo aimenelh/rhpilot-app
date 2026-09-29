@@ -40,8 +40,8 @@ describe("calculateAbsenceGrossImpact", () => {
           basis: "RULE_DEFINED",
           ruleVersionId: "rule-v2",
         },
-      }).grossDelta,
-    ).toBe(0);
+      }),
+    ).toMatchObject({ status: "RESOLVED", grossDelta: 0 });
   });
 
   it("rejects a basis that the engine does not implement yet", () => {

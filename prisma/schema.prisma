@@ -3,6 +3,12 @@
 // ============================================================
 // Le référentiel conventionnel est versionné et séparé des règles
 // de paie. Aucune règle sociale ou juridique n'est déduite par l'IA.
+//
+// Ce schéma reflète exactement la base de production : plusieurs tables ont été
+// créées par des migrations SQL écrites à la main. Il a été resynchronisé par
+// introspection (prisma db pull sur une base rejouant toutes les migrations) ;
+// `npm run check:schema` vérifie qu'aucun écart ne réapparaît. Sans cela,
+// prisma migrate dev proposerait de supprimer des tables et leurs données.
 
 generator client {
   provider = "prisma-client-js"
@@ -14,72 +20,893 @@ datasource db {
 }
 
 model Organization {
-  id                    String    @id @default(cuid())
-  name                  String
-  siret                 String?
-  conventionCollective  String?
-  collectiveAgreementId String?
-  payrollAddress        String?
-  payrollPostalCode     String?
-  payrollCity           String?
-  payrollNafCode        String?
-  payrollUrssafReference String?
-  stripeCustomerId      String?   @unique
-  stripeSubscriptionId  String?   @unique
-  subscriptionStatus    String?
-  currentPeriodEnd      DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-  deletedAt             DateTime?
+  id                           String                         @id @default(cuid())
+  name                         String
+  createdAt                    DateTime                       @default(now())
+  updatedAt                    DateTime                       @updatedAt
+  deletedAt                    DateTime?
+  siret                        String?
+  conventionCollective         String?
+  collectiveAgreementId        String?
+  payrollAddress               String?
+  payrollPostalCode            String?
+  payrollCity                  String?
+  payrollNafCode               String?
+  payrollUrssafReference       String?
+  legalCategory                String?
+  atmpRate                     Decimal?                       @db.Decimal(7, 4)
+  companyCreationDate          DateTime?
+  payrollDepartment            String?
+  healthPlanMonthlyAmount      Decimal?                       @db.Decimal(10, 2)
+  healthPlanEmployerRate       Decimal?                       @db.Decimal(5, 2)
+  stripeCustomerId             String?                        @unique
+  stripeSubscriptionId         String?                        @unique
+  subscriptionStatus           String?
+  currentPeriodEnd             DateTime?
+  payrollHeadcount             Int?
+  mobilityRate                 Decimal?                       @db.Decimal(6, 3)
+  ijssSubrogation              Boolean                        @default(true)
+  paidLeaveMethod              String                         @default("OUVRABLES")
+  workedSolidarityDay          Boolean                        @default(false)
+  prevoyanceRates              Json?
+  mealVoucherFaceValue         Decimal?                       @db.Decimal(8, 2)
+  mealVoucherEmployerShare     Decimal?                       @db.Decimal(5, 4)
+  transportEmployerShare       Decimal                        @default(0.5) @db.Decimal(5, 4)
+  payrollCommuneCode           String?
+  registrySyncedAt             DateTime?
+  registrySnapshot             Json?
+  registryCheckedAt            DateTime?
+  mobilityRateSource           String?
+  mobilityRateCheckedAt        DateTime?
+  mobilityRateDetail           String?
+  absences                     Absence[]
+  anomalyDismissals            AnomalyDismissal[]
+  auditLogs                    AuditLog[]
+  dsn_organization_settings    dsn_organization_settings?
+  employee_accounts            employee_accounts[]
+  employee_documents           employee_documents[]
+  employeeEvents               EmployeeEvent[]
+  employee_paid_leave_openings employee_paid_leave_openings[]
+  employee_payroll_openings    employee_payroll_openings[]
+  employees                    Employee[]
+  invitations                  Invitation[]
+  memberships                  Membership[]
+  notifications                Notification[]
+  collectiveAgreement          CollectiveAgreement?           @relation(fields: [collectiveAgreementId], references: [id], onDelete: Restrict, map: "organizations_collective_agreement_fk")
+  payroll_periods              PayrollPeriod[]
+  reminderRules                ReminderRule[]
+  taskTemplateOverrides        TaskTemplateOverride[]
 
-  memberships             Membership[]
-  employees               Employee[]
-  employeeEvents          EmployeeEvent[]
-  auditLogs               AuditLog[]
-  notifications           Notification[]
-  invitations             Invitation[]
-  taskTemplateOverrides   TaskTemplateOverride[]
-  reminderRules           ReminderRule[]
-  anomalyDismissals       AnomalyDismissal[]
-  absences                Absence[]
-  collectiveAgreement     CollectiveAgreement? @relation(fields: [collectiveAgreementId], references: [id], onDelete: Restrict)
-
-  @@index([collectiveAgreementId])
+  @@index([collectiveAgreementId], map: "organizations_collective_agreement_idx")
   @@map("organizations")
 }
 
 model Invitation {
-  id              String     @id @default(cuid())
+  id              String       @id @default(cuid())
   organizationId  String
   email           String
   accessRole      AccessRole
-  token           String     @unique
+  token           String       @unique
   createdByUserId String
-  createdAt       DateTime   @default(now())
+  createdAt       DateTime     @default(now())
   expiresAt       DateTime
   acceptedAt      DateTime?
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization    Organization @relation(fields: [organizationId], references: [id])
+
   @@index([organizationId])
   @@map("invitations")
 }
 
 model User {
-  id             String    @id @default(cuid())
-  email          String    @unique
-  firstName      String?
-  lastName       String?
-  authProviderId String?   @unique
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  deletedAt      DateTime?
-  memberships       Membership[]
-  auditLogs         AuditLog[]
-  anomalyDismissals AnomalyDismissal[]
-  sentNotifications Notification[]
-  validatedAbsences Absence[] @relation("AbsenceValidatedBy")
-  uploadedAbsenceJustifications AbsenceJustification[] @relation("AbsenceJustificationUploadedBy")
+  id                            String                 @id @default(cuid())
+  email                         String                 @unique
+  authProviderId                String?                @unique
+  createdAt                     DateTime               @default(now())
+  updatedAt                     DateTime               @updatedAt
+  deletedAt                     DateTime?
+  firstName                     String?
+  lastName                      String?
   reviewedAbsenceJustifications AbsenceJustification[] @relation("AbsenceJustificationReviewedBy")
+  uploadedAbsenceJustifications AbsenceJustification[] @relation("AbsenceJustificationUploadedBy")
+  validatedAbsences             Absence[]              @relation("AbsenceValidatedBy")
+  anomalyDismissals             AnomalyDismissal[]
+  auditLogs                     AuditLog[]
+  employee_accounts             employee_accounts[]
+  memberships                   Membership[]
+  sentNotifications             Notification[]
+
   @@map("users")
+}
+
+model Membership {
+  id                    String                @id @default(cuid())
+  userId                String
+  organizationId        String
+  accessRole            AccessRole
+  functionalRole        FunctionalRole?
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @updatedAt
+  deletedAt             DateTime?
+  notificationFrequency NotificationFrequency @default(DAILY)
+  uploadedAttachments   Attachment[]
+  managedEmployees      Employee[]            @relation("EmployeeManager")
+  organization          Organization          @relation(fields: [organizationId], references: [id])
+  user                  User                  @relation(fields: [userId], references: [id])
+  receivedNotifications Notification[]
+  assignedTasks         Task[]
+
+  @@unique([userId, organizationId])
+  @@unique([organizationId, id])
+  @@index([organizationId, functionalRole])
+  @@map("memberships")
+}
+
+model Employee {
+  id                            String                         @id @default(cuid())
+  organizationId                String
+  firstName                     String
+  lastName                      String
+  position                      String?
+  hireDate                      DateTime
+  managerMembershipId           String?
+  createdAt                     DateTime                       @default(now())
+  updatedAt                     DateTime                       @updatedAt
+  deletedAt                     DateTime?
+  contractType                  ContractType?
+  nextMedicalVisitDate          DateTime?
+  civility                      Civility?
+  probationDuration             Int?
+  probationDurationUnit         DurationUnit?
+  contractEndDate               DateTime?
+  professionalCategory          ProfessionalCategory?
+  isDemoData                    Boolean                        @default(false)
+  personalEmail                 String?
+  paperPayslipSince             DateTime?
+  paperPayslipSource            String?
+  electronicPayslipNoticeAt     DateTime?                      @db.Date
+  electronicPayslipNoticeMethod String?
+  absences                      Absence[]
+  dsn_employee_profiles         dsn_employee_profiles?
+  employee_accounts             employee_accounts[]
+  employee_documents            employee_documents[]
+  events                        EmployeeEvent[]
+  employee_paid_leave_openings  employee_paid_leave_openings[]
+  employee_payroll_openings     employee_payroll_openings[]
+  organization                  Organization                   @relation(fields: [organizationId], references: [id])
+  managerMembership             Membership?                    @relation("EmployeeManager", fields: [organizationId, managerMembershipId], references: [organizationId, id])
+  payroll_calculations          PayrollCalculation[]
+  payroll_entry_reviews         payroll_entry_reviews[]
+  payroll_profiles              PayrollProfile[]
+  payroll_terminations          payroll_terminations[]
+  payroll_variables             PayrollVariable[]
+  payslips                      Payslip[]
+
+  @@unique([organizationId, id])
+  @@index([organizationId])
+  @@map("employees")
+}
+
+model EventTemplate {
+  id             String          @id @default(cuid())
+  key            String          @unique
+  label          String
+  description    String?
+  archivedAt     DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  employeeEvents EmployeeEvent[]
+  taskTemplates  TaskTemplate[]
+
+  @@map("event_templates")
+}
+
+model TaskTemplateOverride {
+  id             String         @id @default(cuid())
+  organizationId String
+  taskTemplateId String
+  action         OverrideAction
+  label          String?
+  dueOffsetDays  Int?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  organization   Organization   @relation(fields: [organizationId], references: [id])
+  taskTemplate   TaskTemplate   @relation(fields: [taskTemplateId], references: [id])
+
+  @@unique([organizationId, taskTemplateId])
+  @@index([organizationId])
+  @@map("task_template_overrides")
+}
+
+model TaskTemplate {
+  id                    String                   @id @default(cuid())
+  key                   String                   @unique
+  eventTemplateId       String
+  label                 String
+  stepOrder             Int
+  dueOffsetDays         Int
+  deadlineType          DeadlineType             @default(ORGANIZATIONAL_DEFAULT)
+  defaultFunctionalRole FunctionalRoleResolution
+  proofRequired         Boolean                  @default(false)
+  proofLabel            String?
+  archivedAt            DateTime?
+  createdAt             DateTime                 @default(now())
+  updatedAt             DateTime                 @updatedAt
+  overrides             TaskTemplateOverride[]
+  eventTemplate         EventTemplate            @relation(fields: [eventTemplateId], references: [id])
+  tasks                 Task[]
+
+  @@index([eventTemplateId])
+  @@map("task_templates")
+}
+
+model EmployeeEvent {
+  id              String        @id
+  organizationId  String
+  employeeId      String
+  eventTemplateId String
+  triggerDate     DateTime
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  deletedAt       DateTime?
+  eventTemplate   EventTemplate @relation(fields: [eventTemplateId], references: [id])
+  employee        Employee      @relation(fields: [organizationId, employeeId], references: [organizationId, id])
+  organization    Organization  @relation(fields: [organizationId], references: [id])
+  tasks           Task[]
+
+  @@unique([organizationId, id])
+  @@index([organizationId])
+  @@index([employeeId])
+  @@map("employee_events")
+}
+
+model Task {
+  id                   String                   @id @default(cuid())
+  organizationId       String
+  employeeEventId      String
+  taskTemplateId       String?
+  label                String
+  stepOrder            Int
+  dueDate              DateTime
+  deadlineType         DeadlineType
+  resolutionRole       FunctionalRoleResolution
+  assignedMembershipId String?
+  status               TaskStatus               @default(TO_PREPARE)
+  completedAt          DateTime?
+  proofRequired        Boolean                  @default(false)
+  proofLabel           String?
+  createdAt            DateTime                 @default(now())
+  updatedAt            DateTime                 @updatedAt
+  attachments          Attachment[]
+  assignedMembership   Membership?              @relation(fields: [organizationId, assignedMembershipId], references: [organizationId, id])
+  employeeEvent        EmployeeEvent            @relation(fields: [organizationId, employeeEventId], references: [organizationId, id], onDelete: Cascade)
+  taskTemplate         TaskTemplate?            @relation(fields: [taskTemplateId], references: [id], onDelete: Restrict)
+
+  @@unique([organizationId, id])
+  @@index([employeeEventId])
+  @@index([assignedMembershipId])
+  @@index([status, dueDate])
+  @@map("tasks")
+}
+
+model Attachment {
+  id                     String      @id @default(cuid())
+  organizationId         String
+  taskId                 String
+  storageKey             String
+  fileName               String?
+  mimeType               String
+  sizeBytes              Int
+  uploadedByMembershipId String?
+  createdAt              DateTime    @default(now())
+  task                   Task        @relation(fields: [organizationId, taskId], references: [organizationId, id], onDelete: Cascade)
+  uploadedByMembership   Membership? @relation(fields: [organizationId, uploadedByMembershipId], references: [organizationId, id])
+
+  @@index([taskId])
+  @@map("attachments")
+}
+
+model ReminderRule {
+  id             String       @id @default(cuid())
+  organizationId String
+  daysBeforeDue  Int
+  notifyAssignee Boolean      @default(true)
+  notifyManager  Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, daysBeforeDue])
+  @@index([organizationId])
+  @@map("reminder_rules")
+}
+
+model Notification {
+  id                    String       @id
+  organizationId        String
+  recipientMembershipId String
+  type                  String
+  subject               String
+  taskId                String?
+  employeeEventId       String?
+  sentByUserId          String?
+  sentAt                DateTime     @default(now())
+  delivered             Boolean      @default(true)
+  organization          Organization @relation(fields: [organizationId], references: [id])
+  recipientMembership   Membership   @relation(fields: [organizationId, recipientMembershipId], references: [organizationId, id])
+  sentByUser            User?        @relation(fields: [sentByUserId], references: [id])
+
+  @@index([organizationId, sentAt])
+  @@map("notifications")
+}
+
+model AnomalyDismissal {
+  id                String       @id
+  organizationId    String
+  anomalyKey        String
+  snoozedUntil      DateTime?
+  dismissedByUserId String?
+  createdAt         DateTime     @default(now())
+  dismissedBy       User?        @relation(fields: [dismissedByUserId], references: [id])
+  organization      Organization @relation(fields: [organizationId], references: [id])
+
+  @@unique([organizationId, anomalyKey])
+  @@index([organizationId])
+  @@map("anomaly_dismissals")
+}
+
+model AuditLog {
+  id             String       @id
+  organizationId String
+  actorUserId    String?
+  action         String
+  entityType     String
+  entityId       String
+  metadata       Json?
+  createdAt      DateTime     @default(now())
+  actor          User?        @relation(fields: [actorUserId], references: [id])
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  @@index([organizationId, createdAt])
+  @@map("audit_logs")
+}
+
+model DiagnosticResponse {
+  id          String   @id
+  answers     Json
+  riskAreas   String[]
+  email       String?
+  companySize String?
+  createdAt   DateTime @default(now())
+
+  @@index([createdAt])
+  @@map("diagnostic_responses")
+}
+
+model CollectiveAgreement {
+  id              String                       @id
+  idcc            String                       @unique
+  name            String
+  sourceName      String?
+  sourceUrl       String?
+  status          String                       @default("ACTIVE")
+  createdAt       DateTime                     @default(now())
+  updatedAt       DateTime                     @default(now()) @updatedAt
+  versions        CollectiveAgreementVersion[]
+  organizations   Organization[]
+  payrollProfiles PayrollProfile[]
+
+  @@map("collective_agreements")
+}
+
+model CollectiveAgreementVersion {
+  id                    String                    @id
+  collectiveAgreementId String
+  version               Int
+  validFrom             DateTime                  @db.Date
+  validUntil            DateTime?                 @db.Date
+  sourceName            String
+  sourceUrl             String?
+  sourceReference       String?
+  status                String                    @default("DRAFT")
+  createdAt             DateTime                  @default(now())
+  updatedAt             DateTime                  @default(now()) @updatedAt
+  rules                 CollectiveAgreementRule[]
+  collectiveAgreement   CollectiveAgreement       @relation(fields: [collectiveAgreementId], references: [id], map: "collective_agreement_versions_agreement_fk")
+
+  @@unique([collectiveAgreementId, version], map: "collective_agreement_versions_agreement_version_key")
+  @@index([collectiveAgreementId, validFrom, validUntil, status], map: "collective_agreement_versions_lookup_idx")
+  @@map("collective_agreement_versions")
+}
+
+model CollectiveAgreementRule {
+  id              String                     @id
+  versionId       String
+  code            String
+  category        String
+  parameters      Json
+  sourceReference String
+  sourceUrl       String?
+  validFrom       DateTime                   @db.Date
+  validUntil      DateTime?                  @db.Date
+  status          String                     @default("DRAFT")
+  createdAt       DateTime                   @default(now())
+  updatedAt       DateTime                   @default(now()) @updatedAt
+  version         CollectiveAgreementVersion @relation(fields: [versionId], references: [id], map: "collective_agreement_rules_version_fk")
+
+  @@unique([versionId, code], map: "collective_agreement_rules_version_code_key")
+  @@index([versionId, category, validFrom, validUntil, status], map: "collective_agreement_rules_lookup_idx")
+  @@map("collective_agreement_rules")
+}
+
+model Absence {
+  id                    String                 @id
+  organizationId        String
+  employeeId            String
+  type                  AbsenceType
+  startDate             DateTime               @db.Date
+  endDate               DateTime               @db.Date
+  status                AbsenceStatus          @default(TO_VALIDATE)
+  justificationRequired Boolean                @default(false)
+  payrollImpactStatus   PayrollImpactStatus    @default(PENDING)
+  notes                 String?
+  validatedByUserId     String?
+  validatedAt           DateTime?
+  rejectedReason        String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @default(now()) @updatedAt
+  justifications        AbsenceJustification[]
+  employee              Employee               @relation(fields: [organizationId, employeeId], references: [organizationId, id], map: "absences_employee_fkey")
+  organization          Organization           @relation(fields: [organizationId], references: [id])
+  validatedBy           User?                  @relation("AbsenceValidatedBy", fields: [validatedByUserId], references: [id])
+
+  @@index([organizationId, startDate, endDate])
+  @@index([organizationId, employeeId, startDate])
+  @@index([organizationId, status])
+  @@map("absences")
+}
+
+model AbsenceJustification {
+  id               String              @id
+  absenceId        String
+  status           JustificationStatus @default(TO_PROVIDE)
+  storageKey       String?
+  fileName         String?
+  mimeType         String?
+  sizeBytes        Int?
+  uploadedByUserId String?
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  rejectionReason  String?
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @default(now()) @updatedAt
+  absence          Absence             @relation(fields: [absenceId], references: [id], onDelete: Cascade)
+  reviewedBy       User?               @relation("AbsenceJustificationReviewedBy", fields: [reviewedByUserId], references: [id])
+  uploadedBy       User?               @relation("AbsenceJustificationUploadedBy", fields: [uploadedByUserId], references: [id])
+
+  @@index([absenceId, status])
+  @@index([reviewedByUserId, reviewedAt])
+  @@map("absence_justifications")
+}
+
+model PayrollProfile {
+  id                      String               @id
+  organizationId          String
+  employeeId              String
+  payFrequency            String               @default("MONTHLY")
+  currency                String               @default("EUR")
+  baseSalaryCents         Int?
+  monthlyHours            Decimal?             @db.Decimal(8, 2)
+  collectiveAgreementId   String?
+  effectiveFrom           DateTime
+  effectiveUntil          DateTime?
+  createdAt               DateTime             @default(now())
+  updatedAt               DateTime             @default(now()) @updatedAt
+  classificationCode      String?
+  classificationLabel     String?
+  level                   String?
+  coefficient             String?
+  seniorityDate           DateTime?
+  employeeAddress         String?
+  weeklySchedule          Json?
+  structuralOvertimeHours Decimal?             @db.Decimal(8, 2)
+  structuralOvertimeRate  Decimal?             @db.Decimal(5, 4)
+  healthPlanWaiver        Boolean              @default(false)
+  collectiveAgreement     CollectiveAgreement? @relation(fields: [collectiveAgreementId], references: [id], onDelete: Restrict, map: "payroll_profiles_collective_agreement_fk")
+  employees               Employee             @relation(fields: [organizationId, employeeId], references: [organizationId, id], map: "payroll_profiles_employee_fk")
+
+  @@unique([organizationId, employeeId, effectiveFrom], map: "payroll_profiles_organization_employee_effective_from_key")
+  @@index([collectiveAgreementId], map: "payroll_profiles_collective_agreement_idx")
+  @@index([organizationId, employeeId], map: "payroll_profiles_organization_employee_idx")
+  @@map("payroll_profiles")
+}
+
+model PayrollPeriod {
+  id                    String                  @id
+  organizationId        String
+  year                  Int
+  month                 Int
+  status                String                  @default("DRAFT")
+  calculatedAt          DateTime?
+  validatedAt           DateTime?
+  lockedAt              DateTime?
+  createdAt             DateTime                @default(now())
+  updatedAt             DateTime                @default(now()) @updatedAt
+  paymentDate           DateTime?               @db.Date
+  payroll_calculations  PayrollCalculation[]
+  payroll_entry_reviews payroll_entry_reviews[]
+  organizations         Organization            @relation(fields: [organizationId], references: [id], map: "payroll_periods_organization_fk")
+  payroll_terminations  payroll_terminations[]
+  payroll_variables     PayrollVariable[]
+  payslips              Payslip[]
+
+  @@unique([organizationId, id], map: "payroll_periods_organization_id_id_key")
+  @@unique([organizationId, year, month], map: "payroll_periods_organization_year_month_key")
+  @@index([organizationId, status], map: "payroll_periods_organization_status_idx")
+  @@map("payroll_periods")
+}
+
+model PayrollVariable {
+  id              String        @id
+  organizationId  String
+  payrollPeriodId String
+  employeeId      String
+  code            String
+  label           String
+  amount          Decimal       @db.Decimal(12, 2)
+  unit            String        @default("EUR")
+  source          String        @default("MANUAL")
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @default(now()) @updatedAt
+  reference       String?
+  employees       Employee      @relation(fields: [organizationId, employeeId], references: [organizationId, id], map: "payroll_variables_employee_fk")
+  payroll_periods PayrollPeriod @relation(fields: [organizationId, payrollPeriodId], references: [organizationId, id], map: "payroll_variables_period_fk")
+
+  @@index([organizationId, payrollPeriodId, employeeId], map: "payroll_variables_period_employee_idx")
+  @@map("payroll_variables")
+}
+
+model PayrollRuleVersion {
+  id                    String                @id
+  code                  String
+  version               Int
+  scope                 String
+  validFrom             DateTime              @db.Date
+  validUntil            DateTime?             @db.Date
+  sourceName            String
+  sourceUrl             String?
+  parameters            Json
+  status                String                @default("DRAFT")
+  createdAt             DateTime              @default(now())
+  updatedAt             DateTime              @default(now()) @updatedAt
+  payroll_contributions PayrollContribution[]
+
+  @@unique([code, version, scope])
+  @@index([code, scope, validFrom, validUntil, status], map: "payroll_rule_versions_lookup_idx")
+  @@map("payroll_rule_versions")
+}
+
+model PayrollCalculation {
+  id                     String                   @id
+  organizationId         String
+  payrollPeriodId        String
+  employeeId             String
+  ruleSetVersion         String
+  grossAmount            Decimal                  @db.Decimal(12, 2)
+  employeeContributions  Decimal                  @default(0) @db.Decimal(12, 2)
+  employerContributions  Decimal                  @default(0) @db.Decimal(12, 2)
+  netBeforeTax           Decimal                  @db.Decimal(12, 2)
+  withholdingTax         Decimal                  @default(0) @db.Decimal(12, 2)
+  netPaid                Decimal                  @db.Decimal(12, 2)
+  calculationSnapshot    Json
+  createdAt              DateTime                 @default(now())
+  netTaxableAmount       Decimal?                 @db.Decimal(12, 2)
+  netSocialAmount        Decimal?                 @db.Decimal(12, 2)
+  employees              Employee                 @relation(fields: [organizationId, employeeId], references: [organizationId, id], map: "payroll_calculations_employee_fk")
+  payroll_periods        PayrollPeriod            @relation(fields: [organizationId, payrollPeriodId], references: [organizationId, id], map: "payroll_calculations_period_fk")
+  payroll_contributions  PayrollContribution[]
+  payroll_ledger_entries payroll_ledger_entries[]
+  payslips               Payslip?
+
+  @@unique([organizationId, payrollPeriodId, employeeId], map: "payroll_calculations_period_employee_key")
+  @@map("payroll_calculations")
+}
+
+model PayrollContribution {
+  id                    String              @id
+  calculationId         String
+  code                  String
+  label                 String
+  side                  String
+  baseAmount            Decimal             @db.Decimal(12, 2)
+  rate                  Decimal             @db.Decimal(10, 6)
+  amount                Decimal             @db.Decimal(12, 2)
+  ruleVersionId         String?
+  createdAt             DateTime            @default(now())
+  payroll_calculations  PayrollCalculation  @relation(fields: [calculationId], references: [id], onDelete: Cascade, map: "payroll_contributions_calculation_fk")
+  payroll_rule_versions PayrollRuleVersion? @relation(fields: [ruleVersionId], references: [id], onDelete: Restrict, map: "payroll_contributions_rule_fk")
+
+  @@index([calculationId], map: "payroll_contributions_calculation_idx")
+  @@map("payroll_contributions")
+}
+
+model Payslip {
+  id                   String             @id
+  organizationId       String
+  payrollPeriodId      String
+  employeeId           String
+  calculationId        String             @unique(map: "payslips_calculation_key")
+  documentStatus       String             @default("DRAFT")
+  storageKey           String?
+  generatedAt          DateTime?
+  publishedAt          DateTime?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @default(now()) @updatedAt
+  payroll_calculations PayrollCalculation @relation(fields: [calculationId], references: [id], map: "payslips_calculation_fk")
+  employees            Employee           @relation(fields: [organizationId, employeeId], references: [organizationId, id], map: "payslips_employee_fk")
+  payroll_periods      PayrollPeriod      @relation(fields: [organizationId, payrollPeriodId], references: [organizationId, id], map: "payslips_period_fk")
+
+  @@unique([organizationId, payrollPeriodId, employeeId], map: "payslips_period_employee_key")
+  @@map("payslips")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model dsn_employee_profiles {
+  id                       String   @id
+  organizationId           String
+  employeeId               String
+  nirCiphertext            String
+  birthDate                DateTime @db.Date
+  birthPlace               String
+  birthDepartment          String
+  addressLine              String
+  postalCode               String
+  city                     String
+  countryCode              String?
+  contractNumber           String
+  contractNatureCode       String
+  publicPolicyCode         String   @default("99")
+  pcsEsecCode              String
+  conventionalStatusCode   String
+  retirementStatusCode     String
+  workUnitCode             String   @default("10")
+  referenceWorkQuota       Decimal  @db.Decimal(8, 2)
+  contractWorkQuota        Decimal  @db.Decimal(8, 2)
+  workModalityCode         String
+  sicknessRegimeCode       String
+  oldAgeRegimeCode         String
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @default(now())
+  birthCountryCode         String?
+  euClassificationCode     String?
+  baseSchemeSupplementCode String?
+  workLocationId           String?
+  foreignWorkerCode        String?
+  employmentStatusCode     String?
+  multipleJobsCode         String?
+  multipleEmployersCode    String?
+  workAccidentRegimeCode   String?
+  workAccidentRiskCode     String?
+  employees                Employee @relation(fields: [organizationId, employeeId], references: [organizationId, id], map: "dsn_employee_profiles_employee_fk")
+
+  @@unique([organizationId, employeeId], map: "dsn_employee_profiles_org_employee_unique")
+  @@index([organizationId, employeeId], map: "dsn_employee_profiles_lookup_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model dsn_organization_settings {
+  organizationId      String       @id
+  contactName         String
+  contactEmail        String
+  contactPhone        String
+  defaultTestMode     Boolean      @default(true)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @default(now())
+  declaredContactType String?
+  enterpriseApenCode  String?
+  urssafSiret         String?
+  organizations       Organization @relation(fields: [organizationId], references: [id], map: "dsn_organization_settings_organization_fk")
+}
+
+model employee_accounts {
+  id              String       @id
+  organizationId  String
+  employeeId      String
+  email           String
+  userId          String?
+  inviteTokenHash String?      @unique(map: "employee_accounts_token_unique")
+  inviteExpiresAt DateTime?
+  invitedAt       DateTime?
+  invitedByUserId String?
+  activatedAt     DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @default(now())
+  employees       Employee     @relation(fields: [employeeId], references: [id], map: "employee_accounts_employee_fk")
+  organizations   Organization @relation(fields: [organizationId], references: [id], map: "employee_accounts_organization_fk")
+  users           User?        @relation(fields: [userId], references: [id], map: "employee_accounts_user_fk")
+
+  @@unique([organizationId, employeeId], map: "employee_accounts_employee_unique")
+  @@index([userId], map: "employee_accounts_user_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model employee_alternance_profiles {
+  id                       String    @id
+  organizationId           String
+  employeeId               String
+  birthDate                DateTime  @db.Date
+  contractYear             Int?
+  hasBaccalaureateOrHigher Boolean?
+  validFrom                DateTime  @db.Date
+  validUntil               DateTime? @db.Date
+  source                   String
+  sourceReference          String?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime
+
+  @@index([organizationId, employeeId, validFrom, validUntil], map: "employee_alternance_profiles_lookup_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model employee_document_events {
+  id                 String             @id
+  organizationId     String
+  documentId         String
+  employeeId         String
+  action             String
+  actorKind          String
+  actorUserId        String?
+  metadata           Json?
+  createdAt          DateTime           @default(now())
+  employee_documents employee_documents @relation(fields: [documentId], references: [id], map: "employee_document_events_document_fk")
+
+  @@index([documentId, createdAt], map: "employee_document_events_document_idx")
+  @@index([organizationId, employeeId, createdAt], map: "employee_document_events_employee_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model employee_documents {
+  id                       String                     @id
+  organizationId           String
+  employeeId               String
+  kind                     String
+  title                    String
+  periodYear               Int?
+  periodMonth              Int?
+  sourcePayslipId          String?
+  storageKey               String
+  sha256                   String
+  sizeBytes                Int
+  fileName                 String
+  publishedAt              DateTime                   @default(now())
+  publishedByUserId        String?
+  replacedAt               DateTime?
+  replacedByDocumentId     String?
+  createdAt                DateTime                   @default(now())
+  employee_document_events employee_document_events[]
+  employees                Employee                   @relation(fields: [employeeId], references: [id], map: "employee_documents_employee_fk")
+  organizations            Organization               @relation(fields: [organizationId], references: [id], map: "employee_documents_organization_fk")
+
+  @@index([organizationId, employeeId, publishedAt], map: "employee_documents_employee_idx")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model employee_paid_leave_openings {
+  id                    String       @id
+  organizationId        String
+  employeeId            String
+  asOf                  DateTime     @db.Date
+  previousAcquired      Decimal      @default(0) @db.Decimal(6, 2)
+  previousTaken         Decimal      @default(0) @db.Decimal(6, 2)
+  currentAcquired       Decimal      @default(0) @db.Decimal(6, 2)
+  currentTaken          Decimal      @default(0) @db.Decimal(6, 2)
+  referenceGross        Decimal?     @db.Decimal(12, 2)
+  referenceAcquiredDays Decimal?     @db.Decimal(6, 2)
+  currentReferenceGross Decimal?     @db.Decimal(12, 2)
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @default(now())
+  employees             Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade, map: "employee_paid_leave_openings_employee_fk")
+  organizations         Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, map: "employee_paid_leave_openings_organization_fk")
+
+  @@unique([organizationId, employeeId, asOf], map: "employee_paid_leave_openings_unique")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model employee_payroll_openings {
+  id             String       @id
+  organizationId String
+  employeeId     String
+  year           Int
+  throughMonth   Int
+  cumuls         Json
+  sickPayHistory Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @default(now())
+  employees      Employee     @relation(fields: [employeeId], references: [id], onDelete: Cascade, map: "employee_payroll_openings_employee_fk")
+  organizations  Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade, map: "employee_payroll_openings_organization_fk")
+
+  @@unique([organizationId, employeeId, year], map: "employee_payroll_openings_unique")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model employee_withholding_tax_profiles {
+  id              String    @id
+  organizationId  String
+  employeeId      String
+  rate            Decimal   @db.Decimal(8, 6)
+  validFrom       DateTime  @db.Date
+  validUntil      DateTime? @db.Date
+  source          String
+  sourceReference String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime
+
+  @@index([organizationId, employeeId, validFrom, validUntil], map: "employee_withholding_tax_profiles_lookup_idx")
+}
+
+model payroll_entry_reviews {
+  id               String        @id
+  organizationId   String
+  payrollPeriodId  String
+  employeeId       String
+  reviewedByUserId String?
+  reviewedAt       DateTime      @default(now())
+  employees        Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade, map: "payroll_entry_reviews_employee_fk")
+  payroll_periods  PayrollPeriod @relation(fields: [payrollPeriodId], references: [id], onDelete: Cascade, map: "payroll_entry_reviews_period_fk")
+
+  @@unique([organizationId, payrollPeriodId, employeeId], map: "payroll_entry_reviews_unique")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model payroll_ledger_entries {
+  id                   String             @id
+  calculation_id       String
+  line_order           Int
+  code                 String
+  label                String
+  category             String
+  kind                 String
+  side                 String             @default("EMPLOYEE")
+  amount               Decimal            @db.Decimal(12, 2)
+  gross_delta          Decimal            @default(0) @db.Decimal(12, 2)
+  taxable_delta        Decimal            @default(0) @db.Decimal(12, 2)
+  social_delta         Decimal            @default(0) @db.Decimal(12, 2)
+  net_delta            Decimal            @default(0) @db.Decimal(12, 2)
+  cash_delta           Decimal            @default(0) @db.Decimal(12, 2)
+  rule_version_id      String?
+  source_name          String?
+  source_url           String?
+  source_reference     String?
+  metadata             Json?
+  created_at           DateTime           @default(now())
+  payroll_calculations PayrollCalculation @relation(fields: [calculation_id], references: [id], onDelete: Cascade)
+
+  @@index([calculation_id, line_order])
+  @@index([rule_version_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model payroll_terminations {
+  id                          String        @id
+  organizationId              String
+  payrollPeriodId             String
+  employeeId                  String
+  reason                      String
+  noticeCompensation          Decimal?      @db.Decimal(12, 2)
+  severanceAmount             Decimal?      @db.Decimal(12, 2)
+  severanceLegalMinimum       Decimal?      @db.Decimal(12, 2)
+  previousYearGross           Decimal?      @db.Decimal(12, 2)
+  eligibleForFullPension      Boolean       @default(false)
+  cddEndAllowanceMode         String        @default("AUTO")
+  cddEndAllowanceAmount       Decimal?      @db.Decimal(12, 2)
+  cddEndAllowanceRate         Decimal?      @db.Decimal(5, 4)
+  paidLeaveCompensationAmount Decimal?      @db.Decimal(12, 2)
+  createdAt                   DateTime      @default(now())
+  updatedAt                   DateTime      @default(now())
+  employees                   Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade, map: "payroll_terminations_employee_fk")
+  payroll_periods             PayrollPeriod @relation(fields: [payrollPeriodId], references: [id], onDelete: Cascade, map: "payroll_terminations_period_fk")
+
+  @@unique([organizationId, payrollPeriodId, employeeId], map: "payroll_terminations_unique")
 }
 
 enum AccessRole {
@@ -97,28 +924,6 @@ enum NotificationFrequency {
   DAILY
   WEEKLY
   OFF
-}
-
-model Membership {
-  id                    String                @id @default(cuid())
-  userId                String
-  organizationId        String
-  accessRole            AccessRole
-  functionalRole        FunctionalRole?
-  notificationFrequency NotificationFrequency @default(DAILY)
-  createdAt             DateTime              @default(now())
-  updatedAt             DateTime              @updatedAt
-  deletedAt             DateTime?
-  user         User         @relation(fields: [userId], references: [id], onDelete: Restrict)
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  managedEmployees      Employee[]     @relation("EmployeeManager")
-  assignedTasks         Task[]
-  uploadedAttachments   Attachment[]
-  receivedNotifications Notification[]
-  @@unique([userId, organizationId])
-  @@unique([organizationId, id])
-  @@index([organizationId, functionalRole])
-  @@map("memberships")
 }
 
 enum ContractType {
@@ -148,47 +953,6 @@ enum ProfessionalCategory {
   AUTRE
 }
 
-model Employee {
-  id                      String        @id @default(cuid())
-  organizationId          String
-  firstName               String
-  lastName                String
-  civility                Civility?
-  position                String?
-  professionalCategory    ProfessionalCategory?
-  hireDate                DateTime
-  contractType            ContractType?
-  contractEndDate         DateTime?
-  probationDuration       Int?
-  probationDurationUnit   DurationUnit?
-  nextMedicalVisitDate    DateTime?
-  managerMembershipId     String?
-  isDemoData              Boolean       @default(false)
-  createdAt               DateTime      @default(now())
-  updatedAt               DateTime      @updatedAt
-  deletedAt               DateTime?
-  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  managerMembership Membership?  @relation("EmployeeManager", fields: [organizationId, managerMembershipId], references: [organizationId, id], onDelete: Restrict)
-  events            EmployeeEvent[]
-  absences          Absence[]
-  @@unique([organizationId, id])
-  @@index([organizationId])
-  @@map("employees")
-}
-
-model EventTemplate {
-  id          String    @id @default(cuid())
-  key         String    @unique
-  label       String
-  description String?
-  archivedAt  DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  taskTemplates  TaskTemplate[]
-  employeeEvents EmployeeEvent[]
-  @@map("event_templates")
-}
-
 enum FunctionalRoleResolution {
   RH
   DIRIGEANT
@@ -206,62 +970,6 @@ enum OverrideAction {
   REMOVED
 }
 
-model TaskTemplateOverride {
-  id             String         @id @default(cuid())
-  organizationId String
-  taskTemplateId String
-  action         OverrideAction
-  label          String?
-  dueOffsetDays  Int?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  taskTemplate TaskTemplate @relation(fields: [taskTemplateId], references: [id], onDelete: Restrict)
-  @@unique([organizationId, taskTemplateId])
-  @@index([organizationId])
-  @@map("task_template_overrides")
-}
-
-model TaskTemplate {
-  id                    String                   @id @default(cuid())
-  key                   String                   @unique
-  eventTemplateId       String
-  label                 String
-  stepOrder             Int
-  dueOffsetDays         Int
-  deadlineType          DeadlineType             @default(ORGANIZATIONAL_DEFAULT)
-  defaultFunctionalRole FunctionalRoleResolution
-  proofRequired         Boolean                  @default(false)
-  proofLabel            String?
-  archivedAt            DateTime?
-  createdAt             DateTime                 @default(now())
-  updatedAt             DateTime                 @updatedAt
-  eventTemplate EventTemplate @relation(fields: [eventTemplateId], references: [id], onDelete: Restrict)
-  tasks         Task[]
-  overrides     TaskTemplateOverride[]
-  @@index([eventTemplateId])
-  @@map("task_templates")
-}
-
-model EmployeeEvent {
-  id              String    @id
-  organizationId  String
-  employeeId      String
-  eventTemplateId String
-  triggerDate     DateTime
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  deletedAt       DateTime?
-  organization  Organization  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  employee      Employee      @relation(fields: [organizationId, employeeId], references: [organizationId, id], onDelete: Restrict)
-  eventTemplate EventTemplate @relation(fields: [eventTemplateId], references: [id], onDelete: Restrict)
-  tasks         Task[]
-  @@unique([organizationId, id])
-  @@index([organizationId])
-  @@index([employeeId])
-  @@map("employee_events")
-}
-
 enum TaskStatus {
   TO_PREPARE
   TODO
@@ -269,202 +977,6 @@ enum TaskStatus {
   WAITING_EXTERNAL
   DONE
   CANCELLED
-}
-
-model Task {
-  id                   String                   @id @default(cuid())
-  organizationId       String
-  employeeEventId      String
-  taskTemplateId       String?
-  label                String
-  stepOrder             Int
-  dueDate               DateTime
-  deadlineType          DeadlineType
-  resolutionRole       FunctionalRoleResolution
-  assignedMembershipId String?
-  status               TaskStatus               @default(TO_PREPARE)
-  completedAt           DateTime?
-  proofRequired         Boolean                  @default(false)
-  proofLabel            String?
-  createdAt             DateTime                 @default(now())
-  updatedAt             DateTime                 @updatedAt
-  employeeEvent      EmployeeEvent  @relation(fields: [organizationId, employeeEventId], references: [organizationId, id], onDelete: Cascade)
-  taskTemplate       TaskTemplate?  @relation(fields: [taskTemplateId], references: [id], onDelete: Restrict)
-  assignedMembership Membership?    @relation(fields: [organizationId, assignedMembershipId], references: [organizationId, id], onDelete: Restrict)
-  attachments        Attachment[]
-  @@unique([organizationId, id])
-  @@index([employeeEventId])
-  @@index([assignedMembershipId])
-  @@index([status, dueDate])
-  @@map("tasks")
-}
-
-model Attachment {
-  id                     String   @id @default(cuid())
-  organizationId         String
-  taskId                 String
-  storageKey              String
-  fileName               String?
-  mimeType               String
-  sizeBytes              Int
-  uploadedByMembershipId String?
-  createdAt              DateTime @default(now())
-  task                 Task        @relation(fields: [organizationId, taskId], references: [organizationId, id], onDelete: Cascade)
-  uploadedByMembership Membership? @relation(fields: [organizationId, uploadedByMembershipId], references: [organizationId, id], onDelete: Restrict)
-  @@index([taskId])
-  @@map("attachments")
-}
-
-model ReminderRule {
-  id             String   @id @default(cuid())
-  organizationId String
-  daysBeforeDue  Int
-  notifyAssignee Boolean  @default(true)
-  notifyManager  Boolean  @default(false)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  @@unique([organizationId, daysBeforeDue])
-  @@index([organizationId])
-  @@map("reminder_rules")
-}
-
-model Notification {
-  id                    String   @id
-  organizationId        String
-  recipientMembershipId String
-  type                  String
-  subject               String
-  taskId                String?
-  employeeEventId       String?
-  sentByUserId          String?
-  delivered             Boolean  @default(true)
-  sentAt                DateTime @default(now())
-  organization         Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  recipientMembership  Membership   @relation(fields: [organizationId, recipientMembershipId], references: [organizationId, id], onDelete: Restrict)
-  sentByUser            User?        @relation(fields: [sentByUserId], references: [id], onDelete: SetNull)
-  @@index([organizationId, sentAt])
-  @@map("notifications")
-}
-
-model AnomalyDismissal {
-  id                String    @id
-  organizationId    String
-  anomalyKey        String
-  snoozedUntil      DateTime?
-  dismissedByUserId String?
-  createdAt         DateTime  @default(now())
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  dismissedBy  User?        @relation(fields: [dismissedByUserId], references: [id], onDelete: SetNull)
-  @@unique([organizationId, anomalyKey])
-  @@index([organizationId])
-  @@map("anomaly_dismissals")
-}
-
-model AuditLog {
-  id             String   @id
-  organizationId String
-  actorUserId    String?
-  action         String
-  entityType     String
-  entityId       String
-  metadata       Json?
-  createdAt      DateTime @default(now())
-  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  actor        User?        @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
-  @@index([organizationId, createdAt])
-  @@map("audit_logs")
-}
-
-model DiagnosticResponse {
-  id          String   @id
-  answers     Json
-  riskAreas   String[]
-  email       String?
-  companySize String?
-  createdAt   DateTime @default(now())
-  @@index([createdAt])
-  @@map("diagnostic_responses")
-}
-
-model CollectiveAgreement {
-  id         String   @id
-  idcc       String
-  name       String
-  sourceName String?
-  sourceUrl  String?
-  status     String   @default("ACTIVE")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  organizations   Organization[]
-  versions        CollectiveAgreementVersion[]
-  payrollProfiles PayrollProfile[]
-  @@unique([idcc])
-  @@map("collective_agreements")
-}
-
-model CollectiveAgreementVersion {
-  id                    String   @id
-  collectiveAgreementId String
-  version               Int
-  validFrom             DateTime @db.Date
-  validUntil            DateTime? @db.Date
-  sourceName            String
-  sourceUrl             String?
-  sourceReference       String?
-  status                String   @default("DRAFT")
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  collectiveAgreement CollectiveAgreement @relation(fields: [collectiveAgreementId], references: [id], onDelete: Restrict)
-  rules                CollectiveAgreementRule[]
-  @@unique([collectiveAgreementId, version])
-  @@index([collectiveAgreementId, validFrom, validUntil, status])
-  @@map("collective_agreement_versions")
-}
-
-model CollectiveAgreementRule {
-  id              String   @id
-  versionId       String
-  code            String
-  category        String
-  parameters      Json
-  sourceReference String
-  sourceUrl       String?
-  validFrom       DateTime @db.Date
-  validUntil      DateTime? @db.Date
-  status          String   @default("DRAFT")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  version CollectiveAgreementVersion @relation(fields: [versionId], references: [id], onDelete: Restrict)
-  @@unique([versionId, code])
-  @@index([versionId, category, validFrom, validUntil, status])
-  @@map("collective_agreement_rules")
-}
-
-model Absence {
-  id                    String        @id
-  organizationId        String
-  employeeId            String
-  type                  AbsenceType
-  startDate             DateTime      @db.Date
-  endDate               DateTime      @db.Date
-  status                AbsenceStatus @default(TO_VALIDATE)
-  justificationRequired Boolean       @default(false)
-  payrollImpactStatus   PayrollImpactStatus @default(PENDING)
-  notes                 String?
-  validatedByUserId     String?
-  validatedAt           DateTime?
-  rejectedReason        String?
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-  employee           Employee     @relation(fields: [organizationId, employeeId], references: [organizationId, id], onDelete: Restrict)
-  validatedBy        User?        @relation("AbsenceValidatedBy", fields: [validatedByUserId], references: [id], onDelete: SetNull)
-  justifications     AbsenceJustification[]
-  @@index([organizationId, startDate, endDate])
-  @@index([organizationId, employeeId, startDate])
-  @@index([organizationId, status])
-  @@map("absences")
 }
 
 enum AbsenceType {
@@ -498,156 +1010,4 @@ enum PayrollImpactStatus {
   PENDING
   READY
   INTEGRATED
-}
-
-model AbsenceJustification {
-  id                String              @id
-  absenceId         String
-  status             JustificationStatus @default(TO_PROVIDE)
-  storageKey         String?
-  fileName           String?
-  mimeType           String?
-  sizeBytes          Int?
-  uploadedByUserId   String?
-  reviewedByUserId   String?
-  reviewedAt         DateTime?
-  rejectionReason    String?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
-  absence            Absence             @relation(fields: [absenceId], references: [id], onDelete: Cascade)
-  uploadedBy         User?               @relation("AbsenceJustificationUploadedBy", fields: [uploadedByUserId], references: [id], onDelete: SetNull)
-  reviewedBy         User?               @relation("AbsenceJustificationReviewedBy", fields: [reviewedByUserId], references: [id], onDelete: SetNull)
-  @@index([absenceId, status])
-  @@index([reviewedByUserId, reviewedAt])
-  @@map("absence_justifications")
-}
-
-model PayrollProfile {
-  id                    String   @id
-  organizationId        String
-  employeeId            String
-  payFrequency          String   @default("MONTHLY")
-  currency              String   @default("EUR")
-  baseSalaryCents       Int?
-  monthlyHours          Decimal? @db.Decimal(8, 2)
-  collectiveAgreementId String?
-  classificationCode    String?
-  classificationLabel   String?
-  employeeAddress       String?
-  level                 String?
-  coefficient            String?
-  seniorityDate         DateTime?
-  effectiveFrom         DateTime
-  effectiveUntil        DateTime?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  collectiveAgreement CollectiveAgreement? @relation(fields: [collectiveAgreementId], references: [id], onDelete: Restrict)
-  @@unique([organizationId, employeeId, effectiveFrom])
-  @@index([organizationId, employeeId])
-  @@index([collectiveAgreementId])
-  @@map("payroll_profiles")
-}
-
-model PayrollPeriod {
-  id             String    @id
-  organizationId String
-  year           Int
-  month          Int
-  status         String    @default("DRAFT")
-  calculatedAt   DateTime?
-  validatedAt    DateTime?
-  lockedAt       DateTime?
-  paymentDate    DateTime? @db.Date
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
-  @@unique([organizationId, year, month])
-  @@index([organizationId, status])
-  @@map("payroll_periods")
-}
-
-model PayrollVariable {
-  id              String   @id
-  organizationId  String
-  payrollPeriodId String
-  employeeId      String
-  code            String
-  label           String
-  amount          Decimal  @db.Decimal(12, 2)
-  unit            String   @default("EUR")
-  source          String   @default("MANUAL")
-  reference       String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  @@index([organizationId, payrollPeriodId, employeeId])
-  @@map("payroll_variables")
-}
-
-model PayrollRuleVersion {
-  id         String   @id
-  code       String
-  version    Int
-  scope      String
-  validFrom  DateTime @db.Date
-  validUntil DateTime? @db.Date
-  sourceName String
-  sourceUrl  String?
-  parameters Json
-  status     String   @default("DRAFT")
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  @@unique([code, version, scope])
-  @@index([code, scope, validFrom, validUntil, status])
-  @@map("payroll_rule_versions")
-}
-
-model PayrollCalculation {
-  id                    String   @id
-  organizationId        String
-  payrollPeriodId       String
-  employeeId            String
-  ruleSetVersion        String
-  grossAmount           Decimal  @db.Decimal(12, 2)
-  employeeContributions Decimal  @default(0) @db.Decimal(12, 2)
-  employerContributions Decimal  @default(0) @db.Decimal(12, 2)
-  netBeforeTax          Decimal  @db.Decimal(12, 2)
-  withholdingTax        Decimal  @default(0) @db.Decimal(12, 2)
-  netPaid               Decimal  @db.Decimal(12, 2)
-  netTaxableAmount      Decimal? @db.Decimal(12, 2)
-  netSocialAmount       Decimal? @db.Decimal(12, 2)
-  calculationSnapshot   Json
-  createdAt             DateTime @default(now())
-  @@unique([organizationId, payrollPeriodId, employeeId])
-  @@map("payroll_calculations")
-}
-
-model PayrollContribution {
-  id             String   @id
-  calculationId  String
-  code           String
-  label          String
-  side           String
-  baseAmount     Decimal  @db.Decimal(12, 2)
-  rate           Decimal  @db.Decimal(10, 6)
-  amount         Decimal  @db.Decimal(12, 2)
-  ruleVersionId  String?
-  createdAt      DateTime @default(now())
-  @@index([calculationId])
-  @@map("payroll_contributions")
-}
-
-model Payslip {
-  id              String    @id
-  organizationId  String
-  payrollPeriodId String
-  employeeId      String
-  calculationId   String
-  documentStatus  String    @default("DRAFT")
-  storageKey      String?
-  generatedAt     DateTime?
-  publishedAt     DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
-  @@unique([calculationId])
-  @@unique([organizationId, payrollPeriodId, employeeId])
-  @@map("payslips")
 }
