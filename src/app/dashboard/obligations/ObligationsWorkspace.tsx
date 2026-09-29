@@ -43,17 +43,17 @@ const STATUS_META: Record<
 > = {
   TO_DO: {
     label: "À traiter",
-    classes: "bg-red-50 text-red-700 ring-red-100",
+    classes: "bg-accent-rose/5 text-accent-rose ring-accent-rose/30",
     icon: AlertTriangle,
   },
   UPCOMING: {
     label: "À venir",
-    classes: "bg-blue-50 text-blue-700 ring-blue-100",
+    classes: "bg-surface-subtle text-ink-soft ring-surface-border",
     icon: CalendarClock,
   },
   COMPLIANT: {
     label: "Conforme",
-    classes: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+    classes: "bg-accent-teal/10 text-accent-teal ring-accent-teal/30",
     icon: CheckCircle2,
   },
   INFO_NEEDED: {
@@ -371,7 +371,7 @@ function TrackingSubmit({
         {pending ? "Enregistrement..." : "Enregistrer le suivi"}
       </button>
       {feedback ? (
-        <p className={`text-xs ${feedback.type === "error" ? "text-red-600" : "text-emerald-700"}`}>{feedback.message}</p>
+        <p className={`text-xs ${feedback.type === "error" ? "text-accent-rose" : "text-accent-teal"}`}>{feedback.message}</p>
       ) : null}
     </div>
   );
@@ -576,7 +576,7 @@ function EmployeeGroupDrawer({
                   <p className="truncate text-sm font-medium text-ink">{item.subjectLabel}</p>
                   <p className="mt-0.5 truncate text-xs text-ink-faint md:hidden">{item.summary}</p>
                 </div>
-                <p className="text-xs font-medium text-ink-soft">{item.dueDate ? formatDate(item.dueDate) : "—"}</p>
+                <p className="text-xs font-medium text-ink-soft">{item.dueDate ? formatDate(item.dueDate) : "Non renseigné"}</p>
                 <div><StatusBadge status={item.status} /></div>
                 <ChevronRight size={16} className="hidden text-ink-faint md:block" />
               </button>
@@ -675,15 +675,15 @@ export default function ObligationsWorkspace({
     <>
       <section className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-xl border border-surface-border bg-white p-4">
-          <div className="flex items-center justify-between"><p className="text-xs text-ink-faint">À traiter</p><AlertTriangle size={17} className="text-red-500" /></div>
+          <div className="flex items-center justify-between"><p className="text-xs text-ink-faint">À traiter</p><AlertTriangle size={17} className="text-accent-rose" /></div>
           <p className="mt-2 text-2xl font-semibold text-ink">{snapshot.stats.toDo}</p>
         </div>
         <div className="rounded-xl border border-surface-border bg-white p-4">
-          <div className="flex items-center justify-between"><p className="text-xs text-ink-faint">À venir / surveiller</p><CalendarClock size={17} className="text-blue-500" /></div>
+          <div className="flex items-center justify-between"><p className="text-xs text-ink-faint">À venir / surveiller</p><CalendarClock size={17} className="text-ink-soft" /></div>
           <p className="mt-2 text-2xl font-semibold text-ink">{snapshot.stats.upcoming}</p>
         </div>
         <div className="rounded-xl border border-surface-border bg-white p-4">
-          <div className="flex items-center justify-between"><p className="text-xs text-ink-faint">Conformes</p><CheckCircle2 size={17} className="text-emerald-500" /></div>
+          <div className="flex items-center justify-between"><p className="text-xs text-ink-faint">Conformes</p><CheckCircle2 size={17} className="text-accent-teal" /></div>
           <p className="mt-2 text-2xl font-semibold text-ink">{snapshot.stats.compliant}</p>
         </div>
         <div className="rounded-xl border border-surface-border bg-white p-4">

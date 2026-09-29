@@ -68,12 +68,12 @@ export async function saveDsnOrganizationSettings(
   try {
     const { membership, user } = await adminContext();
     const contactName = required(formData, "contactName", "Le nom du contact DSN");
-    const contactEmail = required(formData, "contactEmail", "L'adresse email du contact DSN").toLowerCase();
+    const contactEmail = required(formData, "contactEmail", "L'adresse e-mail du contact DSN").toLowerCase();
     const contactPhone = required(formData, "contactPhone", "Le téléphone du contact DSN");
     const declaredContactType = listedCode(formData, "declaredContactType", "Le type de contact chez le déclaré", CONTACT_TYPES);
     const enterpriseApenCode = code(formData, "enterpriseApenCode", "Le code APEN de l'entreprise", 5);
     if (!/^\d{4}[A-Z]$/.test(enterpriseApenCode)) throw new Error("Le code APEN doit respecter le format NAF sur 5 caractères, par exemple 6201Z.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) throw new Error("L'adresse email du contact DSN est invalide.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) throw new Error("L'adresse e-mail du contact DSN est invalide.");
     if (!/^[+0-9(). /-]{10,20}$/.test(contactPhone)) throw new Error("Le numéro de téléphone du contact DSN doit comporter entre 10 et 20 caractères autorisés.");
 
     await prisma.$transaction(async (tx) => {

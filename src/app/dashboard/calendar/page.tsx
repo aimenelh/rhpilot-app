@@ -34,6 +34,8 @@ import {
 } from "@/lib/calendar";
 import { Card } from "@/components/ui/Card";
 import { MonthSummaryButton } from "./MonthSummaryButton";
+
+export const metadata = { title: "Calendrier" };
 export const dynamic = "force-dynamic";
 // Uniquement pour les puces de filtre par catégorie (leur rôle est
 // justement de distinguer les catégories) -- jamais utilisé ailleurs.

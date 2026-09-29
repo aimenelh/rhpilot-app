@@ -20,7 +20,7 @@ type DefaultValues = {
   position: string;
   hireDate: string; // format YYYY-MM-DD
   contractType: string; // "" | "CDI" | "CDD" | "APPRENTISSAGE" | "PROFESSIONNALISATION"
-  contractEndDate: string; // "" ou YYYY-MM-DD — pertinent pour CDD/apprentissage/professionnalisation
+  contractEndDate: string; // "" ou YYYY-MM-DD : pertinent pour CDD/apprentissage/professionnalisation
   probationDuration: string; // "" ou un nombre en chaîne
   probationDurationUnit: string; // "" | "DAYS" | "WEEKS" | "MONTHS"
   nextMedicalVisitDate: string; // "" ou YYYY-MM-DD

@@ -4,6 +4,8 @@ import { isOrganizationAdmin } from "@/lib/accessPolicy";
 import { prisma } from "@/lib/prisma";
 import AbsencesWorkspace, { type AbsenceWorkspaceItem } from "./AbsencesWorkspace";
 
+export const metadata = { title: "Absences" };
+
 export const dynamic = "force-dynamic";
 
 function isAdmin(role: string) {

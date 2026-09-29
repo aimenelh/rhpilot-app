@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -24,14 +25,16 @@ import {
 } from "lucide-react";
 import { Logomark, Wordmark } from "./Brand";
 import { FlashToast } from "./ui/FlashToast";
-import { AppCopilote } from "./AppCopilote";
-import { DiscoveryTour } from "./tour/DiscoveryTour";
 import { GlobalSearch } from "./GlobalSearch";
 import { RhNewsToast } from "./RhNewsToast";
 import type { RhNewsItem } from "@/lib/rhNews";
 import { IosInstallHint } from "./IosInstallHint";
 import "./AppWorkspace.css";
 import { NavigationProgress } from "@/components/app/NavigationProgress";
+
+// Chargés après l'affichage de la page : ni la visite ni le Copilote ne doivent retarder le premier rendu.
+const AppCopilote = dynamic(() => import("./AppCopilote").then((mod) => mod.AppCopilote), { ssr: false });
+const DiscoveryTour = dynamic(() => import("./tour/DiscoveryTour").then((mod) => mod.DiscoveryTour), { ssr: false });
 
 type NavItem = {
   href: string;
@@ -106,6 +109,7 @@ export function AppShell({
   organizationName,
   accessRole,
   payrollEnabled,
+  discoveryTourCompleted,
   assistantSummary,
   rhNews,
   aiEnabled,
@@ -115,6 +119,7 @@ export function AppShell({
   organizationName: string;
   accessRole: string;
   payrollEnabled: boolean;
+  discoveryTourCompleted: boolean;
   assistantSummary: { userDisplayName: string; overdueCount: number; suggestionsCount: number };
   rhNews: RhNewsItem[];
   aiEnabled: boolean;
@@ -317,7 +322,7 @@ export function AppShell({
       </Suspense>
       <FlashToast />
       <AppCopilote summary={assistantSummary} aiEnabled={aiEnabled} />
-      <DiscoveryTour accessRole={accessRole} payrollEnabled={payrollEnabled} userName={assistantSummary.userDisplayName} />
+      <DiscoveryTour accessRole={accessRole} payrollEnabled={payrollEnabled} userName={assistantSummary.userDisplayName} completed={discoveryTourCompleted} />
       <RhNewsToast items={rhNews} />
       <IosInstallHint />
     </div>

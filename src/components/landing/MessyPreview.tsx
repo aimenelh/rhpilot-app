@@ -2,7 +2,7 @@ import { Mail, FileSpreadsheet, StickyNote } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 
 const SCATTERED_ITEMS = [
-  { icon: Mail, label: "\u201cPenses à faire le contrat de Julie...\u201d", meta: "Email, il y a 12 jours" },
+  { icon: Mail, label: "\u201cPenses à faire le contrat de Julie...\u201d", meta: "E-mail, il y a 12 jours" },
   { icon: FileSpreadsheet, label: "Onglet « RH divers »", meta: "Excel, dernière modif. il y a 3 semaines" },
   { icon: StickyNote, label: "Visite médicale ?", meta: "Post-it, date illisible" },
 ];

@@ -6,7 +6,6 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 // pas l'écran de connexion).
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
-  "/welcome(.*)",
   "/entering(.*)",
   "/creating-account(.*)",
   "/api/(.*)",

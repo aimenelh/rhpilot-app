@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, ReactNode, useMemo, useState, useTransition } from "react";
+import { FormEvent, ReactNode, useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import {
   CalendarDays,
@@ -20,6 +20,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
+import { useAskDialog, type AskOptions } from "@/components/ui/AskDialog";
 import {
   createAbsence,
   deleteAbsence,
@@ -80,36 +81,36 @@ type Props = {
 };
 
 const TYPE_META: Record<string, { label: string; short: string; pill: string; bar: string; dot: string }> = {
-  PAID_LEAVE: { label: "Congés payés", short: "CP", pill: "bg-blue-50 text-blue-700", bar: "border-blue-200 bg-blue-100 text-blue-800", dot: "bg-blue-500" },
-  RTT: { label: "RTT", short: "RTT", pill: "bg-violet-50 text-violet-700", bar: "border-violet-200 bg-violet-100 text-violet-800", dot: "bg-violet-500" },
+  PAID_LEAVE: { label: "Congés payés", short: "CP", pill: "bg-surface-subtle text-ink-soft", bar: "border-surface-border bg-surface-subtle text-ink-soft", dot: "bg-ink-soft" },
+  RTT: { label: "RTT", short: "RTT", pill: "bg-brand-primary/10 text-brand-primary-dark", bar: "border-brand-primary/30 bg-brand-primary/10 text-brand-primary-dark", dot: "bg-brand-primary-dark" },
   SICK_LEAVE: { label: "Maladie", short: "MAL", pill: "bg-amber-50 text-amber-800", bar: "border-amber-200 bg-amber-100 text-amber-900", dot: "bg-amber-500" },
-  WORK_ACCIDENT: { label: "Accident du travail", short: "AT", pill: "bg-red-50 text-red-700", bar: "border-red-200 bg-red-100 text-red-800", dot: "bg-red-500" },
+  WORK_ACCIDENT: { label: "Accident du travail", short: "AT", pill: "bg-accent-rose/5 text-accent-rose", bar: "border-accent-rose/30 bg-accent-rose/5 text-accent-rose", dot: "bg-accent-rose" },
   UNPAID_LEAVE: { label: "Sans solde", short: "SS", pill: "bg-slate-100 text-slate-700", bar: "border-slate-200 bg-slate-100 text-slate-700", dot: "bg-slate-500" },
-  FAMILY_EVENT: { label: "Événement familial", short: "EF", pill: "bg-emerald-50 text-emerald-700", bar: "border-emerald-200 bg-emerald-100 text-emerald-800", dot: "bg-emerald-500" },
+  FAMILY_EVENT: { label: "Événement familial", short: "EF", pill: "bg-accent-teal/10 text-accent-teal", bar: "border-accent-teal/30 bg-accent-teal/10 text-accent-teal", dot: "bg-accent-teal" },
   MATERNITY: { label: "Maternité", short: "MAT", pill: "bg-pink-50 text-pink-700", bar: "border-pink-200 bg-pink-100 text-pink-800", dot: "bg-pink-500" },
-  PATERNITY: { label: "Paternité", short: "PAT", pill: "bg-sky-50 text-sky-700", bar: "border-sky-200 bg-sky-100 text-sky-800", dot: "bg-sky-500" },
+  PATERNITY: { label: "Paternité", short: "PAT", pill: "bg-surface-subtle text-ink-soft", bar: "border-surface-border bg-surface-subtle text-ink-soft", dot: "bg-ink-soft" },
   OTHER: { label: "Autre", short: "AUT", pill: "bg-gray-100 text-gray-700", bar: "border-gray-200 bg-gray-100 text-gray-700", dot: "bg-gray-500" },
 };
 
 const STATUS_META: Record<string, { label: string; className: string }> = {
   TO_VALIDATE: { label: "À valider", className: "bg-amber-50 text-amber-800" },
   TO_PROVIDE_JUSTIFICATION: { label: "Justificatif à fournir", className: "bg-orange-50 text-orange-800" },
-  TO_REVIEW_JUSTIFICATION: { label: "Justificatif à vérifier", className: "bg-violet-50 text-violet-800" },
-  VALIDATED: { label: "Validée", className: "bg-emerald-50 text-emerald-800" },
+  TO_REVIEW_JUSTIFICATION: { label: "Justificatif à vérifier", className: "bg-brand-primary/10 text-brand-primary-dark" },
+  VALIDATED: { label: "Validée", className: "bg-accent-teal/10 text-accent-teal" },
   REJECTED: { label: "Refusée", className: "bg-slate-100 text-slate-600" },
 };
 
 const JUSTIFICATION_META: Record<string, { label: string; className: string }> = {
   TO_PROVIDE: { label: "À fournir", className: "bg-orange-50 text-orange-800" },
-  RECEIVED: { label: "À vérifier", className: "bg-violet-50 text-violet-800" },
-  VALIDATED: { label: "Vérifié", className: "bg-emerald-50 text-emerald-800" },
-  REJECTED: { label: "Refusé", className: "bg-red-50 text-red-700" },
+  RECEIVED: { label: "À vérifier", className: "bg-brand-primary/10 text-brand-primary-dark" },
+  VALIDATED: { label: "Vérifié", className: "bg-accent-teal/10 text-accent-teal" },
+  REJECTED: { label: "Refusé", className: "bg-accent-rose/5 text-accent-rose" },
 };
 
 const PAYROLL_META: Record<string, { label: string; className: string }> = {
   PENDING: { label: "Non transmise", className: "bg-slate-100 text-slate-600" },
-  READY: { label: "Prête pour la paie", className: "bg-blue-50 text-blue-700" },
-  INTEGRATED: { label: "Intégrée à la paie", className: "bg-emerald-50 text-emerald-800" },
+  READY: { label: "Prête pour la paie", className: "bg-surface-subtle text-ink-soft" },
+  INTEGRATED: { label: "Intégrée à la paie", className: "bg-accent-teal/10 text-accent-teal" },
 };
 
 function toUtcDate(value: string) {
@@ -191,6 +192,7 @@ function Metric({ icon, value, label, tone }: { icon: ReactNode; value: number; 
 }
 
 export default function AbsencesWorkspace({ employees, absences, isAdmin, initialStats }: Props) {
+  const { ask, dialog, isOpen: dialogOpen } = useAskDialog();
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("planning");
   const [search, setSearch] = useState("");
@@ -249,20 +251,35 @@ export default function AbsencesWorkspace({ employees, absences, isAdmin, initia
       setNotice({ tone: "error", text: "Cette absence est déjà intégrée à la paie et ne peut plus être supprimée depuis ce module." });
       return;
     }
-    if (!window.confirm(`Supprimer l'absence de ${absence.employeeName} du ${formatDate(absence.startDate)} au ${formatDate(absence.endDate)} ?`)) return;
-    runAction(() => deleteAbsence(absence.id), "Absence supprimée.", afterSuccess);
+    void ask({
+      title: "Supprimer cette absence ?",
+      description: `Absence de ${absence.employeeName} du ${formatDate(absence.startDate)} au ${formatDate(absence.endDate)}. Cette action est définitive.`,
+      confirmLabel: "Supprimer",
+      danger: true,
+    }).then((answer) => {
+      if (answer !== null) runAction(() => deleteAbsence(absence.id), "Absence supprimée.", afterSuccess);
+    });
   }
 
   function reject(absence: AbsenceWorkspaceItem) {
-    const reason = window.prompt("Motif du refus :", "Absence refusée après vérification RH.");
-    if (!reason?.trim()) return;
-    runAction(() => rejectAbsence(absence.id, reason));
+    void ask({
+      title: "Refuser cette absence ?",
+      description: `Absence de ${absence.employeeName}. Le motif est visible par le salarié dans son espace.`,
+      confirmLabel: "Refuser",
+      danger: true,
+      input: { label: "Motif du refus", defaultValue: "Absence refusée après vérification RH.", required: true },
+    }).then((reason) => {
+      if (reason) runAction(() => rejectAbsence(absence.id, reason));
+    });
   }
+
+  const askJustificationRejection = (options: AskOptions) => ask(options);
 
   return (
     <div className="mt-5 space-y-5">
+      {dialog}
       {notice && (
-        <div className={`flex items-start justify-between gap-4 rounded-xl border px-4 py-3 text-sm ${notice.tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-red-200 bg-red-50 text-red-800"}`}>
+        <div className={`flex items-start justify-between gap-4 rounded-xl border px-4 py-3 text-sm ${notice.tone === "success" ? "border-accent-teal/30 bg-accent-teal/10 text-accent-teal" : "border-accent-rose/30 bg-accent-rose/5 text-accent-rose"}`}>
           <div className="flex items-start gap-2.5">
             {notice.tone === "success" ? <Check size={17} className="mt-0.5 shrink-0" /> : <CircleAlert size={17} className="mt-0.5 shrink-0" />}
             <span>{notice.text}</span>
@@ -272,10 +289,10 @@ export default function AbsencesWorkspace({ employees, absences, isAdmin, initia
       )}
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Metric icon={<Users size={18} />} value={initialStats.today} label="Absents aujourd'hui" tone="bg-blue-50 text-blue-700" />
+        <Metric icon={<Users size={18} />} value={initialStats.today} label="Absents aujourd'hui" tone="bg-surface-subtle text-ink-soft" />
         <Metric icon={<FileClock size={18} />} value={initialStats.pending} label="Dossiers à traiter" tone="bg-amber-50 text-amber-700" />
-        <Metric icon={<FileCheck2 size={18} />} value={initialStats.justificationAttention} label="Justificatifs à traiter" tone="bg-violet-50 text-violet-700" />
-        <Metric icon={<Check size={18} />} value={initialStats.validatedThisMonth} label="Validées ce mois" tone="bg-emerald-50 text-emerald-700" />
+        <Metric icon={<FileCheck2 size={18} />} value={initialStats.justificationAttention} label="Justificatifs à traiter" tone="bg-brand-primary/10 text-brand-primary-dark" />
+        <Metric icon={<Check size={18} />} value={initialStats.validatedThisMonth} label="Validées ce mois" tone="bg-accent-teal/10 text-accent-teal" />
       </div>
 
       <section className="overflow-hidden rounded-2xl border border-surface-border bg-white shadow-sm">
@@ -348,6 +365,7 @@ export default function AbsencesWorkspace({ employees, absences, isAdmin, initia
             isAdmin={isAdmin}
             isPending={isPending}
             runAction={runAction}
+            askReason={askJustificationRejection}
             onOpen={(absence) => setEditor({ mode: "edit", absence })}
           />
         )}
@@ -369,6 +387,8 @@ export default function AbsencesWorkspace({ employees, absences, isAdmin, initia
           onValidate={(absence) => runAction(() => validateAbsence(absence.id))}
           onReject={reject}
           runAction={runAction}
+          askReason={askJustificationRejection}
+          closeOnEscape={!dialogOpen}
         />
       )}
     </div>
@@ -485,7 +505,7 @@ function AbsenceTable({ absences, isAdmin, isPending, onOpen, onDelete, onValida
             <tr><td colSpan={8} className="px-5 py-14 text-center text-sm text-ink-faint">Aucune absence ne correspond aux filtres.</td></tr>
           ) : absences.map((absence) => (
             <tr key={absence.id} className="hover:bg-surface-subtle/60">
-              <td className="px-5 py-4"><p className="text-sm font-medium text-ink">{absence.employeeName}</p><p className="mt-0.5 text-xs text-ink-faint">{absence.employeePosition || "—"}</p></td>
+              <td className="px-5 py-4"><p className="text-sm font-medium text-ink">{absence.employeeName}</p><p className="mt-0.5 text-xs text-ink-faint">{absence.employeePosition || "Non renseigné"}</p></td>
               <td className="px-4 py-4"><TypeLabel type={absence.type} /></td>
               <td className="px-4 py-4 text-sm text-ink-soft">{formatDate(absence.startDate)} → {formatDate(absence.endDate)}</td>
               <td className="px-4 py-4 text-sm text-ink-soft">{durationInDays(absence)} j</td>
@@ -494,9 +514,9 @@ function AbsenceTable({ absences, isAdmin, isPending, onOpen, onDelete, onValida
               <td className="px-4 py-4"><PayrollPill value={absence.payrollImpactStatus} /></td>
               <td className="px-5 py-4"><div className="flex items-center justify-end gap-1">
                 <IconButton label="Ouvrir" onClick={() => onOpen(absence)}><Pencil size={16} /></IconButton>
-                {isAdmin && absence.status === "TO_VALIDATE" && absence.payrollImpactStatus !== "INTEGRATED" && <IconButton label="Valider" onClick={() => onValidate(absence)} disabled={isPending} tone="text-emerald-700 hover:bg-emerald-50"><Check size={16} /></IconButton>}
-                {isAdmin && !["VALIDATED", "REJECTED"].includes(absence.status) && absence.payrollImpactStatus !== "INTEGRATED" && <button type="button" disabled={isPending} onClick={() => onReject(absence)} className="rounded-lg px-2 py-2 text-xs font-medium text-red-700 hover:bg-red-50 disabled:opacity-50">Refuser</button>}
-                {isAdmin && absence.payrollImpactStatus !== "INTEGRATED" && <IconButton label="Supprimer" onClick={() => onDelete(absence)} disabled={isPending} tone="text-red-600 hover:bg-red-50"><Trash2 size={16} /></IconButton>}
+                {isAdmin && absence.status === "TO_VALIDATE" && absence.payrollImpactStatus !== "INTEGRATED" && <IconButton label="Valider" onClick={() => onValidate(absence)} disabled={isPending} tone="text-accent-teal hover:bg-accent-teal/10"><Check size={16} /></IconButton>}
+                {isAdmin && !["VALIDATED", "REJECTED"].includes(absence.status) && absence.payrollImpactStatus !== "INTEGRATED" && <button type="button" disabled={isPending} onClick={() => onReject(absence)} className="rounded-lg px-2 py-2 text-xs font-medium text-accent-rose hover:bg-accent-rose/5 disabled:opacity-50">Refuser</button>}
+                {isAdmin && absence.payrollImpactStatus !== "INTEGRATED" && <IconButton label="Supprimer" onClick={() => onDelete(absence)} disabled={isPending} tone="text-accent-rose hover:bg-accent-rose/5"><Trash2 size={16} /></IconButton>}
               </div></td>
             </tr>
           ))}
@@ -506,7 +526,8 @@ function AbsenceTable({ absences, isAdmin, isPending, onOpen, onDelete, onValida
   );
 }
 
-function JustificationsView({ absences, isAdmin, isPending, runAction, onOpen }: {
+function JustificationsView({ absences, isAdmin, isPending, runAction, askReason, onOpen }: {
+  askReason: (options: AskOptions) => Promise<string | null>;
   absences: AbsenceWorkspaceItem[];
   isAdmin: boolean;
   isPending: boolean;
@@ -538,7 +559,7 @@ function JustificationsView({ absences, isAdmin, isPending, runAction, onOpen }:
                 {justification?.hasFile && (
                   <div className="mt-3 rounded-lg bg-surface-subtle px-3 py-2.5">
                     <div className="flex items-center justify-between gap-3"><div className="min-w-0"><p className="truncate text-xs font-medium text-ink">{justification.fileName || "Justificatif"}</p><p className="mt-0.5 text-[11px] text-ink-faint">{justification.mimeType || "Document"}{justification.sizeBytes ? ` · ${formatSize(justification.sizeBytes)}` : ""}</p></div><a href={`/api/absences/justifications/${justification.id}`} target="_blank" rel="noreferrer" className="shrink-0 text-xs font-semibold text-brand-primary hover:underline">Ouvrir</a></div>
-                    {justification.rejectionReason && <p className="mt-2 text-xs text-red-700">Motif : {justification.rejectionReason}</p>}
+                    {justification.rejectionReason && <p className="mt-2 text-xs text-accent-rose">Motif : {justification.rejectionReason}</p>}
                   </div>
                 )}
 
@@ -555,8 +576,9 @@ function JustificationsView({ absences, isAdmin, isPending, runAction, onOpen }:
                     <>
                       <Button type="button" disabled={isPending} onClick={() => runAction(() => validateAbsenceJustification(justification.id))} className="min-h-9 px-3 py-2 text-xs">Vérifier</Button>
                       <Button type="button" variant="danger" disabled={isPending} onClick={() => {
-                        const reason = window.prompt("Motif du refus du justificatif :");
-                        if (reason?.trim()) runAction(() => rejectAbsenceJustification(justification.id, reason));
+                        void askReason(JUSTIFICATION_REJECTION).then((reason) => {
+                          if (reason) runAction(() => rejectAbsenceJustification(justification.id, reason));
+                        });
                       }} className="min-h-9 px-3 py-2 text-xs">Refuser</Button>
                     </>
                   )}
@@ -571,6 +593,14 @@ function JustificationsView({ absences, isAdmin, isPending, runAction, onOpen }:
   );
 }
 
+const JUSTIFICATION_REJECTION: AskOptions = {
+  title: "Refuser ce justificatif ?",
+  description: "Le salarié est prévenu et pourra en déposer un autre.",
+  confirmLabel: "Refuser",
+  danger: true,
+  input: { label: "Motif du refus", required: true },
+};
+
 function justificationRank(absence: AbsenceWorkspaceItem) {
   const status = absence.justification?.status ?? "TO_PROVIDE";
   if (status === "RECEIVED") return 0;
@@ -579,7 +609,9 @@ function justificationRank(absence: AbsenceWorkspaceItem) {
   return 3;
 }
 
-function AbsenceDrawer({ mode, absence, employees, isAdmin, isPending, onClose, onSubmit, onDelete, onValidate, onReject, runAction }: {
+function AbsenceDrawer({ mode, absence, employees, isAdmin, isPending, onClose, onSubmit, onDelete, onValidate, onReject, runAction, askReason, closeOnEscape }: {
+  askReason: (options: AskOptions) => Promise<string | null>;
+  closeOnEscape: boolean;
   mode: "create" | "edit";
   absence: AbsenceWorkspaceItem | null;
   employees: Employee[];
@@ -593,6 +625,16 @@ function AbsenceDrawer({ mode, absence, employees, isAdmin, isPending, onClose, 
   runAction: (action: () => Promise<ActionResult>, fallback?: string, afterSuccess?: () => void) => void;
 }) {
   const integrated = absence?.payrollImpactStatus === "INTEGRATED";
+
+  // Échap ferme le panneau (sauf si une fenêtre de confirmation est ouverte par-dessus).
+  useEffect(() => {
+    if (!closeOnEscape) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [closeOnEscape, onClose]);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -616,7 +658,7 @@ function AbsenceDrawer({ mode, absence, employees, isAdmin, isPending, onClose, 
 
         <div className="flex-1 overflow-y-auto">
           <form id="absence-editor-form" onSubmit={submit} className="px-5 py-5">
-            {integrated && <div className="mb-4 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs leading-relaxed text-blue-800">Cette absence a déjà été intégrée à la paie. Elle reste consultable mais sa modification et sa suppression sont bloquées afin de préserver la traçabilité.</div>}
+            {integrated && <div className="mb-4 rounded-xl border border-surface-border bg-surface-subtle px-4 py-3 text-xs leading-relaxed text-ink-soft">Cette absence a déjà été intégrée à la paie. Elle reste consultable mais sa modification et sa suppression sont bloquées afin de préserver la traçabilité.</div>}
             <div className="space-y-4">
               <label className="block"><span className="mb-1.5 block text-xs font-medium text-ink">Salarié</span><select name="employeeId" defaultValue={absence?.employeeId ?? ""} required disabled={!isAdmin || integrated} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle"><option value="">Sélectionner...</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}</select></label>
               <label className="block"><span className="mb-1.5 block text-xs font-medium text-ink">Type d'absence</span><select name="type" defaultValue={absence?.type ?? ""} required disabled={!isAdmin || integrated} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle"><option value="">Sélectionner...</option>{Object.entries(TYPE_META).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}</select></label>
@@ -630,7 +672,7 @@ function AbsenceDrawer({ mode, absence, employees, isAdmin, isPending, onClose, 
             <div className="border-t border-surface-border px-5 py-5">
               <h3 className="text-sm font-semibold text-ink">Traitement du dossier</h3>
               <div className="mt-3 flex flex-wrap gap-2"><StatusPill value={absence.status} /><JustificationPill absence={absence} /><PayrollPill value={absence.payrollImpactStatus} /></div>
-              {absence.rejectedReason && <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700">Motif du refus : {absence.rejectedReason}</p>}
+              {absence.rejectedReason && <p className="mt-3 rounded-lg bg-accent-rose/5 px-3 py-2 text-xs text-accent-rose">Motif du refus : {absence.rejectedReason}</p>}
 
               {absence.justificationRequired && absence.justification?.hasFile && (
                 <div className="mt-4 rounded-lg bg-surface-subtle p-3">
@@ -645,7 +687,7 @@ function AbsenceDrawer({ mode, absence, employees, isAdmin, isPending, onClose, 
               )}
 
               {isAdmin && absence.justification?.status === "RECEIVED" && !integrated && (
-                <div className="mt-3 flex flex-wrap gap-2"><Button type="button" className="min-h-9 px-3 py-2 text-xs" disabled={isPending} onClick={() => runAction(() => validateAbsenceJustification(absence.justification!.id))}>Vérifier le justificatif</Button><Button type="button" variant="danger" className="min-h-9 px-3 py-2 text-xs" disabled={isPending} onClick={() => { const reason = window.prompt("Motif du refus du justificatif :"); if (reason?.trim()) runAction(() => rejectAbsenceJustification(absence.justification!.id, reason)); }}>Refuser le justificatif</Button></div>
+                <div className="mt-3 flex flex-wrap gap-2"><Button type="button" className="min-h-9 px-3 py-2 text-xs" disabled={isPending} onClick={() => runAction(() => validateAbsenceJustification(absence.justification!.id))}>Vérifier le justificatif</Button><Button type="button" variant="danger" className="min-h-9 px-3 py-2 text-xs" disabled={isPending} onClick={() => { void askReason(JUSTIFICATION_REJECTION).then((reason) => { if (reason) runAction(() => rejectAbsenceJustification(absence.justification!.id, reason)); }); }}>Refuser le justificatif</Button></div>
               )}
             </div>
           )}
@@ -655,7 +697,7 @@ function AbsenceDrawer({ mode, absence, employees, isAdmin, isPending, onClose, 
           <div className="flex flex-wrap items-center gap-2">
             {mode === "edit" && absence && isAdmin && !integrated && <Button type="button" variant="danger" disabled={isPending} onClick={() => onDelete(absence)} className="mr-auto"><Trash2 size={15} /> Supprimer</Button>}
             {mode === "edit" && absence && isAdmin && absence.status === "TO_VALIDATE" && !integrated && <Button type="button" variant="secondary" disabled={isPending} onClick={() => onValidate(absence)}><Check size={15} /> Valider</Button>}
-            {mode === "edit" && absence && isAdmin && !["VALIDATED", "REJECTED"].includes(absence.status) && !integrated && <Button type="button" variant="ghost" disabled={isPending} onClick={() => onReject(absence)} className="text-red-700">Refuser</Button>}
+            {mode === "edit" && absence && isAdmin && !["VALIDATED", "REJECTED"].includes(absence.status) && !integrated && <Button type="button" variant="ghost" disabled={isPending} onClick={() => onReject(absence)} className="text-accent-rose">Refuser</Button>}
             <Button type="button" variant="secondary" onClick={onClose}>Fermer</Button>
             {isAdmin && !integrated && <Button type="submit" form="absence-editor-form" disabled={isPending}>{isPending && <Loader2 size={15} className="animate-spin" />}{mode === "create" ? "Ajouter" : "Enregistrer"}</Button>}
           </div>

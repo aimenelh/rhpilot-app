@@ -334,11 +334,11 @@ export default async function EmployeeDetailPage({
             </div>
             <dl className="mt-3 grid gap-x-8 gap-y-3 rounded-xl border border-surface-border bg-white px-5 py-4 sm:grid-cols-3">
               <div><dt className="text-xs text-ink-faint">Manager direct</dt><dd className="mt-0.5 text-sm text-ink">{manager ? getUserDisplayName(manager.user) : "Non défini"}</dd></div>
-              <div><dt className="text-xs text-ink-faint">Catégorie professionnelle</dt><dd className="mt-0.5 text-sm text-ink">{employee.professionalCategory ?? "—"}</dd></div>
+              <div><dt className="text-xs text-ink-faint">Catégorie professionnelle</dt><dd className="mt-0.5 text-sm text-ink">{employee.professionalCategory ?? "Non renseigné"}</dd></div>
               <div><dt className="text-xs text-ink-faint">Date d&apos;entrée</dt><dd className="mt-0.5 text-sm text-ink">{formatDate(employee.hireDate)}</dd></div>
               {employee.probationDuration && employee.probationDurationUnit ? <div><dt className="text-xs text-ink-faint">Période d&apos;essai</dt><dd className="mt-0.5 text-sm text-ink">{formatDuration(employee.probationDuration, employee.probationDurationUnit)}</dd></div> : null}
-              <div><dt className="text-xs text-ink-faint">Fin de contrat</dt><dd className="mt-0.5 text-sm text-ink">{employee.contractEndDate ? formatDate(employee.contractEndDate) : "—"}</dd></div>
-              <div><dt className="flex items-center gap-1 text-xs text-ink-faint"><CalendarClock size={12} />Prochaine visite médicale</dt><dd className="mt-0.5 text-sm text-ink">{employee.nextMedicalVisitDate ? formatDate(employee.nextMedicalVisitDate) : "—"}</dd></div>
+              <div><dt className="text-xs text-ink-faint">Fin de contrat</dt><dd className="mt-0.5 text-sm text-ink">{employee.contractEndDate ? formatDate(employee.contractEndDate) : "Non renseigné"}</dd></div>
+              <div><dt className="flex items-center gap-1 text-xs text-ink-faint"><CalendarClock size={12} />Prochaine visite médicale</dt><dd className="mt-0.5 text-sm text-ink">{employee.nextMedicalVisitDate ? formatDate(employee.nextMedicalVisitDate) : "Non renseigné"}</dd></div>
             </dl>
           </section>
 

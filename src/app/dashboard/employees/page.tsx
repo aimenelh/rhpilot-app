@@ -19,6 +19,8 @@ import { EmployeeRowMenu } from "@/components/employees/EmployeeRowMenu";
 import { FlashToast } from "@/components/ui/FlashToast";
 import { employeeAccessWhere, isOrganizationAdmin } from "@/lib/accessPolicy";
 
+export const metadata = { title: "Salariés" };
+
 export const dynamic = "force-dynamic";
 
 export default async function EmployeesPage({
@@ -206,7 +208,7 @@ export default async function EmployeesPage({
                           </Link>
                         )}
                       </td>
-                      <td className="px-5 py-4 text-ink-soft">{employee.position || "—"}</td>
+                      <td className="px-5 py-4 text-ink-soft">{employee.position || "Non renseigné"}</td>
                       <td className="px-5 py-4 text-ink-soft">
                         {formatDate(status === "archived" ? employee.deletedAt! : employee.hireDate)}
                       </td>

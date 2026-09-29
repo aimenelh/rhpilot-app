@@ -43,7 +43,7 @@ function NumberField({ name, label, value, hint }: { name: string; label: string
 
 function Feedback({ state }: { state: PayrollOpeningFormState }) {
   if (state?.error) return <p role="alert" className="rounded-lg border border-accent-rose/30 bg-accent-rose/5 px-3 py-2 text-sm text-accent-rose">{state.error}</p>;
-  if (state?.saved) return <p role="status" className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">Reprise enregistrée.</p>;
+  if (state?.saved) return <p role="status" className="rounded-lg border border-accent-teal/30 bg-accent-teal/10 px-3 py-2 text-sm text-accent-teal">Reprise enregistrée.</p>;
   return null;
 }
 

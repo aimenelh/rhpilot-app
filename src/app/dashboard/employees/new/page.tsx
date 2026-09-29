@@ -7,6 +7,8 @@ import { EmployeeForm } from "../EmployeeForm";
 import { getUserDisplayName } from "@/lib/displayName";
 import { isOrganizationAdmin } from "@/lib/accessPolicy";
 
+export const metadata = { title: "Nouveau salarié" };
+
 export default async function NewEmployeePage() {
   const membership = await getCurrentMembership();
   if (!membership) redirect("/dashboard");

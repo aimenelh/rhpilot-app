@@ -28,7 +28,7 @@ export function LandingPage() {
                 preload="none"
                 poster="/illustrations/illu-cta-final.png"
                 className={s.video}
-                aria-label="Scène de travail en équipe — vidéo de Pavel Danilyuk"
+                aria-label="Scène de travail en équipe : vidéo de Pavel Danilyuk"
               >
                 <source
                   src="https://www.pexels.com/download/video/8343940/?v=8343940"

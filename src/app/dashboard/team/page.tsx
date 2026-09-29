@@ -10,6 +10,8 @@ import { Badge } from "@/components/ui/Badge";
 import { InviteForm } from "./InviteForm";
 import { RevokeInvitationButton } from "./RevokeInvitationButton";
 
+export const metadata = { title: "Équipe" };
+
 export const dynamic = "force-dynamic";
 
 const ACCESS_ROLE_LABELS: Record<string, string> = {
@@ -88,7 +90,7 @@ export default async function TeamPage() {
             <h2 className="text-sm font-semibold text-ink">Inviter quelqu&apos;un</h2>
           </div>
           <p className="mt-1.5 text-sm text-ink-soft">
-            Un email avec un lien d&apos;invitation lui sera envoyé, valable 7 jours.
+            Un e-mail avec un lien d&apos;invitation lui sera envoyé, valable 7 jours.
           </p>
           <InviteForm />
         </Card>

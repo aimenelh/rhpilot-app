@@ -52,7 +52,7 @@ export async function createInvitation(
   // second propriétaire se décide autrement, pas via ce formulaire.
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { error: "Adresse email invalide." };
+    return { error: "Adresse e-mail invalide." };
   }
 
   // Déjà membre de cette organisation ?

@@ -16,6 +16,8 @@ import { summarizeParcours } from "@/lib/parcoursSummary";
 import { isProbationHistoricalAtEntry } from "@/lib/probationTracking";
 import { eventAccessWhere } from "@/lib/accessPolicy";
 
+export const metadata = { title: "Parcours" };
+
 export const dynamic = "force-dynamic";
 
 export default async function EventsPage({

@@ -22,7 +22,7 @@ const SUBPROCESSORS = [
     role: "Authentification (connexion, gestion des comptes)",
     location: "États-Unis",
     detail:
-      "Les données de connexion (email, identité) sont stockées aux États-Unis. Clerk dispose d'un représentant pour la protection des données en Europe et s'appuie sur les clauses contractuelles types pour encadrer ce transfert, conformément au RGPD.",
+      "Les données de connexion (e-mail, identité) sont stockées aux États-Unis. Clerk dispose d'un représentant pour la protection des données en Europe et s'appuie sur les clauses contractuelles types pour encadrer ce transfert, conformément au RGPD.",
   },
   {
     name: "Neon",
@@ -47,10 +47,10 @@ const SUBPROCESSORS = [
   },
   {
     name: "Resend",
-    role: "Envoi des emails (invitations, résumés de tâches)",
+    role: "Envoi des e-mails (invitations, résumés de tâches)",
     location: "États-Unis",
     detail:
-      "Les emails sont envoyés depuis l'Europe, mais les métadonnées de compte sont stockées aux États-Unis. Resend est certifié dans le cadre du Data Privacy Framework UE-États-Unis.",
+      "Les e-mails sont envoyés depuis l'Europe, mais les métadonnées de compte sont stockées aux États-Unis. Resend est certifié dans le cadre du Data Privacy Framework UE-États-Unis.",
   },
   {
     name: "Vercel Analytics",
@@ -108,7 +108,7 @@ export default function ConfidentialitePage() {
               responsabilités différentes au sens du RGPD.
             </p>
             <p>
-              Pour les données de votre compte (email, identité, préférences),
+              Pour les données de votre compte (e-mail, identité, préférences),
               RH Pilot est{" "}
               <strong className="font-semibold text-ink">
                 responsable du traitement
@@ -132,7 +132,7 @@ export default function ConfidentialitePage() {
               <strong className="font-semibold text-ink">
                 Données de compte
               </strong>{" "}
-              : email, nom, mot de passe (géré directement par Clerk, jamais
+              : e-mail, nom, mot de passe (géré directement par Clerk, jamais
               stocké par RH Pilot lui-même).
             </p>
             <p>

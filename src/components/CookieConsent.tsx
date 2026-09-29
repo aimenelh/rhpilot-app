@@ -26,6 +26,13 @@ function readConsent(): ConsentPreferences | null {
   }
 }
 
+export const COOKIE_CONSENT_EVENT = "rhpilot:cookie-consent";
+
+/** Le visiteur a-t-il déjà répondu au bandeau cookies ? */
+export function hasCookieConsentDecision(): boolean {
+  return readConsent() !== null;
+}
+
 export function CookieConsent() {
   const [ready, setReady] = useState(false);
   const [consent, setConsent] = useState<ConsentPreferences | null>(null);
@@ -55,6 +62,8 @@ export function CookieConsent() {
     setConsent(next);
     setAnalyticsChoice(analytics);
     setCustomizing(false);
+    // La visite de découverte attend ce choix pour ne pas s'ouvrir sous le bandeau.
+    window.dispatchEvent(new Event(COOKIE_CONSENT_EVENT));
   }
 
   return (

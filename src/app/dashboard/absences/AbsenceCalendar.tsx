@@ -12,14 +12,14 @@ type CalendarAbsence = {
 };
 
 const TYPE_STYLES: Record<string, { label: string; dot: string; bg: string; text: string; border: string }> = {
-  PAID_LEAVE: { label: "Congés payés", dot: "bg-blue-500", bg: "bg-blue-50", text: "text-blue-800", border: "border-blue-100" },
-  RTT: { label: "RTT", dot: "bg-violet-500", bg: "bg-violet-50", text: "text-violet-800", border: "border-violet-100" },
+  PAID_LEAVE: { label: "Congés payés", dot: "bg-ink-soft", bg: "bg-surface-subtle", text: "text-ink-soft", border: "border-surface-border" },
+  RTT: { label: "RTT", dot: "bg-brand-primary-dark", bg: "bg-brand-primary/10", text: "text-brand-primary-dark", border: "border-brand-primary/30" },
   SICK_LEAVE: { label: "Maladie", dot: "bg-amber-500", bg: "bg-amber-50", text: "text-amber-800", border: "border-amber-100" },
-  WORK_ACCIDENT: { label: "Accident du travail", dot: "bg-red-500", bg: "bg-red-50", text: "text-red-800", border: "border-red-100" },
+  WORK_ACCIDENT: { label: "Accident du travail", dot: "bg-accent-rose", bg: "bg-accent-rose/5", text: "text-accent-rose", border: "border-accent-rose/30" },
   UNPAID_LEAVE: { label: "Sans solde", dot: "bg-slate-500", bg: "bg-slate-50", text: "text-slate-800", border: "border-slate-200" },
-  FAMILY_EVENT: { label: "Événement familial", dot: "bg-emerald-500", bg: "bg-emerald-50", text: "text-emerald-800", border: "border-emerald-100" },
+  FAMILY_EVENT: { label: "Événement familial", dot: "bg-accent-teal", bg: "bg-accent-teal/10", text: "text-accent-teal", border: "border-accent-teal/30" },
   MATERNITY: { label: "Maternité", dot: "bg-pink-500", bg: "bg-pink-50", text: "text-pink-800", border: "border-pink-100" },
-  PATERNITY: { label: "Paternité", dot: "bg-sky-500", bg: "bg-sky-50", text: "text-sky-800", border: "border-sky-100" },
+  PATERNITY: { label: "Paternité", dot: "bg-ink-soft", bg: "bg-surface-subtle", text: "text-ink-soft", border: "border-surface-border" },
   OTHER: { label: "Autre", dot: "bg-gray-500", bg: "bg-gray-50", text: "text-gray-800", border: "border-gray-200" },
 };
 

@@ -12,7 +12,7 @@ import h from "./payroll/PayrollHub.module.css";
 
 const BEYOND = [
   { title: "Les pièces au bon endroit", text: "Contrat signé, accusé de DPAE, convocation : chaque étape garde son justificatif, retrouvable depuis la fiche du salarié." },
-  { title: "Un résumé dans votre boîte mail", text: "Chaque jour ou chaque semaine, au choix : ce qui est en retard, ce qui tombe aujourd’hui, ce qui arrive cette semaine. Et un rappel au responsable d’une tâche en un clic." },
+  { title: "Un résumé dans votre boîte mail", text: "Chaque jour ou chaque semaine, au choix : ce qui est en retard, ce qui tombe aujourd’hui, ce qui arrive cette semaine. Et un rappel au responsable d’une tâche, directement depuis la liste." },
   { title: "La paie dans la continuité", text: "Les salariés, leurs absences et leurs arrêts enregistrés ici servent directement au calcul de la paie, sur le palier Pro." },
 ];
 

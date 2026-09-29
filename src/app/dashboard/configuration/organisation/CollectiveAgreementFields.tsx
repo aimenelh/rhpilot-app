@@ -77,7 +77,7 @@ export function CollectiveAgreementFields({
           <option value="">Sélectionner une convention…</option>
           {options.map((agreement) => (
             <option key={agreement.idcc} value={agreement.idcc}>
-              {agreement.idcc} — {agreement.name}
+              {agreement.idcc} : {agreement.name}
             </option>
           ))}
         </select>

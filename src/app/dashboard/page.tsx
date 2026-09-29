@@ -26,6 +26,8 @@ import { isProbationHistoricalAtEntry } from "@/lib/probationTracking";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
 import { employeeAccessWhere, eventAccessWhere, isOrganizationAdmin, taskAccessWhere, type MembershipAccess } from "@/lib/accessPolicy";
 
+export const metadata = { title: "Tableau de bord" };
+
 export const dynamic = "force-dynamic";
 
 type AttentionReason = "overdue" | "unassigned" | "soon";
@@ -256,14 +258,15 @@ export default async function DashboardPage({
   else if (soonCount > 0) mascotPose = "deadline";
   else if (!isEmpty) mascotPose = "calm";
 
-  const firstName = user!.firstName || user!.email.split("@")[0];
+  // Sans prénom connu (inscription par e-mail seul), on salue sans le citer plutôt qu'avec le début de l'e-mail.
+  const firstName = user!.firstName ?? "";
 
   return (
     <div className="dashboard-overview">
       <div className="dashboard-heading flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <h1 data-tour="dashboard-attention" className="text-2xl font-semibold text-ink">
-            Bonjour {firstName} 👋
+            Bonjour{firstName ? ` ${firstName}` : ""}.
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-ink-soft">{synthesis}</p>
           <div className="mt-4 flex flex-wrap gap-2.5">
@@ -426,7 +429,7 @@ export default async function DashboardPage({
                 className={`shrink-0 ${percentUpToDate === 100 ? "text-accent-teal" : "text-accent-amber"}`}
               />
               <div>
-                <p className="text-xl font-semibold text-ink">{percentUpToDate === null ? "—" : `${percentUpToDate}%`}</p>
+                <p className="text-xl font-semibold text-ink">{percentUpToDate === null ? "Aucun parcours" : `${percentUpToDate}%`}</p>
                 <p className="text-xs text-ink-faint">
                   {percentUpToDate === null ? "Suivi à démarrer" : "Parcours sans retard"}
                 </p>

@@ -314,10 +314,10 @@ export default async function PayrollPayslipsPage({
                       </span>
                     </td>
                     <td className="px-5 py-4 text-ink-soft">
-                      {payslip?.generatedAt ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(payslip.generatedAt) : "—"}
+                      {payslip?.generatedAt ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(payslip.generatedAt) : "Pas encore"}
                     </td>
                     <td className="px-5 py-4 text-ink-soft">
-                      {payslip?.publishedAt ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(payslip.publishedAt) : "—"}
+                      {payslip?.publishedAt ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(payslip.publishedAt) : "Pas encore"}
                     </td>
                     <td className="px-5 py-4">
                       {canDownload ? (

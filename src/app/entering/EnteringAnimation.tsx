@@ -8,9 +8,9 @@ import { greetingFor } from "@/components/auth/greeting";
 import s from "@/components/auth/AuthStage.module.css";
 
 // Suite de la connexion : le même papier, le même fil, une salutation, puis le
-// tableau de bord. Court exprès (1,4 s) : on se connecte tous les jours, on
+// tableau de bord. Très court (0,6 s) : on se connecte tous les jours, on
 // ne doit pas attendre. Le tableau de bord est préchargé pendant ce temps.
-const MIN_DISPLAY_MS = 1400;
+const MIN_DISPLAY_MS = 600;
 
 export function EnteringAnimation() {
   const router = useRouter();

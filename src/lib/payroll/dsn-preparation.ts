@@ -88,7 +88,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
   const siret = requiredString(organization.siret, "le SIRET de l'organisation").replace(/\s+/g, "");
   if (!/^\d{14}$/.test(siret)) throw new Error("DSN bloquée : le SIRET de l'organisation doit contenir 14 chiffres.");
   const contactName = requiredString(organization.contactName, "le nom du contact DSN de l'organisation");
-  const contactEmail = requiredString(organization.contactEmail, "l'email du contact DSN de l'organisation");
+  const contactEmail = requiredString(organization.contactEmail, "l'e-mail du contact DSN de l'organisation");
   const contactPhone = requiredString(organization.contactPhone, "le téléphone du contact DSN de l'organisation");
   const declaredContactType = requiredString(organization.declaredContactType, "le type de contact chez le déclaré");
   const enterpriseApenCode = requiredString(organization.enterpriseApenCode, "le code APEN de l'entreprise");

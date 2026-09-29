@@ -4,6 +4,8 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Field";
 import { FAQ_ENTRIES } from "@/lib/faq";
 
+export const metadata = { title: "Aide" };
+
 export default function HelpPage({
   searchParams,
 }: {

@@ -52,14 +52,14 @@ export const FAQ_ENTRIES: FaqEntry[] = [
     category: "Parcours RH",
     question: "Pourquoi une suggestion apparaît sur mon tableau de bord ?",
     answer:
-      "RH Pilot détecte automatiquement certaines situations qui méritent votre attention, par exemple une période d'essai qui approche sans qu'aucun parcours n'ait été déclenché. Chaque suggestion propose une action directe pour la résoudre en un clic.",
+      "RH Pilot détecte automatiquement certaines situations qui méritent votre attention, par exemple une période d'essai qui approche sans qu'aucun parcours n'ait été déclenché. Chaque suggestion propose une action directe pour la résoudre.",
   },
   {
     id: "faq-notifications-work",
     category: "Notifications",
     question: "Comment fonctionnent les notifications ?",
     answer:
-      "Chaque personne peut recevoir un résumé par email (quotidien ou hebdomadaire, réglable dans Paramètres) listant uniquement les tâches qui lui sont assignées et qui approchent ou sont en retard. Un rappel manuel ponctuel reste toujours possible en un clic, quelle que soit cette préférence.",
+      "Chaque personne peut recevoir un résumé par e-mail (quotidien ou hebdomadaire, réglable dans Paramètres) listant uniquement les tâches qui lui sont assignées et qui approchent ou sont en retard. Un rappel manuel ponctuel reste toujours possible depuis la tâche, quelle que soit cette préférence.",
   },
   {
     id: "faq-notifications-history",

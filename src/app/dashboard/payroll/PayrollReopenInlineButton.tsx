@@ -12,7 +12,7 @@ function SubmitButton() {
       disabled={pending}
       className="rounded-lg border border-accent-amber/40 bg-white px-3 py-2 text-xs font-semibold text-ink transition hover:bg-accent-amber/5 disabled:cursor-not-allowed disabled:opacity-50"
     >
-      {pending ? "Réouverture…" : "Réouvrir"}
+      {pending ? "Réouverture…" : "Rouvrir"}
     </button>
   );
 }

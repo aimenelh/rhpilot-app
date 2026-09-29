@@ -17,7 +17,7 @@ function dateOnly(value: string | null) {
 }
 
 function formatEuros(cents: number | null) {
-  if (cents === null) return "—";
+  if (cents === null) return "Non renseigné";
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(cents / 100);
 }
 

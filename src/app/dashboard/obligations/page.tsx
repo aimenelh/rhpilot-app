@@ -8,6 +8,8 @@ import {
 } from "@/lib/compliance/obligations";
 import ObligationsWorkspace from "./ObligationsWorkspace";
 
+export const metadata = { title: "Obligations RH" };
+
 export const dynamic = "force-dynamic";
 
 function isAdmin(role: string) {

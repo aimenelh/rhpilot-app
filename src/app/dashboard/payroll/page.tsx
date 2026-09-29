@@ -8,6 +8,8 @@ import { prepareDemoPayrollData } from "./demoPayrollActions";
 import { DemoPayrollSetupButton } from "./DemoPayrollSetupButton";
 import { getPayrollMemberships } from "@/lib/payrollAccess";
 
+export const metadata = { title: "Paie" };
+
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 const PAYROLL_STATUS_LABELS: Record<string, string> = {
   DRAFT: "Saisie",
@@ -79,7 +81,7 @@ function formatEuros(cents: number | null) {
 function statusClasses(status: string) {
   if (status === "LOCKED") return "bg-accent-teal/10 text-accent-teal";
   if (status === "VALIDATED" || status === "REVIEW") return "bg-accent-amber/10 text-accent-amber";
-  if (status === "CALCULATED") return "bg-blue-50 text-blue-700";
+  if (status === "CALCULATED") return "bg-surface-subtle text-ink-soft";
   return "bg-surface-subtle text-ink-soft";
 }
 

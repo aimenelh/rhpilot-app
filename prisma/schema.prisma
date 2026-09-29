@@ -106,6 +106,7 @@ model User {
   deletedAt                     DateTime?
   firstName                     String?
   lastName                      String?
+  discoveryTourCompletedAt      DateTime?
   reviewedAbsenceJustifications AbsenceJustification[] @relation("AbsenceJustificationReviewedBy")
   uploadedAbsenceJustifications AbsenceJustification[] @relation("AbsenceJustificationUploadedBy")
   validatedAbsences             Absence[]              @relation("AbsenceValidatedBy")

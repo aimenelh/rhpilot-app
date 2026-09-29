@@ -30,7 +30,7 @@ type Row = {
 };
 
 function formatCents(value: number | undefined) {
-  return value === undefined ? "—" : EURO_FORMATTER.format(value / 100);
+  return value === undefined ? "Non renseigné" : EURO_FORMATTER.format(value / 100);
 }
 
 export default function MinimumSalaryControlSection({
@@ -197,7 +197,7 @@ export default function MinimumSalaryControlSection({
                       <div><p className="text-xs text-ink-faint">SMIC proratisé</p><p className="mt-1 text-sm font-semibold text-ink">{formatCents(control.smicMonthlyMinimumCents)}</p></div>
                       <div><p className="text-xs text-ink-faint">Minimum conventionnel</p><p className="mt-1 text-sm font-semibold text-ink">{formatCents(control.collectiveMonthlyMinimumCents ?? undefined)}</p></div>
                       <div><p className="text-xs text-ink-faint">Source retenue</p><p className="mt-1 text-sm font-semibold text-ink">{control.source === "COLLECTIVE_AGREEMENT" ? "Convention collective" : "SMIC"}</p></div>
-                      <div><p className="text-xs text-ink-faint">Version SMIC</p><p className="mt-1 text-sm font-semibold text-ink">{control.smicRuleVersionId ?? "—"}</p></div>
+                      <div><p className="text-xs text-ink-faint">Version SMIC</p><p className="mt-1 text-sm font-semibold text-ink">{control.smicRuleVersionId ?? "Non renseigné"}</p></div>
                     </div>
                     {control.collectiveRuleVersionId ? <p className="mt-3 text-xs text-ink-faint">Version convention : {control.collectiveRuleVersionId}</p> : null}
                     <p className="mt-2 text-xs text-ink-faint">{control.explanation}</p>

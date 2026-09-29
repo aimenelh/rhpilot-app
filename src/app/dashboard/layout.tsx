@@ -15,6 +15,9 @@ import { InitializingScreen } from "@/components/InitializingScreen";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
 import { isOrganizationAdmin, taskAccessWhere } from "@/lib/accessPolicy";
 
+// Chaque onglet porte le nom de sa page : « Salariés · RH Pilot ».
+export const metadata = { title: { default: "Tableau de bord · RH Pilot", template: "%s · RH Pilot" }, robots: { index: false } };
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -98,6 +101,7 @@ export default async function DashboardLayout({
       organizationName={currentMembership.organization.name}
       accessRole={currentMembership.accessRole}
       payrollEnabled={canUsePayroll(currentMembership)}
+      discoveryTourCompleted={Boolean(user.discoveryTourCompletedAt)}
       assistantSummary={{
         userDisplayName: getUserDisplayName(user),
         overdueCount,

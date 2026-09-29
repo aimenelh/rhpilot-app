@@ -210,7 +210,7 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
   add(lines, "S10.G00.01.005", text(input.emitter.postalCode, "le code postal de l'émetteur"));
   add(lines, "S10.G00.01.006", text(input.emitter.city, "la ville de l'émetteur"));
   add(lines, "S10.G00.02.002", text(input.emitter.contactName, "le nom du contact DSN"));
-  add(lines, "S10.G00.02.004", text(input.emitter.contactEmail, "l'email du contact DSN"));
+  add(lines, "S10.G00.02.004", text(input.emitter.contactEmail, "l'e-mail du contact DSN"));
   add(lines, "S10.G00.02.005", text(input.emitter.contactPhone, "le téléphone du contact DSN"));
 
   add(lines, "S20.G00.05.001", "01");
@@ -223,7 +223,7 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
   add(lines, "S20.G00.05.010", "01");
   add(lines, "S20.G00.07.001", text(input.emitter.contactName, "le contact chez le déclaré"));
   add(lines, "S20.G00.07.002", text(input.emitter.contactPhone, "le téléphone du contact chez le déclaré"));
-  add(lines, "S20.G00.07.003", text(input.emitter.contactEmail, "l'email du contact chez le déclaré"));
+  add(lines, "S20.G00.07.003", text(input.emitter.contactEmail, "l'e-mail du contact chez le déclaré"));
   add(lines, "S20.G00.07.004", assertCode(input.emitter.declaredContactType, "le type de contact chez le déclaré", 2, 2));
 
   add(lines, "S21.G00.06.001", siren);
