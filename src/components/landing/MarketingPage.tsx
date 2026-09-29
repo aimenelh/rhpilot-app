@@ -51,7 +51,7 @@ export function MarketingCTA({
   title = "Le prochain pas, à votre rythme.",
   text = "Créez votre espace et préparez votre premier parcours RH. Gratuit jusqu’à 3 salariés.",
   href = "/sign-up",
-  action = "Créer mon espace ↗",
+  action = "Créer mon espace",
 }: {
   title?: string;
   text?: string;

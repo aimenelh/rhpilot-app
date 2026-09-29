@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CookiePreferencesButton } from "@/components/CookiePreferencesButton";
 import { Logomark, Wordmark } from "@/components/Brand";
 
 const PRODUCT_LINKS = [
@@ -11,6 +12,8 @@ const PRODUCT_LINKS = [
   { href: "/pourquoi", label: "À propos" },
   { href: "/questions", label: "Questions fréquentes" },
   { href: "/diagnostic", label: "Diagnostic RH" },
+  { href: "/contact", label: "Contact et démonstration" },
+  { href: "/feuille-de-route", label: "Feuille de route" },
   { href: "/sign-up", label: "Créer mon espace" },
   { href: "/sign-in", label: "Se connecter" },
 ];
@@ -44,6 +47,8 @@ const LEGAL_LINKS = [
   { href: "/mentions-legales", label: "Mentions légales" },
   { href: "/securite", label: "Sécurité" },
   { href: "/cgu", label: "CGU" },
+  { href: "/cgv", label: "CGV" },
+  { href: "/dpa", label: "Contrat de sous-traitance" },
   { href: "/confidentialite", label: "Confidentialité" },
   { href: "/cookies", label: "Cookies" },
 ];
@@ -141,6 +146,7 @@ export function MarketingFooter() {
               </li>
             ))}
           </ul>
+          <div className="mt-3"><CookiePreferencesButton /></div>
         </div>
       </div>
 

@@ -8,7 +8,7 @@ import s from "@/components/landing/MarketingV2.module.css";
 import p from "@/components/landing/InnerPages.module.css";
 import { PricingCalculator } from "@/components/landing/PricingCalculator";
 export const metadata = {
-  title: "Tarifs, RH Pilot",
+  title: "Tarifs",
   description:
     "Gratuit jusqu’à 3 salariés. Pro : 15 € par mois + 3 € par salarié. Espace salarié inclus, sans coût par compte.",
 };
@@ -35,25 +35,25 @@ export default function TarifsPage() {
                 <li>Copilote inclus</li>
               </ul>
               <Link className={s.secondary} href="/sign-up">
-                Créer mon compte ↗
+                Créer mon compte
               </Link>
             </article>
             <article className={`${p.plan} ${p.planPro}`}>
               <p className={p.label}>Pour accompagner votre croissance</p>
               <h2>Pro</h2>
               <p className={p.price}>
-                15 € <span style={{ fontSize: 18 }}> / mois</span>
+                15 € HT <span style={{ fontSize: 18 }}> / mois</span>
               </p>
-              <p>+ 3 € par salarié / mois</p>
+              <p>+ 3 € HT par salarié / mois</p>
               <ul>
                 <li>Sans limite de salariés</li>
                 <li>Parcours et rappels illimités</li>
-                <li>Module paie : saisie, calcul et bulletins</li>
-                <li>Espace salarié complet, bulletins compris</li>
+                <li>Suivi RH complet pour votre équipe</li>
+                <li>Espace salarié et dépôt de bulletins externes</li>
                 <li>Copilote inclus dans votre abonnement</li>
               </ul>
               <Link className={s.primary} href="/sign-up">
-                Commencer avec RH Pilot ↗
+                Commencer avec RH Pilot
               </Link>
             </article>
           </div>
@@ -65,7 +65,7 @@ export default function TarifsPage() {
               </p>
             </div>
             <Link href="mailto:contact@rhpilot.fr" className={s.textLink}>
-              Échanger avec l’équipe ↗
+              Échanger avec l’équipe
             </Link>
           </div>
         </div>
@@ -85,7 +85,7 @@ export default function TarifsPage() {
               connectées.
             </p>
             <Link href="/espace-salarie" className={s.textLink}>
-              Découvrir l&apos;espace salarié →
+              Découvrir l&apos;espace salarié
             </Link>
           </div>
         </div>
@@ -106,8 +106,9 @@ export default function TarifsPage() {
       <div className={s.wrap}>
         <p className={p.support}>
           Le Copilote et l&apos;espace salarié sont inclus dans les offres
-          Gratuit et Pro ; les bulletins y arrivent avec le module paie. Le
-          module paie reste limité aux situations actuellement prises en charge.
+          Gratuit et Pro. TVA non applicable, article 293 B du CGI. Le calcul de paie est en accès anticipé,
+          sur invitation, avec un périmètre limité. L’abonnement Pro ne donne pas automatiquement accès au calcul de paie.
+          Vous pouvez déposer des bulletins établis par votre comptable ou un autre logiciel.
         </p>
       </div>
       <MarketingCTA />

@@ -18,7 +18,7 @@ const nextConfig = {
   // ESLint tourne dans la CI (npm run lint) ; une alerte ne doit pas bloquer un déploiement.
   eslint: { ignoreDuringBuilds: true },
   images: {
-    unoptimized: true,
+    formats: ["image/avif", "image/webp"],
   },
   experimental: {
     // Les dépôts documentaires sont plafonnés à 4 Mo côté métier.

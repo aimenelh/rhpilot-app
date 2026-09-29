@@ -30,6 +30,7 @@ export function ArticleLayout({
               <span>{readTime} de lecture</span>
             </div>
             <h1 className={p.h1}>{title}</h1>
+            <p className="mt-4 text-sm text-ink-soft">Par Aimen El Housseini · Révisé le <time dateTime="2026-09-29">29 septembre 2026</time></p>
           </div>
         </header>
         <div className={p.articleBody}>

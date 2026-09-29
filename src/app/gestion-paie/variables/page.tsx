@@ -2,7 +2,7 @@ import { PayrollFeaturePage } from "@/components/landing/PayrollFeaturePage";
 import { PAYROLL_FEATURES } from "@/components/landing/payrollFeatures";
 
 export const metadata = {
-  title: "Variables de paie, RH Pilot",
+  title: "Variables de paie",
   description: "Réunissez et contrôlez les variables de paie avant le calcul avec RH Pilot.",
 };
 

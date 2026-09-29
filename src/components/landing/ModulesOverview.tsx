@@ -14,8 +14,8 @@ const MODULES = [
     position: "left top",
   },
   {
-    title: "La paie",
-    text: "La saisie du mois dans un tableau, le calcul des bulletins, les contrôles avant validation. Les absences et les arrêts viennent du suivi RH.",
+    title: "La paie en accès anticipé",
+    text: "Sur invitation, avec un périmètre limité : saisie du mois, calcul et contrôles des bulletins. Pro ne donne pas automatiquement accès à ce module.",
     href: "/gestion-paie",
     link: "Voir le module paie",
     image: { src: "/marketing/paie-saisie.webp", width: 1200, height: 900, alt: "Tableau de saisie des primes et variables du mois dans la paie RH Pilot" },
@@ -48,7 +48,7 @@ export function ModulesOverview() {
               </div>
               <h3>{module.title}</h3>
               <p>{module.text}</p>
-              <Link href={module.href}>{module.link} →</Link>
+              <Link href={module.href}>{module.link}</Link>
             </article>
           ))}
         </div>

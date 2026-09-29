@@ -2,7 +2,7 @@ import { PayrollFeaturePage } from "@/components/landing/PayrollFeaturePage";
 import { PAYROLL_FEATURES } from "@/components/landing/payrollFeatures";
 
 export const metadata = {
-  title: "Congés et absences, RH Pilot",
+  title: "Congés et absences",
   description: "Reliez la gestion des congés et absences à la préparation de la paie avec RH Pilot.",
 };
 

@@ -1,7 +1,7 @@
 import { ArticleLayout, H2, P, List } from "@/components/landing/ArticleLayout";
 
 export const metadata = {
-  title: "Arrêts de travail : ce qui change au 1er septembre 2026, RH Pilot",
+  title: "Arrêts de travail : ce qui change au 1er septembre 2026",
   description:
     "Un décret publié en juin 2026 plafonne pour la première fois la durée des arrêts de travail prescrits. Ce que ça change concrètement pour une équipe RH.",
 };

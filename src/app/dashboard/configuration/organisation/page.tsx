@@ -254,7 +254,7 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
           <PayrollSettingsFields values={payrollSettingsValues(social, automaticHeadcount)} />
           <Card className="mt-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="text-sm font-semibold text-ink">Convention collective</h2><p className="mt-1 text-sm text-ink-soft">Reprise automatiquement de la DSN de votre établissement quand elle y est déclarée. Changez-la ici si une autre convention s&apos;applique.</p></div><Link href="https://code.travail.gouv.fr/outils/convention-collective/entreprise" target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-brand-primary hover:underline"><ExternalLink size={13} /> Vérifier l&apos;IDCC</Link></div>
-            <div className="mt-4"><CollectiveAgreementFields agreements={collectiveAgreements} defaultIdcc={organization?.collectiveAgreement?.idcc ?? ""} defaultName={organization?.collectiveAgreement?.name ?? organization?.conventionCollective ?? ""} /></div>
+            <div className="mt-4"><CollectiveAgreementFields defaultNaf={organization?.payrollNafCode ?? ""} agreements={collectiveAgreements} defaultIdcc={organization?.collectiveAgreement?.idcc ?? ""} defaultName={organization?.collectiveAgreement?.name ?? organization?.conventionCollective ?? ""} /></div>
           </Card>
         </>)}
         <div className="mt-6 flex justify-end"><Button type="submit">Enregistrer les modifications</Button></div>

@@ -1,7 +1,7 @@
 import { ArticleLayout, H2, P, List } from "@/components/landing/ArticleLayout";
 
 export const metadata = {
-  title: "Rupture conventionnelle : indemnisation chômage réduite en 2026, RH Pilot",
+  title: "Rupture conventionnelle : indemnisation chômage réduite en 2026",
   description:
     "Depuis le 1er septembre 2026, la durée maximale d'indemnisation chômage après une rupture conventionnelle diminue. Ce que ça change dans une négociation.",
 };

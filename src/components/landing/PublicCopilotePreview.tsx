@@ -13,7 +13,7 @@ const PUBLIC_FAQ: { question: string; answer: string }[] = [
   {
     question: "RH Pilot remplace-t-il mon logiciel de paie ?",
     answer:
-      "Non, et il ne le sera jamais. RH Pilot vous aide à préparer les éléments variables, jamais à les calculer ou les déclarer à votre place.",
+      "Le suivi RH est disponible. Le calcul de paie est en accès anticipé sur invitation, avec un périmètre limité. RH Pilot ne dépose pas de DSN sur net-entreprises.",
   },
   {
     question: "Combien ça coûte ?",
@@ -28,7 +28,7 @@ const PUBLIC_FAQ: { question: string; answer: string }[] = [
   {
     question: "Mes données sont-elles en sécurité ?",
     answer:
-      "Isolation stricte entre organisations, hébergement en Europe, authentification déléguée à un spécialiste.",
+      "Les données sont isolées entre organisations. La base RH est hébergée à Francfort ; certains prestataires traitent des données aux États-Unis. Le détail figure dans notre politique de confidentialité.",
   },
 ];
 

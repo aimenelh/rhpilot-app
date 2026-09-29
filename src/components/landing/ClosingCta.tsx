@@ -1,7 +1,7 @@
 import Link from "next/link";
 import s from "./ClosingCta.module.css";
 
-type ClosingCtaProps = { title?: string; accent?: string; text?: string; action?: string };
+type ClosingCtaProps = { title?: string; accent?: string; text?: string; action?: string; href?: string };
 
 /** Fin de page : le fil corail de l'introduction revient et traverse l'appel final. */
 export function ClosingCta({
@@ -9,6 +9,7 @@ export function ClosingCta({
   accent = "Gardez le fil.",
   text = "Créez votre espace et préparez votre premier parcours.",
   action = "Créer mon premier plan",
+  href = "/sign-up",
 }: ClosingCtaProps = {}) {
   return (
     <section className={s.close} aria-labelledby="closing-title">
@@ -24,7 +25,7 @@ export function ClosingCta({
           <p className={s.text}>{text}</p>
         </div>
         <div className={s.action}>
-          <Link href="/sign-up" className={s.primary}>
+          <Link href={href} className={s.primary}>
             {action}
           </Link>
           <span>Gratuit jusqu’à 3 salariés.</span>

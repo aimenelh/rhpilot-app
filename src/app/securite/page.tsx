@@ -6,7 +6,7 @@ import p from "@/components/landing/InnerPages.module.css";
 import sec from "./Securite.module.css";
 
 export const metadata = {
-  title: "Sécurité, RH Pilot",
+  title: "Sécurité",
   description:
     "Comment RH Pilot protège vos données RH : isolation entre organisations, prestataires techniques, authentification déléguée, traçabilité complète.",
 };
@@ -70,7 +70,7 @@ export default function SecurityPage() {
     <MarketingPage>
       <PageIntro
         eyebrow="Sécurité"
-        title="La confiance ne se décrète pas."
+        title="La protection de vos données RH."
         intro="Vos données RH sont sensibles. Voici, concrètement, comment RH Pilot les traite, sans jargon, et sans rien promettre que nous ne fassions déjà."
       />
 
@@ -99,7 +99,7 @@ export default function SecurityPage() {
           <p className={s.eyebrow}>Notre infrastructure</p>
           <h2 className={s.title}>Avec qui nous travaillons</h2>
           <p className={`${s.body} ${sec.narrow}`}>
-            Aucun mystère : voici l’infrastructure réelle derrière RH Pilot, listée en détail dans notre{" "}
+            L’infrastructure de RH Pilot est détaillée dans notre{" "}
             <Link href="/confidentialite" className={sec.inline}>
               politique de confidentialité
             </Link>
@@ -122,7 +122,7 @@ export default function SecurityPage() {
         <div className={`${s.wrap} ${p.columns}`}>
           <div>
             <p className={s.eyebrow}>Vos droits</p>
-            <h2 className={s.title}>Vos droits, sans détour</h2>
+            <h2 className={s.title}>Vos droits sur vos données</h2>
           </div>
           <div className={p.story}>
             <p>
@@ -146,7 +146,7 @@ export default function SecurityPage() {
 
       <MarketingCTA
         title="Une question sur vos données ?"
-        text="Écrivez-nous : nous répondons avec les détails techniques, sans détour."
+        text="Écrivez-nous : nous répondons avec les détails techniques."
         href="mailto:contact@rhpilot.fr"
         action="Nous écrire"
       />

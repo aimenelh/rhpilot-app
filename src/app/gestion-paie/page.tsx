@@ -7,7 +7,7 @@ import { computePayslipDemo, DEFAULT_DEMO_INPUT } from "@/components/landing/pay
 import s from "@/components/landing/payroll/PayrollHub.module.css";
 
 export const metadata = {
-  title: "Gestion de la paie, RH Pilot",
+  title: "Gestion de la paie",
   description:
     "Calculez un bulletin en direct avec le moteur de RH Pilot : cotisations ligne par ligne, net social, coût employeur, règles et sources officielles.",
 };
@@ -31,6 +31,7 @@ export default function GestionPaiePage() {
               Changez le salaire, passez le salarié cadre, ouvrez une ligne : c’est le moteur de RH Pilot qui recalcule,
               et chaque montant montre sa base, son taux et sa source officielle.
             </p>
+            <p className={s.intro}>Démonstration sur un salarié fictif. Le calcul de paie dans l’application est en accès anticipé sur invitation, distinct de Pro. La DSN reste en préparation, sans dépôt.</p>
             <div className={s.demo} id="bulletin">
               <LivePayslip initial={initial} />
             </div>
@@ -42,8 +43,8 @@ export default function GestionPaiePage() {
       <ClosingCta
         title="Votre prochaine paie se prépare déjà."
         accent="Autant la voir venir."
-        text="Créez votre espace, ajoutez vos salariés et lancez votre première période."
-        action="Créer mon espace"
+        text="Contactez-nous pour connaître le périmètre pris en charge et demander un accès anticipé."
+        action="Demander un accès" href="/contact"
       />
       <MarketingFooter />
     </div>

@@ -3,6 +3,8 @@ import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import p from "@/components/landing/InnerPages.module.css";
 import { Reveal } from "@/components/landing/Reveal";
 
+export const metadata = { title: "Conditions générales d’utilisation" };
+
 export default function CguPage() {
   return (
     <div className={p.editorial}>
@@ -12,16 +14,13 @@ export default function CguPage() {
           <Reveal>
             <div className="rounded-2xl border border-surface-border bg-white/75 p-8 shadow-sm backdrop-blur-md sm:p-10">
               <p className="text-xs font-medium uppercase tracking-wide text-brand-primary">
-                Conditions d’utilisation, document en cours de finalisation
+                Conditions d’utilisation
               </p>
               <h1 className="mt-2 text-3xl font-semibold text-ink">
                 Conditions Générales d&apos;Utilisation
               </h1>
               <p className="mt-4 text-sm leading-relaxed text-ink-soft">
-                Ce document
-                sera complété au fur et à mesure de l&apos;avancement
-                administratif du projet (immatriculation en cours). Une question
-                ? Contactez-nous directement.
+                Version du 29 septembre 2026. Les conditions de vente et le contrat de sous-traitance complètent ces conditions pour les organisations clientes.
               </p>
 
               <div className="mt-10 flex flex-col gap-8 text-sm leading-relaxed text-ink-soft">
@@ -30,8 +29,7 @@ export default function CguPage() {
                   <p className="mt-2">
                     Les présentes Conditions Générales d&apos;Utilisation (« CGU
                     ») définissent les modalités et conditions dans lesquelles
-                    RH Pilot (immatriculation en cours en tant
-                    qu&apos;auto-entreprise, SIRET à venir) met à disposition de
+                    Aimen EL HOUSSEINI, entrepreneur individuel exerçant sous le nom RH Pilot (RCS Montpellier 108 345 125) met à disposition de
                     ses utilisateurs professionnels le logiciel RH Pilot.
                   </p>
                   <p className="mt-2">
@@ -52,7 +50,7 @@ export default function CguPage() {
                     et de bénéficier de rappels et de suggestions proactives.
                   </p>
                   <p className="mt-2">
-                    RH Pilot comprend un module de paie qui calcule les bulletins
+                    RH Pilot propose un module de paie en accès anticipé sur invitation distincte de l’abonnement Pro. Il calcule les bulletins
                     à partir des données saisies par le Client. Le Client reste
                     responsable de l&apos;exactitude de ces données, de la
                     vérification des bulletins avant leur validation et de ses
@@ -138,8 +136,7 @@ export default function CguPage() {
                   </h2>
                   <p className="mt-2">
                     Pour toute question relative à ces conditions,
-                    contactez-nous directement via les coordonnées communiquées
-                    lors de votre inscription.
+                    écrivez à contact@rhpilot.fr. Les CGV sont disponibles sur /cgv et le contrat de sous-traitance sur /dpa.
                   </p>
                 </section>
               </div>

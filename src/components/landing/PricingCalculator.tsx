@@ -61,10 +61,10 @@ export function PricingCalculator() {
         ) : (
           <>
             <p className="font-display text-3xl font-semibold text-ink">
-              {formatEuros(proTotalCents)} €<span className="text-base font-normal text-ink-soft"> / mois</span>
+              {formatEuros(proTotalCents)} € HT<span className="text-base font-normal text-ink-soft"> / mois</span>
             </p>
             <p className="mt-1 text-sm text-ink-soft">
-              15 € + {headcount} × 3 €. Palier Pro, salariés illimités, résiliable à tout moment.
+              15 € HT + {headcount} × 3 € HT. Palier Pro, salariés illimités, résiliable à tout moment.
             </p>
           </>
         )}

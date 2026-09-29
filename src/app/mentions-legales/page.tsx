@@ -5,7 +5,7 @@ import p from "@/components/landing/InnerPages.module.css";
 import { Reveal } from "@/components/landing/Reveal";
 
 export const metadata = {
-  title: "Mentions légales, RH Pilot",
+  title: "Mentions légales",
   description:
     "Identité de l'éditeur, hébergement et informations légales du site RH Pilot.",
 };
@@ -63,6 +63,7 @@ export default function MentionsLegalesPage() {
             </p>
             <p>Adresse : 198 rue Robert Koch, 34090 Montpellier, France.</p>
             <p>{RCS}.</p>
+            {process.env.RH_PILOT_CONTACT_PHONE && <p>Téléphone : {process.env.RH_PILOT_CONTACT_PHONE}</p>}
             <p>TVA non applicable, article 293 B du Code général des impôts.</p>
             <p>
               Contact :{" "}
@@ -82,8 +83,9 @@ export default function MentionsLegalesPage() {
 
           <Section title="Hébergement">
             <p>Le site est hébergé par Vercel Inc.</p>
+            {process.env.RH_PILOT_HOST_PHONE && <p>Téléphone : {process.env.RH_PILOT_HOST_PHONE}</p>}
             <p>
-              Adresse : 340 S Lemon Ave #4133, Walnut, CA 91789, États-Unis.
+              Adresse : 440 N Barranca Avenue #4133, Covina, CA 91723, États-Unis.
             </p>
             <p>
               Site web :{" "}

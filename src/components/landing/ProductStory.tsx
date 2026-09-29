@@ -49,7 +49,7 @@ export function ProductStory() {
           ))}
         </div>
         <p className={s.more}>
-          Captures réelles de l’application. <Link href="/services#demo">Explorer la démonstration →</Link>
+          Captures réelles de l’application. <Link href="/services#demo">Explorer la démonstration</Link>
         </p>
       </div>
     </section>

@@ -43,8 +43,8 @@ const GROUPS = [
       [
         "Le module paie est-il disponible ?",
         <>
-          Oui, sur le palier Pro, pour un périmètre défini : quand une situation n’est pas encore prise en charge, le
-          calcul est bloqué plutôt que faux. Vous pouvez essayer le calcul d’un bulletin sur la page{" "}
+          Le calcul de paie est en accès anticipé, réservé aux organisations invitées. Il n’est pas inclus automatiquement dans Pro.
+          Le périmètre est limité et la DSN reste en préparation et pré-contrôle, sans dépôt sur net-entreprises. Vous pouvez essayer le calcul d’un bulletin sur la page{" "}
           <Link href="/gestion-paie">Gestion de la paie</Link>.
         </>,
       ],
@@ -81,7 +81,7 @@ const GROUPS = [
   },
 ];
 export const metadata = {
-  title: "Questions fréquentes, RH Pilot",
+  title: "Questions fréquentes",
   description:
     "Les réponses à vos questions sur RH Pilot, ses parcours et ses offres.",
 };

@@ -1,4 +1,5 @@
 "use server";
+import { randomUUID } from "node:crypto";
 
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -11,7 +12,8 @@ import { billableEmployeeWhere } from "@/lib/billingEmployeeScope";
 export type BillingActionState = { error: string } | undefined;
 
 export async function createCheckoutSession(
-  _prevState: BillingActionState
+  _prevState: BillingActionState,
+  formData: FormData
 ): Promise<BillingActionState> {
   const membership = await getCurrentMembership();
   const user = await getCurrentUser();
@@ -37,6 +39,8 @@ export async function createCheckoutSession(
     return { error: "Un abonnement Stripe existe déjà pour cette organisation." };
   }
 
+  if (formData.get("acceptTerms") !== "on") return { error: "Acceptez les CGV, les CGU et le contrat de sous-traitance avant de continuer." };
+  const acceptedAt = new Date().toISOString();
   // Quantité du prix "par salarié" = salariés réels actifs uniquement.
   // Les 15 fiches de démonstration ne doivent jamais devenir une ligne
   // facturable. La quantité se resynchronisera ensuite via le cron.
@@ -52,9 +56,9 @@ export async function createCheckoutSession(
       customer: organization.stripeCustomerId ?? undefined,
       customer_email: organization.stripeCustomerId ? undefined : user.email,
       client_reference_id: organization.id,
-      metadata: { organizationId: organization.id },
+      metadata: { organizationId: organization.id, termsVersion: "2026-09-29", termsAcceptedAt: acceptedAt, termsAcceptedBy: user.id },
       subscription_data: {
-        metadata: { organizationId: organization.id },
+        metadata: { organizationId: organization.id, termsVersion: "2026-09-29", termsAcceptedAt: acceptedAt, termsAcceptedBy: user.id },
       },
       line_items: [
         { price: STRIPE_PRICE_BASE, quantity: 1 },
@@ -64,6 +68,7 @@ export async function createCheckoutSession(
       cancel_url: `${appUrl}/dashboard/billing?canceled=1`,
     });
     sessionUrl = session.url;
+    await prisma.auditLog.create({ data: { id: randomUUID(), organizationId: organization.id, actorUserId: user.id, action: "billing.terms.accepted", entityType: "CheckoutSession", entityId: session.id, metadata: { version: "2026-09-29", acceptedAt, documents: ["cgv", "cgu", "dpa"] } } });
   } catch (error) {
     // Un stripeCustomerId périmé (ex. résidu d'un changement de mode
     // test/live) ou tout autre refus de Stripe ne doit jamais faire

@@ -37,6 +37,7 @@ export function MobileAppNotice({ mode }: { mode: "sign-in" | "sign-up" }) {
         <a href={mailto} className="mt-4 inline-flex items-center gap-2 rounded-lg border border-surface-border px-4 py-2.5 text-sm font-semibold text-ink">
           <Mail size={16} /> M&apos;envoyer le lien par e-mail
         </a>
+        <div className="mt-4 flex flex-wrap gap-4 text-sm font-semibold text-brand-primary-dark"><Link href="/services?demo=1" className="underline">Voir la démonstration</Link><Link href="/contact" className="underline">Demander une présentation</Link></div>
         <p className="mt-4 text-sm text-ink-soft">
           En attendant, testez votre suivi RH en deux minutes :{" "}
           <Link href="/diagnostic" className="font-semibold text-brand-primary-dark underline underline-offset-2">faire le diagnostic</Link>.

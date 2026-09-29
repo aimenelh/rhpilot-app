@@ -6,10 +6,11 @@ import type { MetadataRoute } from "next";
 // exigent une connexion, jamais accessibles à un robot anonyme.
 export default function robots(): MetadataRoute.Robots {
   return {
+    sitemap: "https://rhpilot.fr/sitemap.xml",
     rules: {
       userAgent: "*",
       allow: "/",
-      disallow: ["/dashboard", "/api"],
+      disallow: ["/dashboard", "/api", "/espace", "/sign-in", "/sign-up", "/join", "/welcome", "/entering", "/creating-account"],
     },
   };
 }
