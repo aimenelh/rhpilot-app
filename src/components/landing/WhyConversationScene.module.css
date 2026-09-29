@@ -187,3 +187,5 @@
   .chatTrack { transform: translateY(-43px); }
   .messageRow, .typing, .contextCard { opacity: 1; }
 }
+
+.phoneFrame { inset: 1.6% 24% 10%; width: 51%; height: 88%; border: 7px solid #202020; border-radius: 42px; background: #202020; box-shadow: 0 22px 50px #14151a30; }

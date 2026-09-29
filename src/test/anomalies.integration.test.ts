@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { prisma } from "@/lib/prisma";
 import { getAnomalies } from "@/lib/anomalies";
@@ -72,6 +73,7 @@ async function createFixtures() {
   });
   await prisma.employeeEvent.create({
     data: {
+      id: randomUUID(),
       organizationId: org.id,
       employeeId: probationAlreadyTriggered.id,
       eventTemplateId: eventTemplateProbation.id,
@@ -237,7 +239,7 @@ describe("getAnomalies — mise en sourdine (AnomalyDismissal)", () => {
 
   it("une mise en sourdine définitive (sans snoozedUntil) masque l'anomalie", async () => {
     const key = `no-manager-${f.withoutManager.id}`;
-    await prisma.anomalyDismissal.create({ data: { organizationId: f.org.id, anomalyKey: key } });
+    await prisma.anomalyDismissal.create({ data: { id: randomUUID(), organizationId: f.org.id, anomalyKey: key } });
 
     const anomalies = await getAnomalies(f.org.id);
     expect(anomalies.find((a) => a.key === key)).toBeUndefined();
@@ -246,7 +248,7 @@ describe("getAnomalies — mise en sourdine (AnomalyDismissal)", () => {
   it("une mise en sourdine avec une date future masque encore l'anomalie", async () => {
     const key = `no-manager-${f.onboardingMissing.id}`;
     await prisma.anomalyDismissal.create({
-      data: { organizationId: f.org.id, anomalyKey: key, snoozedUntil: daysFromNow(10) },
+      data: { id: randomUUID(), organizationId: f.org.id, anomalyKey: key, snoozedUntil: daysFromNow(10) },
     });
 
     const anomalies = await getAnomalies(f.org.id);
@@ -256,7 +258,7 @@ describe("getAnomalies — mise en sourdine (AnomalyDismissal)", () => {
   it("une mise en sourdine dont la date est déjà passée laisse réapparaître l'anomalie", async () => {
     const key = `no-manager-${f.onboardingTooRecent.id}`;
     await prisma.anomalyDismissal.create({
-      data: { organizationId: f.org.id, anomalyKey: key, snoozedUntil: daysAgo(1) },
+      data: { id: randomUUID(), organizationId: f.org.id, anomalyKey: key, snoozedUntil: daysAgo(1) },
     });
 
     const anomalies = await getAnomalies(f.org.id);

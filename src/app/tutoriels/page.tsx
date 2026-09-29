@@ -5,7 +5,7 @@ import { TutorialGuide } from "@/components/landing/TutorialGuide";
 import styles from "@/components/landing/TutorialGuide.module.css";
 
 export const metadata: Metadata = {
-  title: "Tutoriels | RH Pilot",
+  title: "Tutoriels",
   description: "Découvrez RH Pilot en vidéo et prenez rapidement en main les principales fonctionnalités du logiciel.",
 };
 

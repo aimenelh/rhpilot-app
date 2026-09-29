@@ -1,16 +1,17 @@
 import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { isOrganizationAdmin } from "@/lib/accessPolicy";
 import { prisma } from "@/lib/prisma";
 import { readPayslipDocument } from "@/lib/payroll/payslip-storage";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 function safeFilePart(value: string): string {
   return value.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 80) || "salarie";
 }
 
 export async function GET(_request: Request, { params }: { params: { payslipId: string } }) {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return new NextResponse("Non autorisé", { status: 401 });
   // Les bulletins de tous les salariés : réservé aux administrateurs, comme la paie.

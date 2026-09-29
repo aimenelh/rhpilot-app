@@ -7,8 +7,11 @@ import { getUserDisplayName } from "@/lib/displayName";
 import { formatDate } from "@/lib/format";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { MemberControls } from "./MemberControls";
 import { InviteForm } from "./InviteForm";
 import { RevokeInvitationButton } from "./RevokeInvitationButton";
+
+export const metadata = { title: "Équipe" };
 
 export const dynamic = "force-dynamic";
 
@@ -88,7 +91,7 @@ export default async function TeamPage() {
             <h2 className="text-sm font-semibold text-ink">Inviter quelqu&apos;un</h2>
           </div>
           <p className="mt-1.5 text-sm text-ink-soft">
-            Un email avec un lien d&apos;invitation lui sera envoyé, valable 7 jours.
+            Un e-mail avec un lien d&apos;invitation lui sera envoyé, valable 7 jours.
           </p>
           <InviteForm />
         </Card>
@@ -106,7 +109,7 @@ export default async function TeamPage() {
             return (
               <li
                 key={m.id}
-                className="-mx-2.5 flex items-center justify-between gap-3 rounded-lg px-2.5 py-3 transition-colors duration-150 hover:bg-surface-subtle/70"
+                className="-mx-2.5 flex flex-wrap items-center justify-between gap-3 rounded-lg px-2.5 py-3 transition-colors duration-150 hover:bg-surface-subtle/70"
               >
                 <div className="flex items-center gap-3">
                   <span
@@ -132,6 +135,7 @@ export default async function TeamPage() {
                   </div>
                 </div>
                 <Badge tone="neutral">{ACCESS_ROLE_LABELS[m.accessRole] ?? m.accessRole}</Badge>
+                {!isSelf && m.accessRole !== "OWNER" && (membership.accessRole === "OWNER" || m.accessRole === "MEMBER") && <div className="w-full"><MemberControls memberId={m.id} accessRole={m.accessRole} functionalRole={m.functionalRole} isOwner={membership.accessRole === "OWNER"} /></div>}
               </li>
             );
           })}

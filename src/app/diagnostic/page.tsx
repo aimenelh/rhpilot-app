@@ -8,7 +8,7 @@ import s from "@/components/landing/MarketingV2.module.css";
 import p from "@/components/landing/InnerPages.module.css";
 import { DiagnosticQuiz } from "@/components/landing/DiagnosticQuiz";
 export const metadata = {
-  title: "Diagnostic RH, RH Pilot",
+  title: "Diagnostic RH",
   description: "Six questions pour faire le point sur votre organisation RH.",
 };
 export default function DiagnosticPage() {

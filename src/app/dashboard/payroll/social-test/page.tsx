@@ -1,11 +1,18 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getCurrentMembership } from "@/lib/auth";
+import { notFound, redirect } from "next/navigation";
+
 import { prisma } from "@/lib/prisma";
 import { resolveOrganizationLegalCategory } from "@/lib/payroll/social-organization-context";
 import { calculateSocialPayroll } from "@/lib/payroll/social-engine";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 export const dynamic = "force-dynamic";
+
+// Page de contrôle interne du moteur social : jamais visible en production,
+// sauf si PAYROLL_INTERNAL_TOOLS=true est défini explicitement.
+function internalToolsEnabled() {
+  return process.env.NODE_ENV !== "production" || process.env.PAYROLL_INTERNAL_TOOLS === "true";
+}
 
 type SearchParams = {
   status?: string;
@@ -21,7 +28,8 @@ type SearchParams = {
 async function testSocialPayroll() {
   "use server";
 
-  const membership = await getCurrentMembership();
+  if (!internalToolsEnabled()) notFound();
+  const membership = await getPayrollMembership();
   if (!membership) redirect("/dashboard");
   if (membership.accessRole !== "OWNER" && membership.accessRole !== "ADMIN") {
     redirect("/dashboard/payroll/social-test?status=error&error=Accès%20réservé%20aux%20administrateurs.");
@@ -106,7 +114,8 @@ function formatEuro(value?: string) {
 }
 
 export default async function SocialPayrollTestPage({ searchParams }: { searchParams?: SearchParams }) {
-  const membership = await getCurrentMembership();
+  if (!internalToolsEnabled()) notFound();
+  const membership = await getPayrollMembership();
   if (!membership) redirect("/dashboard");
 
   const success = searchParams?.status === "success";

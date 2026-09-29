@@ -166,8 +166,8 @@ export function CreateOrganizationForm() {
                 disabled={isJoining}
               />
               <FieldHint>
-                Collez le lien tel qu&apos;il apparaît dans l&apos;email reçu. L&apos;invitation
-                doit avoir été envoyée à la même adresse email que celle utilisée pour vous
+                Collez le lien tel qu&apos;il apparaît dans l&apos;e-mail reçu. L&apos;invitation
+                doit avoir été envoyée à la même adresse e-mail que celle utilisée pour vous
                 connecter ici.
               </FieldHint>
             </div>

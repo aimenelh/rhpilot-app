@@ -102,7 +102,10 @@ export function resolveMinimumSalary(input: {
   }
 
   if (input.collectiveMinimum?.status === "APPLICABLE") {
-    collectiveMonthlyMinimumCents = input.collectiveMinimum.monthlyMinimumCents;
+    // Les grilles conventionnelles sont fixées pour un temps plein : un temps partiel
+    // les applique au prorata de son horaire (jamais au-delà du temps plein).
+    const ratio = Math.min(1, exactMonthlyHours(input.monthlyHours) / exactMonthlyHours(input.smic.monthlyHoursAt35Hours));
+    collectiveMonthlyMinimumCents = Math.round(input.collectiveMinimum.monthlyMinimumCents * ratio);
   }
 
   const appliedMonthlyMinimumCents = Math.max(

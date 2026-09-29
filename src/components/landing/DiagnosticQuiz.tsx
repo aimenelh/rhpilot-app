@@ -15,7 +15,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { submitDiagnostic, type DiagnosticAnswers } from "@/app/diagnostic/actions";
+import { sendDiagnosticByEmail, submitDiagnostic, type DiagnosticAnswers } from "@/app/diagnostic/actions";
+import { RISK_AREA_TEXT } from "@/lib/diagnostic";
 
 type Option = { label: string; risky: boolean };
 type Question = { id: keyof DiagnosticAnswers; question: string; options: Option[]; riskArea?: string };
@@ -82,33 +83,17 @@ const QUESTIONS: Question[] = [
   },
 ];
 
-const RISK_AREAS: Record<string, { label: string; icon: typeof Hourglass; tip: string }> = {
-  "periode-essai": {
-    label: "Suivi des périodes d'essai",
-    icon: Hourglass,
-    tip: "RH Pilot calcule automatiquement le délai de prévenance et vous alerte avant l'échéance, pas après.",
-  },
-  "visite-medicale": {
-    label: "Visites médicales d'embauche",
-    icon: Stethoscope,
-    tip: "Un parcours dédié déclenche le suivi dès la prise de poste, avec un rappel avant les trois mois.",
-  },
-  "responsabilites": {
-    label: "Répartition des responsabilités",
-    icon: UserRoundX,
-    tip: "Chaque tâche a un responsable visible, jamais deviné au dernier moment.",
-  },
-  "entretien-pro": {
-    label: "Entretiens professionnels",
-    icon: GraduationCap,
-    tip: "RH Pilot vous rappelle l'échéance des 2 ans avant qu'elle ne devienne un risque de sanction.",
-  },
-  "surcharge": {
-    label: "Charge administrative",
-    icon: Clock,
-    tip: "Moins de relances manuelles à faire soi-même, plus de temps pour le reste.",
-  },
+const RISK_ICONS: Record<string, typeof Hourglass> = {
+  "periode-essai": Hourglass,
+  "visite-medicale": Stethoscope,
+  responsabilites: UserRoundX,
+  "entretien-pro": GraduationCap,
+  surcharge: Clock,
 };
+
+const RISK_AREAS: Record<string, { label: string; icon: typeof Hourglass; tip: string }> = Object.fromEntries(
+  Object.entries(RISK_AREA_TEXT).map(([key, text]) => [key, { ...text, icon: RISK_ICONS[key] ?? Clock }]),
+);
 
 export function DiagnosticQuiz() {
   const [step, setStep] = useState(0);
@@ -116,6 +101,8 @@ export function DiagnosticQuiz() {
   const [email, setEmail] = useState("");
   const [emailSent, setEmailSent] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [responseId, setResponseId] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState("");
 
   const isResult = step === QUESTIONS.length;
   const current = QUESTIONS[step];
@@ -127,26 +114,33 @@ export function DiagnosticQuiz() {
       setStep(step + 1);
     } else {
       setStep(QUESTIONS.length);
-      void saveDiagnostic(next as DiagnosticAnswers, null);
+      void saveDiagnostic(next as DiagnosticAnswers);
     }
   }
 
-  async function saveDiagnostic(finalAnswers: DiagnosticAnswers, providedEmail: string | null) {
+  async function saveDiagnostic(finalAnswers: DiagnosticAnswers) {
     const riskAreas = QUESTIONS.filter((q) => {
       const chosen = finalAnswers[q.id];
       const option = q.options.find((o) => o.label === chosen);
       return option?.risky && q.riskArea;
     }).map((q) => q.riskArea!);
 
-    await submitDiagnostic(finalAnswers, riskAreas, providedEmail);
+    const result = await submitDiagnostic(finalAnswers, riskAreas).catch(() => undefined);
+    if (result?.id) setResponseId(result.id);
   }
 
   async function handleEmailSubmit() {
     if (!email.trim()) return;
+    if (!responseId) {
+      setEmailError("L'envoi est indisponible pour le moment.");
+      return;
+    }
     setSubmitting(true);
-    await saveDiagnostic(answers as DiagnosticAnswers, email.trim());
+    setEmailError("");
+    const result = await sendDiagnosticByEmail(responseId, email.trim()).catch(() => ({ sent: false, error: "L'envoi a échoué. Réessayez plus tard." }));
     setSubmitting(false);
-    setEmailSent(true);
+    if (result.sent) setEmailSent(true);
+    else setEmailError(result.error);
   }
 
   const riskAreas = isResult
@@ -234,9 +228,9 @@ export function DiagnosticQuiz() {
           {!emailSent ? (
             <Card className="mt-4">
               <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-                <Mail size={14} /> Recevoir ce diagnostic par email
+                <Mail size={14} /> Recevoir ce diagnostic par e-mail
               </p>
-              <p className="mt-1 text-xs text-ink-faint">Optionnel, pour le retrouver plus tard.</p>
+              <p className="mt-1 text-xs text-ink-faint">Optionnel : vous le recevez une seule fois, sans inscription à une liste.</p>
               <div className="mt-3 flex gap-2">
                 <input
                   type="email"
@@ -251,13 +245,14 @@ export function DiagnosticQuiz() {
                   disabled={submitting || !email.trim()}
                   className="rounded-lg bg-brand-primary px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
-                  {submitting ? "..." : "Envoyer"}
+                  {submitting ? "Envoi…" : "Envoyer"}
                 </button>
               </div>
+              {emailError ? <p role="alert" className="mt-2 text-xs text-accent-rose">{emailError}</p> : null}
             </Card>
           ) : (
             <Card className="mt-4 text-center">
-              <p className="text-sm font-medium text-accent-teal">Diagnostic enregistré.</p>
+              <p className="text-sm font-medium text-ink">Diagnostic envoyé à {email.trim()}.</p>
             </Card>
           )}
 

@@ -6,7 +6,7 @@ import { Reveal } from "@/components/landing/Reveal";
 import { Card } from "@/components/ui/Card";
 
 export const metadata = {
-  title: "Politique de confidentialité, RH Pilot",
+  title: "Politique de confidentialité",
   description:
     "Quelles données RH Pilot collecte, pourquoi, avec qui elles sont partagées et où elles sont hébergées, sous-traitant par sous-traitant.",
 };
@@ -14,22 +14,23 @@ export const metadata = {
 // Dernière révision : garder cette date à jour à chaque modification
 // du contenu ci-dessous, c'est la seule chose que la loi demande de
 // signaler explicitement en haut d'une politique de confidentialité.
-const LAST_UPDATED = "24 septembre 2026";
+const LAST_UPDATED = "29 septembre 2026";
 
 const SUBPROCESSORS = [
+  { name: "Stripe", role: "Paiement, abonnement et factures", location: "Traitements internationaux, dont États-Unis", detail: "Stripe reçoit les coordonnées nécessaires à la facturation et au paiement. RH Pilot ne stocke pas les numéros de carte. Stripe traite aussi certaines données comme responsable distinct pour ses obligations de sécurité et de conformité." },
   {
     name: "Clerk",
     role: "Authentification (connexion, gestion des comptes)",
     location: "États-Unis",
     detail:
-      "Les données de connexion (email, identité) sont stockées aux États-Unis. Clerk dispose d'un représentant pour la protection des données en Europe et s'appuie sur les clauses contractuelles types pour encadrer ce transfert, conformément au RGPD.",
+      "Les données de connexion (e-mail, identité) sont stockées aux États-Unis. Clerk dispose d'un représentant pour la protection des données en Europe et s'appuie sur les clauses contractuelles types pour encadrer ce transfert, conformément au RGPD.",
   },
   {
     name: "Neon",
     role: "Base de données (salariés, parcours, tâches)",
     location: "Europe (Francfort, Allemagne)",
     detail:
-      "L'ensemble des données RH que vous saisissez dans RH Pilot est hébergé sur ce serveur, en Europe.",
+      "La base de données RH est configurée à Francfort. Les autres prestataires peuvent traiter certaines données dans d’autres régions, comme indiqué ci-dessous.",
   },
   {
     name: "Anthropic",
@@ -47,10 +48,10 @@ const SUBPROCESSORS = [
   },
   {
     name: "Resend",
-    role: "Envoi des emails (invitations, résumés de tâches)",
+    role: "Envoi des e-mails (invitations, résumés de tâches)",
     location: "États-Unis",
     detail:
-      "Les emails sont envoyés depuis l'Europe, mais les métadonnées de compte sont stockées aux États-Unis. Resend est certifié dans le cadre du Data Privacy Framework UE-États-Unis.",
+      "Les e-mails sont envoyés depuis l'Europe, mais les métadonnées de compte sont stockées aux États-Unis. Resend est certifié dans le cadre du Data Privacy Framework UE-États-Unis.",
   },
   {
     name: "Vercel Analytics",
@@ -108,7 +109,7 @@ export default function ConfidentialitePage() {
               responsabilités différentes au sens du RGPD.
             </p>
             <p>
-              Pour les données de votre compte (email, identité, préférences),
+              Pour les données de votre compte (e-mail, identité, préférences),
               RH Pilot est{" "}
               <strong className="font-semibold text-ink">
                 responsable du traitement
@@ -132,7 +133,7 @@ export default function ConfidentialitePage() {
               <strong className="font-semibold text-ink">
                 Données de compte
               </strong>{" "}
-              : email, nom, mot de passe (géré directement par Clerk, jamais
+              : e-mail, nom, mot de passe (géré directement par Clerk, jamais
               stocké par RH Pilot lui-même).
             </p>
             <p>
@@ -140,7 +141,7 @@ export default function ConfidentialitePage() {
                 Données RH que vous saisissez
               </strong>{" "}
               : identité des salariés, dates de contrat, période d&apos;essai,
-              visites médicales, tâches et échéances associées.
+              visites médicales, tâches et échéances associées, rémunérations, taux de prélèvement, NIR chiffré lorsque requis, bulletins et justificatifs d’absence. Aucun diagnostic médical n’est demandé.
             </p>
             <p>
               <strong className="font-semibold text-ink">
@@ -160,9 +161,11 @@ export default function ConfidentialitePage() {
 
           <Section title="3. Pourquoi ces données sont collectées">
             <p>
-              Faire fonctionner RH Pilot : calculer vos échéances, générer vos
-              parcours RH, répondre à vos questions. Rien de plus. Aucune donnée
-              n&apos;est vendue, louée ou utilisée à des fins publicitaires.
+              La gestion des comptes, l’assistance et l’abonnement reposent sur l’exécution du contrat.
+              La facturation répond aussi aux obligations comptables et fiscales. La sécurité et la prévention des abus reposent sur l’intérêt légitime de protéger le service.
+              La mesure d’audience facultative repose sur votre consentement, révocable depuis « Gérer mes cookies ».
+              Pour les données RH, votre employeur détermine la base légale (contrat de travail, obligations légales ou autre base applicable) ; RH Pilot agit sur ses instructions, selon le contrat de sous-traitance.
+              Les données ne sont pas vendues ni utilisées à des fins publicitaires.
             </p>
           </Section>
 
@@ -202,10 +205,10 @@ export default function ConfidentialitePage() {
 
           <Section title="5. Combien de temps ces données sont conservées">
             <p>
-              Vos données RH sont conservées tant que votre compte est actif.
-              Vous pouvez exporter l&apos;ensemble de vos données à tout moment
-              depuis votre espace, ou demander leur suppression complète en nous
-              contactant.
+              Les données de compte sont conservées pendant la relation contractuelle. Après clôture, leur suppression peut être demandée ; les données nécessaires à un litige sont conservées jusqu’à cinq ans et les pièces comptables dix ans.
+              Les données RH restent sous les instructions de l’employeur ; après la fin du service, la restitution et la suppression sont organisées selon le contrat de sous-traitance.
+              Les documents déjà remis dans l’espace salarié suivent la disponibilité prévue dans les CGU (cinquante ans pour les bulletins). L’archivage d’un salarié n’est pas une suppression.
+              L’export de l’organisation contient les données structurées ; les fichiers se téléchargent séparément depuis les fiches salariés et l’archive de documents.
             </p>
             <p>
               Les questions posées au Copilote sont conservées au maximum 30
@@ -228,8 +231,7 @@ export default function ConfidentialitePage() {
 
           <Section title="7. Cookies">
             <p>
-              RH Pilot n&apos;utilise aucun cookie de mesure d&apos;audience ou
-              publicitaire. Clerk dépose un cookie technique indispensable au
+              Vercel Analytics est chargé uniquement si vous acceptez la mesure d’audience ; il ne dépose pas de cookie de mesure d’audience. Vous pouvez modifier ce choix via « Gérer mes cookies » en bas de page. Clerk dépose un cookie technique indispensable au
               maintien de votre connexion : sans lui, vous seriez déconnecté à
               chaque page. Ce type de cookie est exempté de consentement par la
               loi, car strictement nécessaire au fonctionnement du service.
@@ -241,7 +243,7 @@ export default function ConfidentialitePage() {
               Isolation stricte des données entre organisations : une entreprise
               ne peut jamais voir les données d&apos;une autre. Authentification
               déléguée à un spécialiste plutôt que gérée en interne. Connexions
-              chiffrées de bout en bout.
+              protégées par TLS. Le NIR est chiffré avant stockage. Les nouveaux documents utilisent le chiffrement applicatif AES-256-GCM lorsque la clé documentaire est configurée ; les anciens documents ne sont pas automatiquement rechiffrés. Il ne s’agit pas d’un chiffrement de bout en bout.
             </p>
           </Section>
 
@@ -259,10 +261,10 @@ export default function ConfidentialitePage() {
               Pour toute question sur cette politique ou pour exercer vos
               droits, écrivez à{" "}
               <Link
-                href="mailto:aimenoffi@gmail.com"
+                href="mailto:contact@rhpilot.fr"
                 className="font-medium text-brand-primary hover:underline"
               >
-                aimenoffi@gmail.com
+                contact@rhpilot.fr
               </Link>
               .
             </p>

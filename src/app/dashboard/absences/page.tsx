@@ -4,6 +4,8 @@ import { isOrganizationAdmin } from "@/lib/accessPolicy";
 import { prisma } from "@/lib/prisma";
 import AbsencesWorkspace, { type AbsenceWorkspaceItem } from "./AbsencesWorkspace";
 
+export const metadata = { title: "Absences" };
+
 export const dynamic = "force-dynamic";
 
 function isAdmin(role: string) {
@@ -25,7 +27,13 @@ export default async function AbsencesPage() {
       where: { organizationId: membership.organizationId },
       include: {
         employee: { select: { firstName: true, lastName: true, position: true } },
-        justifications: { orderBy: { createdAt: "desc" }, take: 1 },
+        // Jamais le fichier lui-même (stocké en base, jusqu'à plusieurs Mo) : la page n'a besoin
+        // que de savoir s'il existe. Il s'ouvre via /api/absences/justifications/[id].
+        justifications: {
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { id: true, status: true, fileName: true, mimeType: true, sizeBytes: true, rejectionReason: true },
+        },
       },
       orderBy: [{ startDate: "desc" }, { createdAt: "desc" }],
       take: 500,
@@ -54,7 +62,8 @@ export default async function AbsencesPage() {
             fileName: justification.fileName,
             mimeType: justification.mimeType,
             sizeBytes: justification.sizeBytes,
-            storageKey: justification.storageKey,
+            // Un document déposé renseigne toujours son type et sa taille avec sa clé de stockage.
+            hasFile: Boolean(justification.mimeType && justification.sizeBytes),
             rejectionReason: justification.rejectionReason,
           }
         : null,

@@ -1,7 +1,7 @@
 import { ArticleLayout, H2, P, List } from "@/components/landing/ArticleLayout";
 
 export const metadata = {
-  title: "IA et recrutement : ce que la CNIL contrôle en 2026, RH Pilot",
+  title: "IA et recrutement : ce que la CNIL contrôle en 2026",
   description:
     "Le recrutement est devenu une priorité de contrôle de la CNIL en 2026, au moment où l'IA Act européen classe les outils de tri de CV comme systèmes à haut risque.",
 };

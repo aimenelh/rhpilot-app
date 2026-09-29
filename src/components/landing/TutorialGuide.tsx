@@ -1,4 +1,5 @@
 "use client";
+import Image from "next/image";
 
 import { useEffect, useRef, useState } from "react";
 import {
@@ -230,7 +231,7 @@ export function TutorialGuide() {
             <div className={styles.cover}>
               <div className={styles.coverContent}>
                 <p className={styles.chapterNumber}>
-                  {phase === "outro" ? <><Check size={15} /> Vidéo terminée</> : `Tutoriel ${String(activeIndex + 1).padStart(2, "0")} / 08`}
+                  {phase === "outro" ? <><Check size={15} /> Vidéo terminée</> : `Vidéo ${activeIndex + 1} sur ${steps.length}`}
                 </p>
                 <h2 className={styles.coverTitle}>
                   {phase === "outro" ? (activeIndex === steps.length - 1 ? "À vous de jouer." : "On continue ?") : active.title}
@@ -260,7 +261,7 @@ export function TutorialGuide() {
                 </div>
                 {phase === "intro" && <p className={styles.coverDuration}>{active.duration}</p>}
               </div>
-              <img src="/illustrations/tutorials/mascot-presenter.webp" alt="" width={1536} height={1024} className={styles.coverArt} />
+              <Image src="/illustrations/tutorials/mascot-presenter.webp" alt="" width={1536} height={1024} sizes="(max-width: 700px) 160px, 350px" className={styles.coverArt} />
             </div>
           )}
           {phase === "video" && (

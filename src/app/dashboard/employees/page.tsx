@@ -10,13 +10,16 @@ import { Input } from "@/components/ui/Field";
 import { Mascot } from "@/components/Mascot";
 import { getUserDisplayName } from "@/lib/displayName";
 import { formatDate } from "@/lib/format";
-import { archiveEmployee, reactivateEmployee } from "./actions";
+import { anonymizeEmployee, archiveEmployee, reactivateEmployee } from "./actions";
+import { AnonymizeEmployeeButton } from "@/components/employees/AnonymizeEmployeeButton";
 import { generateDemoOrganization, archiveAllEmployees } from "./demoActions";
 import { DemoOrgSubmitButton } from "./DemoOrgSubmitButton";
 import { ArchiveAllButton } from "@/components/employees/ArchiveAllButton";
 import { EmployeeRowMenu } from "@/components/employees/EmployeeRowMenu";
 import { FlashToast } from "@/components/ui/FlashToast";
 import { employeeAccessWhere, isOrganizationAdmin } from "@/lib/accessPolicy";
+
+export const metadata = { title: "Salariés" };
 
 export const dynamic = "force-dynamic";
 
@@ -36,15 +39,18 @@ export default async function EmployeesPage({
     where: {
       organizationId: membership.organizationId,
       deletedAt: status === "archived" ? { not: null } : null,
-      ...employeeAccessWhere(membership),
-      ...(query
-        ? {
-            OR: [
-              { firstName: { contains: query, mode: "insensitive" } },
-              { lastName: { contains: query, mode: "insensitive" } },
-            ],
-          }
-        : {}),
+      // AND : la recherche (un OR) ne doit jamais remplacer le filtre d'accès (un OR aussi).
+      AND: [
+        employeeAccessWhere(membership),
+        query
+          ? {
+              OR: [
+                { firstName: { contains: query, mode: "insensitive" } },
+                { lastName: { contains: query, mode: "insensitive" } },
+              ],
+            }
+          : {},
+      ],
     },
     include: { managerMembership: { include: { user: true } } },
     orderBy: status === "archived" ? { deletedAt: "desc" } : { lastName: "asc" },
@@ -202,7 +208,7 @@ export default async function EmployeesPage({
                           </Link>
                         )}
                       </td>
-                      <td className="px-5 py-4 text-ink-soft">{employee.position || "—"}</td>
+                      <td className="px-5 py-4 text-ink-soft">{employee.position || "Non renseigné"}</td>
                       <td className="px-5 py-4 text-ink-soft">
                         {formatDate(status === "archived" ? employee.deletedAt! : employee.hireDate)}
                       </td>
@@ -218,14 +224,24 @@ export default async function EmployeesPage({
                       </td>
                       {status === "archived" && (
                         <td className="px-5 py-4 text-right">
-                          {canManageBulkData && <form action={reactivateEmployee.bind(null, employee.id)}> 
-                            <button
-                              type="submit"
-                              className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-primary hover:underline"
-                            >
-                              <ArchiveRestore size={13} /> Réactiver
-                            </button>
-                          </form>}
+                          {canManageBulkData && (
+                            <div className="flex items-center justify-end gap-4">
+                              <form action={reactivateEmployee.bind(null, employee.id)}>
+                                <button
+                                  type="submit"
+                                  className="inline-flex items-center gap-1.5 text-xs font-medium text-brand-primary hover:underline"
+                                >
+                                  <ArchiveRestore size={13} /> Réactiver
+                                </button>
+                              </form>
+                              {employee.firstName !== "Salarié" || !employee.lastName.startsWith("anonymisé") ? (
+                                <AnonymizeEmployeeButton
+                                  action={anonymizeEmployee.bind(null, employee.id)}
+                                  employeeName={`${employee.firstName} ${employee.lastName}`}
+                                />
+                              ) : null}
+                            </div>
+                          )}
                         </td>
                       )}
                       {status === "active" && canManageBulkData && (

@@ -1,8 +1,24 @@
 /** @type {import('next').NextConfig} */
+// En-têtes de sécurité appliqués à toutes les réponses. Pas encore de CSP stricte :
+// Clerk et Stripe chargent des scripts et des iframes, une CSP doit d'abord être
+// testée en production (en mode Report-Only) pour ne pas casser la connexion.
+const securityHeaders = [
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  { key: "X-Frame-Options", value: "DENY" },
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), browsing-topics=()" },
+  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
+];
+
 const nextConfig = {
   reactStrictMode: true,
+  async headers() {
+    return [{ source: "/:path*", headers: securityHeaders }];
+  },
+  // ESLint tourne dans la CI (npm run lint) ; une alerte ne doit pas bloquer un déploiement.
+  eslint: { ignoreDuringBuilds: true },
   images: {
-    unoptimized: true,
+    formats: ["image/avif", "image/webp"],
   },
   experimental: {
     // Les dépôts documentaires sont plafonnés à 4 Mo côté métier.

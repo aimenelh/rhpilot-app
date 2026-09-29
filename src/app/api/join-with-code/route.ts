@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
+import { invitationTokenWhere } from "@/lib/invitationToken";
 
 /**
  * Deuxième porte d'entrée vers la même invitation que celle envoyée
@@ -47,9 +48,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Veuillez coller un code ou un lien d'invitation." }, { status: 400 });
   }
 
-  const invitation = await prisma.invitation.findUnique({
-    where: { token },
-    include: { organization: true },
+  const invitation = await prisma.invitation.findFirst({
+    where: invitationTokenWhere(token),
+    include: { organization: { select: { id: true, name: true } } },
   });
 
   if (!invitation) {
@@ -102,5 +103,6 @@ export async function POST(request: Request) {
     });
   });
 
-  return NextResponse.json({ organization: invitation.organization }, { status: 200 });
+  // Seul le nom est renvoyé : jamais les identifiants de facturation de l'organisation.
+  return NextResponse.json({ organization: { name: invitation.organization.name } }, { status: 200 });
 }

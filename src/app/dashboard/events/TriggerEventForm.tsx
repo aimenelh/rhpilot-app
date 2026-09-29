@@ -77,7 +77,7 @@ export function TriggerEventForm({
       </div>
       <p className="mt-1.5 text-sm text-ink-soft">
         Génère automatiquement le plan d&apos;action complet : tâches, échéances et
-        responsables affectés en un clic.
+        responsables affectés automatiquement.
       </p>
 
       <form action={formAction} className="mt-4 flex flex-col gap-4" noValidate>

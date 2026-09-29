@@ -4,6 +4,8 @@ import type { Config } from "tailwindcss";
 // affirmé (brand.primary), avec une variante plus sombre pour les
 // accents secondaires (brand.primary-dark). accent.teal/amber/rose ont
 // un sens précis (succès/avertissement/critique) dans toute l'app.
+// Contrastes : chaque couleur de texte atteint 4,5:1 sur blanc (WCAG AA) :
+// corail 4,85, turquoise 5,47, ambre 5,02, texte discret 5,30. Le logo garde son corail d'origine.
 const config: Config = {
   content: ["./src/**/*.{ts,tsx}"],
   theme: {
@@ -12,7 +14,7 @@ const config: Config = {
         ink: {
           DEFAULT: "#14151A",
           soft: "#4A4A4D",
-          faint: "#8C8C90",
+          faint: "#6B6B70",
         },
         surface: {
           DEFAULT: "#FFFFFF",
@@ -20,12 +22,12 @@ const config: Config = {
           border: "#E4E7EE",
         },
         brand: {
-          primary: "#E8432E",
+          primary: "#D2381F",
           "primary-dark": "#B8321F",
         },
         accent: {
-          teal: "#14B8A6",
-          amber: "#D97706",
+          teal: "#0F766E",
+          amber: "#B45309",
           rose: "#E11D48",
         },
       },

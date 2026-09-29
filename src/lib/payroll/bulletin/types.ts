@@ -193,6 +193,9 @@ export type YearToDate = {
   hoursPaid: number;
   grossTotal: number;
   employerCost: number;
+  /** Forfait mobilités durables et prise en charge exonérée du transport public, cumulés sur l'année. */
+  sustainableMobility?: number;
+  publicTransportExempt?: number;
 };
 
 export type SickPayHistory = {

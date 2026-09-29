@@ -40,6 +40,16 @@ async function assertAlternanceMinimum(input: {
   if (input.profile.baseSalaryCents < (result.monthlyMinimumCents ?? Number.POSITIVE_INFINITY)) throw new Error(`Calcul bloqué pour le salarié ${input.employeeId} : salaire brut mensuel ${input.profile.baseSalaryCents / 100} € inférieur au minimum alternance applicable ${((result.monthlyMinimumCents ?? 0) / 100).toFixed(2)} €. ${result.explanation}`);
 }
 
+/** Code de la règle de minimum conventionnel propre à une classification (ex. MINIMUM_SALARY_ETAM_1.1). */
+export function collectiveMinimumRuleCode(classificationCode: string | null | undefined): string {
+  const code = classificationCode?.trim();
+  return code ? `MINIMUM_SALARY_${code}` : "MINIMUM_SALARY_NON_CLASSE";
+}
+
+function isMinimumSalaryRuleCode(ruleCode: string): boolean {
+  return ruleCode === "MINIMUM_GROSS_MONTHLY" || ruleCode.startsWith("MINIMUM_SALARY_");
+}
+
 async function resolvePayrollDepartment(organizationId: string): Promise<string | null> {
   const rows = await prisma.$queryRaw<Array<{ payrollDepartment: string | null }>>`SELECT "payrollDepartment" FROM "organizations" WHERE "id" = ${organizationId} LIMIT 1`;
   return rows[0]?.payrollDepartment?.trim() || null;
@@ -56,7 +66,7 @@ export async function resolveCollectiveAgreementFromPrisma(input: { organization
   const collectiveAgreementId = profile?.collectiveAgreementId ?? organization.collectiveAgreementId;
   if (!collectiveAgreementId) {
     const unresolved = resolveCollectiveAgreement({ organizationCollectiveAgreementId: null, employeeCollectiveAgreementId: null, periodDate: input.periodDate, ruleCode: input.ruleCode, versions: [], rules: [] });
-    if (input.ruleCode === "MINIMUM_GROSS_MONTHLY" && employee) await assertAlternanceMinimum({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate, payrollDepartment, employee, profile, collectiveResolution: unresolved });
+    if (isMinimumSalaryRuleCode(input.ruleCode) && employee) await assertAlternanceMinimum({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate, payrollDepartment, employee, profile, collectiveResolution: unresolved });
     return unresolved;
   }
   const [agreement, versions, rules] = await Promise.all([
@@ -66,10 +76,10 @@ export async function resolveCollectiveAgreementFromPrisma(input: { organization
   ]);
   if (!agreement || agreement.status !== "ACTIVE") {
     const unresolved: CollectiveAgreementResolutionResult = { status: "UNRESOLVED", code: "NO_VALIDATED_VERSION", message: `La convention ${collectiveAgreementId} n'est pas active dans le référentiel.` };
-    if (input.ruleCode === "MINIMUM_GROSS_MONTHLY" && employee) await assertAlternanceMinimum({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate, payrollDepartment, employee, profile, collectiveResolution: unresolved });
+    if (isMinimumSalaryRuleCode(input.ruleCode) && employee) await assertAlternanceMinimum({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate, payrollDepartment, employee, profile, collectiveResolution: unresolved });
     return unresolved;
   }
   const resolution = resolveCollectiveAgreement({ organizationCollectiveAgreementId: organization.collectiveAgreementId, employeeCollectiveAgreementId: profile?.collectiveAgreementId, periodDate: input.periodDate, ruleCode: input.ruleCode, versions: versions.map((version) => ({ ...version, status: normalizeAgreementStatus(version.status) })), rules: rules.map((rule) => ({ ...rule, status: normalizeRuleStatus(rule.status) })) });
-  if (input.ruleCode === "MINIMUM_GROSS_MONTHLY" && employee) await assertAlternanceMinimum({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate, payrollDepartment, employee, profile, collectiveResolution: resolution });
+  if (isMinimumSalaryRuleCode(input.ruleCode) && employee) await assertAlternanceMinimum({ organizationId: input.organizationId, employeeId: input.employeeId, periodDate: input.periodDate, payrollDepartment, employee, profile, collectiveResolution: resolution });
   return resolution;
 }

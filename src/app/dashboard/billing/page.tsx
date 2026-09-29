@@ -7,6 +7,26 @@ import { formatDate } from "@/lib/format";
 import { ManageSubscriptionButton } from "./ManageSubscriptionButton";
 import { UpgradeToProButton } from "./UpgradeToProButton";
 import { billableEmployeeWhere } from "@/lib/billingEmployeeScope";
+import { isStripeConfigured, stripe } from "@/lib/stripe";
+
+type InvoiceRow = { id: string; date: Date; amount: number; status: string | null; url: string | null };
+
+const INVOICE_STATUS: Record<string, string> = { paid: "Payée", open: "À régler", void: "Annulée", uncollectible: "Impayée", draft: "Brouillon" };
+const euros = (value: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(value);
+
+// Factures Stripe du client : jamais bloquant, la page reste affichée si Stripe ne répond pas.
+async function loadInvoices(customerId: string | null | undefined): Promise<InvoiceRow[] | null> {
+  if (!customerId || !isStripeConfigured()) return [];
+  try {
+    const invoices = await stripe.invoices.list({ customer: customerId, limit: 12 });
+    return invoices.data
+      .filter((invoice) => invoice.status !== "draft")
+      .map((invoice) => ({ id: invoice.id ?? invoice.number ?? String(invoice.created), date: new Date(invoice.created * 1000), amount: (invoice.total ?? 0) / 100, status: invoice.status ?? null, url: invoice.invoice_pdf ?? invoice.hosted_invoice_url ?? null }));
+  } catch (error) {
+    console.error("Factures Stripe indisponibles :", error);
+    return null;
+  }
+}
 import {
   estimatedProMonthlyPrice,
   FREE_TIER_LIMIT,
@@ -14,13 +34,15 @@ import {
   hasProAccess,
 } from "@/lib/billingPolicy";
 
+export const metadata = { title: "Abonnement" };
+
 // Ce que RH Pilot inclut réellement, identique sur les deux paliers —
 // seul le nombre de salariés distingue Gratuit de Pro. Jamais de
 // fonctionnalité présentée comme incluse si elle ne l'est pas.
 const INCLUDED_FEATURES = [
   "Parcours RH automatisés (embauche, période d'essai, visite médicale...)",
   "Détection proactive des anomalies et échéances",
-  "Rappels automatiques par email",
+  "Rappels automatiques par e-mail",
   "Assistant RH intégré",
 ];
 
@@ -44,7 +66,8 @@ export default async function BillingPage({
     organization?.subscriptionStatus
   );
   const canManageBilling = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
-  const monthlyEstimate = isPro ? estimatedProMonthlyPrice(employeeCount).toFixed(2) : null;
+  const monthlyEstimate = isPro ? euros(estimatedProMonthlyPrice(employeeCount)) : null;
+  const invoices = await loadInvoices(organization?.stripeCustomerId);
   const usageRatio = Math.min(employeeCount / FREE_TIER_LIMIT, 1);
 
   return (
@@ -88,7 +111,7 @@ export default async function BillingPage({
         </div>
         <p className="mt-2 text-sm text-ink-soft">
           {isPro
-            ? `${employeeCount} salarié${employeeCount > 1 ? "s" : ""} facturable${employeeCount > 1 ? "s" : ""} · ${monthlyEstimate} € estimés ce mois-ci`
+            ? `${employeeCount} salarié${employeeCount > 1 ? "s" : ""} facturable${employeeCount > 1 ? "s" : ""} · ${monthlyEstimate} HT estimés ce mois-ci`
             : hasSubscription
               ? "Votre abonnement nécessite une action. Ouvrez sa gestion pour régulariser la situation."
               : `Jusqu'à ${FREE_TIER_LIMIT} salariés inclus, sans engagement`}
@@ -156,7 +179,22 @@ export default async function BillingPage({
           "Historique de facturation". */}
       <div className="mt-8 border-t border-surface-border pt-6">
         <h2 className="text-sm font-semibold text-ink">Factures</h2>
-        <p className="mt-2 text-sm text-ink-faint">Aucune facture pour le moment.</p>
+        {invoices === null ? (
+          <p className="mt-2 text-sm text-ink-faint">Vos factures sont momentanément indisponibles. Retrouvez-les dans l&apos;espace de gestion de l&apos;abonnement.</p>
+        ) : invoices.length === 0 ? (
+          <p className="mt-2 text-sm text-ink-faint">Aucune facture pour le moment.</p>
+        ) : (
+          <ul className="mt-3 divide-y divide-surface-border text-sm">
+            {invoices.map((invoice) => (
+              <li key={invoice.id} className="flex items-center justify-between gap-3 py-2.5">
+                <span className="text-ink">{formatDate(invoice.date)}</span>
+                <span className="tabular-nums text-ink">{euros(invoice.amount)}</span>
+                <span className="text-ink-faint">{invoice.status ? INVOICE_STATUS[invoice.status] ?? invoice.status : ""}</span>
+                {invoice.url ? <a href={invoice.url} target="_blank" rel="noreferrer" className="font-medium text-brand-primary-dark hover:underline">PDF</a> : <span />}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { isSealedPayload, openDocumentPayload, sealDocumentPayload } from "@/lib/document-crypto";
 
 const PREFIX = "inline-db-v1:";
 const MAX_PDF_SIZE_BYTES = 5 * 1024 * 1024;
@@ -20,7 +21,7 @@ export function storePayslipDocument(pdf: Buffer): StoredPayslipDocument {
   if (pdf.subarray(0, 5).toString("latin1") !== "%PDF-") throw new Error("Le document à stocker n'est pas un PDF valide.");
 
   const sha256 = createHash("sha256").update(pdf).digest("hex");
-  const payload = pdf.toString("base64");
+  const payload = sealDocumentPayload(pdf);
 
   return {
     storageKey: `${PREFIX}${sha256}:${payload}`,
@@ -37,14 +38,15 @@ export function readPayslipDocument(storageKey: string): Buffer {
 
   const expectedHash = value.slice(0, separator);
   const payload = value.slice(separator + 1);
-  if (!/^[a-f0-9]{64}$/.test(expectedHash) || !payload || !/^[A-Za-z0-9+/]+={0,2}$/.test(payload) || payload.length % 4 !== 0) {
+  const sealed = isSealedPayload(payload);
+  const base64 = sealed ? payload.slice(5) : payload;
+  if (!/^[a-f0-9]{64}$/.test(expectedHash) || !base64 || !/^[A-Za-z0-9+/]+={0,2}$/.test(base64) || base64.length % 4 !== 0) {
     throw new Error("Clé de stockage de bulletin invalide.");
   }
 
-  const pdf = Buffer.from(payload, "base64");
+  const pdf = openDocumentPayload(payload);
   if (pdf.length === 0 || pdf.length > MAX_PDF_SIZE_BYTES) throw new Error("Taille du document stocké invalide.");
-  const canonicalPayload = pdf.toString("base64");
-  if (canonicalPayload !== payload) throw new Error("Charge base64 du bulletin invalide.");
+  if (!sealed && pdf.toString("base64") !== payload) throw new Error("Charge base64 du bulletin invalide.");
 
   const actualHash = createHash("sha256").update(pdf).digest("hex");
   if (actualHash !== expectedHash) throw new Error("Intégrité du bulletin PDF invalide.");

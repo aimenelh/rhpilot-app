@@ -1,9 +1,11 @@
 "use server";
 
+import { dayBefore } from "@/lib/payroll/profile-selection";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
-import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 export type PayrollProfileFormState = { error: string } | undefined;
 
@@ -18,7 +20,7 @@ export async function saveEmployeePayrollProfile(
   _prevState: PayrollProfileFormState,
   formData: FormData,
 ): Promise<PayrollProfileFormState> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {
@@ -108,7 +110,8 @@ export async function saveEmployeePayrollProfile(
     for (const profile of existingProfiles) {
       await tx.payrollProfile.update({
         where: { id: profile.id },
-        data: { effectiveUntil: effectiveFrom, updatedAt: new Date() },
+        // L'ancien profil s'arrête la veille : aucun jour n'est couvert par deux salaires.
+        data: { effectiveUntil: dayBefore(effectiveFrom), updatedAt: new Date() },
       });
     }
 

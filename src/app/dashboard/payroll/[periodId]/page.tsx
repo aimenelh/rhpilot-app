@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, ExternalLink, FileText } from "lucide-react";
-import { getCurrentMembership } from "@/lib/auth";
+
 import { prisma } from "@/lib/prisma";
 import { checkPayrollPeriodReadiness } from "@/lib/payroll/period-preflight";
 import { loadTerminations } from "@/lib/payroll/bulletin/period-loader";
@@ -20,6 +20,7 @@ import PayrollEntryGrid, { type GridEmployee } from "./PayrollEntryGrid";
 import PayrollAbsencesPanel, { type PeriodAbsenceRow } from "./PayrollAbsencesPanel";
 import PayslipReview, { type PayslipReviewRow } from "./PayslipReview";
 import { BackToEntryButton, ClosePeriodButton, RunCalculationButton } from "./PeriodActions";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -58,7 +59,7 @@ function warningLink(periodId: string, employeeId: string, warning: string): { h
 }
 
 export default async function PayrollPeriodPage({ params, searchParams }: { params: { periodId: string }; searchParams: { tab?: string; sub?: string; focus?: string; absence?: string } }) {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   if (!membership) redirect("/dashboard");
   const organizationId = membership.organizationId;
 
@@ -439,11 +440,11 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
               </div>
               <div className="min-w-0 rounded-2xl border border-surface-border bg-white p-5">
                 <h3 className="font-semibold text-ink">Corriger un mois clôturé</h3>
-                <p className="mt-1 text-sm leading-6 text-ink-soft">Possible tant que les bulletins n&apos;ont pas été produits.</p>
+                <p className="mt-1 text-sm leading-6 text-ink-soft">Possible tant qu&apos;aucun bulletin n&apos;a été remis aux salariés. Les bulletins déjà préparés seront à régénérer.</p>
                 <div className="mt-4">
                   <PayrollReopenButton
                     periodId={period.id}
-                    disabledReason={payslips.length > 0 ? "Les bulletins de ce mois ont été produits : il ne peut plus être rouvert. Une erreur se corrige par une régularisation sur la paie du mois suivant." : null}
+                    disabledReason={payslips.some((payslip) => payslip.documentStatus === "PUBLISHED") ? "Des bulletins de ce mois ont été remis aux salariés : il ne peut plus être rouvert. Une erreur se corrige par une régularisation sur la paie du mois suivant." : null}
                   />
                 </div>
               </div>

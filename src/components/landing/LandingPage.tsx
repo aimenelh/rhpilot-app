@@ -1,6 +1,5 @@
 import { LandingMotion } from "./LandingMotion";
 import { ArrivalHero } from "./ArrivalHero";
-import { BrandIntro } from "./BrandIntro";
 import Link from "next/link";
 import { MarketingHeader } from "./MarketingHeader";
 import { MarketingFooter } from "./MarketingFooter";
@@ -13,7 +12,6 @@ export function LandingPage() {
   return (
     <div className={s.site} data-landing-motion>
       <LandingMotion />
-      <BrandIntro />
       <MarketingHeader />
       <main id="main-content">
         <ArrivalHero />
@@ -28,7 +26,7 @@ export function LandingPage() {
                 preload="none"
                 poster="/illustrations/illu-cta-final.png"
                 className={s.video}
-                aria-label="Scène de travail en équipe — vidéo de Pavel Danilyuk"
+                aria-label="Scène de travail en équipe : vidéo de Pavel Danilyuk"
               >
                 <source
                   src="https://www.pexels.com/download/video/8343940/?v=8343940"
@@ -57,7 +55,7 @@ export function LandingPage() {
                 Montpellier
               </div>
               <Link href="/pourquoi" className={s.textLink}>
-                Lire l’histoire du projet →
+                Lire l’histoire du projet
               </Link>
             </div>
           </div>
@@ -67,7 +65,7 @@ export function LandingPage() {
             <div>
               <h2 className={s.title}>Quelques repères.</h2>
               <Link href="/questions" className={s.textLink}>
-                Toutes les questions →
+                Toutes les questions
               </Link>
             </div>
             <div className={s.faq}>
@@ -87,7 +85,7 @@ export function LandingPage() {
                   SIRET de votre entreprise : il est gratuit jusqu’à 3 salariés.
                 </p>
                 <Link href="/services#demo" className={s.textLink}>
-                  Ouvrir la démonstration →
+                  Ouvrir la démonstration
                 </Link>
               </details>
               <details>
@@ -99,7 +97,7 @@ export function LandingPage() {
                   compte.
                 </p>
                 <Link href="/espace-salarie" className={s.textLink}>
-                  Découvrir l’espace salarié →
+                  Découvrir l’espace salarié
                 </Link>
               </details>
               <details>
@@ -110,7 +108,7 @@ export function LandingPage() {
                   de votre équipe.
                 </p>
                 <Link href="/tarifs" className={s.textLink}>
-                  Comparer les offres →
+                  Comparer les offres
                 </Link>
               </details>
               <details>
@@ -121,7 +119,7 @@ export function LandingPage() {
                   données.
                 </p>
                 <Link href="/securite" className={s.textLink}>
-                  Consulter la page Sécurité →
+                  Consulter la page Sécurité
                 </Link>
               </details>
             </div>

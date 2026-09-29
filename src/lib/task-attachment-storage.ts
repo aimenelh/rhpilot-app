@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { openDocumentPayload, sealDocumentPayload } from "@/lib/document-crypto";
 
 const PREFIX = "inline-db-task-attachment-v1:";
 export const MAX_TASK_ATTACHMENT_BYTES = 4 * 1024 * 1024;
@@ -31,7 +32,7 @@ export function storeTaskAttachment(bytes: Buffer, mimeType: string): StoredTask
 
   const sha256 = createHash("sha256").update(bytes).digest("hex");
   return {
-    storageKey: `${PREFIX}${sha256}:${bytes.toString("base64")}`,
+    storageKey: `${PREFIX}${sha256}:${sealDocumentPayload(bytes)}`,
     sha256,
     sizeBytes: bytes.length,
     mimeType: mimeType as (typeof ALLOWED_TASK_ATTACHMENT_TYPES)[number],
@@ -51,7 +52,7 @@ export function readTaskAttachment(storageKey: string): Buffer {
     throw new Error("Clé de stockage invalide.");
   }
 
-  const bytes = Buffer.from(payload, "base64");
+  const bytes = openDocumentPayload(payload);
   const actualHash = createHash("sha256").update(bytes).digest("hex");
   if (actualHash !== expectedHash) throw new Error("Intégrité du document invalide.");
   if (bytes.length > MAX_TASK_ATTACHMENT_BYTES) throw new Error("Document trop volumineux.");

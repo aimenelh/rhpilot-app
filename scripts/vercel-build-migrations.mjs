@@ -25,6 +25,15 @@ function runCapture(args) {
   };
 }
 
+// Les migrations ne tournent que pour le déploiement de production. Une prévisualisation
+// (branche non fusionnée) qui partagerait la base de production la modifierait sinon.
+// ALLOW_PREVIEW_MIGRATIONS=true les autorise pour une base de prévisualisation distincte.
+const vercelEnv = process.env.VERCEL_ENV;
+if (vercelEnv && vercelEnv !== "production" && process.env.ALLOW_PREVIEW_MIGRATIONS !== "true") {
+  console.log(`Déploiement ${vercelEnv} : migrations ignorées (réservées à la production).`);
+  process.exit(0);
+}
+
 let result = runCapture(["migrate", "deploy"]);
 
 if (result.status !== 0) {

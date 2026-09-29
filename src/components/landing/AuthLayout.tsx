@@ -61,7 +61,7 @@ export function AuthLayout({
 
           <div className="auth-in mt-10" style={{ animationDelay: "0.3s" }}>
             <Link href="/securite" className="text-xs font-medium text-ink-faint hover:text-brand-primary hover:underline">
-              Sécurité et RGPD →
+              Sécurité et RGPD
             </Link>
           </div>
         </div>

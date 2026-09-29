@@ -2,13 +2,14 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { readPayslipDocument } from "@/lib/payroll/payslip-storage";
 import { publishVaultDocument } from "@/lib/employee-space/vault";
 import { notifyEmployeesInBatch, type DocumentNotice } from "@/lib/employee-space/notify";
 import { payslipFileName, payslipTitle } from "@/lib/employee-space/labels";
 import { electronicPayslipReadiness } from "@/lib/employee-space/notice-rules";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 export type PublishPayslipsResult =
   | { error: string }
@@ -22,7 +23,7 @@ export type PublishPayslipsResult =
  * et les fiches de démonstration.
  */
 export async function publishPayslipsAction(periodId: string): Promise<PublishPayslipsResult> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs publient les bulletins." };

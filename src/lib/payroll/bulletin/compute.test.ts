@@ -432,3 +432,13 @@ describe("moteur de bulletin — solde de tout compte", () => {
 function round(value: number) {
   return Math.round(value * 100) / 100;
 }
+
+describe("borne des paramètres légaux", () => {
+  it("bloque janvier 2027 tant que les paramètres 2027 ne sont pas saisis", async () => {
+    const { ENGINE_LAST_SUPPORTED_DAY, PAS_DEFAULT_GRIDS, valueAt, MissingParameterError } = await import("./params");
+    expect(ENGINE_LAST_SUPPORTED_DAY).toBe("2026-12-31");
+    // La grille PAS 2026 couvre les salaires versés jusqu'au 30 avril 2027, pas au-delà.
+    expect(() => valueAt(PAS_DEFAULT_GRIDS, new Date("2027-01-05T12:00:00Z"), "grille PAS")).not.toThrow();
+    expect(() => valueAt(PAS_DEFAULT_GRIDS, new Date("2027-05-02T12:00:00Z"), "grille PAS")).toThrow(MissingParameterError);
+  });
+});

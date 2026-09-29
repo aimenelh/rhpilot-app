@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import { getCurrentMembership } from "@/lib/auth";
+
 import { prisma } from "@/lib/prisma";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 export async function GET(
   _request: Request,
   { params }: { params: { periodId: string } },
 ) {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   if (!membership) return new NextResponse("Non autorisé", { status: 401 });
 
   const period = await prisma.payrollPeriod.findFirst({

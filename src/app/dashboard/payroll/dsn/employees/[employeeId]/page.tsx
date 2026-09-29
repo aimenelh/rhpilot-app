@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCurrentMembership } from "@/lib/auth";
+
 import { prisma } from "@/lib/prisma";
 import DsnEmployeeForm, { type DsnEmployeeFormInitial } from "../../DsnEmployeeForm";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 type DsnProfileRow = {
   nirCiphertext: string; birthDate: Date; birthPlace: string; birthDepartment: string; birthCountryCode: string | null; euClassificationCode: string | null;
@@ -16,7 +17,7 @@ type DsnProfileRow = {
 function dateInput(date: Date | null | undefined): string { return date instanceof Date && !Number.isNaN(date.getTime()) ? date.toISOString().slice(0, 10) : ""; }
 
 export default async function DsnEmployeeSetupPage({ params }: { params: { employeeId: string } }) {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   if (!membership) return null;
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return <div className="mx-auto max-w-3xl rounded-xl border border-surface-border bg-white p-6"><h1 className="text-xl font-semibold text-ink">Configuration DSN</h1><p className="mt-2 text-sm text-ink-soft">Seuls les administrateurs peuvent consulter et modifier les données déclaratives DSN.</p></div>;
 

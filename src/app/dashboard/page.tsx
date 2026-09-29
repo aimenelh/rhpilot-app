@@ -1,3 +1,5 @@
+import { generateDemoOrganization } from "./employees/demoActions";
+import { DemoOrgSubmitButton } from "./employees/DemoOrgSubmitButton";
 import Link from "next/link";
 import {
   TriangleAlert,
@@ -25,6 +27,8 @@ import { AskAboutOrganization } from "@/components/AskAboutOrganization";
 import { isProbationHistoricalAtEntry } from "@/lib/probationTracking";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
 import { employeeAccessWhere, eventAccessWhere, isOrganizationAdmin, taskAccessWhere, type MembershipAccess } from "@/lib/accessPolicy";
+
+export const metadata = { title: "Tableau de bord" };
 
 export const dynamic = "force-dynamic";
 
@@ -202,11 +206,11 @@ export default async function DashboardPage({
   const isEmpty = employeeCount === 0;
   const onboardingSteps = canManageOrganization
     ? [
-        { label: "Créer votre organisation", done: true },
-        { label: "Définir votre convention collective", done: Boolean(organization.conventionCollective) },
-        { label: "Ajouter votre premier salarié", done: employeeCount > 0 },
-        { label: "Déclencher un premier parcours", done: eventCount > 0 },
-        { label: "Inviter un collègue", done: membersInOrgCount > 1 },
+        { href: "/dashboard/configuration/organisation", label: "Créer votre organisation", done: true },
+        { href: "/dashboard/configuration/organisation", label: "Définir votre convention collective", done: Boolean(organization.conventionCollective) },
+        { href: "/dashboard/employees/new", label: "Ajouter votre premier salarié", done: employeeCount > 0 },
+        { href: "/dashboard/events", label: "Déclencher un premier parcours", done: eventCount > 0 },
+        { href: "/dashboard/team", label: "Inviter un collègue", done: membersInOrgCount > 1 },
       ]
     : [];
   const allStepsDone =
@@ -256,14 +260,15 @@ export default async function DashboardPage({
   else if (soonCount > 0) mascotPose = "deadline";
   else if (!isEmpty) mascotPose = "calm";
 
-  const firstName = user!.firstName || user!.email.split("@")[0];
+  // Sans prénom connu (inscription par e-mail seul), on salue sans le citer plutôt qu'avec le début de l'e-mail.
+  const firstName = user!.firstName ?? "";
 
   return (
     <div className="dashboard-overview">
       <div className="dashboard-heading flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0">
           <h1 data-tour="dashboard-attention" className="text-2xl font-semibold text-ink">
-            Bonjour {firstName} 👋
+            Bonjour{firstName ? ` ${firstName}` : ""}.
           </h1>
           <p className="mt-1 max-w-2xl text-sm text-ink-soft">{synthesis}</p>
           <div className="mt-4 flex flex-wrap gap-2.5">
@@ -426,7 +431,7 @@ export default async function DashboardPage({
                 className={`shrink-0 ${percentUpToDate === 100 ? "text-accent-teal" : "text-accent-amber"}`}
               />
               <div>
-                <p className="text-xl font-semibold text-ink">{percentUpToDate === null ? "—" : `${percentUpToDate}%`}</p>
+                <p className="text-xl font-semibold text-ink">{percentUpToDate === null ? "Aucun parcours" : `${percentUpToDate}%`}</p>
                 <p className="text-xs text-ink-faint">
                   {percentUpToDate === null ? "Suivi à démarrer" : "Parcours sans retard"}
                 </p>
@@ -453,10 +458,11 @@ export default async function DashboardPage({
                   ) : (
                     <Circle size={16} className="shrink-0 text-ink-faint" />
                   )}
-                  <span className={step.done ? "text-ink-faint line-through" : "text-ink"}>{step.label}</span>
+                  <Link href={step.href} className={step.done ? "text-ink-faint line-through hover:underline" : "text-ink hover:underline"}>{step.label}</Link>
                 </li>
               ))}
             </ul>
+            {isEmpty && <form action={generateDemoOrganization} className="mt-5 border-t border-surface-border pt-4"><DemoOrgSubmitButton /></form>}
           </Card>
         )}
 

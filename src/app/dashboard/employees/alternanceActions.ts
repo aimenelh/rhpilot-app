@@ -3,11 +3,13 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
 import { resolveApprenticeshipMinimum, resolveProfessionalisationMinimum } from "@/lib/payroll/alternance-minimum";
 import { calculateAgeAtDate } from "@/lib/payroll/alternance-profile";
 import { resolveSmicMinimumFromPrisma } from "@/lib/payroll/minimum-wage-prisma";
+import { getPayrollMembership } from "@/lib/payrollAccess";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type AlternanceProfileFormState = { error: string } | undefined;
 
@@ -31,7 +33,7 @@ export type AlternanceMinimumPreview = {
 };
 
 export async function getAlternanceProfile(employeeId: string): Promise<AlternanceProfileData | null> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   if (!membership) return null;
   const employee = await prisma.employee.findFirst({
     where: { id: employeeId, organizationId: membership.organizationId, deletedAt: null },
@@ -69,7 +71,7 @@ export async function getAlternanceProfile(employeeId: string): Promise<Alternan
 }
 
 export async function getAlternanceMinimumPreview(employeeId: string): Promise<AlternanceMinimumPreview | null> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   if (!membership) return null;
 
   const employee = await prisma.employee.findFirst({
@@ -176,7 +178,7 @@ export async function saveAlternanceProfile(
   _previous: AlternanceProfileFormState,
   formData: FormData
 ): Promise<AlternanceProfileFormState> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Vous n'avez pas les droits pour modifier le profil alternance de ce salarié." };
@@ -207,7 +209,7 @@ export async function saveAlternanceProfile(
     validFrom = parseDate(validFromRaw, "La date de prise d'effet");
     if (validUntilRaw) validUntil = parseDate(validUntilRaw, "La date de fin de validité");
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Une date n'est pas valide." };
+    return { error: userFacingError(error, "Une date n'est pas valide.") };
   }
   if (birthDate >= validFrom) return { error: "La date de naissance doit être antérieure à la prise d'effet du profil." };
   if (validUntil && validUntil < validFrom) return { error: "La fin de validité doit être postérieure ou égale à la prise d'effet." };
@@ -278,7 +280,7 @@ export async function saveAlternanceProfile(
       });
     });
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Impossible d'enregistrer le profil alternance." };
+    return { error: userFacingError(error, "Impossible d'enregistrer le profil alternance.") };
   }
 
   revalidatePath(`/dashboard/employees/${employeeId}`);

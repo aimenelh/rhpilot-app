@@ -259,6 +259,7 @@ export function ThreadHero() {
       <div className={s.top}>
         <div className={s.titleWrap}>
           <h1 id="arrival-title" className={s.title}>
+            <span className="sr-only">Logiciel RH pour TPE et PME : </span>
             <button
               ref={clause}
               type="button"

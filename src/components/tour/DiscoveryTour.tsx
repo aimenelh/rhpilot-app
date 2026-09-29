@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowLeft, ArrowRight, Route, Settings, Upload, UserPlus, UsersRound, X } from "lucide-react";
 import { TOUR_DONE_VALUE, TOUR_STORAGE_KEY, WELCOME_SEEN_KEY } from "@/lib/tourStorage";
+import { COOKIE_CONSENT_EVENT, hasCookieConsentDecision } from "@/components/CookieConsent";
+import { markDiscoveryTourCompleted } from "@/app/dashboard/tourActions";
 import {
   AbsencesVisual,
   CopilotVisual,
@@ -25,7 +27,7 @@ const STORAGE_KEY = "rhpilot_discovery_tour_v1";
 const PREVIOUS_TOUR_KEY = "rhpilot_product_tour_v4";
 export const START_TOUR_EVENT = "rhpilot:start-tour";
 
-type Audience = "all" | "admin" | "owner";
+type Audience = "all" | "admin" | "payroll";
 
 type Chapter = {
   key: string;
@@ -80,18 +82,18 @@ const CHAPTERS: Chapter[] = [
     eyebrow: "Absences et obligations",
     title: "Absences et échéances, *sous contrôle.*",
     text: "Demandes, justificatifs et planning d'équipe au même endroit ; DUERP, entretiens professionnels et CSE rappelés avant qu'il soit trop tard.",
-    points: ["Validation des demandes en un clic", "Justificatifs suivis jusqu'à réception", "Obligations RH listées avec leur date"],
+    points: ["Validation des demandes depuis le planning", "Justificatifs suivis jusqu'à réception", "Obligations RH listées avec leur date"],
     Visual: AbsencesVisual,
     audience: "admin",
   },
   {
     key: "paie",
-    eyebrow: "Paie · avant-première",
+    eyebrow: "Paie · accès anticipé",
     title: "La paie, *sans tableur ni surprise.*",
     text: "Saisissez les variables du mois dans un seul tableau : RH Pilot calcule chaque bulletin, le contrôle et vous explique chaque ligne.",
     points: ["Cotisations et réduction générale à jour", "Contrôles avant la clôture", "Bulletins prêts à publier"],
     Visual: PayrollVisual,
-    audience: "owner",
+    audience: "payroll",
   },
   {
     key: "espace-salarie",
@@ -107,7 +109,7 @@ const CHAPTERS: Chapter[] = [
     eyebrow: "Copilote",
     title: "Une question ? *Le contexte sous les yeux.*",
     text: "Le Copilote répond à partir de vos salariés, de vos parcours et de ce qui est déjà fait. Il vous dit quoi faire, et pour quand.",
-    points: ["Toujours en bas à droite de l'écran", "Répond avec vos données, pas des généralités"],
+    points: ["Sur le tableau de bord, et en bas à droite des autres pages", "Répond avec vos données, pas des généralités"],
     Visual: CopilotVisual,
     audience: "all",
   },
@@ -115,8 +117,8 @@ const CHAPTERS: Chapter[] = [
 
 const LAST = "demarrer";
 
-function allowed(audience: Audience, accessRole: string) {
-  if (audience === "owner") return accessRole === "OWNER";
+function allowed(audience: Audience, accessRole: string, payrollEnabled: boolean) {
+  if (audience === "payroll") return payrollEnabled;
   if (audience === "admin") return accessRole === "OWNER" || accessRole === "ADMIN";
   return true;
 }
@@ -153,9 +155,9 @@ function writeStorage(key: string, value: string) {
   }
 }
 
-export function DiscoveryTour({ accessRole, userName }: { accessRole: string; userName: string }) {
+export function DiscoveryTour({ accessRole, payrollEnabled, userName, completed }: { accessRole: string; payrollEnabled: boolean; userName: string; completed: boolean }) {
   const pathname = usePathname();
-  const chapters = CHAPTERS.filter((chapter) => allowed(chapter.audience, accessRole));
+  const chapters = CHAPTERS.filter((chapter) => allowed(chapter.audience, accessRole, payrollEnabled));
   const total = chapters.length + 1;
   const [index, setIndex] = useState<number | null>(null);
   const [direction, setDirection] = useState<1 | -1>(1);
@@ -180,6 +182,11 @@ export function DiscoveryTour({ accessRole, userName }: { accessRole: string; us
       open(0);
       return;
     }
+    // Déjà vue ou passée sur ce compte, depuis n'importe quel appareil.
+    if (completed) {
+      writeStorage(STORAGE_KEY, TOUR_DONE_VALUE);
+      return;
+    }
     const stored = readStorage(STORAGE_KEY);
     if (stored === TOUR_DONE_VALUE) return;
     if (readStorage(PREVIOUS_TOUR_KEY) === TOUR_DONE_VALUE || readStorage(TOUR_STORAGE_KEY) === TOUR_DONE_VALUE) {
@@ -191,8 +198,17 @@ export function DiscoveryTour({ accessRole, userName }: { accessRole: string; us
       open(saved);
       return;
     }
-    if (pathname === "/dashboard" && !readStorage(WELCOME_SEEN_KEY)) open(0);
-  }, [pathname, open, total]);
+    if (pathname === "/dashboard" && !readStorage(WELCOME_SEEN_KEY)) {
+      // Première connexion : on attend la réponse au bandeau cookies, qui couvrirait sinon les boutons.
+      if (hasCookieConsentDecision()) {
+        open(0);
+        return;
+      }
+      const onConsent = () => open(0);
+      window.addEventListener(COOKIE_CONSENT_EVENT, onConsent, { once: true });
+      return () => window.removeEventListener(COOKIE_CONSENT_EVENT, onConsent);
+    }
+  }, [pathname, open, total, completed]);
 
   useEffect(() => {
     const onStart = () => open(0);
@@ -203,6 +219,7 @@ export function DiscoveryTour({ accessRole, userName }: { accessRole: string; us
   const close = useCallback(() => {
     writeStorage(STORAGE_KEY, TOUR_DONE_VALUE);
     writeStorage(TOUR_STORAGE_KEY, TOUR_DONE_VALUE);
+    void markDiscoveryTourCompleted().catch(() => undefined);
     setIndex(null);
     previousFocus.current?.focus?.();
   }, []);

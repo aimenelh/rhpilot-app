@@ -1,40 +1,26 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
-// Routes publiques : landing, pages d'auth, pages de présentation de la paie,
-// et les endpoints techniques qui ne nécessitent pas de session Clerk.
-const isPublicRoute = createRouteMatcher([
-  "/",
-  "/services",
-  "/tarifs",
-  "/espace-salarie",
-  "/pourquoi",
-  "/securite",
-  "/mentions-legales",
-  "/ressources",
-  "/ressources(.*)",
-  "/tutoriels",
-  "/gestion-paie(.*)",
-  "/diagnostic",
-  "/questions",
-  "/cgu",
-  "/confidentialite",
-  "/cookies",
-  "/join(.*)",
-  "/welcome",
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  // Espace salarié : chaque page vérifie elle-même la session et renvoie vers
-  // /espace/connexion, la connexion salarié qui s'affiche aussi sur téléphone.
-  "/espace",
-  "/espace/(.*)",
+// Logique inversée : tout est public, sauf l'espace connecté et les API privées.
+// Le site vitrine, robots.txt, le sitemap, les images de partage et la page 404
+// restent ainsi accessibles sans session (une URL mal tapée affiche la 404,
+// pas l'écran de connexion).
+const isProtectedRoute = createRouteMatcher([
+  "/dashboard(.*)",
+  "/entering(.*)",
+  "/creating-account(.*)",
+  "/api/(.*)",
+]);
+
+// API appelées sans session Clerk : espace salarié (sa propre session), webhooks
+// signés, cron authentifié par CRON_SECRET. Chacune vérifie elle-même l'appelant.
+const isPublicApi = createRouteMatcher([
   "/api/espace/(.*)",
-  "/api/webhooks/clerk",
-  "/api/webhooks/stripe",
-  "/api/cron/reminders",
+  "/api/webhooks/(.*)",
+  "/api/cron/(.*)",
 ]);
 
 export default clerkMiddleware((auth, request) => {
-  if (!isPublicRoute(request)) {
+  if (isProtectedRoute(request) && !isPublicApi(request)) {
     auth().protect();
   }
 });

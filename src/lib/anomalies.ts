@@ -34,6 +34,16 @@ type AnomalyDetector = (organizationId: string) => Promise<Anomaly[]>;
 
 const SEVERITY_ORDER: Record<AnomalySeverity, number> = { critical: 0, medium: 1, low: 2 };
 
+/** Salariés ayant déjà un parcours de ce type : une seule requête au lieu d'une par salarié. */
+async function employeesWithEvent(organizationId: string, templateKey: string): Promise<Set<string>> {
+  const rows = await prisma.employeeEvent.findMany({
+    where: { organizationId, deletedAt: null, eventTemplate: { key: templateKey } },
+    select: { employeeId: true },
+    distinct: ["employeeId"],
+  });
+  return new Set(rows.map((row) => row.employeeId));
+}
+
 /**
  * Un salarié dont on connaît la durée de période d'essai, dont la fin
  * calculée approche (30 jours) ou est dépassée depuis peu (45 jours
@@ -62,18 +72,11 @@ async function detectProbationEndingWithoutEvent(organizationId: string): Promis
   });
 
   const anomalies: Anomaly[] = [];
+  const triggered = await employeesWithEvent(organizationId, "fin_periode_essai");
   for (const employee of employees) {
     if (daysUntil(employee.hireDate) < -365) continue;
 
-    const alreadyTriggered = await prisma.employeeEvent.findFirst({
-      where: {
-        organizationId,
-        employeeId: employee.id,
-        eventTemplate: { key: "fin_periode_essai" },
-        deletedAt: null,
-      },
-    });
-    if (alreadyTriggered) continue;
+    if (triggered.has(employee.id)) continue;
 
     const endDate = addDuration(employee.hireDate, employee.probationDuration!, employee.probationDurationUnit!);
     const diff = daysUntil(endDate);
@@ -134,15 +137,13 @@ async function detectMissingOnboardingEvent(organizationId: string): Promise<Ano
   });
 
   const anomalies: Anomaly[] = [];
+  const triggered = await employeesWithEvent(organizationId, "embauche");
   for (const employee of employees) {
     const daysSinceHire = Math.abs(daysUntil(employee.hireDate));
     if (daysUntil(employee.hireDate) > -7) continue;
     if (daysSinceHire > 60) continue;
 
-    const alreadyTriggered = await prisma.employeeEvent.findFirst({
-      where: { organizationId, employeeId: employee.id, eventTemplate: { key: "embauche" }, deletedAt: null },
-    });
-    if (alreadyTriggered) continue;
+    if (triggered.has(employee.id)) continue;
 
     anomalies.push({
       key: `onboarding-${employee.id}`,
@@ -236,13 +237,11 @@ async function detectMedicalVisitNeverScheduled(organizationId: string): Promise
   });
 
   const anomalies: Anomaly[] = [];
+  const triggered = await employeesWithEvent(organizationId, "visite_medicale");
   for (const employee of employees) {
     if (daysUntil(employee.hireDate) > -365) continue;
 
-    const alreadyTriggered = await prisma.employeeEvent.findFirst({
-      where: { organizationId, employeeId: employee.id, eventTemplate: { key: "visite_medicale" }, deletedAt: null },
-    });
-    if (alreadyTriggered) continue;
+    if (triggered.has(employee.id)) continue;
 
     anomalies.push({
       key: `medical-visit-never-${employee.id}`,

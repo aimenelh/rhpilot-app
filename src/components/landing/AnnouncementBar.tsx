@@ -73,7 +73,7 @@ export function AnnouncementBar() {
     <div className="relative bg-ink py-2.5 pl-4 pr-10 text-center text-[13px] leading-snug text-white sm:px-10 sm:text-sm">
       <Link href={announcement.href} className="hover:underline">
         {announcement.text}{" "}
-        <span className="whitespace-nowrap font-semibold text-brand-primary">{announcement.cta} →</span>
+        <span className="whitespace-nowrap font-semibold text-brand-primary">{announcement.cta}</span>
       </Link>
       <button
         type="button"

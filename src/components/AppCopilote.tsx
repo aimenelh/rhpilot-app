@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { usePathname } from "next/navigation";
-import { X, CheckCheck } from "lucide-react";
+import { X } from "lucide-react";
 import { Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 import { Logomark } from "@/components/Brand";
@@ -39,10 +39,11 @@ function timeGreeting(): string {
 // Repris tel quel de l'ancien Assistant : le message d'accueil
 // personnalisé selon ce qui attend réellement la personne aujourd'hui.
 function buildGreeting(summary: Summary): string {
-  const firstName = summary.userDisplayName.split(" ")[0];
-  const hello = timeGreeting();
+  // Sans prénom connu, le nom affiché est l'e-mail : on salue sans le citer.
+  const firstName = summary.userDisplayName.includes("@") ? "" : summary.userDisplayName.split(" ")[0];
+  const hello = firstName ? `${timeGreeting()} ${firstName}.` : `${timeGreeting()}.`;
   if (summary.overdueCount === 0 && summary.suggestionsCount === 0) {
-    return `${hello} ${firstName} 👋 Aucun point urgent aujourd'hui. Tout est à jour.`;
+    return `${hello} Aucun point urgent aujourd'hui, tout est à jour.`;
   }
   const parts: string[] = [];
   if (summary.overdueCount > 0) {
@@ -51,24 +52,11 @@ function buildGreeting(summary: Summary): string {
   if (summary.suggestionsCount > 0) {
     parts.push(`${summary.suggestionsCount} suggestion${summary.suggestionsCount > 1 ? "s" : ""}`);
   }
-  return `${hello} ${firstName} 👋 Vous avez actuellement ${parts.join(" et ")}.`;
+  return `${hello} Vous avez actuellement ${parts.join(" et ")}.`;
 }
 
-// Le 👋 fait un vrai petit signe une fois à l'ouverture, plutôt que de
-// rester un simple emoji statique dans le texte. Une seule fois, pas
-// en boucle — sinon ça distrairait pendant la lecture du reste.
 function renderGreeting(text: string) {
-  const parts = text.split("👋");
-  if (parts.length === 1) return text;
-  return (
-    <>
-      {parts[0]}
-      <span className="wave-emoji inline-block animate-[wave_1.2s_ease-in-out_1]" style={{ transformOrigin: "70% 70%" }}>
-        👋
-      </span>
-      {parts[1]}
-    </>
-  );
+  return text;
 }
 
 // Filet de sécurité : le system prompt interdit le Markdown à l'IA,
@@ -160,21 +148,13 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
   return (
     <div className="fixed bottom-6 right-6 z-40">
       <style>{`
-        @keyframes wave {
-          0%, 60%, 100% { transform: rotate(0deg); }
-          10% { transform: rotate(14deg); }
-          20% { transform: rotate(-8deg); }
-          30% { transform: rotate(14deg); }
-          40% { transform: rotate(-4deg); }
-          50% { transform: rotate(10deg); }
-        }
         @keyframes copiloteBreathe {
           0%, 100% { transform: scale(1); }
           50% { transform: scale(1.045); }
         }
         .copilote-fab { animation: copiloteBreathe 3.5s ease-in-out infinite; }
         @media (prefers-reduced-motion: reduce) {
-          .copilote-fab, .wave-emoji { animation: none !important; }
+          .copilote-fab { animation: none !important; }
         }
       `}</style>
 
@@ -187,9 +167,8 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
               </div>
               <div>
                 <p className="text-sm font-semibold text-ink">Copilote RH Pilot</p>
-                <span className="flex items-center gap-1.5 text-xs font-medium text-ink-faint">
-                  <span className={`h-1.5 w-1.5 rounded-full ${aiEnabled ? "bg-accent-teal" : "bg-ink-faint"}`} />
-                  {aiEnabled ? "En ligne" : "Indisponible"}
+                <span className="text-xs text-ink-faint">
+                  {aiEnabled ? "Répond à partir de vos données" : "Momentanément indisponible"}
                 </span>
               </div>
             </div>
@@ -222,7 +201,7 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
                         {m.text}
                       </div>
                       <span className="flex items-center gap-1 pr-1 text-[10px] text-ink-faint">
-                        {m.time} <CheckCheck size={12} className="text-brand-primary" aria-hidden />
+                        {m.time}
                       </span>
                     </div>
                   ) : (

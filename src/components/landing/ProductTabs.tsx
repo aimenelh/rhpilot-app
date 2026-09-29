@@ -96,7 +96,7 @@ export function ProductTabs() {
           <h3>{item.title}</h3>
           <p className={s.copy}>{item.text}</p>
           <Link href={`/services#${item.id}`} className={s.textLink}>
-            Découvrir cette fonctionnalité →
+            Découvrir cette fonctionnalité
           </Link>
         </div>
         <div className={s.tabImage}>

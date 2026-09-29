@@ -26,7 +26,15 @@ function readConsent(): ConsentPreferences | null {
   }
 }
 
+export const COOKIE_CONSENT_EVENT = "rhpilot:cookie-consent";
+
+/** Le visiteur a-t-il déjà répondu au bandeau cookies ? */
+export function hasCookieConsentDecision(): boolean {
+  return readConsent() !== null;
+}
+
 export function CookieConsent() {
+  const [reopened, setReopened] = useState(false);
   const [ready, setReady] = useState(false);
   const [consent, setConsent] = useState<ConsentPreferences | null>(null);
   const [customizing, setCustomizing] = useState(false);
@@ -37,6 +45,9 @@ export function CookieConsent() {
     setConsent(saved);
     setAnalyticsChoice(saved?.analytics ?? false);
     setReady(true);
+    const reopen = () => { setReopened(true); setCustomizing(true); };
+    window.addEventListener("rhpilot:manage-cookies", reopen);
+    return () => window.removeEventListener("rhpilot:manage-cookies", reopen);
   }, []);
 
   function saveConsent(analytics: boolean) {
@@ -52,16 +63,19 @@ export function CookieConsent() {
       // Le choix reste appliqué pour la session même si le stockage est indisponible.
     }
 
+    setReopened(false);
     setConsent(next);
     setAnalyticsChoice(analytics);
     setCustomizing(false);
+    // La visite de découverte attend ce choix pour ne pas s'ouvrir sous le bandeau.
+    window.dispatchEvent(new Event(COOKIE_CONSENT_EVENT));
   }
 
   return (
     <>
       {consent?.analytics ? <Analytics /> : null}
 
-      {ready && !consent ? (
+      {ready && (!consent || reopened) ? (
         <section
           role="dialog"
           aria-label="Choix des cookies"
@@ -85,9 +99,9 @@ export function CookieConsent() {
           </h2>
 
           <p id="rhpilot-cookie-description" className="mt-3 text-[15px] leading-6 text-ink-soft">
-            RH Pilot utilise des cookies et technologies similaires de mesure d’audience
-            pour comprendre l’utilisation du site et l’améliorer. Les éléments strictement
-            nécessaires au fonctionnement restent actifs.
+            Les cookies de connexion sont nécessaires au service. Avec votre accord,
+            Vercel Analytics mesure la fréquentation sans cookie de mesure d’audience.
+            Votre choix est conservé dans ce navigateur ; vous pouvez le modifier en bas de page.
           </p>
 
           {customizing ? (

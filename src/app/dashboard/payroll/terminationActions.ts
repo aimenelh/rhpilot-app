@@ -2,8 +2,10 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getPayrollMembership } from "@/lib/payrollAccess";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type TerminationFormState = { error?: string; saved?: boolean } | undefined;
 
@@ -18,7 +20,7 @@ function amount(formData: FormData, name: string): number | null {
 }
 
 async function editableContext(periodId: string, employeeId: string) {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) throw new Error("Session expirée, veuillez recharger la page.");
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) throw new Error("Seuls les administrateurs peuvent saisir un solde de tout compte.");
@@ -71,6 +73,6 @@ export async function saveTermination(periodId: string, employeeId: string, _pre
     revalidatePath(`/dashboard/payroll/${period.id}`);
     return { saved: true };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "La fiche de sortie n'a pas pu être enregistrée." };
+    return { error: userFacingError(error, "La fiche de sortie n'a pas pu être enregistrée.") };
   }
 }

@@ -12,11 +12,13 @@
  * Toute information indispensable manquante bloque le calcul avec un message
  * explicite plutôt que de produire un bulletin approximatif.
  */
-import { addDays, assertSchedule, calendarDays, daysBetweenInclusive, fromIsoDay, monthBounds, paidLeaveDaysForAbsence, publicHolidays, type CalendarDay, type IsoDay } from "./calendar";
+import { addDays, assertSchedule, calendarDays, daysBetweenInclusive, fromIsoDay, monthBounds, paidLeaveDaysForAbsence, publicHolidays, weekdayIndex, type CalendarDay, type IsoDay } from "./calendar";
 import { valueAbsence, type ValuedAbsence } from "./absences";
 import {
   CONTRIBUTION_RATES,
   ENGINE_FIRST_SUPPORTED_DAY,
+  ENGINE_LAST_SUPPORTED_DAY,
+  MissingParameterError,
   EXPENSES,
   LEGAL_MONTHLY_HOURS,
   OVERTIME,
@@ -88,6 +90,7 @@ export function computePayslip(input: PayslipInput): PayslipResult {
   if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) throw new Error("La période de paie est invalide.");
   const period = monthBounds(year, month);
   if (period.first < ENGINE_FIRST_SUPPORTED_DAY) throw new Error(`Le moteur de bulletin couvre les périodes à compter du ${frDate(ENGINE_FIRST_SUPPORTED_DAY)}.`);
+  if (period.last > ENGINE_LAST_SUPPORTED_DAY) throw new MissingParameterError(`Les paramètres légaux de ${year} (plafond de la sécurité sociale, Smic, taux de cotisations) ne sont pas encore intégrés : le calcul est bloqué plutôt que d'appliquer ceux de l'année précédente.`);
   const paymentDate = input.paymentDate ?? period.last;
   const periodDate = fromIsoDay(period.first);
 
@@ -206,6 +209,11 @@ export function computePayslip(input: PayslipInput): PayslipResult {
   const totalAbsenceDeduction = valued.reduce((total, absence) => total + absence.deduction, 0);
   if (org.alsaceMoselle && valued.some((absence) => absence.input.kind === "SICK_LEAVE" && absence.deduction > 0)) {
     warnings.push("Alsace-Moselle : le droit local (C. trav. art. L1226-23) maintient le salaire, sans carence ni condition d'ancienneté, pour une absence d'une durée relativement sans importance. Le maintien légal national a été appliqué : ajoutez le complément dû selon la durée de l'arrêt.");
+  }
+  // Le maintien conventionnel (souvent plus favorable, sans carence ou dès l'embauche) n'est pas encore modélisé :
+  // on le signale à chaque arrêt au lieu d'appliquer le minimum légal en silence.
+  if (valued.some((absence) => (absence.input.kind === "SICK_LEAVE" || absence.input.kind === "WORK_ACCIDENT") && absence.deduction > 0)) {
+    warnings.push("Arrêt de travail : le maintien de salaire légal a été appliqué (C. trav. art. L1226-1 et D1226-1). Votre convention collective prévoit peut-être un maintien plus favorable (carence réduite, taux ou durée supérieurs) : vérifiez-la et ajoutez le complément en prime si c'est le cas.");
   }
   if (valued.some((absence) => (absence.input.kind === "MATERNITY" || absence.input.kind === "PATERNITY") && absence.deduction > 0)) {
     warnings.push("Congé maternité ou paternité : aucun maintien de salaire légal n'est dû, vérifiez si votre convention collective en prévoit un et saisissez-le en prime le cas échéant.");
@@ -350,6 +358,40 @@ export function computePayslip(input: PayslipInput): PayslipResult {
     if (transportExcess > 0) grossLine({ code: "TRANSPORT_EXCESS", label: "Prise en charge du transport au-delà de 75 %", amount: transportExcess, source: expenseParams.source });
   }
 
+  // --- Frais professionnels : la part au-delà des limites d'exonération est réintégrée au brut ---
+  const priorYear = input.yearToDate && input.yearToDate.year === year ? input.yearToDate : null;
+  const transportExemptThisMonth = round2(transportReimbursement - transportExcess);
+  const transportExemptYear = round2((priorYear?.publicTransportExempt ?? 0) + transportExemptThisMonth);
+  let sustainableMobilityYear = priorYear?.sustainableMobility ?? 0;
+  const expenseExcess = new Map<number, number>();
+  const workingDays = (() => {
+    let count = 0;
+    for (let day = period.first; day <= period.last; day = addDays(day, 1)) if (weekdayIndex(day) < 5) count += 1;
+    return count;
+  })();
+  (input.expenses ?? []).forEach((expense, index) => {
+    assertAmount(expense.amount, `Le remboursement « ${expense.label} »`);
+    let excess = 0;
+    if (expense.code === "SUSTAINABLE_MOBILITY") {
+      const soloRoom = expenseParams.value.sustainableMobilityAnnualCap - sustainableMobilityYear;
+      // Cumulé avec le transport public, l'ensemble est exonéré jusqu'à 900 € (ou au transport seul s'il est plus élevé).
+      const combinedRoom = transportExemptYear > 0 ? Math.max(expenseParams.value.sustainableMobilityCombinedAnnualCap, transportExemptYear) - transportExemptYear - sustainableMobilityYear : Number.POSITIVE_INFINITY;
+      const exempt = Math.max(0, Math.min(expense.amount, soloRoom, combinedRoom));
+      excess = round2(expense.amount - exempt);
+      sustainableMobilityYear = round2(sustainableMobilityYear + exempt);
+      if (excess > 0) grossLine({ code: "SUSTAINABLE_MOBILITY_EXCESS", label: "Forfait mobilités durables au-delà du plafond annuel d'exonération", amount: excess, source: expenseParams.source });
+    } else if (expense.code === "EXPENSE_MEAL") {
+      // Sans le nombre de repas, seul le maximum absolu du mois (un repas au restaurant par jour ouvré) est contrôlable.
+      const ceiling = round2(expenseParams.value.mealAllowanceRestaurant * workingDays);
+      excess = round2(Math.max(0, expense.amount - ceiling));
+      if (excess > 0) grossLine({ code: "MEAL_ALLOWANCE_EXCESS", label: "Indemnités de repas au-delà de la limite d'exonération", amount: excess, source: expenseParams.source });
+      warnings.push(`Indemnités de repas : l'exonération est limitée par repas à ${expenseParams.value.mealAllowanceOnSite.toFixed(2).replace(".", ",")} € (sur le lieu de travail), ${expenseParams.value.mealAllowanceOffSite.toFixed(2).replace(".", ",")} € (hors des locaux) ou ${expenseParams.value.mealAllowanceRestaurant.toFixed(2).replace(".", ",")} € (au restaurant en déplacement). Si le montant versé dépasse ces limites au regard du nombre de repas, saisissez l'excédent en prime.`);
+    } else if (expense.code === "EXPENSE_KILOMETRIC") {
+      warnings.push("Indemnités kilométriques : exonérées dans la limite du barème fiscal, selon la puissance du véhicule et les kilomètres parcourus. Conservez le détail des trajets ; un montant au-delà du barème doit être saisi en prime.");
+    }
+    if (excess > 0) expenseExcess.set(index, excess);
+  });
+
   // --- Fin de contrat : solde de tout compte -------------------------------------------
   const severanceTreatment = input.termination
     ? addTerminationLines({ input, lines, grossLine, paidLeaveOutcome, balances, warnings, sources, pmss: pmss.value, periodFirst: period.first, periodLast: period.last })
@@ -424,7 +466,9 @@ export function computePayslip(input: PayslipInput): PayslipResult {
     let employerT1 = prevoyanceRates?.employerT1 ?? 0;
     const employeeT1 = prevoyanceRates?.employeeT1 ?? 0;
     if (employee.executive && employerT1 < r.prevoyanceCadreMinimumEmployer - 1e-9) {
-      if (prevoyanceRates) warnings.push("La part patronale de prévoyance des cadres sur la tranche 1 est inférieure au minimum de 1,50 % : le minimum conventionnel est appliqué.");
+      warnings.push(prevoyanceRates
+        ? "La part patronale de prévoyance des cadres sur la tranche 1 est inférieure au minimum de 1,50 % : le minimum conventionnel est appliqué."
+        : "Prévoyance des cadres non paramétrée : le minimum obligatoire de 1,50 % de la tranche 1 (ANI du 17 novembre 2017) est appliqué à la charge de l'employeur. Renseignez les taux de votre contrat dans les paramètres de paie.");
       employerT1 = r.prevoyanceCadreMinimumEmployer;
     }
     const employeeT2 = prevoyanceRates?.employeeT2 ?? 0;
@@ -482,7 +526,10 @@ export function computePayslip(input: PayslipInput): PayslipResult {
       others.push(["TAXE_APPRENTISSAGE_SOLDE", "Solde de la taxe d'apprentissage", G, r.taxeApprentissageSolde]);
     }
   }
-  if (employee.contract === "CDD") others.push(["CPF_CDD", "Contribution CPF-CDD", G, r.cpfCdd]);
+  if (employee.contract === "CDD") {
+    others.push(["CPF_CDD", "Contribution CPF-CDD", G, r.cpfCdd]);
+    warnings.push("Contribution CPF-CDD de 1 % appliquée. Elle n'est pas due pour un CDD conclu avec un jeune pendant son cursus scolaire ou universitaire, ni pour un CDD qui se poursuit en CDI (C. trav. art. L6322-37) : dans ces cas, faites-la retirer avant de remettre le bulletin.");
+  }
   if (thresholds.atLeast11 && prevoyanceEmployer + healthEmployer > 0) others.push(["FORFAIT_SOCIAL", "Forfait social sur la prévoyance", prevoyanceEmployer + healthEmployer, r.forfaitSocialPrevoyance]);
   if (severanceTreatment.specificContributionBase > 0) others.push(["CONTRIBUTION_RUPTURE", "Contribution patronale spécifique sur l'indemnité de rupture", severanceTreatment.specificContributionBase, severanceTreatment.specificContributionRate]);
   const otherSource = (code: string) => code === "VERSEMENT_MOBILITE" ? "Taux de versement mobilité de la commune (Urssaf)" : code === "CONTRIBUTION_RUPTURE" ? severanceTreatment.source : rates.source;
@@ -576,10 +623,11 @@ export function computePayslip(input: PayslipInput): PayslipResult {
   if (mealVoucherExcess > 0) netItem({ code: "MEAL_VOUCHER_EXCESS_DEDUCTION", label: "Titres-restaurant : part patronale excédentaire (remise en titres)", amount: -mealVoucherExcess, source: expenseParams.source });
   if (mealVoucherEmployeeShare > 0) netItem({ code: "MEAL_VOUCHER_EMPLOYEE", label: `Titres-restaurant : part salariale (${input.mealVouchers?.count ?? 0} titres)`, quantity: input.mealVouchers?.count, unit: "UNITS", amount: -mealVoucherEmployeeShare, source: expenseParams.source });
   if (transportReimbursement > 0) netItem({ code: "PUBLIC_TRANSPORT", label: "Remboursement transport public domicile-travail", amount: transportReimbursement - transportExcess, source: "C. trav. art. L3261-2 et R3261-1 (prise en charge exonérée jusqu'à 75 %)" });
-  for (const expense of input.expenses ?? []) {
-    assertAmount(expense.amount, `Le remboursement « ${expense.label} »`);
-    netItem({ code: expense.code, label: expense.label, amount: expense.amount, source: "Frais professionnels remboursés sur justificatifs ou dans les limites d'exonération (arrêté du 20 décembre 2002)" });
-  }
+  (input.expenses ?? []).forEach((expense, index) => {
+    // L'excédent éventuel est déjà versé via le brut : seule la part exonérée s'ajoute au net.
+    const exemptAmount = round2(expense.amount - (expenseExcess.get(index) ?? 0));
+    if (exemptAmount > 0) netItem({ code: expense.code, label: expense.label, amount: exemptAmount, source: "Frais professionnels remboursés sur justificatifs ou dans les limites d'exonération (arrêté du 20 décembre 2002)" });
+  });
   let ijssNetTotal = 0;
   let ijssTaxableTotal = 0;
   for (const absence of valued) {
@@ -656,6 +704,8 @@ export function computePayslip(input: PayslipInput): PayslipResult {
     hoursPaid: round2(ytd.hoursPaid + hoursPaid),
     grossTotal: round2(ytd.grossTotal + grossTotal),
     employerCost: round2(ytd.employerCost + employerCost),
+    sustainableMobility: sustainableMobilityYear,
+    publicTransportExempt: transportExemptYear,
   };
 
   return {

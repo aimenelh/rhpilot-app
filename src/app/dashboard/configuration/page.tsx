@@ -5,7 +5,6 @@ import {
   Waypoints,
   Bell,
   Database,
-  Shield,
   Info,
   ChevronRight,
   Download,
@@ -16,6 +15,8 @@ import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
+
+export const metadata = { title: "Configuration" };
 
 export const dynamic = "force-dynamic";
 
@@ -155,15 +156,6 @@ export default async function ConfigurationPage() {
         </div>
         )}
 
-        {canManageData && (
-        <div className="flex items-start gap-3 px-5 py-4 opacity-60">
-          <Shield size={18} className="mt-0.5 shrink-0 text-ink-faint" />
-          <div className="min-w-0 flex-1">
-            <h2 className="text-sm font-semibold text-ink">Sécurité</h2>
-            <p className="mt-0.5 text-sm text-ink-soft">Paramètres avancés à venir.</p>
-          </div>
-        </div>
-        )}
 
         <Link
           href="/dashboard/configuration/a-propos"

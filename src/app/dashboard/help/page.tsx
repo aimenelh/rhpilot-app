@@ -4,6 +4,8 @@ import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Field";
 import { FAQ_ENTRIES } from "@/lib/faq";
 
+export const metadata = { title: "Aide" };
+
 export default function HelpPage({
   searchParams,
 }: {
@@ -101,7 +103,7 @@ export default function HelpPage({
           <p className="mt-0.5 text-sm text-ink-soft">On vous répond directement.</p>
         </div>
         <a
-          href="mailto:aimenoffi@gmail.com?subject=Question%20RH%20Pilot"
+          href="mailto:contact@rhpilot.fr?subject=Question%20RH%20Pilot"
           className="flex shrink-0 items-center gap-1.5 rounded-lg border border-surface-border px-3.5 py-2 text-sm font-medium text-ink-soft transition-colors hover:border-brand-primary hover:text-brand-primary"
         >
           <Mail size={14} />

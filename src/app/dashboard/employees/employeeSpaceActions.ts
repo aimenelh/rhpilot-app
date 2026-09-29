@@ -16,6 +16,10 @@ import { buildFinalSettlementItems, renderFinalSettlementPdf, renderWorkCertific
 import { DOCUMENT_KIND_LABELS, isVaultDocumentKind, safeFileName, type VaultDocumentKind } from "@/lib/employee-space/labels";
 import { isNoticeMethod, noticeMethodLabel } from "@/lib/employee-space/notice-rules";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
+import { externalPayslipPeriod, validateExternalPdf } from "@/lib/externalPayslip";
+import { electronicPayslipReadiness } from "@/lib/employee-space/notice-rules";
+import { payslipTitle, payslipFileName } from "@/lib/employee-space/labels";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type EmployeeSpaceActionState = { error?: string; success?: string; manualUrl?: string } | undefined;
 
@@ -40,13 +44,14 @@ async function findEmployee(organizationId: string, employeeId: string) {
 function refresh(employeeId: string) {
   revalidatePath(`/dashboard/employees/${employeeId}`);
   revalidatePath("/dashboard/payroll", "layout");
+  revalidatePath("/espace", "layout");
 }
 
 async function audit(organizationId: string, userId: string, action: string, entityId: string, metadata: Record<string, unknown>) {
   await prisma.auditLog.create({ data: { id: randomUUID(), organizationId, actorUserId: userId, action, entityType: "Employee", entityId, metadata: metadata as object } });
 }
 
-const failure = (error: unknown): EmployeeSpaceActionState => ({ error: error instanceof Error ? error.message : "L'opération a échoué." });
+const failure = (error: unknown): EmployeeSpaceActionState => ({ error: userFacingError(error, "L'opération a échoué.") });
 
 /** Adresse personnelle et choix du bulletin papier, depuis la fiche salarié. */
 export async function saveEmployeeSpaceSettings(employeeId: string, _state: EmployeeSpaceActionState, formData: FormData): Promise<EmployeeSpaceActionState> {
@@ -143,7 +148,7 @@ export async function revokeEmployeeSpace(employeeId: string): Promise<EmployeeS
   }
 }
 
-const UPLOAD_KINDS: readonly VaultDocumentKind[] = ["FRANCE_TRAVAIL", "WORK_CERTIFICATE", "FINAL_SETTLEMENT", "OTHER"];
+const UPLOAD_KINDS: readonly VaultDocumentKind[] = ["PAYSLIP", "FRANCE_TRAVAIL", "WORK_CERTIFICATE", "FINAL_SETTLEMENT", "OTHER"];
 
 /** Dépose un PDF dans l'espace du salarié (attestation France Travail, document signé…). */
 export async function uploadEmployeeDocument(_state: EmployeeSpaceActionState, formData: FormData): Promise<EmployeeSpaceActionState> {
@@ -159,17 +164,36 @@ export async function uploadEmployeeDocument(_state: EmployeeSpaceActionState, f
     if (!(file instanceof File) || file.size === 0) return { error: "Choisissez un fichier PDF." };
     if (file.size > MAX_UPLOAD_BYTES) return { error: "Le fichier dépasse 4 Mo." };
     const pdf = Buffer.from(await file.arrayBuffer());
-    if (pdf.subarray(0, 5).toString("latin1") !== "%PDF-") return { error: "Le fichier doit être un PDF." };
+    const pdfError = await validateExternalPdf(pdf);
+    if (pdfError) return { error: pdfError };
+    const period = kind === "PAYSLIP" ? externalPayslipPeriod(formData.get("period")) : null;
+    if (kind === "PAYSLIP" && !period) return { error: "Indiquez le mois du bulletin (AAAA-MM)." };
     const customTitle = String(formData.get("title") ?? "").trim().slice(0, 120);
     if (kind === "OTHER" && !customTitle) return { error: "Donnez un titre au document." };
-    const title = customTitle || DOCUMENT_KIND_LABELS[kind];
+    const title = period ? payslipTitle(period.year, period.month) : customTitle || DOCUMENT_KIND_LABELS[kind];
 
-    const outcome = await prisma.$transaction((tx) => publishVaultDocument(tx, {
-      organizationId, employeeId: employee.id, kind, title, fileName: safeFileName(file.name || title), pdf, actorUserId: userId, actorKind: "EMPLOYER",
-    }));
+    const outcome = await prisma.$transaction(async tx => {
+      // Lock the employee before checking notice, paper preference and replacement.
+      const rows = await tx.$queryRaw<Array<{ paperPayslipSince: Date | null; noticeAt: string | null; noticeMethod: string | null }>>`
+        SELECT "paperPayslipSince", to_char("electronicPayslipNoticeAt", 'YYYY-MM-DD') AS "noticeAt", "electronicPayslipNoticeMethod" AS "noticeMethod"
+        FROM "employees" WHERE "id" = ${employee.id} AND "organizationId" = ${organizationId} FOR UPDATE`;
+      if (!rows[0]) throw new Error("Salarié introuvable.");
+      if (period) {
+        const preferences = rows[0];
+        if (preferences.paperPayslipSince) throw new Error("Ce salarié a choisi le bulletin papier. Remettez-lui le bulletin sur papier.");
+        const existing = await tx.$queryRaw<Array<{ id: string; replacedAt: Date | null; periodYear: number; periodMonth: number }>>`SELECT "id", "replacedAt", "periodYear", "periodMonth" FROM "employee_documents" WHERE "organizationId" = ${organizationId} AND "employeeId" = ${employee.id} AND "kind" = 'PAYSLIP'`;
+        const readiness = electronicPayslipReadiness({ noticeAt: preferences.noticeAt, method: preferences.noticeMethod, alreadyReceivedElectronic: existing.length > 0, today: new Date().toISOString().slice(0, 10) });
+        if (!readiness.ready) throw new Error(readiness.reason === "WAITING" ? `Le premier bulletin électronique peut être publié à partir du ${readiness.availableFrom}.` : "Enregistrez d’abord la remise de la note d’information sur le bulletin électronique.");
+        if (existing.some(row => !row.replacedAt && row.periodYear === period.year && row.periodMonth === period.month) && formData.get("confirmReplacement") !== "on") throw new Error("Un bulletin existe déjà pour ce mois. Confirmez son remplacement ; l’ancienne version restera conservée.");
+      }
+      return publishVaultDocument(tx, {
+        organizationId, employeeId: employee.id, kind, title, fileName: period ? payslipFileName(period.year, period.month) : safeFileName(file.name || title), pdf, actorUserId: userId, actorKind: "EMPLOYER",
+        periodYear: period?.year, periodMonth: period?.month,
+      });
+    });
     if (outcome.status === "UNCHANGED") return { success: "Ce document est déjà dans l'espace du salarié." };
     const notified = await notifyEmployeeOfDocuments({ organizationId, organizationName, employeeId: employee.id, documents: [{ documentId: outcome.documentId, label: title, corrected: outcome.status === "REPLACED" }], actorUserId: userId });
-    await audit(organizationId, userId, "employee_space.document.uploaded", employee.id, { kind, documentId: outcome.documentId, status: outcome.status, notified });
+    await audit(organizationId, userId, "employee_space.document.uploaded", employee.id, { kind, documentId: outcome.documentId, status: outcome.status, notified, source: "EXTERNAL", periodYear: period?.year, periodMonth: period?.month });
     refresh(employee.id);
     return { success: notified === "NOTIFIED" ? "Document publié, le salarié est prévenu par e-mail." : notified === "FAILED" ? "Document publié, mais l'e-mail de notification n'est pas parti." : "Document publié. Le salarié le verra dès l'activation de son espace." };
   } catch (error) {

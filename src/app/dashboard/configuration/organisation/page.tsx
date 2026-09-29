@@ -176,8 +176,8 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
       <Link href="/dashboard/configuration" className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-faint hover:text-ink"><ArrowLeft size={14} /> Configuration</Link>
       <h1 className="mt-3 text-2xl font-semibold text-ink">Organisation</h1>
       <p className="mt-1 text-sm text-ink-soft">{canEditOrganization ? "L’identité de l’entreprise est reprise de son SIRET. Il ne vous reste que ce que RH Pilot ne peut pas savoir." : "Votre rôle dans l’organisation."}</p>
-      {saved && <div role="status" className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-800">✓ Modifications enregistrées.</div>}
-      {registryFlash && <div role="status" className={`mt-4 rounded-lg border px-4 py-3 text-sm ${registryFlash.ok ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-200 bg-amber-50 text-amber-900"}`}>{registryFlash.message}</div>}
+      {saved && <div role="status" className="mt-4 rounded-lg border border-accent-teal/30 bg-accent-teal/10 px-4 py-3 text-sm font-medium text-accent-teal">✓ Modifications enregistrées.</div>}
+      {registryFlash && <div role="status" className={`mt-4 rounded-lg border px-4 py-3 text-sm ${registryFlash.ok ? "border-accent-teal/30 bg-accent-teal/10 text-accent-teal" : "border-amber-200 bg-amber-50 text-amber-900"}`}>{registryFlash.message}</div>}
 
       {canEditOrganization && (
         <Card className="mt-6">
@@ -254,7 +254,7 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
           <PayrollSettingsFields values={payrollSettingsValues(social, automaticHeadcount)} />
           <Card className="mt-4">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><div><h2 className="text-sm font-semibold text-ink">Convention collective</h2><p className="mt-1 text-sm text-ink-soft">Reprise automatiquement de la DSN de votre établissement quand elle y est déclarée. Changez-la ici si une autre convention s&apos;applique.</p></div><Link href="https://code.travail.gouv.fr/outils/convention-collective/entreprise" target="_blank" rel="noreferrer" className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-brand-primary hover:underline"><ExternalLink size={13} /> Vérifier l&apos;IDCC</Link></div>
-            <div className="mt-4"><CollectiveAgreementFields agreements={collectiveAgreements} defaultIdcc={organization?.collectiveAgreement?.idcc ?? ""} defaultName={organization?.collectiveAgreement?.name ?? organization?.conventionCollective ?? ""} /></div>
+            <div className="mt-4"><CollectiveAgreementFields defaultNaf={organization?.payrollNafCode ?? ""} agreements={collectiveAgreements} defaultIdcc={organization?.collectiveAgreement?.idcc ?? ""} defaultName={organization?.collectiveAgreement?.name ?? organization?.conventionCollective ?? ""} /></div>
           </Card>
         </>)}
         <div className="mt-6 flex justify-end"><Button type="submit">Enregistrer les modifications</Button></div>

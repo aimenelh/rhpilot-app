@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendConfiguredReminders } from "@/lib/reminders";
@@ -58,9 +59,17 @@ async function purgeStaleDemoEmployees() {
   return { purgedCount: result.count };
 }
 
+function safeEqual(a: string, b: string) {
+  const left = Buffer.from(a);
+  const right = Buffer.from(b);
+  return left.length === right.length && timingSafeEqual(left, right);
+}
+
 export async function GET(request: Request) {
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  const secret = process.env.CRON_SECRET;
+  // Sans secret configuré, « Bearer undefined » ne doit jamais ouvrir la route.
+  if (!secret || secret.length < 16 || !safeEqual(authHeader ?? "", `Bearer ${secret}`)) {
     return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
   }
 

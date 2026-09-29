@@ -9,7 +9,7 @@ import c from "./CreatingAccount.module.css";
 
 // Suite directe de l'inscription : la même fenêtre revient au centre et le
 // fil corail pose, une à une, les briques de l'espace pendant que le compte
-// se prépare. Même durée qu'avant (3,4 s), puis le tableau de bord.
+// se prépare, en 1,8 s, puis le tableau de bord.
 
 const STEPS = [
   "Votre compte est créé",
@@ -17,8 +17,8 @@ const STEPS = [
   "Le calendrier des échéances vous attend",
   "Il reste à nommer votre entreprise et à ajouter un premier salarié",
 ];
-const STEP_MS = 650;
-const TOTAL_MS = 3400;
+const STEP_MS = 330;
+const TOTAL_MS = 1800;
 
 export function CreatingAccountAnimation() {
   const router = useRouter();
@@ -34,7 +34,7 @@ export function CreatingAccountAnimation() {
     if (reduce) setShown(STEPS.length);
     const timers = reduce ? [] : STEPS.map((_, index) => window.setTimeout(() => setShown((n) => Math.max(n, index + 1)), 250 + index * STEP_MS));
     const readyTimer = window.setTimeout(() => setReady(true), reduce ? 600 : 250 + STEPS.length * STEP_MS);
-    const done = window.setTimeout(() => routerRef.current.replace("/dashboard"), reduce ? 2000 : TOTAL_MS);
+    const done = window.setTimeout(() => routerRef.current.replace("/dashboard"), reduce ? 900 : TOTAL_MS);
     return () => {
       timers.forEach(window.clearTimeout);
       window.clearTimeout(readyTimer);

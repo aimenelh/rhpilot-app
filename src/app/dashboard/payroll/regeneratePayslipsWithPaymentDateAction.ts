@@ -2,12 +2,14 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   generatePayslipsFromLockedSnapshotAction,
   type PayrollPayslipGenerationFormState,
 } from "./generatePayslipsFromLockedSnapshotAction";
+import { getPayrollMembership } from "@/lib/payrollAccess";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type { PayrollPayslipGenerationFormState } from "./generatePayslipsFromLockedSnapshotAction";
 
@@ -64,7 +66,7 @@ export async function regeneratePayslipsWithPaymentDateAction(
   prevState: PayrollPayslipGenerationFormState,
   formData: FormData,
 ): Promise<PayrollPayslipGenerationFormState> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {
@@ -155,6 +157,6 @@ export async function regeneratePayslipsWithPaymentDateAction(
       // Keep the original error: it explains why generation failed. A restore
       // failure will also be visible in runtime logs and must be investigated.
     }
-    return { error: error instanceof Error ? error.message : "La régénération des bulletins a échoué." };
+    return { error: userFacingError(error, "La régénération des bulletins a échoué.") };
   }
 }

@@ -53,7 +53,7 @@ const ARTICLES = [
 ];
 
 export const metadata = {
-  title: "Ressources, RH Pilot",
+  title: "Ressources",
   description:
     "Des repères pour le quotidien RH : articles et points de vigilance.",
 };

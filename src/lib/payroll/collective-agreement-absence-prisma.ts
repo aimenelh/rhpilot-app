@@ -32,6 +32,8 @@ export function parseCollectiveAgreementAbsenceTreatment(
     : fallbackRuleVersionId;
 
   if (!effect || !basis || divisor === null || rate === null) return null;
+  // Une retenue ou un ajout calculé au jour ou à l'heure a besoin de son diviseur et de son taux.
+  if (effect !== "EXCLUDE_FROM_GROSS" && basis !== "NONE" && basis !== "RULE_DEFINED" && (divisor === undefined || rate === undefined)) return null;
   if (divisor !== undefined && (!Number.isFinite(divisor) || divisor <= 0)) return null;
   if (rate !== undefined && (!Number.isFinite(rate) || rate < 0 || rate > 1)) return null;
 

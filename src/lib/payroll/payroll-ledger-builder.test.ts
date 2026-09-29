@@ -4,10 +4,10 @@ import type { SocialPayrollResult } from "./social-engine";
 import type { MinimumSalaryControlSnapshot } from "./minimum-salary-control";
 
 const socialResult: SocialPayrollResult = {
-  modelVersion: "11.1.0", grossAmount: 2250, legalCategory: "SAS", employeeContributions: 480, employerContributions: 820, netBeforeTax: 1770, netSocialAmount: 1785, employerCost: 3070,
+  modelVersion: "11.1.0", grossAmount: 2250, legalCategory: "SAS", employeeContributions: 480, employerContributions: 820, netBeforeTax: 1770, netTaxableAmount: 1830, netSocialAmount: 1785, employerCost: 3070,
   contributionDetails: [
-    { code: "vieillesse_plafonnee_salarie", label: "Assurance vieillesse plafonnée", sourceRule: "salarié . cotisations . vieillesse . plafonnée . salarié", side: "EMPLOYEE", amount: 180 },
-    { code: "atmp", label: "Accidents du travail et maladies professionnelles", sourceRule: "salarié . cotisations . ATMP", side: "EMPLOYER", amount: 70 },
+    { code: "vieillesse_plafonnee_salarie", label: "Assurance vieillesse plafonnée", sourceRule: "salarié . cotisations . vieillesse . plafonnée . salarié", side: "EMPLOYEE", baseAmount: 2250, rate: 0.08, amount: 180 },
+    { code: "atmp", label: "Accidents du travail et maladies professionnelles", sourceRule: "salarié . cotisations . ATMP", side: "EMPLOYER", baseAmount: 2250, rate: 0.0311, amount: 70 },
   ],
 };
 const commonInput = { baseSalaryAmount: 2000, ruleVersionId: "rule-1", sourceName: "Urssaf / Mon-entreprise", sourceUrl: "https://mon-entreprise.urssaf.fr/documentation/salari%C3%A9/cotisations", socialResult, withholdingTax: 0, withholdingTaxRateProvided: false };

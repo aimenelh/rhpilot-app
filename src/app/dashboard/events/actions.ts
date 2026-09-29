@@ -10,6 +10,7 @@ import { triggerEmployeeEvent } from "@/lib/eventEngine";
 import type { TaskStatus, Prisma } from "@prisma/client";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type TriggerEventFormState = { error: string } | undefined;
 
@@ -56,7 +57,7 @@ export async function triggerEvent(
     });
     employeeEventId = employeeEvent.id;
   } catch (err) {
-    return { error: err instanceof Error ? err.message : "Une erreur est survenue." };
+    return { error: userFacingError(err, "Une erreur est survenue.") };
   }
 
   redirect(

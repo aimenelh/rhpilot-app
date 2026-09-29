@@ -46,12 +46,17 @@ function snapshotWithholdingTax(snapshot: CalculationSnapshot, employeeId: strin
 
 const DSN_UNMAPPED_BULLETIN_LINES = new Set(["ENTRY_EXIT", "SEVERANCE", "PAID_LEAVE_COMPENSATION", "NOTICE_COMPENSATION", "CDD_END_ALLOWANCE"]);
 
-function assertSimpleDsnScope(snapshot: CalculationSnapshot, employeeId: string): void {
-  // Entrées, sorties et indemnités de rupture exigent les blocs de fin de contrat et d'indemnités, pas encore émis.
-  const unmapped = (snapshot.bulletin?.lines ?? []).find((line) => line.code && DSN_UNMAPPED_BULLETIN_LINES.has(line.code));
-  if (unmapped) throw new Error(`DSN bloquée pour le salarié ${employeeId} : les entrées, sorties et indemnités de fin de contrat nécessitent encore les blocs de fin de contrat (S21.G00.62) et d'indemnités avant export.`);
-  if ((snapshot.variables?.length ?? 0) > 0) throw new Error(`DSN bloquée pour le salarié ${employeeId} : les variables de paie nécessitent encore leur ventilation NEODeS en blocs prime/autre revenu avant export.`);
-  if ((snapshot.validatedAbsences?.length ?? 0) > 0) throw new Error(`DSN bloquée pour le salarié ${employeeId} : les absences nécessitent encore leur ventilation détaillée d'activité/événement avant export.`);
+/**
+ * Éléments d'un bulletin que la DSN préparatoire ne sait pas encore déclarer. Tous sont listés
+ * d'un coup (et pas seulement le premier), pour que l'entreprise voie d'emblée ce qui reste à
+ * déclarer par un autre moyen (logiciel de paie, expert-comptable ou saisie sur net-entreprises).
+ */
+export function dsnScopeIssues(snapshot: { variables?: unknown[]; validatedAbsences?: unknown[]; bulletin?: { lines?: Array<{ code?: string }> } }): string[] {
+  const issues: string[] = [];
+  if ((snapshot.bulletin?.lines ?? []).some((line) => line.code && DSN_UNMAPPED_BULLETIN_LINES.has(line.code))) issues.push("entrée, sortie ou indemnité de fin de contrat (blocs S21.G00.62 non émis)");
+  if ((snapshot.variables?.length ?? 0) > 0) issues.push("primes ou variables du mois (blocs primes et autres revenus non émis)");
+  if ((snapshot.validatedAbsences?.length ?? 0) > 0) issues.push("absences du mois (blocs d'arrêt et d'activité non émis)");
+  return issues;
 }
 
 function assertNirBirthYear(nir: string, birthDate: Date, employeeId: string): void {
@@ -83,7 +88,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
   const siret = requiredString(organization.siret, "le SIRET de l'organisation").replace(/\s+/g, "");
   if (!/^\d{14}$/.test(siret)) throw new Error("DSN bloquée : le SIRET de l'organisation doit contenir 14 chiffres.");
   const contactName = requiredString(organization.contactName, "le nom du contact DSN de l'organisation");
-  const contactEmail = requiredString(organization.contactEmail, "l'email du contact DSN de l'organisation");
+  const contactEmail = requiredString(organization.contactEmail, "l'e-mail du contact DSN de l'organisation");
   const contactPhone = requiredString(organization.contactPhone, "le téléphone du contact DSN de l'organisation");
   const declaredContactType = requiredString(organization.declaredContactType, "le type de contact chez le déclaré");
   const enterpriseApenCode = requiredString(organization.enterpriseApenCode, "le code APEN de l'entreprise");
@@ -115,6 +120,16 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
   const employeeById = new Map(employees.map((employee) => [employee.id, employee]));
   const dsnProfileByEmployee = new Map(dsnProfiles.map((profile) => [profile.employeeId, profile]));
 
+  const outOfScope = calculations.flatMap((calculation) => {
+    const issues = dsnScopeIssues(asSnapshot(calculation.calculationSnapshot));
+    if (issues.length === 0) return [];
+    const employee = employeeById.get(calculation.employeeId);
+    return [`${employee ? `${employee.firstName} ${employee.lastName}` : calculation.employeeId} : ${issues.join(", ")}`];
+  });
+  if (outOfScope.length > 0) {
+    throw new Error(`DSN préparatoire impossible ce mois-ci. RH Pilot ne déclare pas encore : ${outOfScope.join(" ; ")}. Déposez la DSN de ce mois avec votre expert-comptable ou sur net-entreprises.`);
+  }
+
   const dsnEmployees: DsnP26MonthlyInput["employees"] = [];
   for (const calculation of calculations) {
     const employee = employeeById.get(calculation.employeeId);
@@ -125,7 +140,6 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
     if (dsnProfile.countryCode?.trim()) throw new Error(`DSN bloquée pour ${employee.firstName} ${employee.lastName} : les adresses étrangères ne sont pas encore couvertes par le code de distribution à l'étranger.`);
 
     const snapshot = asSnapshot(calculation.calculationSnapshot);
-    assertSimpleDsnScope(snapshot, employee.id);
     const profileSnapshot = snapshot.profile;
     if (!profileSnapshot) throw new Error(`DSN bloquée : le profil paie verrouillé du salarié ${employee.id} est absent.`);
     const baseSalaryCents = requiredNumber(profileSnapshot.baseSalaryCents, `le salaire de base verrouillé du salarié ${employee.id}`);

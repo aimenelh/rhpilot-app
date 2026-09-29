@@ -2,10 +2,12 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calculatePayrollPeriod } from "@/lib/payroll/payroll-period-calculation";
 import { ENGINE_COMPUTED_VARIABLES, getBulletinVariable } from "@/lib/payroll/bulletin/variables";
+import { getPayrollMembership } from "@/lib/payrollAccess";
+import { userFacingError } from "@/lib/userFacingError";
 
 const VARIABLE_UNITS = ["EUR", "DAYS", "HOURS", "PERCENT", "UNITS"] as const;
 type VariableUnit = (typeof VARIABLE_UNITS)[number];
@@ -56,7 +58,7 @@ async function getEditablePayrollPeriod(periodId: string, organizationId: string
 }
 
 export async function addPayrollVariable(periodId: string, _prevState: PayrollVariableFormState, formData: FormData): Promise<PayrollVariableFormState> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent modifier les variables de paie." };
@@ -98,7 +100,7 @@ export async function addPayrollVariable(periodId: string, _prevState: PayrollVa
 }
 
 export async function deletePayrollVariable(periodId: string, variableId: string): Promise<PayrollVariableFormState> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent modifier les variables de paie." };
@@ -115,7 +117,7 @@ export async function deletePayrollVariable(periodId: string, variableId: string
 }
 
 export async function calculatePayrollPeriodAction(_prevState: PayrollCalculationFormState, formData: FormData): Promise<PayrollCalculationFormState> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent lancer le calcul de paie." };
@@ -131,12 +133,12 @@ export async function calculatePayrollPeriodAction(_prevState: PayrollCalculatio
     if (result.employeeCount === 0) return { error: "Aucun salarié actif n'est disponible pour cette période." };
     return undefined;
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Le calcul de la période a échoué." };
+    return { error: userFacingError(error, "Le calcul de la période a échoué.") };
   }
 }
 
 export async function movePayrollPeriodToReviewAction(_prevState: PayrollReviewFormState, formData: FormData): Promise<PayrollReviewFormState> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent ouvrir le contrôle de paie." };
@@ -161,7 +163,7 @@ export async function movePayrollPeriodToReviewAction(_prevState: PayrollReviewF
 }
 
 export async function validatePayrollPeriodAction(_prevState: PayrollValidationFormState, formData: FormData): Promise<PayrollValidationFormState> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent valider la paie." };
@@ -187,7 +189,7 @@ export async function validatePayrollPeriodAction(_prevState: PayrollValidationF
 }
 
 export async function lockPayrollPeriodAction(_prevState: PayrollLockFormState, formData: FormData): Promise<PayrollLockFormState> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent verrouiller la paie." };
@@ -211,7 +213,7 @@ export async function lockPayrollPeriodAction(_prevState: PayrollLockFormState, 
 }
 
 export async function reopenPayrollPeriodAction(_prevState: PayrollReopenFormState, formData: FormData): Promise<PayrollReopenFormState> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent rouvrir une période de paie." };
@@ -227,16 +229,20 @@ export async function reopenPayrollPeriodAction(_prevState: PayrollReopenFormSta
   if (!period) return { error: "Période de paie introuvable." };
   if (period.status !== "LOCKED") return { error: "Seule une période verrouillée peut être rouverte pour correction." };
 
-  const payslipCount = await prisma.payslip.count({
-    where: {
-      organizationId: membership.organizationId,
-      payrollPeriodId: period.id,
-    },
+  // Tant qu'aucun bulletin n'a été remis aux salariés, on peut rouvrir : les bulletins préparés sont
+  // supprimés (ils se régénèrent après correction). Une fois publiés, l'erreur se corrige par une
+  // régularisation sur la paie du mois suivant.
+  const payslips = await prisma.payslip.findMany({
+    where: { organizationId: membership.organizationId, payrollPeriodId: period.id },
+    select: { id: true, documentStatus: true, publishedAt: true },
   });
-  if (payslipCount > 0) return { error: "La période ne peut plus être rouverte après préparation d'un bulletin." };
+  if (payslips.some((payslip) => payslip.documentStatus === "PUBLISHED" || payslip.publishedAt)) {
+    return { error: "Des bulletins de ce mois ont déjà été remis aux salariés : il ne peut plus être rouvert. Corrigez l'erreur par une régularisation sur la paie du mois suivant." };
+  }
 
   const reopenedAt = new Date();
   await prisma.$transaction(async (tx) => {
+    if (payslips.length > 0) await tx.payslip.deleteMany({ where: { organizationId: membership.organizationId, payrollPeriodId: period.id } });
     await tx.payrollPeriod.update({
       where: { id: period.id },
       data: {
@@ -258,6 +264,7 @@ export async function reopenPayrollPeriodAction(_prevState: PayrollReopenFormSta
           month: period.month,
           reason,
           reopenedAt: reopenedAt.toISOString(),
+          discardedPayslips: payslips.length,
         },
       },
     });
@@ -269,7 +276,7 @@ export async function reopenPayrollPeriodAction(_prevState: PayrollReopenFormSta
 }
 
 export async function preparePayrollPayslipsAction(_prevState: PayrollPayslipPreparationFormState, formData: FormData): Promise<PayrollPayslipPreparationFormState> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent préparer les bulletins de paie." };

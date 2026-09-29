@@ -3,15 +3,18 @@
  * versement mobilité, contribution formation, forfait social...), calculé à
  * partir des salariés enregistrés dans RH Pilot plutôt que saisi.
  *
- * Règles appliquées (CSS art. R130-1, qui renvoie aux art. L1111-2 et
+ * Règles appliquées (CSS art. L130-1 et R130-1, qui renvoie aux art. L1111-2 et
  * L1111-3 du code du travail) :
- * - on compte les salariés sous contrat le dernier jour du mois ;
+ * - l'effectif de l'année est la moyenne des effectifs de chaque mois de l'année
+ *   civile précédente ; celui d'un mois se compte au dernier jour du mois ;
  * - les apprentis et les contrats de professionnalisation sont exclus ;
- * - les temps partiels comptent au prorata de leur horaire (151,67 h = 1).
+ * - les temps partiels comptent au prorata de leur horaire (151,67 h = 1) ;
+ * - loi Pacte : un seuil franchi à la hausse ne produit ses effets que lorsqu'il
+ *   a été atteint ou dépassé pendant cinq années civiles consécutives.
  *
- * Limite connue : la règle de la loi Pacte (un seuil franchi à la hausse ne
- * s'applique qu'après cinq années civiles consécutives) dépend d'un
- * historique antérieur à RH Pilot ; elle se traite par l'effectif saisi.
+ * Sans historique pour l'année précédente dans RH Pilot (création, ou salariés
+ * saisis récemment), l'effectif du mois sert d'estimation et un avertissement
+ * invite à saisir l'effectif réel dans Configuration > Organisation.
  */
 
 export const FULL_TIME_MONTHLY_HOURS = 151.67;
@@ -61,4 +64,52 @@ export function thresholdCrossingWarning(previous: number | null, current: numbe
     ? `Effectif calculé : ${current} salariés, soit au moins ${crossed} : ${effects} s'appliquent.`
     : `L'effectif calculé passe de ${previous} à ${current} salariés et atteint le seuil de ${crossed} : ${effects} s'appliquent désormais.`;
   return `${lead} Un seuil franchi ne compte qu'après cinq années civiles consécutives (loi Pacte) et l'Urssaf retient la moyenne de l'année précédente : si l'effectif à retenir est plus faible, indiquez-le dans Configuration > Organisation.`;
+}
+
+const PACTE_THRESHOLDS = [50, 20, 11] as const;
+
+function monthEnds(year: number): Date[] {
+  return Array.from({ length: 12 }, (_, month) => new Date(Date.UTC(year, month + 1, 0, 12)));
+}
+
+/** Moyenne des effectifs de fin de mois d'une année civile (0 si personne n'était sous contrat). */
+export function annualAverageHeadcount(employees: HeadcountEmployee[], year: number): number {
+  const total = monthEnds(year).reduce((sum, day) => sum + countThresholdHeadcount(employees, day), 0);
+  return Math.round((total / 12) * 100) / 100;
+}
+
+export type ThresholdHeadcount = {
+  headcount: number;
+  basis: "PREVIOUS_YEAR_AVERAGE" | "CURRENT_MONTH";
+  warnings: string[];
+};
+
+/**
+ * Effectif des seuils pour un mois de paie de l'année `year` : moyenne de l'année
+ * précédente, plafonnée sous chaque seuil qui n'est pas atteint depuis cinq années
+ * civiles consécutives (années sans historique dans RH Pilot : non opposables).
+ */
+export function resolveThresholdHeadcount(employees: HeadcountEmployee[], year: number, lastDayOfMonth: Date): ThresholdHeadcount {
+  const previous = annualAverageHeadcount(employees, year - 1);
+  if (previous === 0) {
+    const current = countThresholdHeadcount(employees, lastDayOfMonth);
+    const warnings = current >= 11
+      ? [`Effectif estimé à ${current} sur le mois en cours : RH Pilot n'a pas de salariés enregistrés pour ${year - 1}. L'Urssaf retient la moyenne de l'année précédente ; si l'entreprise employait déjà du personnel, indiquez cet effectif dans Configuration > Organisation.`]
+      : [];
+    return { headcount: current, basis: "CURRENT_MONTH", warnings };
+  }
+
+  let headcount = previous;
+  const warnings: string[] = [];
+  const history = [2, 3, 4, 5].map((back) => annualAverageHeadcount(employees, year - back));
+  for (const threshold of PACTE_THRESHOLDS) {
+    if (headcount < threshold) continue;
+    // Une année connue sous le seuil dans les quatre précédentes : le seuil n'est pas encore opposable.
+    const belowInKnownYear = history.some((average) => average > 0 && average < threshold);
+    if (belowInKnownYear) {
+      headcount = threshold - 1;
+      warnings.push(`Effectif moyen ${year - 1} : ${previous}. Le seuil de ${threshold} salariés n'est pas atteint depuis cinq années civiles consécutives (loi Pacte, CSS art. L130-1) : ses effets sont différés et l'effectif retenu est de ${threshold - 1}.`);
+    }
+  }
+  return { headcount, basis: "PREVIOUS_YEAR_AVERAGE", warnings };
 }

@@ -188,12 +188,14 @@ export function UploadEmployeeDocumentForm({ employeeId, defaultKind = "FRANCE_T
         <label className="block text-sm font-medium text-ink">
           Type
           <select name="kind" value={kind} onChange={(event) => setKind(event.target.value)} className="mt-1 block h-10 rounded-lg border border-surface-border bg-white px-2.5 text-sm text-ink">
+            <option value="PAYSLIP">Bulletin établi par un autre logiciel</option>
             <option value="FRANCE_TRAVAIL">Attestation employeur France Travail</option>
             <option value="WORK_CERTIFICATE">Certificat de travail signé</option>
             <option value="FINAL_SETTLEMENT">Reçu pour solde de tout compte signé</option>
             <option value="OTHER">Autre document</option>
           </select>
         </label>
+        {kind === "PAYSLIP" && <label className="block text-sm font-medium text-ink">Mois du bulletin<input type="month" name="period" required min="1950-01" max="2100-12" className="mt-1 block h-10 rounded-lg border border-surface-border px-3 text-sm" /></label>}
         {kind === "OTHER" ? (
           <label className="block flex-1 text-sm font-medium text-ink">
             Titre
@@ -206,6 +208,7 @@ export function UploadEmployeeDocumentForm({ employeeId, defaultKind = "FRANCE_T
         </label>
         <Submit>Publier</Submit>
       </div>
+      {kind === "PAYSLIP" && <div className="mt-3 space-y-2 text-sm text-ink-soft"><p>Déposez le PDF établi par votre comptable ou votre logiciel de paie (4 Mo maximum). Aucun recalcul : il sera remis au salarié avec son mois de référence, après vérification de l’information préalable et du choix papier.</p><label className="flex items-start gap-2"><input type="checkbox" name="confirmReplacement" className="mt-1" /><span>Si un bulletin existe pour ce mois, je confirme son remplacement. La version précédente restera conservée.</span></label></div>}
       {kind === "FRANCE_TRAVAIL" ? <p className="mt-2 text-xs leading-5 text-ink-faint">L&apos;attestation part à France Travail avec la DSN de fin de contrat : déposez ici l&apos;exemplaire salarié téléchargé sur net-entreprises.</p> : null}
       <Message state={state} />
     </form>

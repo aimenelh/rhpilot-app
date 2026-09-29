@@ -8,7 +8,8 @@
  * divergence apparaisse dès la mise à jour de l'un ou de l'autre.
  */
 
-export type Dated<T> = { from: string; value: T; source: string };
+/** `until` (inclus) borne la dernière valeur connue : au-delà, le calcul est bloqué. */
+export type Dated<T> = { from: string; until?: string; value: T; source: string };
 
 export class MissingParameterError extends Error {}
 
@@ -21,12 +22,19 @@ export function valueAt<T>(list: readonly Dated<T>[], date: Date, label: string)
   const day = isoDay(date);
   let found: Dated<T> | undefined;
   for (const entry of list) if (entry.from <= day && (!found || entry.from > found.from)) found = entry;
-  if (!found) throw new MissingParameterError(`Paramètre « ${label} » inconnu au ${day.split("-").reverse().join("/")} : le calcul est bloqué plutôt que d'utiliser une valeur non vérifiée.`);
+  if (!found || (found.until && day > found.until)) throw new MissingParameterError(`Paramètre « ${label} » inconnu au ${day.split("-").reverse().join("/")} : le calcul est bloqué plutôt que d'utiliser une valeur non vérifiée.`);
   return { value: found.value, source: found.source, from: found.from };
 }
 
 /** Première date couverte par les paramètres du moteur. */
 export const ENGINE_FIRST_SUPPORTED_DAY = "2026-01-01";
+
+/**
+ * Dernière date couverte. PMSS, Smic, taux de cotisations, RGDU et plafonds changent
+ * au 1er janvier : sans cette borne, les valeurs 2026 s'appliqueraient en 2027 sans
+ * prévenir. À repousser en même temps que la saisie des paramètres 2027, vérifiés.
+ */
+export const ENGINE_LAST_SUPPORTED_DAY = "2026-12-31";
 
 // ---------------------------------------------------------------------------
 // Plafond de la sécurité sociale et Smic
@@ -166,10 +174,36 @@ export const OVERTIME: readonly Dated<OvertimeParameters>[] = [
 // Frais professionnels exonérés
 // ---------------------------------------------------------------------------
 
-export type ExpenseParameters = { mealVoucherEmployerExemptPerVoucher: number; mealVoucherEmployerShareMin: number; mealVoucherEmployerShareMax: number; publicTransportExemptShareCap: number };
+export type ExpenseParameters = {
+  mealVoucherEmployerExemptPerVoucher: number;
+  mealVoucherEmployerShareMin: number;
+  mealVoucherEmployerShareMax: number;
+  publicTransportExemptShareCap: number;
+  /** Indemnités de repas, par repas : sur le lieu de travail (horaires atypiques), hors des locaux, au restaurant en déplacement. */
+  mealAllowanceOnSite: number;
+  mealAllowanceOffSite: number;
+  mealAllowanceRestaurant: number;
+  /** Forfait mobilités durables : plafond annuel seul, et plafond cumulé avec la prise en charge du transport public. */
+  sustainableMobilityAnnualCap: number;
+  sustainableMobilityCombinedAnnualCap: number;
+};
 
 export const EXPENSES: readonly Dated<ExpenseParameters>[] = [
-  { from: "2026-01-01", value: { mealVoucherEmployerExemptPerVoucher: 7.32, mealVoucherEmployerShareMin: 0.5, mealVoucherEmployerShareMax: 0.6, publicTransportExemptShareCap: 0.75 }, source: "CSS art. L131-4 ; Urssaf — titres-restaurant 2026 (7,32 €) ; CGI art. 81, 19° ter a" },
+  {
+    from: "2026-01-01",
+    value: {
+      mealVoucherEmployerExemptPerVoucher: 7.32,
+      mealVoucherEmployerShareMin: 0.5,
+      mealVoucherEmployerShareMax: 0.6,
+      publicTransportExemptShareCap: 0.75,
+      mealAllowanceOnSite: 7.5,
+      mealAllowanceOffSite: 10.4,
+      mealAllowanceRestaurant: 21.4,
+      sustainableMobilityAnnualCap: 600,
+      sustainableMobilityCombinedAnnualCap: 900,
+    },
+    source: "CSS art. L131-4 ; Urssaf — titres-restaurant 2026 (7,32 €) et frais de repas 2026 (7,50 € / 10,40 € / 21,40 €) ; C. trav. art. L3261-3-1 et CSS art. L136-1-1 (forfait mobilités durables : 600 €, 900 € en cumul) ; CGI art. 81, 19° ter a",
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -286,7 +320,7 @@ export const PAS_DEFAULT_GRIDS: readonly Dated<Record<PasTerritory, PasBracket[]
   // La loi de finances 2026 ayant été promulguée le 19 février 2026, les grilles du
   // 1er mai 2025 sont restées applicables jusqu'au 30 avril 2026.
   { from: "2025-05-01", value: { METROPOLE: PAS_2025_METROPOLE, ANTILLES_REUNION: PAS_2025_ANTILLES, GUYANE_MAYOTTE: PAS_2025_GUYANE }, source: "BOFiP BOI-BAREME-000037 (grilles applicables à compter du 1er mai 2025)" },
-  { from: "2026-05-01", value: { METROPOLE: PAS_2026_METROPOLE, ANTILLES_REUNION: PAS_2026_ANTILLES, GUYANE_MAYOTTE: PAS_2026_GUYANE }, source: "BOFiP BOI-BAREME-000037-20260407 (grilles applicables à compter du 1er mai 2026, CGI art. 204 H)" },
+  { from: "2026-05-01", until: "2027-04-30", value: { METROPOLE: PAS_2026_METROPOLE, ANTILLES_REUNION: PAS_2026_ANTILLES, GUYANE_MAYOTTE: PAS_2026_GUYANE }, source: "BOFiP BOI-BAREME-000037-20260407 (grilles applicables à compter du 1er mai 2026, CGI art. 204 H)" },
 ];
 
 /** Abattement des contrats courts (CDD de moins de deux mois) : 50 % du Smic net imposable mensuel. */

@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { getCurrentMembership } from "@/lib/auth";
+
 import { prisma } from "@/lib/prisma";
 import DsnOrganizationForm from "./DsnOrganizationForm";
 import DsnExportButton from "./DsnExportButton";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 type OrganizationSettingsRow = {
   contactName: string | null;
@@ -17,7 +18,7 @@ type EmployeeDsnStatusRow = { employeeId: string };
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 
 export default async function DsnPreparationPage() {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   if (!membership) return null;
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {
     return <div className="mx-auto max-w-4xl rounded-xl border border-surface-border bg-white p-6"><h1 className="text-xl font-semibold text-ink">DSN</h1><p className="mt-2 text-sm text-ink-soft">La préparation et l'export DSN sont réservés aux administrateurs.</p></div>;

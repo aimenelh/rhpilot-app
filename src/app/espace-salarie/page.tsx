@@ -6,7 +6,7 @@ import p from "@/components/landing/InnerPages.module.css";
 import e from "./espace-salarie.module.css";
 
 export const metadata = {
-  title: "Espace salarié : bulletins, congés et documents, RH Pilot",
+  title: "Espace salarié : bulletins, congés et documents",
   description:
     "Chaque salarié retrouve ses bulletins de paie, ses congés, ses demandes d’absence et ses documents de fin de contrat sur son téléphone. Inclus dans RH Pilot, sans coût par compte.",
   alternates: { canonical: "/espace-salarie" },

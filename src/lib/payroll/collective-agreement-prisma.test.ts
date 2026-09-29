@@ -1,6 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const prismaMock = {
+// vi.hoisted : le mock est créé avant que vi.mock (remonté en tête de fichier) ne s'exécute.
+const prismaMock = vi.hoisted(() => ({
+  $queryRaw: vi.fn(async () => []),
+  employee: {
+    findFirst: vi.fn(async () => null),
+  },
   organization: {
     findUnique: vi.fn(),
   },
@@ -16,7 +21,7 @@ const prismaMock = {
   collectiveAgreementRule: {
     findMany: vi.fn(),
   },
-};
+}));
 
 vi.mock("@/lib/prisma", () => ({ prisma: prismaMock }));
 

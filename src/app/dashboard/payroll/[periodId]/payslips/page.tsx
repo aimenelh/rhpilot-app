@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getCurrentMembership } from "@/lib/auth";
+
 import { prisma } from "@/lib/prisma";
 import { getPayslipPrerequisites, hasBlockingPayslipPrerequisites } from "@/lib/payroll/payslip-prerequisites";
 import PayrollPayslipPrepareButton from "../../PayrollPayslipPrepareButton";
 import PayrollPayslipGenerateButton from "../../PayrollPayslipGenerateButton";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 const MONTHS = [
   "Janvier",
@@ -41,7 +42,7 @@ export default async function PayrollPayslipsPage({
 }: {
   params: { periodId: string };
 }) {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   if (!membership) redirect("/dashboard");
 
   const period = await prisma.payrollPeriod.findFirst({
@@ -313,10 +314,10 @@ export default async function PayrollPayslipsPage({
                       </span>
                     </td>
                     <td className="px-5 py-4 text-ink-soft">
-                      {payslip?.generatedAt ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(payslip.generatedAt) : "—"}
+                      {payslip?.generatedAt ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(payslip.generatedAt) : "Pas encore"}
                     </td>
                     <td className="px-5 py-4 text-ink-soft">
-                      {payslip?.publishedAt ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(payslip.publishedAt) : "—"}
+                      {payslip?.publishedAt ? new Intl.DateTimeFormat("fr-FR", { dateStyle: "short", timeStyle: "short" }).format(payslip.publishedAt) : "Pas encore"}
                     </td>
                     <td className="px-5 py-4">
                       {canDownload ? (

@@ -3,8 +3,6 @@
 import { useEffect, useState, type CSSProperties } from "react";
 import styles from "./WhyConversationScene.module.css";
 
-const PHONE_MOCKUP_SRC =
-  "https://static.vecteezy.com/system/resources/previews/041/306/517/non_2x/ai-generated-hand-holding-phone-mockup-with-blank-screen-free-png.png";
 
 const messages = [
   { author: "Sophie", tone: "incoming", text: "Le nouveau collaborateur vient d’arriver. Qui s’occupe de l’accueil ?" },
@@ -32,7 +30,7 @@ export function WhyConversationScene() {
       <div className={styles.deskShadow} aria-hidden="true" />
 
       <div className={styles.mockupStage} aria-hidden="true">
-        <img className={styles.phoneFrame} src={PHONE_MOCKUP_SRC} alt="" />
+        <div className={styles.phoneFrame} />
 
         <div className={styles.screen} key={replayKey}>
           <div className={styles.statusBar}>
@@ -88,9 +86,7 @@ export function WhyConversationScene() {
         </button>
       ) : null}
 
-      <a className={styles.attribution} href="https://www.vecteezy.com/free-png/holding-phone" target="_blank" rel="noreferrer">
-        Mockup : Vecteezy
-      </a>
+
     </div>
   );
 }

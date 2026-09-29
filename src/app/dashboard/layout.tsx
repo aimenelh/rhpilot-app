@@ -9,10 +9,14 @@ import { getUserDisplayName } from "@/lib/displayName";
 import { getRhNews } from "@/lib/rhNews";
 import { isAiEnabled } from "@/lib/ai";
 import { AppShell } from "@/components/AppShell";
+import { canUsePayroll } from "@/lib/payrollAccess";
 import { Logomark, Wordmark } from "@/components/Brand";
 import { InitializingScreen } from "@/components/InitializingScreen";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
 import { isOrganizationAdmin, taskAccessWhere } from "@/lib/accessPolicy";
+
+// Chaque onglet porte le nom de sa page : « Salariés · RH Pilot ».
+export const metadata = { title: { default: "Tableau de bord · RH Pilot", template: "%s · RH Pilot" }, robots: { index: false } };
 
 export default async function DashboardLayout({
   children,
@@ -96,6 +100,8 @@ export default async function DashboardLayout({
     <AppShell
       organizationName={currentMembership.organization.name}
       accessRole={currentMembership.accessRole}
+      payrollEnabled={canUsePayroll(currentMembership)}
+      discoveryTourCompleted={Boolean(user.discoveryTourCompletedAt)}
       assistantSummary={{
         userDisplayName: getUserDisplayName(user),
         overdueCount,

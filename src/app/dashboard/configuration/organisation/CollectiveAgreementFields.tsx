@@ -1,6 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
+import { suggestNafConventions } from "./nafActions";
 import { Input, Label, FieldHint } from "@/components/ui/Field";
 
 type Agreement = { id: string; idcc: string; name: string };
@@ -28,14 +29,27 @@ export function CollectiveAgreementFields({
   agreements,
   defaultIdcc,
   defaultName,
+  defaultNaf = "",
 }: {
   agreements: Agreement[];
   defaultIdcc: string;
   defaultName: string;
+  defaultNaf?: string;
 }) {
   const options = useMemo(() => mergeAgreements(agreements), [agreements]);
   const [idcc, setIdcc] = useState(defaultIdcc);
   const [name, setName] = useState(defaultName);
+  const [pending, startTransition] = useTransition();
+  const [suggestions, setSuggestions] = useState<Array<{ idcc: string; name: string }> | null>(null);
+  const [suggestionError, setSuggestionError] = useState<string | null>(null);
+  function suggest() {
+    const field = document.querySelector<HTMLInputElement>("#payrollNafCode");
+    startTransition(async () => {
+      const result = await suggestNafConventions(field?.value ?? defaultNaf);
+      setSuggestionError(result.error ?? null);
+      setSuggestions(result.candidates ?? null);
+    });
+  }
 
   function applyAgreement(agreement: Agreement) {
     setIdcc(agreement.idcc);
@@ -62,6 +76,15 @@ export function CollectiveAgreementFields({
 
   return (
     <div className="space-y-4">
+      <div className="rounded-lg border border-surface-border p-4">
+        <button type="button" disabled={pending} onClick={suggest} className="font-semibold text-brand-primary-dark hover:underline disabled:opacity-50">{pending ? "Recherche…" : "Proposer des conventions à partir du code APE"}</button>
+        <p className="mt-2 text-xs leading-5 text-ink-soft">Candidats observés dans un échantillon d’entreprises du même code APE, via le registre officiel. Le code APE est un indice : vérifiez l’activité réelle et le champ de la convention avant de confirmer. Aucun choix n’est enregistré automatiquement.</p>
+        {suggestionError && <p role="alert" className="mt-2 text-sm text-accent-rose">{suggestionError}</p>}
+        {suggestions && <div className="mt-3 space-y-2">{suggestions.length === 0 ? <p className="text-sm text-ink-soft">Aucune convention retrouvée dans cet échantillon.</p> : suggestions.map(candidate => {
+          const known = options.find(option => option.idcc === candidate.idcc);
+          return <button key={candidate.idcc} type="button" onClick={() => applyAgreement({ id: `ccn-${candidate.idcc}`, ...candidate, name: known?.name ?? candidate.name })} className="block text-left text-sm text-ink hover:underline">{candidate.idcc} : {known?.name ?? candidate.name}</button>;
+        })}<a href="https://code.travail.gouv.fr/outils/convention-collective" target="_blank" rel="noopener noreferrer" className="block text-sm text-brand-primary-dark underline">Vérifier sur le Code du travail numérique</a></div>}
+      </div>
       <div>
         <Label htmlFor="collectiveAgreementSelect">Choisir une convention</Label>
         <select
@@ -77,7 +100,7 @@ export function CollectiveAgreementFields({
           <option value="">Sélectionner une convention…</option>
           {options.map((agreement) => (
             <option key={agreement.idcc} value={agreement.idcc}>
-              {agreement.idcc} — {agreement.name}
+              {agreement.idcc} : {agreement.name}
             </option>
           ))}
         </select>

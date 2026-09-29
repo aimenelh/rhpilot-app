@@ -10,6 +10,39 @@ import { Resend } from "resend";
 
 type SendEmailResult = { ok: true } | { ok: false; error: string };
 
+/**
+ * Version texte d'un e-mail HTML : exigée par de nombreux filtres anti-spam et lue par
+ * les messageries qui n'affichent pas le HTML. Les liens gardent leur adresse.
+ */
+export function htmlToText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<a [^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, (_match, href: string, label: string) => `${label.replace(/<[^>]+>/g, "").trim()} (${href})`)
+    .replace(/<br\s*\/?>/gi, "\n")
+    .replace(/<\/(p|div|h[1-6]|li|tr)>/gi, "\n")
+    .replace(/<li[^>]*>/gi, "- ")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
+
+/** En-tête commun (logo RH Pilot) ajouté à chaque e-mail qui n'a pas déjà sa propre mise en page complète. */
+export function withEmailBranding(html: string): string {
+  if (/<html[\s>]/i.test(html) || html.includes('data-rhpilot-header')) return html;
+  const site = process.env.NEXT_PUBLIC_APP_URL ?? "https://rhpilot.fr";
+  return `<div data-rhpilot-header style="max-width:560px;margin:0 auto;padding:24px 24px 0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif">
+<a href="${site}" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:#14151A;font-weight:600;font-size:15px">
+<img src="${site}/icons/icon-192.png" width="28" height="28" alt="" style="border-radius:7px;vertical-align:middle"> RH Pilot</a></div>
+${html}`;
+}
+
 // Les valeurs injectées dans le gabarit (noms de salariés, libellés de
 // tâches...) viennent de données saisies par les utilisateurs — jamais
 // sans échappement dans du HTML.
@@ -43,7 +76,8 @@ export async function sendEmail({
 
   try {
     const resend = new Resend(apiKey);
-    const { error } = await resend.emails.send({ from, to, subject, html });
+    const branded = withEmailBranding(html);
+    const { error } = await resend.emails.send({ from, to, subject, html: branded, text: htmlToText(branded) });
     if (error) {
       console.error("Échec d'envoi Resend :", error);
       return { ok: false, error: error.message };
@@ -149,7 +183,10 @@ export async function sendEmailBatch(
   for (let index = 0; index < messages.length; index += 100) {
     const chunk = messages.slice(index, index + 100);
     try {
-      const { error } = await resend.batch.send(chunk.map((message) => ({ from, to: message.to, subject: message.subject, html: message.html })));
+      const { error } = await resend.batch.send(chunk.map((message) => {
+        const branded = withEmailBranding(message.html);
+        return { from, to: message.to, subject: message.subject, html: branded, text: htmlToText(branded) };
+      }));
       if (error) {
         console.error("Échec d'envoi groupé Resend :", error);
         results.push(...chunk.map(() => ({ ok: false as const, error: error.message })));

@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { triggerEmployeeEvent } from "@/lib/eventEngine";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
+import { userFacingError } from "@/lib/userFacingError";
 
 type LineResult = { line: number; input: string; message: string };
 
@@ -131,7 +132,7 @@ export async function bulkTriggerEvents(
       failures.push({
         line: lineNumber,
         input: raw,
-        message: err instanceof Error ? err.message : "Erreur inconnue lors de la génération.",
+        message: userFacingError(err, "Erreur inconnue lors de la génération."),
       });
     }
   }

@@ -41,7 +41,10 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "RH Pilot, votre copilote d'organisation RH",
+  metadataBase: new URL("https://rhpilot.fr"),
+  title: { default: "RH Pilot | Logiciel RH pour TPE et PME", template: "%s | RH Pilot" },
+  openGraph: { type: "website", locale: "fr_FR", siteName: "RH Pilot", title: "RH Pilot | Le suivi RH de votre équipe", description: "Salariés, parcours, échéances et documents réunis au même endroit.", images: [{ url: "/opengraph-image", width: 1200, height: 630 }] },
+  twitter: { card: "summary_large_image", images: ["/opengraph-image"] },
   description:
     "RH Pilot transforme chaque événement RH en plan d'action complet : tâches, échéances, responsables et preuves.",
   robots: {

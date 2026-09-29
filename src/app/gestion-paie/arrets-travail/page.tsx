@@ -2,7 +2,7 @@ import { PayrollFeaturePage } from "@/components/landing/PayrollFeaturePage";
 import { PAYROLL_FEATURES } from "@/components/landing/payrollFeatures";
 
 export const metadata = {
-  title: "Arrêts de travail, RH Pilot",
+  title: "Arrêts de travail",
   description: "Structurez le suivi des arrêts de travail et leur prise en compte dans la paie avec RH Pilot.",
 };
 

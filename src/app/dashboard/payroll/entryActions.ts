@@ -2,18 +2,20 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getBulletinVariable } from "@/lib/payroll/bulletin/variables";
 import { RECURRING_CODES, entryTabOf, parseCellInput } from "@/lib/payroll/entry-grid";
 import { calculatePayrollPeriod } from "@/lib/payroll/payroll-period-calculation";
+import { getPayrollMembership } from "@/lib/payrollAccess";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type EntryActionResult = { ok: true; count?: number } | { error: string; cellErrors?: Record<string, string> };
 
 type Context = { organizationId: string; userId: string; period: { id: string; year: number; month: number; status: string } };
 
 async function context(periodId: string, options: { draftOnly?: boolean } = {}): Promise<Context> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) throw new Error("Session expirée, veuillez recharger la page.");
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) throw new Error("Seuls les administrateurs peuvent préparer la paie.");
@@ -41,7 +43,7 @@ function refresh(periodId: string) {
   revalidatePath("/dashboard/payroll");
 }
 
-const failure = (error: unknown): EntryActionResult => ({ error: error instanceof Error ? error.message : "L'enregistrement a échoué." });
+const failure = (error: unknown): EntryActionResult => ({ error: userFacingError(error, "L'enregistrement a échoué.") });
 
 /** Enregistre une ou plusieurs cellules du tableau de saisie (frappe ou collage). */
 export async function saveEntryCells(periodId: string, cells: Array<{ employeeId: string; code: string; raw: string }>): Promise<EntryActionResult> {
@@ -64,15 +66,23 @@ export async function saveEntryCells(periodId: string, cells: Array<{ employeeId
       cellErrors[`${cell.employeeId}:${cell.code}`] = "Salarié hors de cette période.";
       return false;
     });
-    await prisma.$transaction(async (tx) => {
-      for (const cell of accepted) {
-        await tx.payrollVariable.deleteMany({ where: { organizationId, payrollPeriodId: period.id, employeeId: cell.employeeId, code: cell.code, reference: null } });
-        if (cell.value !== null) {
-          await tx.payrollVariable.create({ data: { id: randomUUID(), organizationId, payrollPeriodId: period.id, employeeId: cell.employeeId, code: cell.code, label: cell.label, amount: cell.value, unit: cell.unit, source: "MANUAL" } });
-        }
-      }
-      if (accepted.length > 0) await tx.auditLog.create({ data: { id: randomUUID(), organizationId, actorUserId: userId, action: "payroll.entry.saved", entityType: "PayrollPeriod", entityId: period.id, metadata: { cells: accepted.length } } });
-    });
+    // Deux requêtes pour tout le bloc (suppression groupée puis insertion groupée), au lieu de
+    // deux par cellule : un grand collage ne dépasse plus le délai de la transaction.
+    const unique = new Map(accepted.map((cell) => [`${cell.employeeId}:${cell.code}`, cell]));
+    const cellsToSave = [...unique.values()];
+    if (cellsToSave.length > 0) {
+      await prisma.$transaction([
+        prisma.payrollVariable.deleteMany({
+          where: { organizationId, payrollPeriodId: period.id, reference: null, OR: cellsToSave.map((cell) => ({ employeeId: cell.employeeId, code: cell.code })) },
+        }),
+        prisma.payrollVariable.createMany({
+          data: cellsToSave
+            .filter((cell) => cell.value !== null)
+            .map((cell) => ({ id: randomUUID(), organizationId, payrollPeriodId: period.id, employeeId: cell.employeeId, code: cell.code, label: cell.label, amount: cell.value as number, unit: cell.unit, source: "MANUAL" })),
+        }),
+        prisma.auditLog.create({ data: { id: randomUUID(), organizationId, actorUserId: userId, action: "payroll.entry.saved", entityType: "PayrollPeriod", entityId: period.id, metadata: { cells: cellsToSave.length } } }),
+      ]);
+    }
     refresh(period.id);
     if (Object.keys(cellErrors).length > 0) return { error: "Certaines valeurs n'ont pas été enregistrées.", cellErrors };
     return { ok: true, count: accepted.length };

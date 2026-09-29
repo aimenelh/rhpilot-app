@@ -11,6 +11,8 @@ import { Mascot } from "@/components/Mascot";
 import { getUserDisplayName } from "@/lib/displayName";
 import { sendDigestsNow, updateNotificationPreference } from "./actions";
 
+export const metadata = { title: "Notifications" };
+
 const TYPE_LABELS: Record<string, string> = {
   digest_daily: "Résumé quotidien",
   digest_weekly: "Résumé hebdomadaire",

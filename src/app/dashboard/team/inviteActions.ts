@@ -1,5 +1,6 @@
 "use server";
 
+import { newInvitationToken } from "@/lib/invitationToken";
 import { randomUUID } from "crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
@@ -8,6 +9,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { sendEmail, escapeHtml } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
+import { userFacingError } from "@/lib/userFacingError";
 
 const INVITATION_VALID_DAYS = 7;
 
@@ -40,7 +42,7 @@ export async function createInvitation(
   try {
     ({ membership, user } = await requireInvitePermission());
   } catch (err) {
-    return { error: err instanceof Error ? err.message : "Action non autorisée." };
+    return { error: userFacingError(err, "Action non autorisée.") };
   }
 
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
@@ -50,7 +52,7 @@ export async function createInvitation(
   // second propriétaire se décide autrement, pas via ce formulaire.
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { error: "Adresse email invalide." };
+    return { error: "Adresse e-mail invalide." };
   }
 
   // Déjà membre de cette organisation ?
@@ -77,7 +79,7 @@ export async function createInvitation(
     return { error: "Une invitation est déjà en attente pour cette adresse." };
   }
 
-  const token = randomUUID();
+  const { token, stored: storedToken } = newInvitationToken();
   const expiresAt = new Date();
   expiresAt.setDate(expiresAt.getDate() + INVITATION_VALID_DAYS);
 
@@ -86,7 +88,7 @@ export async function createInvitation(
       organizationId: membership.organizationId,
       email,
       accessRole,
-      token,
+      token: storedToken,
       createdByUserId: user.id,
       expiresAt,
     },

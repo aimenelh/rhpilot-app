@@ -99,7 +99,7 @@ function TerminationForm({ periodId, employee, readOnly }: { periodId: string; e
         ) : null}
       </fieldset>
       {state?.error ? <p role="alert" className="mt-3 rounded-lg border border-accent-rose/30 bg-accent-rose/5 px-3 py-2 text-sm text-accent-rose">{state.error}</p> : null}
-      {state?.saved ? <p role="status" className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">Fiche enregistrée : elle sera prise en compte au prochain calcul.</p> : null}
+      {state?.saved ? <p role="status" className="mt-3 rounded-lg border border-accent-teal/30 bg-accent-teal/10 px-3 py-2 text-sm text-accent-teal">Fiche enregistrée : elle sera prise en compte au prochain calcul.</p> : null}
       {!readOnly ? <div className="mt-4 flex justify-end"><Save /></div> : null}
     </form>
   );

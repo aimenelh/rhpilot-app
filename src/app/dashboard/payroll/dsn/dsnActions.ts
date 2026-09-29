@@ -2,9 +2,11 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { assertNirFormat, encryptDsnSensitiveValue } from "@/lib/payroll/dsn-pii";
+import { getPayrollMembership } from "@/lib/payrollAccess";
+import { userFacingError } from "@/lib/userFacingError";
 
 export type DsnFormState = { error?: string; success?: string } | undefined;
 
@@ -50,7 +52,7 @@ function listedCode(formData: FormData, key: string, label: string, allowed: Set
 }
 
 async function adminContext() {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) throw new Error("Session expirée, veuillez recharger la page.");
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {
@@ -66,12 +68,12 @@ export async function saveDsnOrganizationSettings(
   try {
     const { membership, user } = await adminContext();
     const contactName = required(formData, "contactName", "Le nom du contact DSN");
-    const contactEmail = required(formData, "contactEmail", "L'adresse email du contact DSN").toLowerCase();
+    const contactEmail = required(formData, "contactEmail", "L'adresse e-mail du contact DSN").toLowerCase();
     const contactPhone = required(formData, "contactPhone", "Le téléphone du contact DSN");
     const declaredContactType = listedCode(formData, "declaredContactType", "Le type de contact chez le déclaré", CONTACT_TYPES);
     const enterpriseApenCode = code(formData, "enterpriseApenCode", "Le code APEN de l'entreprise", 5);
     if (!/^\d{4}[A-Z]$/.test(enterpriseApenCode)) throw new Error("Le code APEN doit respecter le format NAF sur 5 caractères, par exemple 6201Z.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) throw new Error("L'adresse email du contact DSN est invalide.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) throw new Error("L'adresse e-mail du contact DSN est invalide.");
     if (!/^[+0-9(). /-]{10,20}$/.test(contactPhone)) throw new Error("Le numéro de téléphone du contact DSN doit comporter entre 10 et 20 caractères autorisés.");
 
     await prisma.$transaction(async (tx) => {
@@ -105,7 +107,7 @@ export async function saveDsnOrganizationSettings(
     revalidatePath("/dashboard/payroll/dsn");
     return { success: "Configuration DSN enregistrée. Le mode dépôt réel reste volontairement désactivé." };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Impossible d'enregistrer la configuration DSN." };
+    return { error: userFacingError(error, "Impossible d'enregistrer la configuration DSN.") };
   }
 }
 
@@ -248,6 +250,6 @@ export async function saveDsnEmployeeProfile(
     revalidatePath(`/dashboard/payroll/dsn/employees/${employee.id}`);
     return { success: `Profil DSN de ${employee.firstName} ${employee.lastName} enregistré.` };
   } catch (error) {
-    return { error: error instanceof Error ? error.message : "Impossible d'enregistrer le profil DSN." };
+    return { error: userFacingError(error, "Impossible d'enregistrer le profil DSN.") };
   }
 }
