@@ -1,5 +1,6 @@
 "use server";
 
+import { dayBefore } from "@/lib/payroll/profile-selection";
 import { revalidatePath } from "next/cache";
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
@@ -109,7 +110,8 @@ export async function saveEmployeePayrollProfile(
     for (const profile of existingProfiles) {
       await tx.payrollProfile.update({
         where: { id: profile.id },
-        data: { effectiveUntil: effectiveFrom, updatedAt: new Date() },
+        // L'ancien profil s'arrête la veille : aucun jour n'est couvert par deux salaires.
+        data: { effectiveUntil: dayBefore(effectiveFrom), updatedAt: new Date() },
       });
     }
 

@@ -228,16 +228,20 @@ export async function reopenPayrollPeriodAction(_prevState: PayrollReopenFormSta
   if (!period) return { error: "Période de paie introuvable." };
   if (period.status !== "LOCKED") return { error: "Seule une période verrouillée peut être rouverte pour correction." };
 
-  const payslipCount = await prisma.payslip.count({
-    where: {
-      organizationId: membership.organizationId,
-      payrollPeriodId: period.id,
-    },
+  // Tant qu'aucun bulletin n'a été remis aux salariés, on peut rouvrir : les bulletins préparés sont
+  // supprimés (ils se régénèrent après correction). Une fois publiés, l'erreur se corrige par une
+  // régularisation sur la paie du mois suivant.
+  const payslips = await prisma.payslip.findMany({
+    where: { organizationId: membership.organizationId, payrollPeriodId: period.id },
+    select: { id: true, documentStatus: true, publishedAt: true },
   });
-  if (payslipCount > 0) return { error: "La période ne peut plus être rouverte après préparation d'un bulletin." };
+  if (payslips.some((payslip) => payslip.documentStatus === "PUBLISHED" || payslip.publishedAt)) {
+    return { error: "Des bulletins de ce mois ont déjà été remis aux salariés : il ne peut plus être rouvert. Corrigez l'erreur par une régularisation sur la paie du mois suivant." };
+  }
 
   const reopenedAt = new Date();
   await prisma.$transaction(async (tx) => {
+    if (payslips.length > 0) await tx.payslip.deleteMany({ where: { organizationId: membership.organizationId, payrollPeriodId: period.id } });
     await tx.payrollPeriod.update({
       where: { id: period.id },
       data: {
@@ -259,6 +263,7 @@ export async function reopenPayrollPeriodAction(_prevState: PayrollReopenFormSta
           month: period.month,
           reason,
           reopenedAt: reopenedAt.toISOString(),
+          discardedPayslips: payslips.length,
         },
       },
     });

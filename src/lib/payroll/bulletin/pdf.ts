@@ -198,6 +198,8 @@ function missingFields(input: BulletinPdfInput): string[] {
     ["Nom de l'employeur", input.employer.name], ["Adresse de l'employeur", input.employer.address], ["SIRET", input.employer.siret], ["Code APE", input.employer.nafCode],
     ["Nom du salarié", input.employee.name], ["Emploi du salarié", input.employee.position], ["Classification du salarié", input.employee.classification],
     ["Convention collective ou référence au Code du travail", input.collectiveAgreement], ["Date de paiement", input.paymentDate],
+    // Mention obligatoire (C. trav. art. R3243-1) : numéro sous lequel les cotisations sont versées à l'Urssaf.
+    ["Numéro de compte Urssaf (Configuration > Organisation)", input.employer.urssafReference],
   ];
   for (const [label, value] of checks) if (!value || !value.trim()) missing.push(label);
   return missing;

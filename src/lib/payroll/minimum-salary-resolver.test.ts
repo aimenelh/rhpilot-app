@@ -30,4 +30,11 @@ describe("résolveur du salaire minimum", () => {
   it("conserve les identifiants de version des deux référentiels", () => expect(resolveMinimumSalary({ smic, collectiveMinimum: collective, monthlyHours: 151.67, collectiveRuleVersionId: "ccn-2025-v1", monthlyGrossCents: 220000 })).toMatchObject({ smicRuleCode: "SMIC_GROSS", smicRuleVersionId: "smic-2026-06", collectiveRuleVersionId: "ccn-2025-v1" }));
   it("signale un brut mensuel négatif", () => expect(resolveMinimumSalary({ smic, monthlyHours: 151.67, monthlyGrossCents: -1 })).toMatchObject({ status: "UNRESOLVED", code: "INVALID_GROSS_SALARY" }));
   it("refuse une durée de référence SMIC invalide", () => expect(resolveMinimumSalary({ smic: { ...smic, monthlyHoursAt35Hours: 0 }, monthlyHours: 151.67, monthlyGrossCents: 190000 })).toMatchObject({ status: "UNRESOLVED", code: "INVALID_SMIC" }));
+  it("proratise le minimum conventionnel d'un temps partiel", () => {
+    // 2 135 € pour un temps plein, 104 h par mois : 2 135 × 104 / 151,67 ≈ 1 463,97 €.
+    const result = resolveMinimumSalary({ smic, collectiveMinimum: collective, monthlyHours: 104, collectiveRuleVersionId: "ccn-2025-v1", monthlyGrossCents: 150000 });
+    expect(result).toMatchObject({ status: "APPLICABLE", source: "COLLECTIVE_AGREEMENT", compliant: true });
+    if (result.status === "APPLICABLE") expect(result.collectiveMonthlyMinimumCents).toBeGreaterThan(146300);
+    if (result.status === "APPLICABLE") expect(result.collectiveMonthlyMinimumCents).toBeLessThan(146500);
+  });
 });

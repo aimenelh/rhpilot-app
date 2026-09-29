@@ -224,15 +224,34 @@ describe("sorties du bulletin : cotisations, ledger et PDF", () => {
   });
 
   it("édite un bulletin clarifié d'une page", async () => {
-    const pdf = await renderBulletinPdf({ result, employer: { name: "Atelier Nord", address: "12 rue des Tanneurs, 59000 Lille", siret: "12345678900021", nafCode: "6201Z" }, employee: { name: "Léa Martin", address: "", position: "Assistante", classification: "Employée", hireDate: "2022-04-01" }, collectiveAgreement: "Code du travail", paymentDate: "2026-03-31", contractMonthlyHours: 151.67 });
+    const pdf = await renderBulletinPdf({ result, employer: { name: "Atelier Nord", address: "12 rue des Tanneurs, 59000 Lille", siret: "12345678900021", nafCode: "6201Z", urssafReference: "597000001234567" }, employee: { name: "Léa Martin", address: "", position: "Assistante", classification: "Employée", hireDate: "2022-04-01" }, collectiveAgreement: "Code du travail", paymentDate: "2026-03-31", contractMonthlyHours: 151.67 });
     expect(pdf.subarray(0, 4).toString()).toBe("%PDF");
     expect((pdf.toString("latin1").match(/\/Type \/Page\b/g) ?? []).length).toBe(1);
     // Rendu reproductible : l'espace salarié ne republie pas un bulletin identique.
-    const again = await renderBulletinPdf({ result, employer: { name: "Atelier Nord", address: "12 rue des Tanneurs, 59000 Lille", siret: "12345678900021", nafCode: "6201Z" }, employee: { name: "Léa Martin", address: "", position: "Assistante", classification: "Employée", hireDate: "2022-04-01" }, collectiveAgreement: "Code du travail", paymentDate: "2026-03-31", contractMonthlyHours: 151.67 });
+    const again = await renderBulletinPdf({ result, employer: { name: "Atelier Nord", address: "12 rue des Tanneurs, 59000 Lille", siret: "12345678900021", nafCode: "6201Z", urssafReference: "597000001234567" }, employee: { name: "Léa Martin", address: "", position: "Assistante", classification: "Employée", hireDate: "2022-04-01" }, collectiveAgreement: "Code du travail", paymentDate: "2026-03-31", contractMonthlyHours: 151.67 });
     expect(again.equals(pdf)).toBe(true);
   });
 
   it("refuse d'éditer un bulletin sans les mentions obligatoires", () => {
     expect(() => renderBulletinPdf({ result, employer: { name: "Atelier Nord", address: "", siret: "", nafCode: "6201Z" }, employee: { name: "Léa Martin", address: "", position: "", classification: "Employée", hireDate: "2022-04-01" }, collectiveAgreement: "Code du travail", paymentDate: "2026-03-31", contractMonthlyHours: 151.67 })).toThrow(/obligatoires/);
+  });
+});
+
+describe("limites d'exonération des frais professionnels", () => {
+  it("réintègre au brut le forfait mobilités durables au-delà de 600 € par an", () => {
+    const withinCap = computePayslip(input({ period: { year: 2026, month: 3 }, expenses: [{ code: "SUSTAINABLE_MOBILITY", label: "Forfait mobilités durables", amount: 50 }] }));
+    expect(withinCap.lines.some((line) => line.code === "SUSTAINABLE_MOBILITY_EXCESS")).toBe(false);
+    expect(withinCap.yearToDate.sustainableMobility).toBe(50);
+
+    const beyond = computePayslip(input({ period: { year: 2026, month: 3 }, expenses: [{ code: "SUSTAINABLE_MOBILITY", label: "Forfait mobilités durables", amount: 100 }], yearToDate: { ...withinCap.yearToDate, sustainableMobility: 550 } }));
+    const excess = beyond.lines.find((line) => line.code === "SUSTAINABLE_MOBILITY_EXCESS");
+    expect(excess?.amount).toBe(50);
+    expect(beyond.lines.find((line) => line.code === "SUSTAINABLE_MOBILITY" && line.section !== "GROSS")?.amount).toBe(50);
+  });
+
+  it("signale la limite par repas des indemnités de repas", () => {
+    const result = computePayslip(input({ period: { year: 2026, month: 3 }, expenses: [{ code: "EXPENSE_MEAL", label: "Indemnités de repas", amount: 40 }] }));
+    expect(result.warnings.some((warning) => warning.includes("21,40 €"))).toBe(true);
+    expect(result.lines.some((line) => line.code === "MEAL_ALLOWANCE_EXCESS")).toBe(false);
   });
 });

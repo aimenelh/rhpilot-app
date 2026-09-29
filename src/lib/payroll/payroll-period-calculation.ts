@@ -1,13 +1,14 @@
+import { selectPeriodProfile } from "./profile-selection";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { resolvePayrollRuleSetFromPrisma } from "./payroll-rule-set-prisma";
 import { resolveValidatedAbsencesForPayrollPeriod } from "./absence-payroll-impact";
-import { resolveCollectiveAgreementFromPrisma } from "./collective-agreement-prisma";
+import { collectiveMinimumRuleCode, resolveCollectiveAgreementFromPrisma } from "./collective-agreement-prisma";
 import { evaluateCollectiveMinimumSalary } from "./collective-agreement-rule-engine";
 import { buildMinimumSalaryControlSnapshot } from "./minimum-salary-control";
 import { resolveSmicMinimumFromPrisma } from "./minimum-wage-prisma";
 import { resolveOrganizationLegalCategory } from "./social-organization-context";
-import { countThresholdHeadcount, thresholdCrossingWarning } from "./headcount";
+import { resolveThresholdHeadcount, thresholdCrossingWarning } from "./headcount";
 import { resolvePeriodMobilityRate } from "./organization-mobility";
 import { ensureOrganizationRegistryData } from "@/lib/organization-registry-sync";
 import { persistPayrollLedger } from "./payroll-ledger-builder";
@@ -106,8 +107,16 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     if (!activeEmployeeIds.has(profile.employeeId)) continue;
     profilesByEmployee.set(profile.employeeId, [...(profilesByEmployee.get(profile.employeeId) ?? []), profile]);
   }
+  // Profil du mois : le plus récent, avec un salaire de base proratisé si le salaire change en cours de mois.
+  const periodProfiles = new Map<string, { profile: (typeof profiles)[number]; baseSalaryCents: number | null; warning: string | null }>();
   for (const [employeeId, employeeProfiles] of profilesByEmployee) {
-    if (employeeProfiles.length > 1) throw new Error(`Plusieurs profils paie se chevauchent pour le salarié ${employeeId} sur la période ${frMonth(period.year, period.month)}. Le calcul est bloqué pour éviter une sélection arbitraire.`);
+    const selection = selectPeriodProfile(employeeProfiles, start, end);
+    if (!selection.ok) {
+      const employee = employees.find((item) => item.id === employeeId);
+      const name = employee ? [employee.firstName, employee.lastName].filter(Boolean).join(" ") : employeeId;
+      throw new Error(`Calcul bloqué pour ${name} sur ${frMonth(period.year, period.month)} : ${selection.error}`);
+    }
+    periodProfiles.set(employeeId, selection);
   }
 
   const employeeIds = employees.map((employee) => employee.id);
@@ -120,17 +129,33 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
   ]);
 
   const { territory, alsaceMoselle } = territoryFromDepartment(socialContext.payrollDepartment);
-  // Effectif des seuils : saisi par l'entreprise s'il l'a été, sinon calculé sur ses salariés (hors alternants, temps partiels au prorata).
-  const automaticHeadcount = countThresholdHeadcount(
-    employees.map((employee) => {
-      const hours = profilesByEmployee.get(employee.id)?.[0]?.monthlyHours;
-      return { contractType: employee.contractType, hireDate: employee.hireDate, contractEndDate: employee.contractEndDate, monthlyHours: hours === null || hours === undefined ? null : Number(hours) };
-    }),
+  // Effectif des seuils : saisi par l'entreprise s'il l'a été, sinon moyenne de l'année précédente
+  // (hors alternants, temps partiels au prorata) avec la règle des cinq ans de la loi Pacte.
+  // L'historique inclut les salariés archivés : un départ reste compté pour les mois où il était présent.
+  const historyStart = new Date(Date.UTC(period.year - 5, 0, 1));
+  const history = await prisma.employee.findMany({
+    where: { organizationId: input.organizationId, hireDate: { lte: end }, OR: [{ contractEndDate: null }, { contractEndDate: { gte: historyStart } }] },
+    select: { id: true, contractType: true, hireDate: true, contractEndDate: true, deletedAt: true },
+  });
+  const historyHours = new Map<string, number | null>();
+  for (const row of await prisma.payrollProfile.findMany({ where: { organizationId: input.organizationId, employeeId: { in: history.map((item) => item.id) } }, select: { employeeId: true, monthlyHours: true }, orderBy: { effectiveFrom: "asc" } })) {
+    historyHours.set(row.employeeId, row.monthlyHours === null ? null : Number(row.monthlyHours));
+  }
+  const thresholdHeadcount = resolveThresholdHeadcount(
+    history.map((item) => ({
+      contractType: item.contractType,
+      hireDate: item.hireDate,
+      // Un salarié archivé sans date de fin de contrat est considéré parti à son archivage.
+      contractEndDate: item.contractEndDate ?? item.deletedAt,
+      monthlyHours: periodProfiles.get(item.id)?.profile.monthlyHours != null ? Number(periodProfiles.get(item.id)?.profile.monthlyHours) : historyHours.get(item.id) ?? null,
+    })),
+    period.year,
     new Date(`${bounds.last}T12:00:00.000Z`),
   );
   // Le moteur attend un entier d'au moins 1 ; l'arrondi inférieur place l'entreprise du même côté des seuils de 11, 20 et 50.
-  const headcount = settings.payrollHeadcount ?? Math.max(1, Math.floor(automaticHeadcount));
+  const headcount = settings.payrollHeadcount ?? Math.max(1, Math.floor(thresholdHeadcount.headcount));
   const globalWarnings: string[] = [];
+  if (settings.payrollHeadcount === null) globalWarnings.push(...thresholdHeadcount.warnings);
   if (settings.payrollHeadcount === null) {
     const [previous] = await prisma.$queryRaw<Array<{ headcount: unknown }>>`
       SELECT c."calculationSnapshot"->'inputs'->'organization'->>'headcount' AS "headcount"
@@ -146,6 +171,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
   const mobility = await resolvePeriodMobilityRate({ organizationId: input.organizationId, periodFirstDay: bounds.first, headcount });
   if (mobility.warning) globalWarnings.push(mobility.warning);
   const collectiveGridMissing = new Set<string>();
+  const classificationUnmatched: string[] = [];
   // Convention associée sans aucune grille validée dans le référentiel (ajoutée depuis le SIRET, par exemple).
   const organizationAgreement = await prisma.organization.findUnique({ where: { id: input.organizationId }, select: { collectiveAgreementId: true } });
   const agreementWithoutGrid = new Map<string, boolean>();
@@ -175,8 +201,9 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
 
   for (const employee of employees) {
     const displayName = [employee.firstName, employee.lastName].filter(Boolean).join(" ") || employee.id;
-    const profile = profilesByEmployee.get(employee.id)?.[0];
-    if (!profile) throw new Error(`Aucun profil paie applicable pour ${displayName}.`);
+    const selected = periodProfiles.get(employee.id);
+    const profile = selected?.profile;
+    if (!profile || !selected) throw new Error(`Aucun profil paie applicable pour ${displayName}.`);
     if (profile.baseSalaryCents === null || !Number.isFinite(Number(profile.baseSalaryCents)) || Number(profile.baseSalaryCents) < 0) throw new Error(`Le salaire brut mensuel est manquant ou invalide pour ${displayName}.`);
     if (!employee.contractType) throw new Error(`Le type de contrat est manquant pour ${displayName}.`);
     if (!employee.professionalCategory) throw new Error(`La catégorie professionnelle est manquante pour ${displayName}.`);
@@ -184,7 +211,8 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     if (!Number.isFinite(monthlyHours) || monthlyHours <= 0 || monthlyHours > 250) throw new Error(`Le volume horaire mensuel est manquant ou invalide pour ${displayName}.`);
 
     // --- Salaire minimum légal, conventionnel et alternance (contrôles bloquants) ---
-    const collectiveMinimumResolution = await resolveCollectiveAgreementFromPrisma({ organizationId: input.organizationId, employeeId: employee.id, periodDate: calculationDate, ruleCode: "MINIMUM_GROSS_MONTHLY" });
+    // Chaque classification a sa propre règle de minimum dans le référentiel (MINIMUM_SALARY_<classification>).
+    const collectiveMinimumResolution = await resolveCollectiveAgreementFromPrisma({ organizationId: input.organizationId, employeeId: employee.id, periodDate: calculationDate, ruleCode: collectiveMinimumRuleCode(profile.classificationCode) });
     const collectiveMinimum: ReturnType<typeof evaluateCollectiveMinimumSalary> = collectiveMinimumResolution.status === "RESOLVED"
       ? evaluateCollectiveMinimumSalary({ monthlyGrossCents: profile.baseSalaryCents, classificationCode: profile.classificationCode, professionalCategory: employee.professionalCategory, contractType: employee.contractType, parameters: collectiveMinimumResolution.rule.parameters })
       : { status: "UNRESOLVED", code: collectiveMinimumResolution.code, message: collectiveMinimumResolution.message };
@@ -193,9 +221,16 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     if (!smicMinimum) throw new Error(`Calcul bloqué pour ${displayName} : aucune version validée du SMIC n'est disponible.`);
     // Convention associée mais dont RH Pilot n'a pas encore intégré la grille : contrôle sur le SMIC et avertissement, sans bloquer.
     // Une version expirée ou une convention désactivée continuent de bloquer ; seule l'absence de grille exploitable passe au SMIC.
+    const agreementId = profile.collectiveAgreementId ?? organizationAgreement?.collectiveAgreementId;
+    const noGrid = await hasNoIntegratedGrid(agreementId);
+    // Grille absente pour toute la convention, ou classification du salarié absente de la grille :
+    // contrôle sur le SMIC et avertissement, sans bloquer les autres salariés.
     const gridMissing = collectiveMinimum.status === "UNRESOLVED"
-      && (collectiveMinimum.code === "NO_VALIDATED_RULE" || (collectiveMinimum.code === "NO_VALIDATED_VERSION" && await hasNoIntegratedGrid(profile.collectiveAgreementId ?? organizationAgreement?.collectiveAgreementId)));
-    if (gridMissing) collectiveGridMissing.add(employee.id);
+      && (collectiveMinimum.code === "NO_VALIDATED_RULE" || (collectiveMinimum.code === "NO_VALIDATED_VERSION" && noGrid));
+    if (gridMissing) {
+      if (noGrid || !agreementId) collectiveGridMissing.add(employee.id);
+      else classificationUnmatched.push(displayName);
+    }
     const minimumSalaryControl = buildMinimumSalaryControlSnapshot({ smic: smicMinimum, collectiveMinimum: gridMissing ? { status: "UNRESOLVED", code: "NO_COLLECTIVE_AGREEMENT", message: collectiveMinimum.message } : collectiveMinimum, monthlyHours, collectiveRuleVersionId: collectiveMinimumResolution.status === "RESOLVED" ? collectiveMinimumResolution.rule.versionId : undefined, monthlyGrossCents: profile.baseSalaryCents });
     if (minimumSalaryControl.status !== "APPLICABLE") throw new Error(`Calcul bloqué pour ${displayName} : contrôle du salaire minimum non résolu. ${minimumSalaryControl.explanation}`);
     const isAlternance = employee.contractType === "APPRENTISSAGE" || employee.contractType === "PROFESSIONNALISATION";
@@ -260,10 +295,11 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     // --- Titres-restaurant et transport ---
     if (variableInputs.mealVoucherCount > 0 && (settings.mealVoucherFaceValue === null || settings.mealVoucherEmployerShare === null)) throw new Error(`Calcul bloqué pour ${displayName} : renseignez la valeur faciale et la part patronale des titres-restaurant dans les paramètres de paie.`);
 
-    const baseSalary = profile.baseSalaryCents / 100;
+    const baseSalary = (selected.baseSalaryCents ?? profile.baseSalaryCents) / 100;
     const extras = profileExtras.get(profile.id);
     const schedule = resolveWeeklySchedule(extras?.weeklySchedule ?? null, monthlyHours);
     const warnings = [...mapped.warnings, ...prior.warnings, ...terminationWarnings];
+    if (selected.warning) warnings.push(selected.warning);
     if (schedule.derived) warnings.push(`Horaire hebdomadaire de ${displayName} non renseigné : ses heures sont réparties du lundi au vendredi pour valoriser les absences.`);
 
     const payslipInput: PayslipInput = {
@@ -371,6 +407,9 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     await tx.payrollPeriod.update({ where: { id: period.id }, data: { status: "CALCULATED", calculatedAt: new Date() } });
   }, { maxWait: 10000, timeout: 60000 });
 
+  if (classificationUnmatched.length > 0) {
+    globalWarnings.push(`Classification conventionnelle absente ou hors grille pour ${classificationUnmatched.join(", ")} : le contrôle du salaire minimum porte sur le SMIC. Renseignez la classification dans l'onglet Paie de la fiche.`);
+  }
   if (collectiveGridMissing.size > 0) {
     globalWarnings.push(`Les minima de salaire de votre convention collective ne sont pas encore intégrés à RH Pilot : le contrôle du salaire minimum porte sur le SMIC pour ${collectiveGridMissing.size === 1 ? "1 salarié" : `${collectiveGridMissing.size} salariés`}. Vérifiez les salaires par rapport à la grille de la convention.`);
   }

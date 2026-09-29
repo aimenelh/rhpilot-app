@@ -3,7 +3,7 @@ import { generatePayslipPdf, type PayslipPdfInput } from "./payslip-pdf";
 import { countPdfPages, mergePayslipPdfs } from "./payslip-pdf-merge";
 
 const input: PayslipPdfInput = {
-  employer: { name: "RH Pilot Demo", address: "1 rue de la Paie, 30000 Nimes", siret: "12345678900012", nafCode: "6201Z", urssafReference: "" },
+  employer: { name: "RH Pilot Demo", address: "1 rue de la Paie, 30000 Nimes", siret: "12345678900012", nafCode: "6201Z", urssafReference: "597000001234567" },
   employee: { name: "Alice Martin", address: "2 rue des RH, 30000 Nimes", position: "Gestionnaire RH", classification: "Employe" },
   period: { year: 2026, month: 9, paymentDate: "2026-09-30", hours: 151.67 },
   salary: { baseGross: 2000, variables: [], gross: 2000, employeeContributions: 100, employerContributions: 200, netBeforeTax: 1900, netTaxable: 1900, withholdingTaxRate: 0.05, withholdingTax: 95, netPaid: 1805, netSocial: 1900, totalEmployerCost: 2200 },
