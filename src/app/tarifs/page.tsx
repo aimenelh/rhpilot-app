@@ -64,7 +64,7 @@ export default function TarifsPage() {
                 L’offre Entreprise est disponible sur devis.
               </p>
             </div>
-            <Link href="mailto:aimenoffi@gmail.com" className={s.textLink}>
+            <Link href="mailto:contact@rhpilot.fr" className={s.textLink}>
               Échanger avec l’équipe ↗
             </Link>
           </div>

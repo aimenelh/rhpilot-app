@@ -73,7 +73,7 @@ const GROUPS = [
       [
         "Comment contacter l’équipe ?",
         <>
-          Écrivez à <a href="mailto:aimenoffi@gmail.com">aimenoffi@gmail.com</a>{" "}
+          Écrivez à <a href="mailto:contact@rhpilot.fr">contact@rhpilot.fr</a>{" "}
           avec votre question.
         </>,
       ],

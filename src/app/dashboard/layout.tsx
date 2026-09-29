@@ -9,6 +9,7 @@ import { getUserDisplayName } from "@/lib/displayName";
 import { getRhNews } from "@/lib/rhNews";
 import { isAiEnabled } from "@/lib/ai";
 import { AppShell } from "@/components/AppShell";
+import { canUsePayroll } from "@/lib/payrollAccess";
 import { Logomark, Wordmark } from "@/components/Brand";
 import { InitializingScreen } from "@/components/InitializingScreen";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
@@ -96,6 +97,7 @@ export default async function DashboardLayout({
     <AppShell
       organizationName={currentMembership.organization.name}
       accessRole={currentMembership.accessRole}
+      payrollEnabled={canUsePayroll(currentMembership)}
       assistantSummary={{
         userDisplayName: getUserDisplayName(user),
         overdueCount,

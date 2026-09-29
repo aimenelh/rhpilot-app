@@ -64,10 +64,10 @@ export function MarketingFooter() {
             endroit.
           </p>
           <a
-            href="mailto:aimenoffi@gmail.com"
+            href="mailto:contact@rhpilot.fr"
             className="mt-4 inline-block text-sm text-ink-soft transition-colors hover:text-ink hover:underline"
           >
-            aimenoffi@gmail.com
+            contact@rhpilot.fr
           </a>
         </div>
 

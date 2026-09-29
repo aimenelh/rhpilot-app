@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, ExternalLink, FileText } from "lucide-react";
-import { getCurrentMembership } from "@/lib/auth";
+
 import { prisma } from "@/lib/prisma";
 import { checkPayrollPeriodReadiness } from "@/lib/payroll/period-preflight";
 import { loadTerminations } from "@/lib/payroll/bulletin/period-loader";
@@ -20,6 +20,7 @@ import PayrollEntryGrid, { type GridEmployee } from "./PayrollEntryGrid";
 import PayrollAbsencesPanel, { type PeriodAbsenceRow } from "./PayrollAbsencesPanel";
 import PayslipReview, { type PayslipReviewRow } from "./PayslipReview";
 import { BackToEntryButton, ClosePeriodButton, RunCalculationButton } from "./PeriodActions";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 export const dynamic = "force-dynamic";
 
@@ -58,7 +59,7 @@ function warningLink(periodId: string, employeeId: string, warning: string): { h
 }
 
 export default async function PayrollPeriodPage({ params, searchParams }: { params: { periodId: string }; searchParams: { tab?: string; sub?: string; focus?: string; absence?: string } }) {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   if (!membership) redirect("/dashboard");
   const organizationId = membership.organizationId;
 

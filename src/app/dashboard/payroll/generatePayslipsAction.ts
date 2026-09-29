@@ -3,7 +3,7 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { calculateSocialPayroll, SOCIAL_MODEL_VERSION } from "@/lib/payroll/social-engine";
 import { resolveOrganizationLegalCategory } from "@/lib/payroll/social-organization-context";
 import { resolveEmployeeWithholdingTaxProfile } from "@/lib/payroll/withholding-tax-profile";
@@ -16,6 +16,7 @@ import { resolveSmicMinimumFromPrisma } from "@/lib/payroll/minimum-wage-prisma"
 import { resolveCollectiveAgreementFromPrisma } from "@/lib/payroll/collective-agreement-prisma";
 import { evaluateCollectiveMinimumSalary } from "@/lib/payroll/collective-agreement-rule-engine";
 import { resolveLockedAnnualCumuls } from "@/lib/payroll/payroll-history";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 export type PayrollPayslipGenerationFormState = { error: string } | undefined;
 
@@ -207,7 +208,7 @@ async function assertAlternanceSnapshotMatchesCurrent(input: { snapshot: Snapsho
 }
 
 export async function generatePayrollPayslipsAction(_prevState: PayrollPayslipGenerationFormState, formData: FormData): Promise<PayrollPayslipGenerationFormState> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent générer les bulletins de paie." };

@@ -36,15 +36,18 @@ export default async function EmployeesPage({
     where: {
       organizationId: membership.organizationId,
       deletedAt: status === "archived" ? { not: null } : null,
-      ...employeeAccessWhere(membership),
-      ...(query
-        ? {
-            OR: [
-              { firstName: { contains: query, mode: "insensitive" } },
-              { lastName: { contains: query, mode: "insensitive" } },
-            ],
-          }
-        : {}),
+      // AND : la recherche (un OR) ne doit jamais remplacer le filtre d'accès (un OR aussi).
+      AND: [
+        employeeAccessWhere(membership),
+        query
+          ? {
+              OR: [
+                { firstName: { contains: query, mode: "insensitive" } },
+                { lastName: { contains: query, mode: "insensitive" } },
+              ],
+            }
+          : {},
+      ],
     },
     include: { managerMembership: { include: { user: true } } },
     orderBy: status === "archived" ? { deletedAt: "desc" } : { lastName: "asc" },

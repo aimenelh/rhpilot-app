@@ -1,3 +1,4 @@
+import { canUsePayroll } from "@/lib/payrollAccess";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentMembership } from "@/lib/auth";
@@ -71,6 +72,9 @@ export default async function EmployeeDetailPage({
   if (!employee) notFound();
 
   const canManageEmployee = isOrganizationAdmin(membership);
+  // L'onglet Paie suit l'accès anticipé au module Paie (lib/payrollAccess).
+  const canSeePayroll = canUsePayroll(membership);
+  const visibleTabs = TABS.filter((item) => item.key !== "paie" || canSeePayroll);
 
   const [memberships, eventTemplates, employeeEvents, organization, payrollProfile, collectiveAgreements] = await Promise.all([
     prisma.membership.findMany({
@@ -109,7 +113,7 @@ export default async function EmployeeDetailPage({
       where: { id: membership.organizationId },
       select: { conventionCollective: true },
     }),
-    canManageEmployee
+    canSeePayroll
       ? prisma.payrollProfile.findFirst({
           where: {
             organizationId: membership.organizationId,
@@ -133,7 +137,7 @@ export default async function EmployeeDetailPage({
   type LeaveOpeningRow = { asOf: Date; previousAcquired: unknown; previousTaken: unknown; currentAcquired: unknown; currentTaken: unknown; referenceGross: unknown; referenceAcquiredDays: unknown; currentReferenceGross: unknown };
   type PayrollOpeningRow = { year: number; throughMonth: number; cumuls: unknown; sickPayHistory: unknown };
   const toNullableNumber = (value: unknown) => (value === null || value === undefined ? null : Number(value));
-  const [profileExtrasRows, leaveOpeningRows, payrollOpeningRows] = canManageEmployee && searchParams.onglet === "paie"
+  const [profileExtrasRows, leaveOpeningRows, payrollOpeningRows] = canSeePayroll && searchParams.onglet === "paie"
     ? await Promise.all([
         payrollProfile ? prisma.$queryRaw<ProfileExtrasRow[]>`SELECT "weeklySchedule", "structuralOvertimeHours", "structuralOvertimeRate", "healthPlanWaiver" FROM "payroll_profiles" WHERE "id" = ${payrollProfile.id}` : Promise.resolve([] as ProfileExtrasRow[]),
         prisma.$queryRaw<LeaveOpeningRow[]>`SELECT "asOf", "previousAcquired", "previousTaken", "currentAcquired", "currentTaken", "referenceGross", "referenceAcquiredDays", "currentReferenceGross" FROM "employee_paid_leave_openings" WHERE "organizationId" = ${membership.organizationId} AND "employeeId" = ${employee.id} ORDER BY "asOf" DESC LIMIT 1`,
@@ -146,7 +150,7 @@ export default async function EmployeeDetailPage({
 
   // Espace salarié : accès, documents publiés et documents de sortie.
   // Fiche en onglets : les données lourdes ne sont lues que pour l'onglet ouvert.
-  const tab: TabKey = canManageEmployee && TABS.some((item) => item.key === searchParams.onglet) ? (searchParams.onglet as TabKey) : "apercu";
+  const tab: TabKey = canManageEmployee && visibleTabs.some((item) => item.key === searchParams.onglet) ? (searchParams.onglet as TabKey) : "apercu";
   const onSpaceTab = tab === "espace";
   const [spaceStatuses, spaceDocuments, exitContext] = canManageEmployee
     ? await Promise.all([
@@ -200,7 +204,7 @@ export default async function EmployeeDetailPage({
     highlights.push({ key: "visite", icon: Stethoscope, label: "Visite médicale", value: medicalVisitOverdue ? `Dépassée de ${Math.abs(daysUntil(employee.nextMedicalVisitDate))} j` : formatDate(employee.nextMedicalVisitDate), tone: medicalVisitOverdue ? "alert" : "info" });
   }
   if (canManageEmployee) {
-    highlights.push({ key: "paie", icon: Wallet, label: "Salaire brut mensuel", value: payrollProfile?.baseSalaryCents != null ? new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(payrollProfile.baseSalaryCents / 100) : "À renseigner", tone: payrollProfile?.baseSalaryCents != null ? "muted" : "alert", link: href("paie") });
+    if (canSeePayroll) highlights.push({ key: "paie", icon: Wallet, label: "Salaire brut mensuel", value: payrollProfile?.baseSalaryCents != null ? new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" }).format(payrollProfile.baseSalaryCents / 100) : "À renseigner", tone: payrollProfile?.baseSalaryCents != null ? "muted" : "alert", link: href("paie") });
     if (!employee.isDemoData) highlights.push({ key: "espace", icon: UserRound, label: "Espace salarié", value: spaceLabel, tone: spaceStatus?.status === "ACTIVE" ? "muted" : "info", link: href("espace") });
   }
   const toneClass = { alert: "border-accent-rose/30 bg-accent-rose/[0.04]", info: "border-brand-primary/20 bg-brand-primary/[0.03]", muted: "border-surface-border bg-white" };
@@ -229,7 +233,7 @@ export default async function EmployeeDetailPage({
         </div>
         {canManageEmployee ? (
           <nav aria-label="Rubriques de la fiche" className="flex gap-1 overflow-x-auto border-t border-surface-border px-4">
-            {TABS.map((item) => {
+            {visibleTabs.map((item) => {
               const active = item.key === tab;
               return (
                 <Link key={item.key} href={href(item.key)} aria-current={active ? "page" : undefined} className={`shrink-0 border-b-2 px-3 py-3 text-sm font-semibold transition ${active ? "border-brand-primary text-ink" : "border-transparent text-ink-faint hover:text-ink"}`}>
@@ -344,7 +348,7 @@ export default async function EmployeeDetailPage({
         </div>
       ) : null}
 
-      {tab === "paie" && canManageEmployee ? (
+      {tab === "paie" && canSeePayroll ? (
         <div className="-mt-3">
           <PayrollProfileSection
             employeeId={employee.id}

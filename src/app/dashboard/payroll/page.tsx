@@ -2,10 +2,11 @@ import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { ArrowRight, CalendarPlus, ChevronRight, FileText, FlaskConical } from "lucide-react";
 import { prisma } from "@/lib/prisma";
-import { getCurrentMemberships } from "@/lib/auth";
+
 import PayrollReopenInlineButton from "./PayrollReopenInlineButton";
 import { prepareDemoPayrollData } from "./demoPayrollActions";
 import { DemoPayrollSetupButton } from "./DemoPayrollSetupButton";
+import { getPayrollMemberships } from "@/lib/payrollAccess";
 
 const MONTHS = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
 const PAYROLL_STATUS_LABELS: Record<string, string> = {
@@ -18,7 +19,7 @@ const PAYROLL_STATUS_LABELS: Record<string, string> = {
 
 async function createPayrollPeriod(formData: FormData) {
   "use server";
-  const { memberships } = await getCurrentMemberships();
+  const { memberships } = await getPayrollMemberships();
   const membership = memberships[0];
   if (!membership) throw new Error("Organisation introuvable.");
   if (membership.accessRole !== "OWNER") throw new Error("Le module Paie est actuellement réservé à l'aperçu propriétaire.");
@@ -39,7 +40,7 @@ async function createPayrollPeriod(formData: FormData) {
 
 async function savePayrollProfile(formData: FormData) {
   "use server";
-  const { memberships } = await getCurrentMemberships();
+  const { memberships } = await getPayrollMemberships();
   const membership = memberships[0];
   if (!membership) throw new Error("Organisation introuvable.");
   if (membership.accessRole !== "OWNER") throw new Error("Le module Paie est actuellement réservé à l'aperçu propriétaire.");
@@ -83,7 +84,7 @@ function statusClasses(status: string) {
 }
 
 export default async function PayrollPage() {
-  const { memberships } = await getCurrentMemberships();
+  const { memberships } = await getPayrollMemberships();
   const membership = memberships[0];
   if (!membership) return null;
 

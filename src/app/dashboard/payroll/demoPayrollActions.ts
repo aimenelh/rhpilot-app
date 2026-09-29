@@ -4,8 +4,9 @@ import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { ProfessionalCategory } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { getCurrentMemberships } from "@/lib/auth";
+
 import { refreshMobilityRateFromUrssaf, syncOrganizationFromRegistry } from "@/lib/organization-registry-sync";
+import { getPayrollMemberships } from "@/lib/payrollAccess";
 
 const DEMO_PAYROLL_DATA = [
   { firstName: "Antoine", professionalCategory: ProfessionalCategory.OUVRIER, classificationCode: "DEMO-OUV", classificationLabel: "Ouvrier", salaryEuros: 2250, pasRate: 0.03 },
@@ -176,7 +177,7 @@ async function prepareDemoPayrollDataForOrganization(organizationId: string) {
 }
 
 export async function prepareDemoPayrollData() {
-  const { memberships } = await getCurrentMemberships();
+  const { memberships } = await getPayrollMemberships();
   const membership = memberships[0];
   if (!membership) throw new Error("Organisation introuvable.");
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {

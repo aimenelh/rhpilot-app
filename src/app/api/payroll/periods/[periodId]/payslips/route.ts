@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
-import { getCurrentMembership } from "@/lib/auth";
+
 import { prisma } from "@/lib/prisma";
 import { mergePayslipPdfs } from "@/lib/payroll/payslip-pdf-merge";
 import { readPayslipDocument } from "@/lib/payroll/payslip-storage";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 export async function GET(_request: Request, { params }: { params: { periodId: string } }) {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   if (!membership) return NextResponse.json({ error: "Session expirée, veuillez vous reconnecter." }, { status: 401 });
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return NextResponse.json({ error: "Accès réservé aux administrateurs." }, { status: 403 });
 

@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { getCurrentMembership } from "@/lib/auth";
+
 import { prisma } from "@/lib/prisma";
 import { getPayslipPrerequisites, hasBlockingPayslipPrerequisites } from "@/lib/payroll/payslip-prerequisites";
 import PayrollPayslipPrepareButton from "../../PayrollPayslipPrepareButton";
 import PayrollPayslipGenerateButton from "../../PayrollPayslipGenerateButton";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 const MONTHS = [
   "Janvier",
@@ -41,7 +42,7 @@ export default async function PayrollPayslipsPage({
 }: {
   params: { periodId: string };
 }) {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   if (!membership) redirect("/dashboard");
 
   const period = await prisma.payrollPeriod.findFirst({

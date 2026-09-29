@@ -1,9 +1,10 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calculatePayrollPeriod } from "@/lib/payroll/payroll-period-calculation";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 export type PayrollCalculationFormState = { error: string } | undefined;
 
@@ -11,7 +12,7 @@ export async function calculatePayrollPeriodSafeAction(
   _prevState: PayrollCalculationFormState,
   formData: FormData,
 ): Promise<PayrollCalculationFormState> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {

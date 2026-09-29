@@ -2,7 +2,7 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
   generatePayslipPdf,
@@ -16,6 +16,7 @@ import { bulletinFromSnapshot } from "@/lib/payroll/bulletin/prior-state";
 import { BulletinPdfPrerequisiteError, renderBulletinPdf } from "@/lib/payroll/bulletin/pdf";
 import { PAS_DEFAULT_GRIDS, pasBracketRate, valueAt } from "@/lib/payroll/bulletin/params";
 import type { PayslipResult } from "@/lib/payroll/bulletin/types";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 export type PayrollPayslipGenerationFormState = { error: string } | undefined;
 
@@ -399,7 +400,7 @@ export async function generatePayslipsFromLockedSnapshotAction(
   _prevState: PayrollPayslipGenerationFormState,
   formData: FormData,
 ): Promise<PayrollPayslipGenerationFormState> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {

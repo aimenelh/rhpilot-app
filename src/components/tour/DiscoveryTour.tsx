@@ -25,7 +25,7 @@ const STORAGE_KEY = "rhpilot_discovery_tour_v1";
 const PREVIOUS_TOUR_KEY = "rhpilot_product_tour_v4";
 export const START_TOUR_EVENT = "rhpilot:start-tour";
 
-type Audience = "all" | "admin" | "owner";
+type Audience = "all" | "admin" | "payroll";
 
 type Chapter = {
   key: string;
@@ -86,12 +86,12 @@ const CHAPTERS: Chapter[] = [
   },
   {
     key: "paie",
-    eyebrow: "Paie · avant-première",
+    eyebrow: "Paie · accès anticipé",
     title: "La paie, *sans tableur ni surprise.*",
     text: "Saisissez les variables du mois dans un seul tableau : RH Pilot calcule chaque bulletin, le contrôle et vous explique chaque ligne.",
     points: ["Cotisations et réduction générale à jour", "Contrôles avant la clôture", "Bulletins prêts à publier"],
     Visual: PayrollVisual,
-    audience: "owner",
+    audience: "payroll",
   },
   {
     key: "espace-salarie",
@@ -115,8 +115,8 @@ const CHAPTERS: Chapter[] = [
 
 const LAST = "demarrer";
 
-function allowed(audience: Audience, accessRole: string) {
-  if (audience === "owner") return accessRole === "OWNER";
+function allowed(audience: Audience, accessRole: string, payrollEnabled: boolean) {
+  if (audience === "payroll") return payrollEnabled;
   if (audience === "admin") return accessRole === "OWNER" || accessRole === "ADMIN";
   return true;
 }
@@ -153,9 +153,9 @@ function writeStorage(key: string, value: string) {
   }
 }
 
-export function DiscoveryTour({ accessRole, userName }: { accessRole: string; userName: string }) {
+export function DiscoveryTour({ accessRole, payrollEnabled, userName }: { accessRole: string; payrollEnabled: boolean; userName: string }) {
   const pathname = usePathname();
-  const chapters = CHAPTERS.filter((chapter) => allowed(chapter.audience, accessRole));
+  const chapters = CHAPTERS.filter((chapter) => allowed(chapter.audience, accessRole, payrollEnabled));
   const total = chapters.length + 1;
   const [index, setIndex] = useState<number | null>(null);
   const [direction, setDirection] = useState<1 | -1>(1);

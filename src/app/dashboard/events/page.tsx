@@ -34,16 +34,19 @@ export default async function EventsPage({
       organizationId: membership.organizationId,
       employee: { deletedAt: null },
       deletedAt: null,
-      ...eventAccessWhere(membership),
-      ...(query
-        ? {
-            OR: [
-              { employee: { firstName: { contains: query, mode: "insensitive" } } },
-              { employee: { lastName: { contains: query, mode: "insensitive" } } },
-              { eventTemplate: { label: { contains: query, mode: "insensitive" } } },
-            ],
-          }
-        : {}),
+      // AND : la recherche (un OR) ne doit jamais remplacer le filtre d'accès (un OR aussi).
+      AND: [
+        eventAccessWhere(membership),
+        query
+          ? {
+              OR: [
+                { employee: { firstName: { contains: query, mode: "insensitive" } } },
+                { employee: { lastName: { contains: query, mode: "insensitive" } } },
+                { eventTemplate: { label: { contains: query, mode: "insensitive" } } },
+              ],
+            }
+          : {},
+      ],
     },
     include: {
       employee: true,

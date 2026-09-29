@@ -3,8 +3,9 @@
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { getCurrentMembership } from "@/lib/auth";
+
 import { parseIsoDateOnly } from "@/lib/dateOnly";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 export type WithholdingTaxFormState = { error: string } | undefined;
 
@@ -16,7 +17,7 @@ export type WithholdingTaxData = {
 } | null;
 
 export async function getWithholdingTaxProfile(employeeId: string): Promise<WithholdingTaxData> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   if (!membership) return null;
 
   const rows = await prisma.$queryRaw<Array<{ rate: unknown; validFrom: Date; source: string; sourceReference: string | null }>>`
@@ -47,7 +48,7 @@ export async function saveWithholdingTaxRate(
   _previous: WithholdingTaxFormState,
   formData: FormData
 ): Promise<WithholdingTaxFormState> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   if (!membership) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {
     return { error: "Vous n'avez pas les droits pour modifier le taux de prélèvement à la source de ce salarié." };

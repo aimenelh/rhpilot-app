@@ -2,8 +2,9 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 export type PayrollPaymentDateFormState = { error: string } | undefined;
 
@@ -11,7 +12,7 @@ export async function setPayrollPaymentDateAction(
   _prevState: PayrollPaymentDateFormState,
   formData: FormData,
 ): Promise<PayrollPaymentDateFormState> {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent renseigner la date de paiement." };

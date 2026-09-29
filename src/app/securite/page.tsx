@@ -147,7 +147,7 @@ export default function SecurityPage() {
       <MarketingCTA
         title="Une question sur vos données ?"
         text="Écrivez-nous : nous répondons avec les détails techniques, sans détour."
-        href="mailto:aimenoffi@gmail.com"
+        href="mailto:contact@rhpilot.fr"
         action="Nous écrire"
       />
     </MarketingPage>

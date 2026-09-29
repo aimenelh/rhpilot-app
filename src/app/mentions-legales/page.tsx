@@ -67,10 +67,10 @@ export default function MentionsLegalesPage() {
             <p>
               Contact :{" "}
               <Link
-                href="mailto:aimenoffi@gmail.com"
+                href="mailto:contact@rhpilot.fr"
                 className="font-medium text-brand-primary hover:underline"
               >
-                aimenoffi@gmail.com
+                contact@rhpilot.fr
               </Link>
               .
             </p>

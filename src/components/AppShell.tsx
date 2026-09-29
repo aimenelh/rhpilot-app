@@ -105,6 +105,7 @@ function useDemoCountdownLabel(target: Date | null) {
 export function AppShell({
   organizationName,
   accessRole,
+  payrollEnabled,
   assistantSummary,
   rhNews,
   aiEnabled,
@@ -113,6 +114,7 @@ export function AppShell({
 }: {
   organizationName: string;
   accessRole: string;
+  payrollEnabled: boolean;
   assistantSummary: { userDisplayName: string; overdueCount: number; suggestionsCount: number };
   rhNews: RhNewsItem[];
   aiEnabled: boolean;
@@ -156,7 +158,10 @@ export function AppShell({
             item.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.href);
           const isPreview = item.previewOwnerAccess === true;
           const isAdmin = accessRole === "OWNER" || accessRole === "ADMIN";
-          const canOpen = (!item.adminOnly || isAdmin) && (item.available || (isPreview && accessRole === "OWNER"));
+          // Un module réservé aux administrateurs n'apparaît pas du tout pour un membre.
+          if (item.adminOnly && !isAdmin) return null;
+          const canOpen = item.available || (isPreview && payrollEnabled);
+          const badge = isPreview && payrollEnabled ? "Accès anticipé" : item.badge;
 
           return (
             <div key={item.href}>
@@ -179,13 +184,13 @@ export function AppShell({
                         ? "bg-brand-primary/10 text-brand-primary"
                         : "text-ink-soft hover:translate-x-0.5 hover:bg-surface-subtle hover:text-ink"
                   }`}
-                  title={isPreview ? "Aperçu privé accessible au propriétaire" : undefined}
+                  title={isPreview ? "Paie en accès anticipé" : undefined}
                 >
                   <item.icon size={16} strokeWidth={2.5} />
                   <span className="min-w-0 flex-1">{item.label}</span>
-                  {item.badge ? (
+                  {badge ? (
                     <span className="rounded-full bg-surface-border/70 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-ink-faint">
-                      {item.badge}
+                      {badge}
                     </span>
                   ) : null}
                 </Link>
@@ -193,7 +198,7 @@ export function AppShell({
                 <div
                   aria-disabled="true"
                   className="flex cursor-not-allowed items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-faint/55"
-                  title="Ce module n'est pas encore disponible"
+                  title="Bientôt disponible"
                 >
                   <item.icon size={16} strokeWidth={2.5} />
                   <span className="min-w-0 flex-1">{item.label}</span>
@@ -224,7 +229,7 @@ export function AppShell({
           {HELP_ITEM.label}
         </Link>
         <a
-          href="mailto:aimenoffi@gmail.com?subject=Retour%20RH%20Pilot"
+          href="mailto:contact@rhpilot.fr?subject=Retour%20RH%20Pilot"
           className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-faint transition-colors hover:bg-surface-subtle hover:text-ink-soft"
         >
           <Mail size={15} />
@@ -312,7 +317,7 @@ export function AppShell({
       </Suspense>
       <FlashToast />
       <AppCopilote summary={assistantSummary} aiEnabled={aiEnabled} />
-      <DiscoveryTour accessRole={accessRole} userName={assistantSummary.userDisplayName} />
+      <DiscoveryTour accessRole={accessRole} payrollEnabled={payrollEnabled} userName={assistantSummary.userDisplayName} />
       <RhNewsToast items={rhNews} />
       <IosInstallHint />
     </div>

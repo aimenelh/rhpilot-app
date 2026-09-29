@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import { getCurrentMembership } from "@/lib/auth";
+
 import { prepareDsnP26V01 } from "@/lib/payroll/dsn-preparation";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request, { params }: { params: { periodId: string } }) {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   if (!membership) return NextResponse.json({ error: "Session expirée, veuillez vous reconnecter." }, { status: 401 });
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {
     return NextResponse.json({ error: "Accès DSN réservé aux administrateurs." }, { status: 403 });

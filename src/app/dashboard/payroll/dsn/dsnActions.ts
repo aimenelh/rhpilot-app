@@ -2,9 +2,10 @@
 
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
-import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { assertNirFormat, encryptDsnSensitiveValue } from "@/lib/payroll/dsn-pii";
+import { getPayrollMembership } from "@/lib/payrollAccess";
 
 export type DsnFormState = { error?: string; success?: string } | undefined;
 
@@ -50,7 +51,7 @@ function listedCode(formData: FormData, key: string, label: string, allowed: Set
 }
 
 async function adminContext() {
-  const membership = await getCurrentMembership();
+  const membership = await getPayrollMembership();
   const user = await getCurrentUser();
   if (!membership || !user) throw new Error("Session expirée, veuillez recharger la page.");
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {
