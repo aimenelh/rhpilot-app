@@ -231,10 +231,51 @@ export function MarketingHeader() {
               À propos
             </Link>
           </nav>
-          <div className="hidden items-center gap-6 lg:flex">
-            <Link href="/sign-in" className={navLink("/sign-in")}>
-              Connexion
-            </Link>
+          <div className="hidden items-center gap-4 lg:flex">
+            <div className="relative">
+              <button
+                type="button"
+                ref={(el) => {
+                  triggers.current.Connexion = el;
+                }}
+                aria-expanded={group === "Connexion"}
+                aria-controls="nav-connexion"
+                onClick={() =>
+                  setGroup(group === "Connexion" ? null : "Connexion")
+                }
+                className="flex items-center gap-1.5 text-sm font-medium text-ink-soft transition-colors hover:text-brand-primary"
+              >
+                Connexion
+                <ChevronDown size={13} />
+              </button>
+              {group === "Connexion" && (
+                <div
+                  id="nav-connexion"
+                  className="absolute right-0 top-full mt-5 w-72 rounded-lg border border-surface-border bg-white p-2 shadow-elevated"
+                >
+                  <Link
+                    href="/sign-in"
+                    onClick={close}
+                    className="block rounded-md px-3 py-3 hover:bg-surface-subtle"
+                  >
+                    <span className="block text-sm font-semibold text-ink">Espace RH</span>
+                    <span className="mt-0.5 block text-xs leading-5 text-ink-faint">
+                      Pour les dirigeants, RH et managers
+                    </span>
+                  </Link>
+                  <Link
+                    href="/espace/connexion"
+                    onClick={close}
+                    className="block rounded-md px-3 py-3 hover:bg-surface-subtle"
+                  >
+                    <span className="block text-sm font-semibold text-ink">Espace salarié</span>
+                    <span className="mt-0.5 block text-xs leading-5 text-ink-faint">
+                      Bulletins, congés, absences et documents
+                    </span>
+                  </Link>
+                </div>
+              )}
+            </div>
             <Link href="/sign-up" className={action}>
               Créer mon espace
             </Link>
@@ -317,17 +358,35 @@ export function MarketingHeader() {
             >
               À propos
             </Link>
-            <Link
-              href="/sign-in"
-              onClick={close}
-              className="block py-4 text-sm"
-            >
-              Connexion
-            </Link>
+            <div className="mt-2 border-t border-surface-border pt-3">
+              <p className="pb-2 text-xs font-semibold uppercase tracking-wide text-ink-faint">
+                Connexion
+              </p>
+              <Link
+                href="/sign-in"
+                onClick={close}
+                className="block rounded-md py-3 text-sm font-semibold text-ink"
+              >
+                Espace RH
+                <span className="mt-0.5 block text-xs font-normal text-ink-faint">
+                  Dirigeants, RH et managers
+                </span>
+              </Link>
+              <Link
+                href="/espace/connexion"
+                onClick={close}
+                className="block rounded-md py-3 text-sm font-semibold text-ink"
+              >
+                Espace salarié
+                <span className="mt-0.5 block text-xs font-normal text-ink-faint">
+                  Bulletins, congés, absences et documents
+                </span>
+              </Link>
+            </div>
             <Link
               href="/sign-up"
               onClick={close}
-              className={`${action} w-full`}
+              className={`${action} mt-3 w-full`}
             >
               Créer mon espace
             </Link>
