@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireEmployeeSession } from "@/lib/employee-space/session";
 import { bulletinFromSnapshot } from "@/lib/payroll/bulletin/prior-state";
 import { loadOrganizationBulletinSettings } from "@/lib/payroll/bulletin/period-loader";
-import { FULL_TIME_SCHEDULE, addDays, monthBounds, paidLeaveDaysForAbsence, publicHolidays, toIsoDay } from "@/lib/payroll/bulletin/calendar";
+import { addDays, monthBounds, paidLeaveDaysForAbsence, publicHolidays, toIsoDay, type WeeklySchedule } from "@/lib/payroll/bulletin/calendar";
 import { ABSENCE_STATUS_LABELS, formatDateRange, ofMonthLabel } from "@/lib/employee-space/labels";
 import type { PaidLeaveBalances } from "@/lib/payroll/bulletin/types";
 
@@ -33,9 +33,14 @@ async function latestBalances(organizationId: string, employeeId: string): Promi
 
 export default async function EspaceLeavePage() {
   const { account } = await requireEmployeeSession();
-  const [latest, settings] = await Promise.all([
+  const [latest, settings, workProfiles] = await Promise.all([
     latestBalances(account.organizationId, account.employeeId),
     loadOrganizationBulletinSettings(account.organizationId).catch(() => null),
+    prisma.payrollProfile.findMany({
+      where: { organizationId: account.organizationId, employeeId: account.employeeId },
+      select: { effectiveFrom: true, effectiveUntil: true, monthlyHours: true, weeklySchedule: true },
+      orderBy: { effectiveFrom: "asc" },
+    }),
   ]);
   const method = settings?.paidLeaveMethod ?? "OUVRABLES";
   const unit = method === "OUVRES" ? "jours ouvrés" : "jours ouvrables";
@@ -54,14 +59,34 @@ export default async function EspaceLeavePage() {
       for (const [day, label] of publicHolidays(year, { workedSolidarityDay: settings?.workedSolidarityDay })) holidays.set(day, label);
     }
   }
+  const scheduleAt = (day: string): WeeklySchedule | null => {
+    const at = new Date(`${day}T12:00:00.000Z`);
+    const profile = [...workProfiles].reverse().find((candidate) =>
+      candidate.effectiveFrom <= at && (!candidate.effectiveUntil || candidate.effectiveUntil >= at)
+    );
+    if (!profile || !Array.isArray(profile.weeklySchedule) || profile.weeklySchedule.length !== 7) return null;
+    const schedule = profile.weeklySchedule.map(Number);
+    if (schedule.some((hours) => !Number.isFinite(hours) || hours < 0 || hours > 12)) return null;
+    if (schedule.reduce((sum, hours) => sum + hours, 0) <= 0) return null;
+    return schedule as WeeklySchedule;
+  };
+
   const upcomingRows = upcoming.map((absence) => {
     const start = toIsoDay(absence.startDate);
     const end = toIsoDay(absence.endDate);
-    const counted = paidLeaveDaysForAbsence({ absenceStart: start, absenceEnd: end, windowStart: start > since ? start : since, windowEnd: addDays(end, 7), method, schedule: FULL_TIME_SCHEDULE, holidays });
+    const schedule = scheduleAt(start);
+    const counted = schedule
+      ? paidLeaveDaysForAbsence({ absenceStart: start, absenceEnd: end, windowStart: start > since ? start : since, windowEnd: addDays(end, 7), method, schedule, holidays })
+      : null;
     return { ...absence, counted };
   });
-  const validatedUpcoming = upcomingRows.filter((row) => row.status === "VALIDATED").reduce((total, row) => total + row.counted, 0);
-  const pendingUpcoming = upcomingRows.filter((row) => row.status !== "VALIDATED").reduce((total, row) => total + row.counted, 0);
+  const validatedUpcoming = upcomingRows
+    .filter((row) => row.status === "VALIDATED" && row.counted !== null)
+    .reduce((total, row) => total + (row.counted ?? 0), 0);
+  const pendingUpcoming = upcomingRows
+    .filter((row) => row.status !== "VALIDATED" && row.counted !== null)
+    .reduce((total, row) => total + (row.counted ?? 0), 0);
+  const uncountedUpcoming = upcomingRows.filter((row) => row.counted === null).length;
 
   const previousBalance = latest ? latest.balances.previousAcquired - latest.balances.previousTaken : 0;
   const currentBalance = latest ? latest.balances.currentAcquired - latest.balances.currentTaken : 0;
@@ -83,6 +108,7 @@ export default async function EspaceLeavePage() {
               <p className="mt-3 border-t border-surface-border pt-3 text-sm leading-6 text-ink-soft">
                 Après vos congés à venir : <strong className="font-semibold text-ink">{days(previousBalance - validatedUpcoming)}</strong>
                 {pendingUpcoming > 0 ? `, et ${days(previousBalance - validatedUpcoming - pendingUpcoming)} si vos demandes en attente sont acceptées` : ""}.
+                {uncountedUpcoming > 0 ? ` ${uncountedUpcoming} demande${uncountedUpcoming > 1 ? "s" : ""} reste${uncountedUpcoming > 1 ? "nt" : ""} à confirmer car l'horaire contractuel n'est pas renseigné.` : ""}
               </p>
             ) : null}
           </section>
@@ -109,7 +135,7 @@ export default async function EspaceLeavePage() {
                   <p className="text-[15px] font-medium text-ink">{formatDateRange(row.startDate, row.endDate)}</p>
                   <p className={`text-[13px] ${row.status === "VALIDATED" ? "text-accent-teal" : "text-ink-faint"}`}>{ABSENCE_STATUS_LABELS[row.status] ?? row.status}</p>
                 </div>
-                <p className="shrink-0 text-sm font-semibold tabular-nums text-ink">{days(row.counted)}</p>
+                <p className="shrink-0 text-sm font-semibold tabular-nums text-ink">{row.counted === null ? "À confirmer" : days(row.counted)}</p>
               </div>
             ))}
           </div>
@@ -117,7 +143,7 @@ export default async function EspaceLeavePage() {
       ) : null}
 
       <Link href="/espace/absences" className="flex min-h-[48px] items-center justify-center rounded-xl bg-brand-primary px-4 text-[15px] font-semibold text-white hover:opacity-90">Poser des congés</Link>
-      <p className="px-1 text-xs leading-5 text-ink-faint">Le décompte des congés à venir est indicatif : votre employeur l&apos;arrête sur le bulletin du mois concerné.</p>
+      <p className="px-1 text-xs leading-5 text-ink-faint">Le décompte des congés à venir utilise l&apos;horaire contractuel enregistré par votre employeur. S&apos;il manque, RH Pilot n&apos;invente pas un planning à 35 h : le décompte reste à confirmer.</p>
     </div>
   );
 }
