@@ -47,13 +47,18 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     expect(() => splitLockedRgdu(february)).toThrow(/bulletin antérieur/);
   });
   it("déclare un reversement de réduction via le CTP 669 avec une assiette", () => {
-    const january = computedSnapshot();
+    const january = computedSnapshot({ pay: { monthlyBaseSalary: 4050, contractMonthlyHours: 151.67, schedule: FULL_TIME_SCHEDULE } });
     const february = computedSnapshot({ period: { year: 2026, month: 2 }, yearToDate: january.bulletin.yearToDate, pay: { monthlyBaseSalary: 15000, contractMonthlyHours: 151.67, schedule: FULL_TIME_SCHEDULE } });
     const mapped = mapLockedContributions({ snapshot: february, previousSnapshot: january, ...ids });
     const reversal = mapped.aggregates.find((item) => item.code === "669")!;
     expect(reversal.baseAmount).toBeGreaterThan(0);
     expect(reversal.contributionAmount).toBeUndefined();
     expect(mapped.individual.find((item) => item.code === "018")!.contributionAmount).toBeGreaterThan(0);
+  });
+  it("bloque une CET déclenchée rétroactivement par une hausse du salaire", () => {
+    const january = computedSnapshot();
+    const february = computedSnapshot({ period: { year: 2026, month: 2 }, yearToDate: january.bulletin.yearToDate, pay: { monthlyBaseSalary: 15000, contractMonthlyHours: 151.67, schedule: FULL_TIME_SCHEDULE } });
+    expect(() => mapLockedContributions({ snapshot: february, previousSnapshot: january, ...ids })).toThrow(/régularisation CET/);
   });
   it("bloque un cumul RGDU divergent et un changement de seuil non traité", () => {
     const january = computedSnapshot();

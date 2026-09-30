@@ -36,7 +36,11 @@ multiple.payments[0].amount *= 2;
 assertDsnValReportAccepted(validate("plusieurs-salaries", buildDsnP26V01Complete(multiple)));
 
 for (const [label, gross, hours] of [["bulletin-2500", 2500, 151.67], ["bulletin-6000", 6000, 151.67], ["bulletin-temps-partiel", 1800, 121.33]] as const) {
-  assertDsnValReportAccepted(validate(label, buildDsnP26V01Complete(computedDsnFixture(gross, hours))));
+  const report = validate(label, buildDsnP26V01Complete(computedDsnFixture(gross, hours)));
+  try { assertDsnValReportAccepted(report); } catch (error) {
+    console.error("Rapport du cas synthétique refusé :", label, report);
+    throw error;
+  }
 }
 
 // Témoin négatif : l'outil doit réellement détecter un bloc obligatoire supprimé.
