@@ -19,7 +19,7 @@ describe("resolveAppUrl", () => {
   });
 
   it("retombe sur le domaine canonique en production", () => {
-    expect(resolveAppUrl({ VERCEL_ENV: "production" })).toBe("https://rhpilot.fr");
+    expect(resolveAppUrl({ VERCEL_ENV: "production" })).toBe("https://www.rhpilot.fr");
   });
 
   it("utilise l'URL Vercel en preview", () => {

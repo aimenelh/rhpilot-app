@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Mail, UserRound } from "lucide-react";
 import { Logomark } from "@/components/Brand";
+import { CANONICAL_SITE_URL } from "@/lib/appUrl";
 
 /**
  * Écran mobile des pages de connexion et d'inscription. L'espace employeur se pilote
@@ -8,7 +9,7 @@ import { Logomark } from "@/components/Brand";
  * espace, l'employeur vers un lien à rouvrir sur ordinateur ou vers le diagnostic RH.
  */
 export function MobileAppNotice({ mode }: { mode: "sign-in" | "sign-up" }) {
-  const link = `https://rhpilot.fr/${mode}`;
+  const link = `${CANONICAL_SITE_URL}/${mode}`;
   const mailto = `mailto:?subject=${encodeURIComponent("RH Pilot, à ouvrir sur ordinateur")}&body=${encodeURIComponent(`Lien pour ${mode === "sign-up" ? "créer mon espace" : "me connecter"} : ${link}`)}`;
   return (
     <div className="flex min-h-screen flex-col justify-center gap-6 px-6 py-10">

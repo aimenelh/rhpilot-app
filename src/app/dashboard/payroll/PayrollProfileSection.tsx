@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
+import type { ClassificationOption } from "@/lib/payroll/collective-classifications";
 
 import { saveEmployeePayrollProfile, type PayrollProfileFormState } from "./employeeActions";
 import { AlternanceProfileSection } from "../employees/AlternanceProfileSection";
@@ -31,6 +33,37 @@ function formatSalary(cents: number | null) {
   return new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 2 }).format(cents / 100);
 }
 
+const fieldClass = "mt-1.5 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink";
+
+/**
+ * Classification : liste tirée de la grille de la convention quand RH Pilot l'a
+ * intégrée (le code enregistré est alors celui que le contrôle des minima attend),
+ * saisie libre sinon.
+ */
+function ClassificationField({ grid, currentCode }: { grid: ClassificationOption[]; currentCode: string | null }) {
+  if (grid.length === 0) {
+    return (
+      <label className="block">
+        <span className="text-xs font-medium text-ink-soft">Code de classification</span>
+        <input name="classificationCode" defaultValue={currentCode ?? ""} className={fieldClass} />
+        <span className="mt-1 block text-xs text-ink-faint">Grille non intégrée pour cette convention : reprenez la classification du contrat. Le contrôle portera sur le SMIC.</span>
+      </label>
+    );
+  }
+  const currentOutsideGrid = currentCode && !grid.some((option) => option.code === currentCode);
+  return (
+    <label className="block">
+      <span className="text-xs font-medium text-ink-soft">Classification</span>
+      <select name="classificationCode" defaultValue={currentCode ?? ""} className={fieldClass}>
+        <option value="">Choisir dans la grille de la convention</option>
+        {currentOutsideGrid ? <option value={currentCode}>{currentCode} (hors grille, à corriger)</option> : null}
+        {grid.map((option) => <option key={option.code} value={option.code}>{option.label}</option>)}
+      </select>
+      <span className="mt-1 block text-xs text-ink-faint">Le salaire est comparé au minimum de la classification choisie.</span>
+    </label>
+  );
+}
+
 function SubmitButton({ firstName }: { firstName: string }) {
   const { pending } = useFormStatus();
   return (
@@ -49,6 +82,8 @@ export function PayrollProfileSection({
   firstName,
   profile,
   agreements,
+  classificationGrids = {},
+  organizationAgreementId = null,
   canEdit,
   paidLeaveOpening = null,
   payrollOpening = null,
@@ -57,6 +92,10 @@ export function PayrollProfileSection({
   firstName: string;
   profile: PayrollProfileView | null;
   agreements: AgreementOption[];
+  /** Classifications de la grille de minima, par convention (voir lib/payroll/collective-classifications). */
+  classificationGrids?: Record<string, ClassificationOption[]>;
+  /** Convention de l'organisation, utilisée quand le profil n'en précise pas. */
+  organizationAgreementId?: string | null;
   canEdit: boolean;
   paidLeaveOpening?: PaidLeaveOpeningView;
   payrollOpening?: PayrollOpeningView;
@@ -64,6 +103,9 @@ export function PayrollProfileSection({
   const action = saveEmployeePayrollProfile.bind(null, employeeId);
   const [state, formAction] = useFormState<PayrollProfileFormState, FormData>(action, undefined);
   const effectiveFrom = profile?.effectiveFrom ?? new Date().toISOString().slice(0, 10);
+  const [selectedAgreementId, setSelectedAgreementId] = useState(profile?.collectiveAgreementId ?? "");
+  const effectiveAgreementId = selectedAgreementId || organizationAgreementId || "";
+  const grid = classificationGrids[effectiveAgreementId] ?? [];
 
   return (
     <section className="mt-8 overflow-hidden rounded-xl border border-surface-border bg-white">
@@ -125,8 +167,8 @@ export function PayrollProfileSection({
               </span>
             </summary>
             <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <label className="block md:col-span-2"><span className="text-xs font-medium text-ink-soft">Convention collective</span><select name="collectiveAgreementId" defaultValue={profile?.collectiveAgreementId ?? ""} className="mt-1.5 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink"><option value="">Utiliser la convention de l&apos;organisation / non renseignée</option>{agreements.map((agreement) => <option key={agreement.id} value={agreement.id}>{agreement.idcc} : {agreement.name}</option>)}</select></label>
-              <label className="block"><span className="text-xs font-medium text-ink-soft">Code de classification</span><input name="classificationCode" defaultValue={profile?.classificationCode ?? ""} className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2 text-sm text-ink" /></label>
+              <label className="block md:col-span-2"><span className="text-xs font-medium text-ink-soft">Convention collective</span><select name="collectiveAgreementId" value={selectedAgreementId} onChange={(event) => setSelectedAgreementId(event.target.value)} className="mt-1.5 w-full rounded-lg border border-surface-border bg-white px-3 py-2 text-sm text-ink"><option value="">Utiliser la convention de l&apos;organisation / non renseignée</option>{agreements.map((agreement) => <option key={agreement.id} value={agreement.id}>{agreement.idcc} : {agreement.name}</option>)}</select></label>
+              <ClassificationField key={effectiveAgreementId} grid={grid} currentCode={selectedAgreementId === (profile?.collectiveAgreementId ?? "") ? profile?.classificationCode ?? null : null} />
               <label className="block"><span className="text-xs font-medium text-ink-soft">Intitulé de classification</span><input name="classificationLabel" defaultValue={profile?.classificationLabel ?? ""} className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2 text-sm text-ink" /></label>
               <label className="block"><span className="text-xs font-medium text-ink-soft">Niveau</span><input name="level" defaultValue={profile?.level ?? ""} className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2 text-sm text-ink" /></label>
               <label className="block"><span className="text-xs font-medium text-ink-soft">Coefficient</span><input name="coefficient" defaultValue={profile?.coefficient ?? ""} className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2 text-sm text-ink" /></label>

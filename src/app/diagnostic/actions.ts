@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { escapeHtml, sendEmail } from "@/lib/email";
 import { isPlausibleEmail, parseDiagnostic, RISK_AREA_TEXT, type DiagnosticAnswers } from "@/lib/diagnostic";
+import { CANONICAL_SITE_URL } from "@/lib/appUrl";
 
 export type { DiagnosticAnswers };
 export type SubmitDiagnosticState = { saved: boolean; id?: string; error: string } | undefined;
@@ -54,7 +55,7 @@ export async function sendDiagnosticByEmail(id: string, email: string): Promise<
     return { sent: false, error: "Ce diagnostic ne peut plus être envoyé. Refaites-le en quelques secondes." };
   }
   const areas = response.riskAreas.map((area) => RISK_AREA_TEXT[area]).filter(Boolean);
-  const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? "https://rhpilot.fr";
+  const siteUrl = process.env.NEXT_PUBLIC_APP_URL ?? CANONICAL_SITE_URL;
   const items = areas.length
     ? areas.map((area) => `<li style="margin:0 0 12px"><strong>${escapeHtml(area.label)}</strong><br><span style="color:#4A4A4D">${escapeHtml(area.tip)}</span></li>`).join("")
     : `<li>Aucun point de vigilance majeur : votre suivi RH est bien tenu.</li>`;

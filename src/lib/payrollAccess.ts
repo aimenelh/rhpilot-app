@@ -5,15 +5,17 @@ import { getCurrentMemberships } from "@/lib/auth";
  * Accès au module Paie, en accès anticipé.
  *
  * Tant que la paie n'est pas ouverte à tous, seules les organisations listées
- * dans PAYROLL_PREVIEW_ORGANIZATIONS (identifiants ou SIRET, séparés par des
- * virgules) y ont accès, et seulement leurs propriétaires et administrateurs.
+ * dans PAYROLL_PREVIEW_ORGANIZATIONS (identifiants d'organisation RH Pilot,
+ * séparés par des virgules) y ont accès, et seulement leurs propriétaires et
+ * administrateurs. Jamais le SIRET : il est public et plusieurs organisations
+ * peuvent déclarer le même, ce qui suffirait à contourner la liste.
  * PAYROLL_ENABLED_FOR_ALL=true ouvre la paie à toutes les organisations.
  *
  * Toute page, action ou route de paie passe par getPayrollMembership() : un
  * simple membre, ou une organisation hors liste, n'obtient jamais de données de paie.
  */
 
-type OrganizationRef = { id: string; siret?: string | null };
+type OrganizationRef = { id: string };
 type MembershipLike = { accessRole: string; organizationId: string; organization: OrganizationRef };
 
 function allowList(): string[] {
@@ -25,9 +27,7 @@ function allowList(): string[] {
 
 export function isPayrollEnabledFor(organization: OrganizationRef): boolean {
   if (process.env.PAYROLL_ENABLED_FOR_ALL === "true") return true;
-  const list = allowList();
-  const siret = organization.siret?.replace(/\s/g, "");
-  return list.includes(organization.id) || Boolean(siret && list.includes(siret));
+  return allowList().includes(organization.id);
 }
 
 export function canUsePayroll(membership: MembershipLike | null | undefined): boolean {

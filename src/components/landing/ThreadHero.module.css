@@ -107,6 +107,9 @@
   pointer-events: none;
   animation: fadeIn 0.6s calc(var(--intro-offset, 0s) + 2.3s) both;
 }
+.hint::after {
+  content: attr(data-hint);
+}
 .slogan {
   font-style: italic;
   color: #b73927;

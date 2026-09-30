@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { annualAverageHeadcount, countThresholdHeadcount, resolveThresholdHeadcount, thresholdCrossingWarning } from "./headcount";
+import { annualAverageHeadcount, countThresholdHeadcount, monthlyHeadcount, resolveThresholdHeadcount, thresholdCrossingWarning } from "./headcount";
 
 const day = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 const employee = (contractType: string | null, hire: string, end: string | null = null, monthlyHours: number | null = 151.67) => ({ contractType, hireDate: day(hire), contractEndDate: end ? day(end) : null, monthlyHours });
@@ -72,8 +72,50 @@ describe("effectif des seuils (moyenne N-1 et loi Pacte)", () => {
   it("estime sur le mois en cours sans historique et le signale au-delà de 10", () => {
     const staff = Array.from({ length: 12 }, () => employee("CDI", "2026-02-01"));
     const result = resolveThresholdHeadcount(staff, 2026, day("2026-03-31"));
-    expect(result).toMatchObject({ headcount: 12, basis: "CURRENT_MONTH" });
+    expect(result).toMatchObject({ headcount: 12, basis: "FIRST_HIRE_MONTH" });
     expect(result.warnings).toHaveLength(1);
     expect(annualAverageHeadcount(staff, 2025)).toBe(0);
+  });
+});
+
+describe("règles Urssaf du décompte", () => {
+  it("compte chaque salarié au prorata de sa présence dans le mois", () => {
+    // Embauché le 16 juin : 15 jours sur 30.
+    expect(monthlyHeadcount([employee("CDI", "2025-06-16")], 2025, 5)).toBe(0.5);
+    // Parti le 10 avril : 10 jours sur 30, à mi-temps.
+    expect(monthlyHeadcount([employee("CDI", "2020-01-01", "2025-04-10", 75.84)], 2025, 3)).toBeCloseTo((10 / 30) * (75.84 / 151.67), 10);
+  });
+
+  it("tronque la moyenne au centième sans arrondir vers le seuil de 11", () => {
+    const staff = [...Array.from({ length: 10 }, () => employee("CDI", "2020-01-01")), employee("CDI", "2020-01-01", null, 151.2)];
+    expect(annualAverageHeadcount(staff, 2025)).toBe(10.99);
+    expect(countThresholdHeadcount(staff, day("2025-12-31"))).toBe(10.99);
+    const partial = [employee("CDI", "2020-01-01", "2025-01-05")];
+    expect(annualAverageHeadcount(partial, 2025)).toBe(0.16);
+  });
+
+  it("ne fait la moyenne que sur les mois où des salariés sont employés", () => {
+    // 6 salariés de juillet à décembre 2025, personne avant.
+    const staff = Array.from({ length: 6 }, () => employee("CDI", "2025-07-01"));
+    expect(annualAverageHeadcount(staff, 2025)).toBe(6);
+  });
+
+  it("retient le dernier jour du mois de la première embauche l'année de cette embauche", () => {
+    const staff = [...Array.from({ length: 3 }, () => employee("CDI", "2026-03-10")), ...Array.from({ length: 9 }, () => employee("CDI", "2026-05-02"))];
+    const result = resolveThresholdHeadcount(staff, 2026, day("2026-06-30"), day("2026-03-01"));
+    expect(result).toMatchObject({ headcount: 3, basis: "FIRST_HIRE_MONTH", warnings: [] });
+  });
+
+  it("n'applique pas le gel Pacte à une entreprise créée d'emblée au-dessus du seuil", () => {
+    const staff = Array.from({ length: 12 }, () => employee("CDI", "2024-01-02"));
+    expect(resolveThresholdHeadcount(staff, 2026, day("2026-03-31"), day("2024-01-01"))).toMatchObject({ headcount: 12, warnings: [] });
+  });
+
+  it("signale les années absentes de RH Pilot quand le seuil s'applique", () => {
+    // Entreprise ancienne (création inconnue), salariés saisis seulement depuis 2024.
+    const staff = Array.from({ length: 12 }, () => employee("CDI", "2024-01-02"));
+    const result = resolveThresholdHeadcount(staff, 2026, day("2026-03-31"));
+    expect(result.headcount).toBe(12);
+    expect(result.warnings.join(" ")).toContain("2021, 2022, 2023");
   });
 });

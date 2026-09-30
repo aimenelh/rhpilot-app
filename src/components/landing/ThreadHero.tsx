@@ -259,7 +259,6 @@ export function ThreadHero() {
       <div className={s.top}>
         <div className={s.titleWrap}>
           <h1 id="arrival-title" className={s.title}>
-            <span className="sr-only">Logiciel RH pour TPE et PME : </span>
             <button
               ref={clause}
               type="button"
@@ -288,11 +287,12 @@ export function ThreadHero() {
                       <path d="M4 7.5 10 13.5 16 7.5" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                     {!touched && (
-                      <span className={s.hint}>
+                      // Indication décorative : son texte vient du CSS (data-hint) pour ne pas
+                      // faire partie du titre lu par les moteurs de recherche et les lecteurs d'écran.
+                      <span className={s.hint} data-hint="changez l’événement" aria-hidden="true">
                         <svg viewBox="0 0 46 26" width="40" height="23">
                           <path d="M44 8 C32 18 18 20 5 13 M5 13 L12 20 M5 13 L14 9" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
-                        changez l’événement
                       </span>
                     )}
                   </span>

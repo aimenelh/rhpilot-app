@@ -133,10 +133,20 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
   // (hors alternants, temps partiels au prorata) avec la règle des cinq ans de la loi Pacte.
   // L'historique inclut les salariés archivés : un départ reste compté pour les mois où il était présent.
   const historyStart = new Date(Date.UTC(period.year - 5, 0, 1));
-  const history = await prisma.employee.findMany({
-    where: { organizationId: input.organizationId, hireDate: { lte: end }, OR: [{ contractEndDate: null }, { contractEndDate: { gte: historyStart } }] },
-    select: { id: true, contractType: true, hireDate: true, contractEndDate: true, deletedAt: true },
-  });
+  // Les salariés de démonstration purgés ne comptent jamais : leurs dates d'embauche fictives
+  // (jusqu'à trois ans en arrière) gonfleraient l'effectif des années passées.
+  const [history, organizationDates] = await Promise.all([
+    prisma.employee.findMany({
+      where: {
+        organizationId: input.organizationId,
+        hireDate: { lte: end },
+        OR: [{ contractEndDate: null }, { contractEndDate: { gte: historyStart } }],
+        NOT: { isDemoData: true, deletedAt: { not: null } },
+      },
+      select: { id: true, contractType: true, hireDate: true, contractEndDate: true, deletedAt: true },
+    }),
+    prisma.organization.findUnique({ where: { id: input.organizationId }, select: { companyCreationDate: true } }),
+  ]);
   const historyHours = new Map<string, number | null>();
   for (const row of await prisma.payrollProfile.findMany({ where: { organizationId: input.organizationId, employeeId: { in: history.map((item) => item.id) } }, select: { employeeId: true, monthlyHours: true }, orderBy: { effectiveFrom: "asc" } })) {
     historyHours.set(row.employeeId, row.monthlyHours === null ? null : Number(row.monthlyHours));
@@ -151,6 +161,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     })),
     period.year,
     new Date(`${bounds.last}T12:00:00.000Z`),
+    organizationDates?.companyCreationDate ?? null,
   );
   // Le moteur attend un entier d'au moins 1 ; l'arrondi inférieur place l'entreprise du même côté des seuils de 11, 20 et 50.
   const headcount = settings.payrollHeadcount ?? Math.max(1, Math.floor(thresholdHeadcount.headcount));

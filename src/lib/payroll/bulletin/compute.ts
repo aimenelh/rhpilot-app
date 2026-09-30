@@ -528,7 +528,11 @@ export function computePayslip(input: PayslipInput): PayslipResult {
   }
   if (employee.contract === "CDD") {
     others.push(["CPF_CDD", "Contribution CPF-CDD", G, r.cpfCdd]);
-    warnings.push("Contribution CPF-CDD de 1 % appliquée. Elle n'est pas due pour un CDD conclu avec un jeune pendant son cursus scolaire ou universitaire, ni pour un CDD qui se poursuit en CDI (C. trav. art. L6322-37) : dans ces cas, faites-la retirer avant de remettre le bulletin.");
+    // Limiter le rappel au premier et au dernier mois du contrat.
+    const endsThisMonth = Boolean(employee.contractEndDate && employee.contractEndDate >= period.first && employee.contractEndDate <= period.last);
+    if (employee.hireDate >= period.first || endsThisMonth) {
+      warnings.push("Contribution CPF-CDD de 1 % appliquée (C. trav. art. L6331-6). Depuis 2022, les CDD conclus pendant un cursus scolaire ou universitaire et ceux qui se poursuivent en CDI restent soumis à cette contribution.");
+    }
   }
   if (thresholds.atLeast11 && prevoyanceEmployer + healthEmployer > 0) others.push(["FORFAIT_SOCIAL", "Forfait social sur la prévoyance", prevoyanceEmployer + healthEmployer, r.forfaitSocialPrevoyance]);
   if (severanceTreatment.specificContributionBase > 0) others.push(["CONTRIBUTION_RUPTURE", "Contribution patronale spécifique sur l'indemnité de rupture", severanceTreatment.specificContributionBase, severanceTreatment.specificContributionRate]);

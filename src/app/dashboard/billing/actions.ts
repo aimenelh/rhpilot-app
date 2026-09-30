@@ -8,6 +8,7 @@ import { stripe, STRIPE_PRICE_BASE, STRIPE_PRICE_PER_EMPLOYEE } from "@/lib/stri
 import { employeeQuantityForBilling, hasOpenStripeSubscription } from "@/lib/billingPolicy";
 import { getAppUrl } from "@/lib/appUrl";
 import { billableEmployeeWhere } from "@/lib/billingEmployeeScope";
+import { TERMS_BUNDLE_VERSION } from "@/lib/legalVersions";
 
 export type BillingActionState = { error: string } | undefined;
 
@@ -56,9 +57,9 @@ export async function createCheckoutSession(
       customer: organization.stripeCustomerId ?? undefined,
       customer_email: organization.stripeCustomerId ? undefined : user.email,
       client_reference_id: organization.id,
-      metadata: { organizationId: organization.id, termsVersion: "2026-09-29", termsAcceptedAt: acceptedAt, termsAcceptedBy: user.id },
+      metadata: { organizationId: organization.id, termsVersion: TERMS_BUNDLE_VERSION, termsAcceptedAt: acceptedAt, termsAcceptedBy: user.id },
       subscription_data: {
-        metadata: { organizationId: organization.id, termsVersion: "2026-09-29", termsAcceptedAt: acceptedAt, termsAcceptedBy: user.id },
+        metadata: { organizationId: organization.id, termsVersion: TERMS_BUNDLE_VERSION, termsAcceptedAt: acceptedAt, termsAcceptedBy: user.id },
       },
       line_items: [
         { price: STRIPE_PRICE_BASE, quantity: 1 },
@@ -68,7 +69,7 @@ export async function createCheckoutSession(
       cancel_url: `${appUrl}/dashboard/billing?canceled=1`,
     });
     sessionUrl = session.url;
-    await prisma.auditLog.create({ data: { id: randomUUID(), organizationId: organization.id, actorUserId: user.id, action: "billing.terms.accepted", entityType: "CheckoutSession", entityId: session.id, metadata: { version: "2026-09-29", acceptedAt, documents: ["cgv", "cgu", "dpa"] } } });
+    await prisma.auditLog.create({ data: { id: randomUUID(), organizationId: organization.id, actorUserId: user.id, action: "billing.terms.accepted", entityType: "CheckoutSession", entityId: session.id, metadata: { version: TERMS_BUNDLE_VERSION, acceptedAt, documents: ["cgv", "cgu", "dpa"] } } });
   } catch (error) {
     // Un stripeCustomerId périmé (ex. résidu d'un changement de mode
     // test/live) ou tout autre refus de Stripe ne doit jamais faire
