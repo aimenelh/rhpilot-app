@@ -31,7 +31,7 @@ describe("calendrier de paie", () => {
 
   it("décompte une semaine de congés du lundi au vendredi comme 6 jours ouvrables ou 5 jours ouvrés", () => {
     const holidays = publicHolidays(2026);
-    const common = { absenceStart: "2026-03-23", absenceEnd: "2026-03-27", windowStart: "2026-03-01", windowEnd: "2026-03-31", schedule: FULL_TIME_SCHEDULE, holidays };
+    const common = { absenceStart: "2026-03-23", absenceEnd: "2026-03-27", windowStart: "2026-03-01", windowEnd: "2026-03-31", schedule: FULL_TIME_SCHEDULE, companyWorkingDays: [true, true, true, true, true, false, false], holidays };
     expect(paidLeaveDaysForAbsence({ ...common, method: "OUVRABLES" })).toBe(6);
     expect(paidLeaveDaysForAbsence({ ...common, method: "OUVRES" })).toBe(5);
     // Semaine du lundi de Pâques : le jour férié n'est pas décompté.

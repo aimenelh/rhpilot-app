@@ -17,7 +17,9 @@ export type OrganizationBulletinSettings = {
   mobilityRatePercent: number | null;
   ijssSubrogation: boolean;
   paidLeaveMethod: "OUVRABLES" | "OUVRES";
+  paidLeaveWorkingDays: readonly boolean[] | null;
   workedSolidarityDay: boolean;
+  alsaceMoselle: boolean;
   prevoyanceRates: unknown;
   mealVoucherFaceValue: number | null;
   mealVoucherEmployerShare: number | null;
@@ -32,7 +34,7 @@ const toNumber = (value: unknown): number | null => {
 
 export async function loadOrganizationBulletinSettings(organizationId: string): Promise<OrganizationBulletinSettings> {
   const rows = await prisma.$queryRaw<Array<Record<string, unknown>>>`
-    SELECT "sickPayRule", "workAccidentPayRule", "payrollHeadcount", "mobilityRate", "ijssSubrogation", "paidLeaveMethod", "workedSolidarityDay", "prevoyanceRates",
+    SELECT "sickPayRule", "workAccidentPayRule", "payrollHeadcount", "mobilityRate", "ijssSubrogation", "paidLeaveMethod", "paidLeaveWorkingDays", "workedSolidarityDay", "payrollDepartment", "prevoyanceRates",
            "mealVoucherFaceValue", "mealVoucherEmployerShare", "transportEmployerShare"
     FROM "organizations" WHERE "id" = ${organizationId} LIMIT 1
   `;
@@ -45,7 +47,9 @@ export async function loadOrganizationBulletinSettings(organizationId: string): 
     mobilityRatePercent: toNumber(row.mobilityRate),
     ijssSubrogation: row.ijssSubrogation !== false,
     paidLeaveMethod: row.paidLeaveMethod === "OUVRES" ? "OUVRES" : "OUVRABLES",
+    paidLeaveWorkingDays: Array.isArray(row.paidLeaveWorkingDays) ? row.paidLeaveWorkingDays as boolean[] : null,
     workedSolidarityDay: row.workedSolidarityDay === true,
+    alsaceMoselle: territoryFromDepartment(String(row.payrollDepartment ?? "")).alsaceMoselle,
     prevoyanceRates: row.prevoyanceRates ?? null,
     mealVoucherFaceValue: toNumber(row.mealVoucherFaceValue),
     mealVoucherEmployerShare: toNumber(row.mealVoucherEmployerShare),

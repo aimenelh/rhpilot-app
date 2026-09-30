@@ -1,5 +1,6 @@
 import { parseMaintenanceForm } from "./maintenance-settings";
 import type { SickPayRule } from "./params";
+import { paidLeaveCompanySchedule } from "./calendar";
 
 /**
  * Lecture et validation du formulaire « Paramètres de paie » de l'organisation.
@@ -11,6 +12,7 @@ export type PayrollSettingsInput = {
   payrollHeadcount: number | null;
   mobilityRate: number | null;
   paidLeaveMethod: "OUVRABLES" | "OUVRES";
+  paidLeaveWorkingDays: boolean[] | null;
   ijssSubrogation: boolean;
   workedSolidarityDay: boolean;
   mealVoucherFaceValue: number | null;
@@ -57,13 +59,17 @@ export function parsePayrollSettingsForm(get: Getter): PayrollSettingsInput {
   };
   const cadre = population("cadre");
   const nonCadre = population("nonCadre");
+  const method = get("paidLeaveMethod") === "OUVRES" ? "OUVRES" : "OUVRABLES";
+  const paidLeaveWorkingDays = method === "OUVRES" ? Array.from({ length: 7 }, (_, day) => get(`paidLeaveWorkingDays.${day}`) === "1") : null;
+  if (method === "OUVRES") paidLeaveCompanySchedule(paidLeaveWorkingDays);
 
   return {
     sickPayRule: parseMaintenanceForm(get, "sickPayRule"),
     workAccidentPayRule: parseMaintenanceForm(get, "workAccidentPayRule"),
     payrollHeadcount: headcount,
     mobilityRate,
-    paidLeaveMethod: get("paidLeaveMethod") === "OUVRES" ? "OUVRES" : "OUVRABLES",
+    paidLeaveMethod: method,
+    paidLeaveWorkingDays,
     ijssSubrogation: get("ijssSubrogation") !== "0",
     workedSolidarityDay: get("workedSolidarityDay") === "1",
     mealVoucherFaceValue: faceValue,

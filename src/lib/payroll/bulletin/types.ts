@@ -32,6 +32,7 @@ export type OrganizationPayrollContext = {
   workAccidentPayRule?: SickPayRule;
   /** Décompte des congés payés. */
   paidLeaveMethod: "OUVRABLES" | "OUVRES";
+  paidLeaveWorkingDays?: readonly boolean[] | null;
 };
 
 export type PrevoyanceRates = {
@@ -227,6 +228,7 @@ export type PayslipInput = {
   publicTransport?: PublicTransportInput | null;
   netAdjustments?: NetAdjustmentInput[];
   paidLeave?: PaidLeaveBalances | null;
+  priorPaidLeaveIndemnities?: Record<string, { days: number; maintenance: number; paid: number; referenceGross: number | null; referenceDays: number | null }>;
   yearToDate?: YearToDate | null;
   sickPayHistory?: SickPayHistory | null;
   /** Trois derniers bruts mensuels avant l'arrêt, pour estimer les IJSS maladie. */

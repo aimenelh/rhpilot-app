@@ -69,6 +69,7 @@ export async function resolveValidatedAbsencesForPayrollPeriod(input: {
   organizationId: string;
   year: number;
   month: number;
+  includePaidLeaveTail?: boolean;
 }): Promise<ValidatedAbsencePayrollImpact[]> {
   const { start: periodStart, end: periodEnd } = periodBounds(input.year, input.month);
 
@@ -77,7 +78,10 @@ export async function resolveValidatedAbsencesForPayrollPeriod(input: {
       organizationId: input.organizationId,
       status: "VALIDATED",
       startDate: { lte: periodEnd },
-      endDate: { gte: periodStart },
+      OR: [
+        { endDate: { gte: periodStart } },
+        ...(input.includePaidLeaveTail ? [{ type: "PAID_LEAVE" as const, endDate: { gte: new Date(periodStart.getTime() - 31 * 86400000) }, employee: { deletedAt: null, hireDate: { lte: periodEnd }, OR: [{ contractEndDate: null }, { contractEndDate: { gte: periodStart } }] } }] : []),
+      ],
     },
     select: {
       id: true,

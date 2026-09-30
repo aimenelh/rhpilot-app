@@ -12,7 +12,7 @@
  * Toute information indispensable manquante bloque le calcul avec un message
  * explicite plutôt que de produire un bulletin approximatif.
  */
-import { addDays, assertSchedule, calendarDays, daysBetweenInclusive, fromIsoDay, monthBounds, paidLeaveDaysForAbsence, publicHolidays, weekdayIndex, type CalendarDay, type IsoDay } from "./calendar";
+import { addDays, assertSchedule, calendarDays, daysBetweenInclusive, fromIsoDay, monthBounds, paidLeaveCompanySchedule, paidLeaveDaysForAbsence, publicHolidays, weekdayIndex, type CalendarDay, type IsoDay } from "./calendar";
 import { valueAbsence, type ValuedAbsence } from "./absences";
 import {
   CONTRIBUTION_RATES,
@@ -36,7 +36,7 @@ import { assertAmount, round2, round4 } from "./money";
 import { NO_SEVERANCE, addTerminationLines } from "./termination";
 import type { PaidLeaveBalances, PaidLeaveOutcome, PayslipInput, PayslipLine, PayslipResult, SickPayHistory, YearToDate } from "./types";
 
-export const BULLETIN_ENGINE_VERSION = "rhpilot-bulletin-2026.3";
+export const BULLETIN_ENGINE_VERSION = "rhpilot-bulletin-2026.4";
 
 export function emptyYearToDate(year: number): YearToDate {
   return {
@@ -126,11 +126,13 @@ export function computePayslip(input: PayslipInput): PayslipResult {
 
   // --- Temps de travail du mois ------------------------------------------------
   const holidays = publicHolidays(year, { workedSolidarityDay: org.workedSolidarityDay, alsaceMoselle: org.alsaceMoselle });
+  for (const otherYear of [year - 1, year + 1]) for (const [day, label] of publicHolidays(otherYear, { workedSolidarityDay: org.workedSolidarityDay, alsaceMoselle: org.alsaceMoselle })) holidays.set(day, label);
   const monthDays = calendarDays(period.first, period.last, pay.schedule, holidays);
   const calendar = new Map<IsoDay, CalendarDay>(monthDays.map((day) => [day.day, day]));
   const monthScheduledHours = monthDays.reduce((total, day) => total + day.scheduledHours, 0);
   if (monthScheduledHours <= 0) throw new Error("L'horaire du salarié ne prévoit aucune heure de travail sur le mois.");
 
+  if (org.paidLeaveMethod === "OUVRES") paidLeaveCompanySchedule(org.paidLeaveWorkingDays);
   const windowStart = employee.hireDate > period.first ? employee.hireDate : period.first;
   const windowEnd = employee.contractEndDate && employee.contractEndDate < period.last ? employee.contractEndDate : period.last;
   if (windowStart > period.last || windowEnd < period.first || windowEnd < windowStart) throw new Error(`${employee.displayName} n'est pas sous contrat sur la période.`);
@@ -184,7 +186,7 @@ export function computePayslip(input: PayslipInput): PayslipResult {
     return salaries;
   };
   for (const absence of [...(input.absences ?? [])].sort((a, b) => a.start.localeCompare(b.start))) {
-    if (absence.end < windowStart || absence.start > windowEnd) continue;
+    if (absence.start > windowEnd || (absence.end < windowStart && (absence.kind !== "PAID_LEAVE" || paidLeaveDaysForAbsence({ absenceStart: absence.start, absenceEnd: absence.end, windowStart, windowEnd, method: org.paidLeaveMethod, companyWorkingDays: org.paidLeaveWorkingDays, schedule: pay.schedule, holidays }) === 0))) continue;
     const result = valueAbsence({
       absence,
       windowStart,
@@ -229,23 +231,30 @@ export function computePayslip(input: PayslipInput): PayslipResult {
   const balances: PaidLeaveBalances = input.paidLeave ?? { previousAcquired: 0, previousTaken: 0, currentAcquired: 0, currentTaken: 0 };
 
   for (const absence of valued) {
-    if (absence.deduction <= 0 && absence.input.kind !== "SICK_LEAVE" && absence.input.kind !== "WORK_ACCIDENT") continue;
-    const first = absence.days[0]?.day;
-    const last = absence.days[absence.days.length - 1]?.day;
+    const cpDays = absence.input.kind === "PAID_LEAVE" ? paidLeaveDaysForAbsence({ absenceStart: absence.input.start, absenceEnd: absence.input.end, windowStart, windowEnd, method: org.paidLeaveMethod, companyWorkingDays: org.paidLeaveWorkingDays, schedule: pay.schedule, holidays }) : 0;
+    if (absence.deduction <= 0 && cpDays <= 0 && absence.input.kind !== "SICK_LEAVE" && absence.input.kind !== "WORK_ACCIDENT") continue;
+    const first = absence.days[0]?.day ?? (cpDays > 0 ? windowStart : undefined);
+    const last = absence.days[absence.days.length - 1]?.day ?? (cpDays > 0 ? windowStart : undefined);
     if (!first || !last) continue;
     const label = `${ABSENCE_LABELS[absence.input.kind] ?? "Absence"} du ${frDate(first)} au ${frDate(last)}`;
     if (absence.deduction > 0) {
       grossLine({ code: `ABS_${absence.input.kind}`, label, quantity: round2(absence.hours), unit: "HOURS", rate: round4(hourlyValue), amount: -absence.deduction, source: "Horaire réel du mois : salaire × heures d'absence / heures programmées du mois", detail: { absenceId: absence.input.id } });
     }
     if (absence.input.kind === "PAID_LEAVE") {
-      const days = paidLeaveDaysForAbsence({ absenceStart: absence.input.start, absenceEnd: absence.input.end, windowStart, windowEnd, method: org.paidLeaveMethod, schedule: pay.schedule, holidays });
+      const days = cpDays;
       let indemnity = absence.deduction;
       let method: "SALARY_MAINTENANCE" | "TENTH" = "SALARY_MAINTENANCE";
       const referenceGross = balances.referenceGross ?? null;
       const referenceDays = balances.referenceAcquiredDays ?? null;
+      const previous = input.priorPaidLeaveIndemnities?.[absence.input.id];
+      if (absence.input.start < period.first && !previous && days > 0) throw new Error("Le congé traverse deux mois : son indemnité et ses jours déjà décomptés doivent être repris depuis le bulletin précédent.");
+      if (previous && (previous.referenceGross !== referenceGross || previous.referenceDays !== referenceDays)) throw new Error("Le congé traverse une modification de sa période de référence : vérifiez son indemnisation avant de calculer le bulletin.");
       if (referenceGross !== null && referenceDays !== null && referenceDays > 0) {
-        const tenth = round2((referenceGross / 10) * (days / referenceDays));
-        if (tenth > indemnity) { indemnity = tenth; method = "TENTH"; }
+        const maintenance = round2((previous?.maintenance ?? 0) + absence.deduction);
+        const tenth = round2((referenceGross / 10) * (((previous?.days ?? 0) + days) / referenceDays));
+        const due = Math.max(maintenance, tenth);
+        indemnity = round2(Math.max(0, due - (previous?.paid ?? 0)));
+        method = tenth > maintenance ? "TENTH" : "SALARY_MAINTENANCE";
       }
       paidLeaveIndemnityTotal += indemnity;
       grossLine({ code: "CP_INDEMNITY", label: `Indemnité de congés payés (${days} jour${days > 1 ? "s" : ""} ${org.paidLeaveMethod === "OUVRABLES" ? "ouvrables" : "ouvrés"})`, quantity: days, unit: "DAYS", amount: indemnity, source: method === "TENTH" ? "C. trav. art. L3141-24 : règle du dixième, plus favorable que le maintien" : "C. trav. art. L3141-24 : maintien de salaire", detail: { absenceId: absence.input.id, method } });
@@ -256,7 +265,7 @@ export function computePayslip(input: PayslipInput): PayslipResult {
   }
 
   if (paidLeaveAbsences.length > 0 || input.paidLeave) {
-    const daysTaken = paidLeaveAbsences.reduce((total, absence) => total + paidLeaveDaysForAbsence({ absenceStart: absence.input.start, absenceEnd: absence.input.end, windowStart, windowEnd, method: org.paidLeaveMethod, schedule: pay.schedule, holidays }), 0);
+    const daysTaken = paidLeaveAbsences.reduce((total, absence) => total + paidLeaveDaysForAbsence({ absenceStart: absence.input.start, absenceEnd: absence.input.end, windowStart, windowEnd, method: org.paidLeaveMethod, companyWorkingDays: org.paidLeaveWorkingDays, schedule: pay.schedule, holidays }), 0);
     const previousAvailable = Math.max(0, balances.previousAcquired - balances.previousTaken);
     const takenFromPrevious = Math.min(daysTaken, previousAvailable);
     const takenFromCurrent = daysTaken - takenFromPrevious;

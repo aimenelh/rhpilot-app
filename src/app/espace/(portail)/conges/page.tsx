@@ -43,7 +43,7 @@ export default async function EspaceLeavePage() {
     }),
   ]);
   const method = settings?.paidLeaveMethod ?? "OUVRABLES";
-  const unit = method === "OUVRES" ? "jours ouvrés" : "jours ouvrables";
+  const unit = !settings ? "décompte à confirmer" : method === "OUVRES" ? "jours ouvrés" : "jours ouvrables";
 
   // Congés posés après le dernier bulletin : pas encore décomptés des compteurs.
   const since = latest ? addDays(monthBounds(latest.year, latest.month).last, 1) : toIsoDay(new Date());
@@ -51,20 +51,19 @@ export default async function EspaceLeavePage() {
     where: { organizationId: account.organizationId, employeeId: account.employeeId, type: "PAID_LEAVE", status: { not: "REJECTED" }, endDate: { gte: new Date(`${since}T00:00:00.000Z`) } },
     select: { id: true, startDate: true, endDate: true, status: true },
     orderBy: { startDate: "asc" },
-    take: 20,
   });
   const holidays = new Map<string, string>();
   for (const absence of upcoming) {
     for (let year = absence.startDate.getUTCFullYear(); year <= absence.endDate.getUTCFullYear() + 1; year += 1) {
-      for (const [day, label] of publicHolidays(year, { workedSolidarityDay: settings?.workedSolidarityDay })) holidays.set(day, label);
+      for (const [day, label] of publicHolidays(year, { workedSolidarityDay: settings?.workedSolidarityDay, alsaceMoselle: settings?.alsaceMoselle })) holidays.set(day, label);
     }
   }
   const scheduleAt = (day: string): WeeklySchedule | null => {
-    const at = new Date(`${day}T00:00:00.000Z`);
     const profile = [...workProfiles].reverse().find((candidate) =>
-      candidate.effectiveFrom <= at && (!candidate.effectiveUntil || candidate.effectiveUntil >= at)
+      toIsoDay(candidate.effectiveFrom) <= day && (!candidate.effectiveUntil || toIsoDay(candidate.effectiveUntil) >= day)
     );
     if (!profile || !Array.isArray(profile.weeklySchedule) || profile.weeklySchedule.length !== 7) return null;
+    if (profile.weeklySchedule.some((hours) => typeof hours !== "number")) return null;
     const schedule = profile.weeklySchedule.map(Number);
     if (schedule.some((hours) => !Number.isFinite(hours) || hours < 0 || hours > 12)) return null;
     if (schedule.reduce((sum, hours) => sum + hours, 0) <= 0) return null;
@@ -75,9 +74,10 @@ export default async function EspaceLeavePage() {
     const start = toIsoDay(absence.startDate);
     const end = toIsoDay(absence.endDate);
     const schedule = scheduleAt(start);
-    const counted = schedule
-      ? paidLeaveDaysForAbsence({ absenceStart: start, absenceEnd: end, windowStart: start > since ? start : since, windowEnd: addDays(end, 7), method, schedule, holidays })
-      : null;
+    let counted: number | null = null;
+    if (settings && schedule) {
+      try { counted = paidLeaveDaysForAbsence({ absenceStart: start, absenceEnd: end, windowStart: start > since ? start : since, windowEnd: addDays(end, 31), method, companyWorkingDays: settings.paidLeaveWorkingDays, schedule, scheduleAt, holidays }); } catch { /* Planning ou calendrier incomplet : aucune estimation silencieuse. */ }
+    }
     return { ...absence, counted };
   });
   const validatedUpcoming = upcomingRows

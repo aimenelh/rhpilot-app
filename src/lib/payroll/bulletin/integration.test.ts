@@ -191,6 +191,7 @@ describe("corrections issues de la relecture", () => {
 describe("paramètres de paie et territoire", () => {
   it("convertit les pourcentages saisis en fractions et contrôle les bornes", () => {
     const values: Record<string, string> = { payrollHeadcount: "14", mobilityRate: "1,8", paidLeaveMethod: "OUVRES", ijssSubrogation: "0", workedSolidarityDay: "1", mealVoucherFaceValue: "10", mealVoucherEmployerShare: "55", transportEmployerShare: "60", "prevoyance.cadre.employerT1": "1,5", "prevoyance.cadre.employeeT2": "0,78" };
+    for (let day = 0; day < 5; day += 1) values[`paidLeaveWorkingDays.${day}`] = "1";
     const parsed = parsePayrollSettingsForm((name) => values[name] ?? null);
     expect(parsed).toMatchObject({ payrollHeadcount: 14, mobilityRate: 1.8, paidLeaveMethod: "OUVRES", ijssSubrogation: false, workedSolidarityDay: true, mealVoucherEmployerShare: 0.55, transportEmployerShare: 0.6 });
     expect(parsed.prevoyanceRates).toEqual({ cadre: { employerT1: 0.015, employeeT2: 0.0078 }, nonCadre: {} });

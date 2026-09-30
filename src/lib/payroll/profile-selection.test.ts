@@ -1,10 +1,20 @@
 import { describe, expect, it } from "vitest";
-import { dayBefore, selectPeriodProfile } from "./profile-selection";
+import { assertPeriodWorkTimeStable, dayBefore, selectPeriodProfile } from "./profile-selection";
 
 const d = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 const november = [d("2026-11-01"), new Date("2026-11-30T23:59:59.999Z")] as const;
 
 describe("profil de paie du mois", () => {
+  it("bloque un passage à temps partiel en milieu de mois plutôt que d'appliquer 24 h au mois entier", () => {
+    const profiles = [{ id: "old", baseSalaryCents: 250000, effectiveFrom: d("2026-01-01"), effectiveUntil: d("2026-11-15"), hours: 35 }, { id: "new", baseSalaryCents: 180000, effectiveFrom: d("2026-11-16"), effectiveUntil: null, hours: 24 }];
+    expect(() => assertPeriodWorkTimeStable(profiles, ...november, profile => String(profile.hours))).toThrow(/deux périodes/);
+  });
+  it("accepte le changement au premier du mois et une augmentation sans modification horaire", () => {
+    const profiles = [{ id: "old", baseSalaryCents: 250000, effectiveFrom: d("2026-01-01"), effectiveUntil: d("2026-11-01"), hours: 35 }, { id: "new", baseSalaryCents: 180000, effectiveFrom: d("2026-11-01"), effectiveUntil: null, hours: 24 }];
+    expect(() => assertPeriodWorkTimeStable(profiles, ...november, profile => String(profile.hours))).not.toThrow();
+    profiles[0].effectiveUntil = d("2026-11-15"); profiles[1].effectiveFrom = d("2026-11-16"); profiles[1].hours = 35;
+    expect(() => assertPeriodWorkTimeStable(profiles, ...november, profile => String(profile.hours))).not.toThrow();
+  });
   it("garde le seul profil applicable", () => {
     const result = selectPeriodProfile([{ id: "a", baseSalaryCents: 250000, effectiveFrom: d("2026-01-01"), effectiveUntil: null }], ...november);
     expect(result).toMatchObject({ ok: true, baseSalaryCents: 250000, warning: null });
