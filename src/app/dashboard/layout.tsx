@@ -14,6 +14,7 @@ import { Logomark, Wordmark } from "@/components/Brand";
 import { InitializingScreen } from "@/components/InitializingScreen";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
 import { employeeAccessWhere, isOrganizationAdmin, taskAccessWhere } from "@/lib/accessPolicy";
+import { AUTH_CONTEXT_COOKIE } from "@/lib/authContext";
 
 // Chaque onglet porte le nom de sa page : « Salariés · RH Pilot ».
 export const metadata = { title: { default: "Tableau de bord · RH Pilot", template: "%s · RH Pilot" }, robots: { index: false } };
@@ -23,6 +24,10 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Défense en profondeur : même si le middleware change un jour, une session
+  // entrée par le portail salarié ne rend jamais le back-office RH.
+  if (cookies().get(AUTH_CONTEXT_COOKIE)?.value === "employee") redirect("/espace");
+
   const { user, memberships } = await getCurrentMemberships();
 
   // Cas rare : le webhook Clerk n'a pas encore (ou plus) de
