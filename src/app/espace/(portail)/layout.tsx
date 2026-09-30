@@ -11,7 +11,6 @@ import { ActionForm } from "@/components/espace/ActionForm";
 import { SubmitButton } from "@/components/espace/SubmitButton";
 import { getEmployeeSessionState } from "@/lib/employee-space/session";
 import { findPendingInvitationsForEmail } from "@/lib/employee-space/invitations";
-import { getCurrentMemberships } from "@/lib/auth";
 import { acceptPendingInvitation, switchEmployeeAccount } from "../actions";
 
 export const dynamic = "force-dynamic";
@@ -19,7 +18,7 @@ export const metadata: Metadata = { title: { default: "Mon espace salarié", tem
 export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", themeColor: "#ffffff" };
 
 async function NoSpace({ email }: { email: string }) {
-  const [pending, { memberships }] = await Promise.all([findPendingInvitationsForEmail(email).catch(() => []), getCurrentMemberships()]);
+  const pending = await findPendingInvitationsForEmail(email).catch(() => []);
   return (
     <EspaceAuthFrame>
       {pending.length > 0 ? (
@@ -44,7 +43,6 @@ async function NoSpace({ email }: { email: string }) {
           </p>
         </>
       )}
-      {memberships.length > 0 ? <Link href="/dashboard" className="mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl border border-surface-border px-4 text-[15px] font-semibold text-ink hover:bg-surface-subtle">Aller au tableau de bord RH</Link> : null}
       <SignOutButton redirectUrl="/espace/connexion">
         <button type="button" className="mt-3 inline-flex min-h-[44px] w-full items-center justify-center rounded-xl px-4 text-sm font-semibold text-ink-soft hover:bg-surface-subtle">Me déconnecter</button>
       </SignOutButton>
