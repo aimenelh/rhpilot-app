@@ -2,6 +2,7 @@ import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import p from "@/components/landing/InnerPages.module.css";
 import { Reveal } from "@/components/landing/Reveal";
+import { LEGAL_VERSIONS } from "@/lib/legalVersions";
 
 export const metadata = { title: "Conditions générales d’utilisation" };
 
@@ -20,7 +21,7 @@ export default function CguPage() {
                 Conditions Générales d&apos;Utilisation
               </h1>
               <p className="mt-4 text-sm leading-relaxed text-ink-soft">
-                Version du 29 septembre 2026. Les conditions de vente et le contrat de sous-traitance complètent ces conditions pour les organisations clientes.
+                Version du {LEGAL_VERSIONS.cgu.label}. Les conditions de vente et le contrat de sous-traitance complètent ces conditions pour les organisations clientes.
               </p>
 
               <div className="mt-10 flex flex-col gap-8 text-sm leading-relaxed text-ink-soft">

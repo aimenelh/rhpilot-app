@@ -1,5 +1,12 @@
 import type { MetadataRoute } from "next";
-const pages = ["", "/services", "/pourquoi", "/tarifs", "/questions", "/tutoriels", "/espace-salarie", "/gestion-paie", "/securite", "/ressources", "/mentions-legales", "/cgu", "/cgv", "/dpa", "/confidentialite", "/cookies", "/contact", "/feuille-de-route", "/ressources/visite-medicale-embauche-delai", "/ressources/rupture-conventionnelle-chomage-2026", "/ressources/ia-recrutement-cnil-2026", "/ressources/reforme-arrets-travail-2026", "/ressources/delai-prevenance-periode-essai"];
+import { CANONICAL_SITE_URL } from "@/lib/appUrl";
+import { LEGAL_PAGES, SITEMAP_PATHS } from "@/lib/publicPages";
+
+// Une page publique ajoutée au site doit être ajoutée à src/lib/publicPages.ts.
 export default function sitemap(): MetadataRoute.Sitemap {
-  return pages.map(path => ({ url: `https://rhpilot.fr${path}`, changeFrequency: path === "" ? "weekly" : "monthly", priority: path === "" ? 1 : 0.6 }));
+  return SITEMAP_PATHS.map((path) => ({
+    url: `${CANONICAL_SITE_URL}${path}`,
+    changeFrequency: path === "" ? "weekly" : LEGAL_PAGES.includes(path) ? "yearly" : "monthly",
+    priority: path === "" ? 1 : LEGAL_PAGES.includes(path) ? 0.3 : 0.6,
+  }));
 }

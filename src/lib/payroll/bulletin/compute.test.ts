@@ -409,6 +409,19 @@ describe("moteur de bulletin — solde de tout compte", () => {
     netPaidCheck(result);
   });
 
+  it("applique la contribution CPF-CDD et limite le rappel aux mois d'entrée et de sortie", () => {
+    const regular = computePayslip(base({
+      employee: { id: "c3", displayName: "Paul Morel", contract: "CDD", executive: false, hireDate: "2025-10-01", contractEndDate: "2026-08-31" },
+    }));
+    expect(lineOf(regular, "CPF_CDD")).toBeDefined();
+    expect(regular.warnings.some((warning) => warning.includes("CPF-CDD"))).toBe(false);
+    const entry = computePayslip(base({
+      employee: { id: "c2", displayName: "Lina Morel", contract: "CDD", executive: false, hireDate: "2026-03-01", contractEndDate: "2026-08-31" },
+    }));
+    expect(lineOf(entry, "CPF_CDD")).toBeDefined();
+    expect(entry.warnings.find((warning) => warning.includes("CPF-CDD"))).toContain("restent soumis");
+  });
+
   it("signale une fin de CDD sans indemnité de précarité et ajoute le préavis au brut", () => {
     const cdd = computePayslip(base({
       employee: { id: "c1", displayName: "Hugo Petit", contract: "CDD", executive: false, hireDate: "2026-01-01", contractEndDate: "2026-03-31" },

@@ -24,6 +24,7 @@ import { getEventTemplateDotColor } from "@/lib/eventTemplateStyle";
 import { summarizeParcours } from "@/lib/parcoursSummary";
 import { CcnHint } from "@/components/CcnHint";
 import { PayrollProfileSection } from "../../payroll/PayrollProfileSection";
+import { loadClassificationGrids } from "@/lib/payroll/collective-classifications";
 import { EmployeeDocumentsTable, EmployeeSpaceCard, ExitDocumentButtons, UploadEmployeeDocumentForm } from "../EmployeeSpaceSection";
 import { loadAdminDocuments, loadSpaceStatuses } from "@/lib/employee-space/admin-summary";
 import { loadExitContext } from "@/lib/employee-space/exit-context";
@@ -111,7 +112,7 @@ export default async function EmployeeDetailPage({
     }),
     prisma.organization.findUnique({
       where: { id: membership.organizationId },
-      select: { conventionCollective: true },
+      select: { conventionCollective: true, collectiveAgreementId: true },
     }),
     canSeePayroll
       ? prisma.payrollProfile.findFirst({
@@ -144,6 +145,11 @@ export default async function EmployeeDetailPage({
         prisma.$queryRaw<PayrollOpeningRow[]>`SELECT "year", "throughMonth", "cumuls", "sickPayHistory" FROM "employee_payroll_openings" WHERE "organizationId" = ${membership.organizationId} AND "employeeId" = ${employee.id} ORDER BY "year" DESC LIMIT 1`,
       ]).catch(() => [[], [], []] as [ProfileExtrasRow[], LeaveOpeningRow[], PayrollOpeningRow[]])
     : [[], [], []] as [ProfileExtrasRow[], LeaveOpeningRow[], PayrollOpeningRow[]];
+  // Grilles de classification des conventions intégrées : le profil propose une liste
+  // au lieu d'un code à taper, pour que le contrôle des minima retrouve la bonne règle.
+  const classificationGrids = canSeePayroll && searchParams.onglet === "paie"
+    ? await loadClassificationGrids().catch(() => ({} as Awaited<ReturnType<typeof loadClassificationGrids>>))
+    : {};
   const profileExtras = profileExtrasRows[0];
   const leaveOpening = leaveOpeningRows[0];
   const payrollOpeningRow = payrollOpeningRows[0];
@@ -374,6 +380,8 @@ export default async function EmployeeDetailPage({
                 : null
             }
             agreements={collectiveAgreements}
+            classificationGrids={classificationGrids}
+            organizationAgreementId={organization?.collectiveAgreementId ?? null}
             paidLeaveOpening={leaveOpening ? {
               asOf: leaveOpening.asOf.toISOString().slice(0, 10),
               previousAcquired: Number(leaveOpening.previousAcquired),

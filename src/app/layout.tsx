@@ -5,6 +5,7 @@ import { frFR } from "@clerk/localizations";
 import { CookieConsent } from "@/components/CookieConsent";
 import { PwaRegister } from "@/components/PwaRegister";
 import "./globals.css";
+import { CANONICAL_SITE_URL } from "@/lib/appUrl";
 
 // Police principale de RH Pilot : DM Sans privilégie la lisibilité,
 // des formes douces et une présence plus humaine qu'une police
@@ -41,7 +42,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://rhpilot.fr"),
+  metadataBase: new URL(CANONICAL_SITE_URL),
   title: { default: "RH Pilot | Logiciel RH pour TPE et PME", template: "%s | RH Pilot" },
   openGraph: { type: "website", locale: "fr_FR", siteName: "RH Pilot", title: "RH Pilot | Le suivi RH de votre équipe", description: "Salariés, parcours, échéances et documents réunis au même endroit.", images: [{ url: "/opengraph-image", width: 1200, height: 630 }] },
   twitter: { card: "summary_large_image", images: ["/opengraph-image"] },

@@ -2,11 +2,14 @@ export function formatDate(date: Date) {
   return new Intl.DateTimeFormat("fr-FR", { dateStyle: "medium" }).format(date);
 }
 
+// Les dates d'embauche sont des jours calendaires stockés à minuit UTC : le calcul se
+// fait en UTC, sinon un serveur ou un navigateur à l'heure de Paris décale d'un jour
+// les échéances qui traversent un changement d'heure.
 export function addDuration(date: Date, amount: number, unit: "DAYS" | "WEEKS" | "MONTHS"): Date {
   const result = new Date(date);
-  if (unit === "DAYS") result.setDate(result.getDate() + amount);
-  else if (unit === "WEEKS") result.setDate(result.getDate() + amount * 7);
-  else result.setMonth(result.getMonth() + amount);
+  if (unit === "DAYS") result.setUTCDate(result.getUTCDate() + amount);
+  else if (unit === "WEEKS") result.setUTCDate(result.getUTCDate() + amount * 7);
+  else result.setUTCMonth(result.getUTCMonth() + amount);
   return result;
 }
 

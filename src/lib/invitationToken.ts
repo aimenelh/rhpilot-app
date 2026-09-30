@@ -17,7 +17,14 @@ export function newInvitationToken(): { token: string; stored: string } {
   return { token, stored: hashInvitationToken(token) };
 }
 
-/** Condition de recherche d'une invitation à partir du jeton reçu dans le lien. */
+/**
+ * Condition de recherche d'une invitation à partir du jeton reçu dans le lien.
+ * La comparaison en clair ne sert qu'aux anciens jetons (UUID) : une valeur qui
+ * ressemble à une empreinte stockée n'est jamais acceptée telle quelle, sinon une
+ * fuite de la base redonnerait des liens d'invitation valides.
+ */
 export function invitationTokenWhere(token: string) {
-  return { OR: [{ token: hashInvitationToken(token) }, { token }] };
+  const hashed = { token: hashInvitationToken(token) };
+  if (token.startsWith(PREFIX)) return hashed;
+  return { OR: [hashed, { token }] };
 }

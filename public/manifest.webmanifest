@@ -2,7 +2,7 @@
   "name": "RH Pilot",
   "short_name": "RH Pilot",
   "description": "RH Pilot transforme chaque événement RH en plan d'action complet : tâches, échéances, responsables et preuves.",
-  "start_url": "/espace",
+  "start_url": "/app",
   "scope": "/",
   "display": "standalone",
   "background_color": "#FFFFFF",

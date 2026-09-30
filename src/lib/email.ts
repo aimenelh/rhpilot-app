@@ -1,4 +1,5 @@
 import { Resend } from "resend";
+import { CANONICAL_SITE_URL } from "@/lib/appUrl";
 
 // Point d'extension volontaire : toute la logique métier (qui doit
 // être notifié, de quoi) passe par cette seule fonction. Le jour où
@@ -36,7 +37,7 @@ export function htmlToText(html: string): string {
 /** En-tête commun (logo RH Pilot) ajouté à chaque e-mail qui n'a pas déjà sa propre mise en page complète. */
 export function withEmailBranding(html: string): string {
   if (/<html[\s>]/i.test(html) || html.includes('data-rhpilot-header')) return html;
-  const site = process.env.NEXT_PUBLIC_APP_URL ?? "https://rhpilot.fr";
+  const site = process.env.NEXT_PUBLIC_APP_URL ?? CANONICAL_SITE_URL;
   return `<div data-rhpilot-header style="max-width:560px;margin:0 auto;padding:24px 24px 0;font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif">
 <a href="${site}" style="display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:#14151A;font-weight:600;font-size:15px">
 <img src="${site}/icons/icon-192.png" width="28" height="28" alt="" style="border-radius:7px;vertical-align:middle"> RH Pilot</a></div>
