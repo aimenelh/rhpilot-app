@@ -68,7 +68,7 @@ export default async function EspaceLeavePage() {
     const schedule = profile.weeklySchedule.map(Number);
     if (schedule.some((hours) => !Number.isFinite(hours) || hours < 0 || hours > 12)) return null;
     if (schedule.reduce((sum, hours) => sum + hours, 0) <= 0) return null;
-    return schedule as WeeklySchedule;
+    return schedule as unknown as WeeklySchedule;
   };
 
   const upcomingRows = upcoming.map((absence) => {
