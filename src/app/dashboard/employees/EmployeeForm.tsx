@@ -9,6 +9,7 @@ import { Input, Label, Select, FieldHint } from "@/components/ui/Field";
 import type { EmployeeFormState } from "./actions";
 import { isWeekend } from "@/lib/format";
 import { isProbationActive } from "@/lib/probationTracking";
+import { defaultScheduleForWeeklyHours, monthlyHoursFromWeekly } from "@/lib/contractWorkTime";
 
 type ManagerOption = { id: string; label: string };
 
@@ -21,6 +22,9 @@ type DefaultValues = {
   hireDate: string; // format YYYY-MM-DD
   contractType: string; // "" | "CDI" | "CDD" | "APPRENTISSAGE" | "PROFESSIONNALISATION"
   contractEndDate: string; // "" ou YYYY-MM-DD : pertinent pour CDD/apprentissage/professionnalisation
+  weeklyHours: string; // durée contractuelle hebdomadaire
+  weeklySchedule: string[]; // lundi → dimanche
+  workScheduleEffectiveFrom: string; // date d'effet du temps de travail
   probationDuration: string; // "" ou un nombre en chaîne
   probationDurationUnit: string; // "" | "DAYS" | "WEEKS" | "MONTHS"
   nextMedicalVisitDate: string; // "" ou YYYY-MM-DD
@@ -46,6 +50,8 @@ const CATEGORY_LABELS: Record<string, string> = {
   EMPLOYE: "employé",
   OUVRIER: "ouvrier",
 };
+
+const WEEK_DAYS = ["Lun.", "Mar.", "Mer.", "Jeu.", "Ven.", "Sam.", "Dim."];
 
 // Article L1242-10 : en CDD, un jour d'essai par semaine de contrat,
 // plafonné à 2 semaines pour un contrat de 6 mois ou moins, et à 1
@@ -247,8 +253,24 @@ export function EmployeeForm({
   // version.
   const [weeksCompany, setWeeksCompany] = useState("2");
   const [weeksCfa, setWeeksCfa] = useState("1");
+  const [weeklyHours, setWeeklyHours] = useState(defaultValues.weeklyHours);
+  const [weeklySchedule, setWeeklySchedule] = useState<string[]>(
+    defaultValues.weeklySchedule.length === 7 ? defaultValues.weeklySchedule : ["", "", "", "", "", "", ""]
+  );
+  const [scheduleTouched, setScheduleTouched] = useState(defaultValues.weeklySchedule.some(Boolean));
+  const [workScheduleEffectiveFrom, setWorkScheduleEffectiveFrom] = useState(defaultValues.workScheduleEffectiveFrom);
 
   const showContractEndDate = ["CDD", "APPRENTISSAGE", "PROFESSIONNALISATION"].includes(contractType);
+
+  useEffect(() => {
+    if (scheduleTouched) return;
+    const parsed = Number(weeklyHours.replace(",", "."));
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      setWeeklySchedule(["", "", "", "", "", "", ""]);
+      return;
+    }
+    setWeeklySchedule(defaultScheduleForWeeklyHours(parsed).map((hours) => String(hours)));
+  }, [weeklyHours, scheduleTouched]);
 
   useEffect(() => {
     if (probationTouched) return;
@@ -279,6 +301,23 @@ export function EmployeeForm({
   const probationSuggestionRelevant =
     rawLegalSuggestion !== null && isProbationSuggestionRelevant(hireDate, rawLegalSuggestion);
   const legalSuggestion = probationSuggestionRelevant ? rawLegalSuggestion : null;
+  const parsedWeeklyHours = Number(weeklyHours.replace(",", "."));
+  const monthlyHoursPreview = Number.isFinite(parsedWeeklyHours) && parsedWeeklyHours > 0
+    ? monthlyHoursFromWeekly(parsedWeeklyHours)
+    : null;
+  const workTimeHint = monthlyHoursPreview === null
+    ? "Renseignez la durée prévue au contrat : elle alimentera les absences, congés et la paie."
+    : parsedWeeklyHours < 35
+      ? `Temps partiel sur la base légale de 35 h · ${monthlyHoursPreview.toLocaleString("fr-FR")} h mensualisées.`
+      : Math.abs(parsedWeeklyHours - 35) < 0.01
+        ? `Temps plein 35 h · ${monthlyHoursPreview.toLocaleString("fr-FR")} h mensualisées.`
+        : `${parsedWeeklyHours.toLocaleString("fr-FR")} h par semaine · l'excédent au-delà de 35 h sera repris comme heures supplémentaires structurelles en paie.`;
+
+  function applyWeeklyPreset(value: number) {
+    setWeeklyHours(String(value));
+    setWeeklySchedule(defaultScheduleForWeeklyHours(value).map((hours) => String(hours)));
+    setScheduleTouched(false);
+  }
 
   return (
     <Card>
@@ -408,6 +447,90 @@ export function EmployeeForm({
             )}
           </div>
         )}
+
+        <section className="rounded-xl border border-surface-border bg-surface-subtle/40 p-4">
+          <div className="mb-4">
+            <h2 className="text-sm font-semibold text-ink">Temps de travail contractuel</h2>
+            <p className="mt-1 text-xs leading-5 text-ink-faint">
+              Une seule donnée pour les congés, les absences et la paie. La répartition proposée peut être adaptée au planning réel du salarié.
+            </p>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div>
+              <Label htmlFor="weeklyHours">Durée hebdomadaire</Label>
+              <Input
+                id="weeklyHours"
+                name="weeklyHours"
+                type="number"
+                min={0.25}
+                max={84}
+                step={0.25}
+                value={weeklyHours}
+                onChange={(event) => setWeeklyHours(event.target.value)}
+                placeholder="35"
+                required
+              />
+              <div className="mt-2 flex flex-wrap gap-2">
+                {[35, 39].map((value) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => applyWeeklyPreset(value)}
+                    className="rounded-lg border border-surface-border bg-white px-3 py-1.5 text-xs font-semibold text-ink-soft hover:border-ink-faint hover:text-ink"
+                  >
+                    {value} h
+                  </button>
+                ))}
+              </div>
+              <FieldHint>{workTimeHint}</FieldHint>
+            </div>
+
+            <div>
+              <Label htmlFor="workScheduleEffectiveFrom">Date d&apos;effet de l&apos;horaire</Label>
+              <Input
+                id="workScheduleEffectiveFrom"
+                name="workScheduleEffectiveFrom"
+                type="date"
+                value={workScheduleEffectiveFrom || hireDate}
+                onChange={(event) => setWorkScheduleEffectiveFrom(event.target.value)}
+                required
+              />
+              <FieldHint>
+                À la création, il s&apos;agit en général de la date d&apos;embauche. En cas de changement d&apos;horaire, RH Pilot conserve les versions précédentes.
+              </FieldHint>
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <p className="text-xs font-medium text-ink-soft">Répartition habituelle des heures</p>
+            <div className="mt-2 grid grid-cols-7 gap-2">
+              {WEEK_DAYS.map((day, index) => (
+                <label key={day} className="block text-center">
+                  <span className="text-[11px] font-medium text-ink-faint">{day}</span>
+                  <input
+                    name={`schedule.${index}`}
+                    type="number"
+                    min="0"
+                    max="12"
+                    step="0.25"
+                    inputMode="decimal"
+                    value={weeklySchedule[index] ?? ""}
+                    onChange={(event) => {
+                      setScheduleTouched(true);
+                      setWeeklySchedule((current) => current.map((value, dayIndex) => dayIndex === index ? event.target.value : value));
+                    }}
+                    className="mt-1 w-full rounded-lg border border-surface-border bg-white px-2 py-2 text-center text-sm text-ink"
+                    aria-label={`Heures travaillées le ${day}`}
+                  />
+                </label>
+              ))}
+            </div>
+            <FieldHint>
+              Exemple : un temps partiel lundi, mardi et jeudi peut être saisi 8 / 8 / 0 / 8 / 0 / 0 / 0. Le total doit correspondre à la durée hebdomadaire du contrat.
+            </FieldHint>
+          </div>
+        </section>
 
         {contractType === "APPRENTISSAGE" && (
           <div className="grid grid-cols-2 gap-4">
