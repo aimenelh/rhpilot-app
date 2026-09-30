@@ -189,7 +189,7 @@ export function parseEmployeeCsv(text: string): CsvParseResult {
       try {
         const work = buildContractWorkTime(parsedWeekly, parsedDays);
         weeklyHours = work.weeklyHours;
-        weeklySchedule = [...work.schedule];
+        weeklySchedule = parsedDays ? [...work.schedule] : null;
       } catch (error) {
         errors.push({
           line: lineNumber,
