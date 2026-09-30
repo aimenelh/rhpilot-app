@@ -29,13 +29,13 @@ describe.skipIf(!process.env.DATABASE_URL)("archives DSN sur PostgreSQL", () => 
     await expect(prisma.$transaction(async (tx) => {
       const archive = await seed(tx);
       const other = await tx.organization.create({ data: { name: "Autre entreprise test" } });
-      await tx.dsn_declarations.create({ data: { ...archive, id: randomUUID(), organizationId: other.id } });
+      await tx.dsn_declarations.create({ data: { ...archive, warnings: [], id: randomUUID(), organizationId: other.id } });
     })).rejects.toThrow(/foreign key|constraint|violates/i);
   });
   it("refuse deux versions identiques sur une période", async () => {
     await expect(prisma.$transaction(async (tx) => {
       const archive = await seed(tx);
-      await tx.dsn_declarations.create({ data: { ...archive, id: randomUUID(), requestKey: randomUUID() } });
+      await tx.dsn_declarations.create({ data: { ...archive, warnings: [], id: randomUUID(), requestKey: randomUUID() } });
     })).rejects.toThrow(/unique|constraint/i);
   });
 });

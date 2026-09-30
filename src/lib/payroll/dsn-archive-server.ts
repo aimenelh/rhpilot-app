@@ -28,7 +28,7 @@ export async function createDsnPrecontrolArchive(input: { organizationId: string
     const version = (latest?.version ?? 0) + 1;
     const archive = sealDsnArchive({ id: randomUUID(), organizationId: input.organizationId, payrollPeriodId: input.periodId }, prepared.content);
     const saved = await tx.dsn_declarations.create({ data: { ...archive, version, requestKey: input.requestKey, normVersion: prepared.normVersion, mode: "PRECONTROL",
-      fileName: prepared.fileName.replace(/\\.txt$/, `-v${version}.txt`), employeeCount: prepared.employeeCount, warnings: prepared.warnings, createdByUserId: input.actorUserId } });
+      fileName: prepared.fileName.replace(/\.txt$/, `-v${version}.txt`), employeeCount: prepared.employeeCount, warnings: prepared.warnings, createdByUserId: input.actorUserId } });
     await tx.auditLog.create({ data: { id: randomUUID(), organizationId: input.organizationId, actorUserId: input.actorUserId, action: "dsn.precontrol.archived",
       entityType: "DsnDeclaration", entityId: saved.id, metadata: { periodId: input.periodId, version, sha256: saved.sha256, normVersion: saved.normVersion, employeeCount: saved.employeeCount } } });
     return saved;
