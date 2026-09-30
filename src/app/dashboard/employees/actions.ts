@@ -101,6 +101,7 @@ function validateEmployeeFields(fields: ReturnType<typeof readEmployeeFields>): 
   if (!fields.firstName) return "Le prénom est obligatoire.";
   if (!fields.lastName) return "Le nom est obligatoire.";
   if (!fields.hireDateRaw) return "La date d'embauche est obligatoire.";
+  if (!fields.contractType) return "Le type de contrat est obligatoire.";
   if (!parseIsoDateOnly(fields.hireDateRaw)) {
     return "La date d'embauche n'est pas valide.";
   }
@@ -135,8 +136,19 @@ function validateEmployeeFields(fields: ReturnType<typeof readEmployeeFields>): 
     return error instanceof Error ? error.message : "Le temps de travail contractuel est invalide.";
   }
   const effectiveRaw = fields.workScheduleEffectiveFromRaw || fields.hireDateRaw;
-  if (!parseIsoDateOnly(effectiveRaw)) {
+  const effectiveDate = parseIsoDateOnly(effectiveRaw);
+  const hireDate = parseIsoDateOnly(fields.hireDateRaw);
+  if (!effectiveDate) {
     return "La date d'effet de l'horaire de travail n'est pas valide.";
+  }
+  if (hireDate && effectiveDate < hireDate) {
+    return "La date d'effet de l'horaire ne peut pas être antérieure à la date d'embauche.";
+  }
+  if (fields.contractEndDateRaw) {
+    const contractEndDate = parseIsoDateOnly(fields.contractEndDateRaw);
+    if (contractEndDate && effectiveDate > contractEndDate) {
+      return "La date d'effet de l'horaire ne peut pas être postérieure à la fin du contrat.";
+    }
   }
   return null;
 }
