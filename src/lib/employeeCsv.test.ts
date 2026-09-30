@@ -118,13 +118,13 @@ describe("parseEmployeeCsv", () => {
     });
   });
 
-  it("dérive un planning lundi-vendredi quand seules les heures hebdomadaires sont fournies", () => {
+  it("conserve la durée hebdomadaire mais laisse le planning à confirmer s'il n'est pas fourni", () => {
     const csv = "prenom,nom,date_embauche,heures_hebdomadaires\nJulie,Martin,2026-01-15,24";
     const { rows, errors } = parseEmployeeCsv(csv);
 
     expect(errors).toHaveLength(0);
     expect(rows[0].weeklyHours).toBe(24);
-    expect(rows[0].weeklySchedule).toEqual([4.8, 4.8, 4.8, 4.8, 4.8, 0, 0]);
+    expect(rows[0].weeklySchedule).toBeNull();
   });
 
   it("conserve la compatibilité avec un ancien CSV sans temps de travail", () => {
