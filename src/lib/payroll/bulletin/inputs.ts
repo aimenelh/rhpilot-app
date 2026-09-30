@@ -168,6 +168,9 @@ export function mapAbsences(periodAbsences: readonly StoredAbsence[], earlierAbs
 // ---------------------------------------------------------------------------
 
 export function resolveWeeklySchedule(stored: unknown, contractMonthlyHours: number): { schedule: WeeklySchedule; derived: boolean } {
+  if (stored !== null && stored !== undefined && (!Array.isArray(stored) || stored.length !== 7 || !stored.every((value) => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 12))) {
+    throw new Error("L'horaire hebdomadaire enregistré est invalide : renseignez sept valeurs numériques entre 0 et 12 heures.");
+  }
   if (Array.isArray(stored) && stored.length === 7 && stored.every((value) => typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 12)) {
     const schedule = stored as unknown as WeeklySchedule;
     const weekly = schedule.reduce((total, hours) => total + hours, 0);
@@ -202,6 +205,8 @@ export function parseYearToDate(stored: unknown, year: number): YearToDate {
   if (!stored || typeof stored !== "object") throw new Error("Les cumuls de reprise enregistrés sont illisibles.");
   const record = stored as Record<string, unknown>;
   const result = emptyYearToDate(year);
+  // Une reprise historique ne doit pas inventer un cumul fiscal nul.
+  if (record.apprenticeFiscalIncome === undefined || record.apprenticeFiscalIncome === null) delete result.apprenticeFiscalIncome;
   for (const key of YTD_KEYS) {
     const value = record[key];
     if (value === undefined || value === null) continue;

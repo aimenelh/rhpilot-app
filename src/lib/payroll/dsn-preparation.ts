@@ -2,7 +2,8 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { buildDsnP26V01Monthly, type DsnP26MonthlyInput } from "./dsn-p26v01";
 import { decryptDsnSensitiveValue, assertNirFormat } from "./dsn-pii";
-import { assertPasDsnScopeSupported, buildDsnPasData } from "./pas-dsn";
+import { assertPasDsnScopeSupported } from "./pas-dsn";
+import { dsnPasFromLockedBulletin } from "./dsn-locked-pas";
 import { assertPayrollOutputConsistency } from "./payroll-output-consistency";
 import type { WithholdingTaxProfile } from "./withholding-tax-profile";
 
@@ -31,7 +32,7 @@ function asSnapshot(value: Prisma.JsonValue): CalculationSnapshot {
   return value as unknown as CalculationSnapshot;
 }
 function requiredString(value: string | null | undefined, label: string): string { const normalized = value?.trim() ?? ""; if (!normalized) throw new Error(`DSN bloquée : ${label} est absent.`); return normalized; }
-function requiredNumber(value: unknown, label: string): number { const number = Number(value); if (!Number.isFinite(number)) throw new Error(`DSN bloquée : ${label} est absent ou invalide.`); return number; }
+function requiredNumber(value: unknown, label: string): number { const number = value === null || value === undefined || value === "" ? NaN : Number(value); if (!Number.isFinite(number)) throw new Error(`DSN bloquée : ${label} est absent ou invalide.`); return number; }
 
 function snapshotWithholdingTax(snapshot: CalculationSnapshot, employeeId: string): WithholdingTaxProfile {
   const withholding = snapshot.withholdingTax;
@@ -163,7 +164,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
 
     const withholdingProfile = snapshotWithholdingTax(snapshot, employee.id);
     assertPasDsnScopeSupported({ source: withholdingProfile.source, contractType: employee.contractType, hireDate: employee.hireDate, contractEndDate: employee.contractEndDate, hasSubrogatedDailyAllowances: false });
-    const pas = buildDsnPasData({ profile: withholdingProfile, payrollDepartment, netTaxableAmount, withholdingAmount: withholdingTax });
+    const { fiscalNet, pas } = dsnPasFromLockedBulletin({ withholding: (snapshot.bulletin as { withholding?: unknown } | undefined)?.withholding, profile: withholdingProfile, payrollDepartment, contractType: employee.contractType, netTaxableAmount, withholdingAmount: withholdingTax });
 
     const nir = assertNirFormat(decryptDsnSensitiveValue(dsnProfile.nirCiphertext));
     assertNirBirthYear(nir, dsnProfile.birthDate, employee.id);
@@ -193,7 +194,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         multipleJobsCode: requiredString(dsnProfile.multipleJobsCode, `le code emplois multiples du salarié ${employee.id}`), multipleEmployersCode: requiredString(dsnProfile.multipleEmployersCode, `le code employeurs multiples du salarié ${employee.id}`),
         workAccidentRegimeCode: requiredString(dsnProfile.workAccidentRegimeCode, `le régime AT/MP du salarié ${employee.id}`), workAccidentRiskCode: riskCode, workAccidentRate: atmpRate,
       },
-      payroll: { baseSalary: baseSalaryCents / 100, grossAmount, cappedContributionBase, netBeforeTax, netTaxableAmount, netSocialAmount, withholdingTax, pas },
+      payroll: { baseSalary: baseSalaryCents / 100, grossAmount, cappedContributionBase, netBeforeTax, netTaxableAmount: fiscalNet, netSocialAmount, withholdingTax, pas },
     });
   }
 

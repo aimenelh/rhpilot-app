@@ -38,6 +38,24 @@ export type PriorState = {
 const FINAL_STATUSES = new Set(["VALIDATED", "LOCKED"]);
 const index = (year: number, month: number) => year * 12 + (month - 1);
 
+/** La régularisation annuelle ne peut pas repartir à zéro après une paie manquante. */
+export function assertPriorPayrollCoverage(input: {
+  year: number; month: number; hireDate: string; displayName: string;
+  calculations: readonly PriorCalculation[]; payrollOpening?: PayrollOpening | null;
+}): void {
+  const hireYear = Number(input.hireDate.slice(0, 4));
+  const hireMonth = Number(input.hireDate.slice(5, 7));
+  const firstMonth = hireYear < input.year ? 1 : hireYear === input.year ? hireMonth : input.month;
+  const opening = input.payrollOpening?.year === input.year && input.payrollOpening.throughMonth < input.month ? input.payrollOpening : null;
+  for (let month = firstMonth; month < input.month; month += 1) {
+    if (opening && month <= opening.throughMonth) continue;
+    const calculation = input.calculations.find((item) => item.year === input.year && item.month === month && FINAL_STATUSES.has(item.status));
+    if (!calculation || !bulletinFromSnapshot(calculation.snapshot)) {
+      throw new Error(`Calcul bloqué pour ${input.displayName} : les cumuls de ${String(month).padStart(2, "0")}/${input.year} manquent ou proviennent de l'ancien moteur. Validez le bulletin détaillé de ce mois ou renseignez les cumuls de reprise arrêtés avant la période à calculer.`);
+    }
+  }
+}
+
 export function bulletinFromSnapshot(snapshot: unknown): PayslipResult | null {
   if (!snapshot || typeof snapshot !== "object") return null;
   const record = snapshot as { calculationSource?: { engine?: unknown }; bulletin?: unknown };

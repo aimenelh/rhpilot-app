@@ -53,12 +53,17 @@ export function mappedDsnFixture(): DsnP26CompleteInput {
       opsIdentifier: "75366412700077",
       totalAmount: 1000,
       aggregatedContributions: [{
-        code: "100", baseQualifier: "920", baseAmount: 2500, contributionAmount: 1000,
+        code: "100", baseQualifier: "920", baseAmount: 2500, ratePercent: 1.5,
+        payableAmount: 1250,
         sourcePayrollCodes: ["URSSAF_TOTAL"], mappingVersion: "FIXTURE-STRUCTURE-P26V01",
+      }, {
+        code: "668", baseQualifier: "921", contributionAmount: 250,
+        payableAmount: -250,
+        sourcePayrollCodes: ["RGDU"], mappingVersion: "FIXTURE-STRUCTURE-P26V01",
       }],
       individualContributions: [{
         employeeNir: "1860875123456", code: "018", baseCode: "03", opsIdentifier: "75366412700077", baseAmount: 2500,
-        contributionAmount: 250, ratePercent: 10, sourcePayrollCode: "RGDU", mappingVersion: "FIXTURE-STRUCTURE-P26V01",
+        contributionAmount: -250, ratePercent: 10, sourcePayrollCode: "RGDU", mappingVersion: "FIXTURE-STRUCTURE-P26V01",
       }],
     },
     payments: [{

@@ -308,6 +308,7 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
     add(lines, "S21.G00.50.007", employee.payroll.pas.rateType);
     add(lines, "S21.G00.50.008", employee.payroll.pas.rateIdentifier);
     add(lines, "S21.G00.50.009", money(employee.payroll.pas.withholdingAmount));
+    add(lines, "S21.G00.50.011", employee.payroll.pas.nonTaxableApprenticeIncome === undefined ? null : money(employee.payroll.pas.nonTaxableApprenticeIncome));
     add(lines, "S21.G00.50.013", money(employee.payroll.pas.amountSubjectToPas));
 
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "001", employee.payroll.grossAmount);

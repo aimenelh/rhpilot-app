@@ -233,10 +233,30 @@ describe("moteur de bulletin — éléments hors brut et contrôles", () => {
     expect(result.totals.netBeforeTax).toBeCloseTo(expected, 2);
   });
 
-  it("exonère l'apprenti d'impôt jusqu'au Smic", () => {
+  it("exonère l'apprenti d'impôt jusqu'au seuil annuel", () => {
     const result = computePayslip(base({ employee: { id: "a1", displayName: "Inès Roux", contract: "APPRENTISSAGE", executive: false, hireDate: "2025-09-01" }, pay: { monthlyBaseSalary: 1100, contractMonthlyHours: 151.67, schedule: FULL_TIME_SCHEDULE } }));
     expect(result.totals.netTaxable).toBe(0);
     expect(lineOf(result, "FORMATION")).toBeUndefined();
+  });
+
+  it("ne prélève pas de PAS sur un gros premier salaire d'apprenti sous le seuil annuel", () => {
+    const result = computePayslip(base({ employee: { ...base().employee, contract: "APPRENTISSAGE", hireDate: "2026-01-01" }, withholding: { mode: "PERSONALIZED", rate: 0.1 }, pay: { ...base().pay, monthlyBaseSalary: 3000 } }));
+    expect(result.withholding.fiscalNetBeforeExemption).toBeGreaterThan(1823.03);
+    expect(result.totals.withholdingTax).toBe(0);
+    expect(result.yearToDate.apprenticeFiscalIncome).toBe(result.withholding.fiscalNetBeforeExemption);
+  });
+
+  it("prélève seulement la part franchissant le seuil annuel de juin (22 184 €)", () => {
+    const result = computePayslip(base({ period: { year: 2026, month: 10 }, employee: { ...base().employee, contract: "APPRENTISSAGE", hireDate: "2026-01-01" }, withholding: { mode: "PERSONALIZED", rate: 0.1 }, yearToDate: { ...emptyYearToDate(2026), apprenticeFiscalIncome: 22000 }, pay: { ...base().pay, monthlyBaseSalary: 3000 } }));
+    expect(result.withholding.nonTaxableApprenticeIncome).toBe(184);
+    expect(result.withholding.base).toBeCloseTo(result.withholding.fiscalNetBeforeExemption! - 184, 2);
+    expect(result.totals.withholdingTax).toBe(Math.round(result.withholding.base * 0.1 * 100) / 100);
+  });
+
+  it("bloque un ancien cumul d'apprenti sans revenu fiscal avant exonération", () => {
+    const yearToDate = { ...emptyYearToDate(2026), grossTotal: 6000 };
+    delete yearToDate.apprenticeFiscalIncome;
+    expect(() => computePayslip(base({ employee: { ...base().employee, contract: "APPRENTISSAGE" }, yearToDate }))).toThrow(/cumul fiscal annuel/);
   });
 
   it("bloque les contextes non pris en charge plutôt que d'approximer", () => {

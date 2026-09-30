@@ -196,6 +196,8 @@ export type YearToDate = {
   /** Forfait mobilités durables et prise en charge exonérée du transport public, cumulés sur l'année. */
   sustainableMobility?: number;
   publicTransportExempt?: number;
+  /** Net fiscal des salaires d'apprentissage avant exonération annuelle, hors IJSS. */
+  apprenticeFiscalIncome?: number;
 };
 
 export type SickPayHistory = {
@@ -306,7 +308,7 @@ export type PayslipResult = {
   lines: PayslipLine[];
   totals: PayslipTotals;
   ceiling: { monthly: number; prorated: number; reason: string };
-  withholding: { mode: "PERSONALIZED" | "DEFAULT_GRID"; rate: number; base: number; amount: number; shortContractAllowance: number; rateIdentifier: string | null; source: string };
+  withholding: { mode: "PERSONALIZED" | "DEFAULT_GRID"; rate: number; base: number; amount: number; shortContractAllowance: number; rateIdentifier: string | null; source: string; fiscalNetBeforeExemption?: number; nonTaxableApprenticeIncome?: number; taxableSubrogatedIjss?: number };
   yearToDate: YearToDate;
   paidLeave: PaidLeaveOutcome | null;
   sickPayUsed: SickPayHistory;
