@@ -202,6 +202,11 @@ describe("Isolation multi-tenant — mutations critiques", () => {
     expect(created?.managerMembershipId).toBe(fixtures.membershipA.id);
 
     // Nettoyage immédiat, ce salarié n'est pas géré par cleanupFixtures.
-    if (created) await prisma.employee.delete({ where: { id: created.id } });
+    if (created) {
+      await prisma.payrollProfile.deleteMany({
+        where: { organizationId: fixtures.orgA.id, employeeId: created.id },
+      });
+      await prisma.employee.delete({ where: { id: created.id } });
+    }
   });
 });
