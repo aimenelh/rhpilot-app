@@ -1,4 +1,6 @@
 import { canUsePayroll } from "@/lib/payrollAccess";
+import { weeklyHoursFromMonthly } from "@/lib/contractWorkTime";
+import { resolveWeeklySchedule } from "@/lib/payroll/bulletin/inputs";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { getCurrentMembership } from "@/lib/auth";
@@ -77,7 +79,7 @@ export default async function EmployeeDetailPage({
   const canSeePayroll = canUsePayroll(membership);
   const visibleTabs = TABS.filter((item) => item.key !== "paie" || canSeePayroll);
 
-  const [memberships, eventTemplates, employeeEvents, organization, payrollProfile, collectiveAgreements] = await Promise.all([
+  const [memberships, eventTemplates, employeeEvents, organization, payrollProfile, workProfile, collectiveAgreements] = await Promise.all([
     prisma.membership.findMany({
       where: {
         organizationId: membership.organizationId,
@@ -121,6 +123,15 @@ export default async function EmployeeDetailPage({
             employeeId: employee.id,
             effectiveFrom: { lte: new Date() },
             OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: new Date() } }],
+          },
+          orderBy: { effectiveFrom: "desc" },
+        })
+      : Promise.resolve(null),
+    canManageEmployee
+      ? prisma.payrollProfile.findFirst({
+          where: {
+            organizationId: membership.organizationId,
+            employeeId: employee.id,
           },
           orderBy: { effectiveFrom: "desc" },
         })
@@ -195,6 +206,16 @@ export default async function EmployeeDetailPage({
   );
 
   const manager = memberships.find((m: { id: string }) => m.id === employee.managerMembershipId);
+  const workMonthlyHours = workProfile?.monthlyHours == null ? null : Number(workProfile.monthlyHours);
+  const workSchedule = workMonthlyHours && workMonthlyHours > 0
+    ? resolveWeeklySchedule(workProfile?.weeklySchedule ?? null, workMonthlyHours).schedule
+    : null;
+  const workWeeklyHours = workMonthlyHours && workMonthlyHours > 0 ? weeklyHoursFromMonthly(workMonthlyHours) : null;
+  const workTimeSummary = workWeeklyHours == null
+    ? "À compléter"
+    : workWeeklyHours > 35.01
+      ? `${workWeeklyHours.toLocaleString("fr-FR")} h/semaine · ${(workWeeklyHours - 35).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} h au-delà de 35 h`
+      : `${workWeeklyHours.toLocaleString("fr-FR")} h/semaine`;
   const href = (key: TabKey) => `/dashboard/employees/${employee.id}${key === "apercu" ? "" : `?onglet=${key}`}`;
   const contractEnded = Boolean(employee.contractEndDate && employee.contractEndDate < new Date());
   const statusLabel = employee.contractEndDate ? (contractEnded ? `Sorti·e le ${formatDate(employee.contractEndDate)}` : `Sortie prévue le ${formatDate(employee.contractEndDate)}`) : "En poste";
@@ -342,6 +363,7 @@ export default async function EmployeeDetailPage({
               <div><dt className="text-xs text-ink-faint">Manager direct</dt><dd className="mt-0.5 text-sm text-ink">{manager ? getUserDisplayName(manager.user) : "Non défini"}</dd></div>
               <div><dt className="text-xs text-ink-faint">Catégorie professionnelle</dt><dd className="mt-0.5 text-sm text-ink">{employee.professionalCategory ?? "Non renseigné"}</dd></div>
               <div><dt className="text-xs text-ink-faint">Date d&apos;entrée</dt><dd className="mt-0.5 text-sm text-ink">{formatDate(employee.hireDate)}</dd></div>
+              <div><dt className="text-xs text-ink-faint">Temps de travail</dt><dd className="mt-0.5 text-sm text-ink">{workTimeSummary}</dd></div>
               {employee.probationDuration && employee.probationDurationUnit ? <div><dt className="text-xs text-ink-faint">Période d&apos;essai</dt><dd className="mt-0.5 text-sm text-ink">{formatDuration(employee.probationDuration, employee.probationDurationUnit)}</dd></div> : null}
               <div><dt className="text-xs text-ink-faint">Fin de contrat</dt><dd className="mt-0.5 text-sm text-ink">{employee.contractEndDate ? formatDate(employee.contractEndDate) : "Non renseigné"}</dd></div>
               <div><dt className="flex items-center gap-1 text-xs text-ink-faint"><CalendarClock size={12} />Prochaine visite médicale</dt><dd className="mt-0.5 text-sm text-ink">{employee.nextMedicalVisitDate ? formatDate(employee.nextMedicalVisitDate) : "Non renseigné"}</dd></div>
@@ -464,6 +486,9 @@ export default async function EmployeeDetailPage({
               contractEndDate: employee.contractEndDate
                 ? employee.contractEndDate.toISOString().slice(0, 10)
                 : "",
+              weeklyHours: workWeeklyHours == null ? "" : String(workWeeklyHours),
+              weeklySchedule: workSchedule ? workSchedule.map((hours) => String(hours)) : ["", "", "", "", "", "", ""],
+              workScheduleEffectiveFrom: workProfile?.effectiveFrom.toISOString().slice(0, 10) ?? employee.hireDate.toISOString().slice(0, 10),
               probationDuration: employee.probationDuration?.toString() ?? "",
               probationDurationUnit: employee.probationDurationUnit ?? "",
               nextMedicalVisitDate: employee.nextMedicalVisitDate
