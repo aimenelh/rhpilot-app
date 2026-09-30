@@ -242,7 +242,7 @@ describe("moteur de bulletin — éléments hors brut et contrôles", () => {
   it("bloque les contextes non pris en charge plutôt que d'approximer", () => {
     expect(() => computePayslip(base({ period: { year: 2025, month: 12 } }))).toThrow(/à compter du/);
     expect(() => computePayslip(base({ organization: { ...base().organization, territory: "ANTILLES_REUNION" } }))).toThrow(/outre-mer/);
-    expect(() => computePayslip(base({ organization: { ...base().organization, headcount: 0 } }))).toThrow(/effectif/);
+    expect(() => computePayslip(base({ organization: { ...base().organization, headcount: -1 } }))).toThrow(/effectif/);
     expect(() => computePayslip(base({ mealVouchers: { count: 10, faceValue: 10, employerShare: 0.7 } }))).toThrow(/50 % et 60 %/);
     expect(() => computePayslip(base({ publicTransport: { monthlySubscription: 50, employerShare: 0.4 } }))).toThrow(/50 %/);
   });

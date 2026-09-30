@@ -43,11 +43,13 @@ model Organization {
   stripeSubscriptionId         String?                        @unique
   subscriptionStatus           String?
   currentPeriodEnd             DateTime?
-  payrollHeadcount             Int?
+  payrollHeadcount             Decimal?                       @db.Decimal(10, 2)
   mobilityRate                 Decimal?                       @db.Decimal(6, 3)
   ijssSubrogation              Boolean                        @default(true)
   paidLeaveMethod              String                         @default("OUVRABLES")
   workedSolidarityDay          Boolean                        @default(false)
+  sickPayRule                  Json?
+  workAccidentPayRule          Json?
   prevoyanceRates              Json?
   mealVoucherFaceValue         Decimal?                       @db.Decimal(8, 2)
   mealVoucherEmployerShare     Decimal?                       @db.Decimal(5, 4)

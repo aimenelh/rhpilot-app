@@ -5,6 +5,7 @@
  */
 import { addDays, daysBetweenInclusive, fromIsoDay, type CalendarDay, type IsoDay } from "./calendar";
 import { IJSS, LEGAL_SICK_PAY, LEGAL_WORK_ACCIDENT_PAY, PMSS, SMIC_HOURLY, LEGAL_MONTHLY_HOURS, valueAt, type SickPayRule } from "./params";
+import { validateMaintenanceRule } from "./maintenance-settings";
 import { round2 } from "./money";
 import type { AbsenceInput, AbsenceKind, SickPayHistory } from "./types";
 
@@ -18,7 +19,7 @@ export type ValuedAbsence = {
   deduction: number;
   /** Jours civils entiers d'absence non rémunérée par l'employeur (réduction du plafond). */
   unpaidCalendarDays: number;
-  maintenance: { amount: number; fullRateDays: number; reducedRateDays: number; waitingDays: number; ijssDeducted: number; rule: string } | null;
+  maintenance: { amount: number; fullRateDays: number; reducedRateDays: number; waitingDays: number; fullRate: number; reducedRate: number; ijssDeducted: number; rule: string } | null;
   ijss: { gross: number; net: number; taxable: number; estimated: boolean; days: number } | null;
 };
 
@@ -189,7 +190,7 @@ export function valueAbsence(input: {
     ijss = { gross, net, taxable, estimated, days: eligible.length };
 
     if (SICKNESS_KINDS.includes(absence.kind)) {
-      const rule = absence.kind === "WORK_ACCIDENT" ? input.workAccidentPayRule ?? LEGAL_WORK_ACCIDENT_PAY : input.sickPayRule ?? LEGAL_SICK_PAY;
+      const rule = absence.kind === "WORK_ACCIDENT" ? validateMaintenanceRule(input.workAccidentPayRule, "workAccidentPayRule") ?? LEGAL_WORK_ACCIDENT_PAY : validateMaintenanceRule(input.sickPayRule, "sickPayRule") ?? LEGAL_SICK_PAY;
       const allocation = allocateMaintenance(absence, rule, input.seniorityFrom, input.history, input.periodStart, input.windowEnd);
       if (allocation) {
         usedInPeriod = allocation.usedInPeriod;
@@ -205,6 +206,8 @@ export function valueAbsence(input: {
         const amount = round2(Math.max(0, guaranteed - ijssOnMaintained));
         maintenance = {
           amount,
+          fullRate: rule.fullRate,
+          reducedRate: rule.reducedRate,
           fullRateDays: allocation.usedInPeriod.fullRateDaysUsed,
           reducedRateDays: allocation.usedInPeriod.reducedRateDaysUsed,
           waitingDays: allocation.waitingDays,

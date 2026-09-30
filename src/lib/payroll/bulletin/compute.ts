@@ -35,7 +35,7 @@ import { assertAmount, round2, round4 } from "./money";
 import { NO_SEVERANCE, addTerminationLines } from "./termination";
 import type { PaidLeaveBalances, PaidLeaveOutcome, PayslipInput, PayslipLine, PayslipResult, SickPayHistory, YearToDate } from "./types";
 
-export const BULLETIN_ENGINE_VERSION = "rhpilot-bulletin-2026.1";
+export const BULLETIN_ENGINE_VERSION = "rhpilot-bulletin-2026.2";
 
 export function emptyYearToDate(year: number): YearToDate {
   return {
@@ -96,7 +96,7 @@ export function computePayslip(input: PayslipInput): PayslipResult {
 
   // --- Contrôles de contexte -------------------------------------------------
   if (org.territory !== "METROPOLE") throw new Error("Les cotisations propres aux départements d'outre-mer (dont LODEOM) ne sont pas encore prises en charge : le calcul est bloqué.");
-  if (!Number.isInteger(org.headcount) || org.headcount < 1) throw new Error("L'effectif de l'entreprise est absent ou invalide : il détermine plusieurs cotisations.");
+  if (!Number.isFinite(org.headcount) || org.headcount < 0 || org.headcount > 100000) throw new Error("L'effectif de l'entreprise est absent ou invalide : il détermine plusieurs cotisations.");
   assertAmount(org.atmpRatePercent, "Le taux AT/MP");
   if (org.atmpRatePercent > 30) throw new Error("Le taux AT/MP saisi est invraisemblable (au-delà de 30 %).");
   assertAmount(org.mobilityRatePercent, "Le taux de versement mobilité");
@@ -212,7 +212,7 @@ export function computePayslip(input: PayslipInput): PayslipResult {
   }
   // Le maintien conventionnel (souvent plus favorable, sans carence ou dès l'embauche) n'est pas encore modélisé :
   // on le signale à chaque arrêt au lieu d'appliquer le minimum légal en silence.
-  if (valued.some((absence) => (absence.input.kind === "SICK_LEAVE" || absence.input.kind === "WORK_ACCIDENT") && absence.deduction > 0)) {
+  if (valued.some((absence) => ((absence.input.kind === "SICK_LEAVE" && !org.sickPayRule) || (absence.input.kind === "WORK_ACCIDENT" && !org.workAccidentPayRule)) && absence.deduction > 0)) {
     warnings.push("Arrêt de travail : le maintien de salaire légal a été appliqué (C. trav. art. L1226-1 et D1226-1). Votre convention collective prévoit peut-être un maintien plus favorable (carence réduite, taux ou durée supérieurs) : vérifiez-la et ajoutez le complément en prime si c'est le cas.");
   }
   if (valued.some((absence) => (absence.input.kind === "MATERNITY" || absence.input.kind === "PATERNITY") && absence.deduction > 0)) {
@@ -249,7 +249,7 @@ export function computePayslip(input: PayslipInput): PayslipResult {
       grossLine({ code: "CP_INDEMNITY", label: `Indemnité de congés payés (${days} jour${days > 1 ? "s" : ""} ${org.paidLeaveMethod === "OUVRABLES" ? "ouvrables" : "ouvrés"})`, quantity: days, unit: "DAYS", amount: indemnity, source: method === "TENTH" ? "C. trav. art. L3141-24 : règle du dixième, plus favorable que le maintien" : "C. trav. art. L3141-24 : maintien de salaire", detail: { absenceId: absence.input.id, method } });
     }
     if (absence.maintenance && absence.maintenance.amount > 0) {
-      grossLine({ code: absence.input.kind === "WORK_ACCIDENT" ? "AT_MAINTENANCE" : "SICK_MAINTENANCE", label: `Indemnité complémentaire ${absence.input.kind === "WORK_ACCIDENT" ? "accident du travail" : "maladie"} (${absence.maintenance.fullRateDays} j à 90 %${absence.maintenance.reducedRateDays ? `, ${absence.maintenance.reducedRateDays} j à 66,66 %` : ""}, IJSS déduites)`, amount: absence.maintenance.amount, source: absence.maintenance.rule, detail: { absenceId: absence.input.id, ijssDeducted: absence.maintenance.ijssDeducted, waitingDays: absence.maintenance.waitingDays, fullRateDays: absence.maintenance.fullRateDays, reducedRateDays: absence.maintenance.reducedRateDays } });
+      grossLine({ code: absence.input.kind === "WORK_ACCIDENT" ? "AT_MAINTENANCE" : "SICK_MAINTENANCE", label: `Indemnité complémentaire ${absence.input.kind === "WORK_ACCIDENT" ? "accident du travail" : "maladie"} (${absence.maintenance.fullRateDays} j à ${(absence.maintenance.fullRate * 100).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} %${absence.maintenance.reducedRateDays ? `, ${absence.maintenance.reducedRateDays} j à ${(absence.maintenance.reducedRate * 100).toLocaleString("fr-FR", { maximumFractionDigits: 2 })} %` : ""}, IJSS déduites)`, amount: absence.maintenance.amount, source: absence.maintenance.rule, detail: { absenceId: absence.input.id, ijssDeducted: absence.maintenance.ijssDeducted, waitingDays: absence.maintenance.waitingDays, fullRateDays: absence.maintenance.fullRateDays, reducedRateDays: absence.maintenance.reducedRateDays } });
     }
   }
 

@@ -1,4 +1,6 @@
 import type { DsnPasData } from "./pas-dsn";
+import { checkSiret } from "../siret";
+import { assertDsnWorkAccidentRiskCode } from "./dsn-nomenclature";
 
 export const DSN_NORM_VERSION = "P26V01";
 
@@ -51,6 +53,8 @@ export type DsnP26MonthlyInput = {
       pcsEsecCode: string;
       conventionalStatusCode: string;
       retirementStatusCode: string;
+      retirementSchemeCode?: string;
+      seniorityDate?: Date | null;
       workUnitCode: string;
       referenceWorkQuota: number;
       contractWorkQuota: number;
@@ -71,6 +75,7 @@ export type DsnP26MonthlyInput = {
     payroll: {
       baseSalary: number;
       grossAmount: number;
+      cappedContributionBase: number;
       netBeforeTax: number;
       netTaxableAmount: number;
       netSocialAmount: number;
@@ -163,6 +168,8 @@ function serialize(lines: DsnLine[]): string {
 
 function siretParts(siretValue: string): { siren: string; nic: string; siret: string } {
   const siret = assertDigits(siretValue, 14, "le SIRET");
+  const checked = checkSiret(siret);
+  if (!checked.ok) throw new Error(`DSN bloquée : ${checked.error}`);
   return { siren: siret.slice(0, 9), nic: siret.slice(9), siret };
 }
 
@@ -228,6 +235,9 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
 
   add(lines, "S21.G00.06.001", siren);
   add(lines, "S21.G00.06.003", apenCode);
+  add(lines, "S21.G00.06.004", text(input.emitter.address, "l'adresse de l'entreprise"));
+  add(lines, "S21.G00.06.005", text(input.emitter.postalCode, "le code postal de l'entreprise"));
+  add(lines, "S21.G00.06.006", text(input.emitter.city, "la ville de l'entreprise"));
   add(lines, "S21.G00.11.001", nic);
   add(lines, "S21.G00.11.002", apetCode);
   add(lines, "S21.G00.11.003", text(input.emitter.address, "l'adresse de l'établissement"));
@@ -277,11 +287,18 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
     add(lines, "S21.G00.40.036", assertCode(employee.contract.multipleJobsCode, "le code emplois multiples", 2, 2));
     add(lines, "S21.G00.40.037", assertCode(employee.contract.multipleEmployersCode, "le code employeurs multiples", 2, 2));
     add(lines, "S21.G00.40.039", assertCode(employee.contract.workAccidentRegimeCode, "le régime AT/MP", 3, 3));
-    add(lines, "S21.G00.40.040", assertCode(employee.contract.workAccidentRiskCode, "le code risque AT/MP", 5, 6));
+    const riskCode = assertCode(employee.contract.workAccidentRiskCode, "le code risque AT/MP", 5, 6);
+    assertDsnWorkAccidentRiskCode(riskCode, periodEnd);
+    add(lines, "S21.G00.40.040", riskCode);
     if (employee.contract.workAccidentRiskCode.toUpperCase() !== "999ZZ") {
       if (employee.contract.workAccidentRate === null || !Number.isFinite(employee.contract.workAccidentRate)) throw new Error("DSN bloquée : le taux AT/MP est obligatoire lorsque le code risque n'est pas 999ZZ.");
       add(lines, "S21.G00.40.043", decimal(employee.contract.workAccidentRate));
     }
+
+    // Régime général couvert par le moteur : retraite unifiée Agirc-Arrco.
+    const retirementScheme = employee.contract.retirementSchemeCode ?? (employee.contract.oldAgeRegimeCode === "200" ? "RUAA" : null);
+    if (!retirementScheme) throw new Error("DSN bloquée : le régime de retraite complémentaire est absent.");
+    add(lines, "S21.G00.71.002", assertCode(retirementScheme, "le régime de retraite complémentaire", 4, 6));
 
     add(lines, "S21.G00.50.001", dsnDate(input.period.paymentDate));
     add(lines, "S21.G00.50.002", money(employee.payroll.netTaxableAmount));
@@ -303,10 +320,25 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
     add(lines, "S21.G00.58.003", "03");
     add(lines, "S21.G00.58.004", money(employee.payroll.netSocialAmount));
 
+    add(lines, "S21.G00.78.001", "02");
+    add(lines, "S21.G00.78.002", dsnDate(periodStart));
+    add(lines, "S21.G00.78.003", dsnDate(periodEnd));
+    add(lines, "S21.G00.78.004", money(employee.payroll.cappedContributionBase));
+
     add(lines, "S21.G00.78.001", "03");
     add(lines, "S21.G00.78.002", dsnDate(periodStart));
     add(lines, "S21.G00.78.003", dsnDate(periodEnd));
     add(lines, "S21.G00.78.004", money(employee.payroll.grossAmount));
+
+    const seniorityStart = employee.contract.seniorityDate ?? employee.contract.startDate;
+    const seniorityEnd = employee.contract.endDate && employee.contract.endDate < periodEnd ? employee.contract.endDate : periodEnd;
+    // Jours civils inclusifs : l'ancienneté ne peut être nulle, même le jour d'embauche.
+    const seniorityDays = Math.floor((Date.UTC(seniorityEnd.getUTCFullYear(), seniorityEnd.getUTCMonth(), seniorityEnd.getUTCDate()) - Date.UTC(seniorityStart.getUTCFullYear(), seniorityStart.getUTCMonth(), seniorityStart.getUTCDate())) / 86400000) + 1;
+    if (!Number.isFinite(seniorityDays) || seniorityDays < 1) throw new Error("DSN bloquée : la date d'ancienneté est postérieure à la période d'emploi.");
+    add(lines, "S21.G00.86.001", "07");
+    add(lines, "S21.G00.86.002", seniorityDays >= 98 * 365 ? "03" : "01");
+    add(lines, "S21.G00.86.003", seniorityDays >= 98 * 365 ? "98" : String(seniorityDays));
+    add(lines, "S21.G00.86.005", contractNumber);
   }
 
   add(lines, "S90.G00.90.001", String(lines.length + 2));

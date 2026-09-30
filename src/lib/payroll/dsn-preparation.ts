@@ -9,7 +9,7 @@ import type { WithholdingTaxProfile } from "./withholding-tax-profile";
 export type DsnPreparationResult = { content: string; fileName: string; normVersion: "P26V01"; employeeCount: number; warnings: string[] };
 
 type SnapshotWithholdingTax = { rate: number; amount: number; validFrom: string; validUntil: string | null; source: string; sourceReference: string | null };
-type CalculationSnapshot = { profile?: { id?: string; baseSalaryCents?: number; monthlyHours?: string | null; collectiveAgreementId?: string | null }; variables?: unknown[]; validatedAbsences?: unknown[]; withholdingTax?: Partial<SnapshotWithholdingTax>; socialEngine?: { employerCost?: number }; bulletin?: { lines?: Array<{ code?: string }> } };
+type CalculationSnapshot = { profile?: { id?: string; baseSalaryCents?: number; monthlyHours?: string | null; collectiveAgreementId?: string | null }; variables?: unknown[]; validatedAbsences?: unknown[]; withholdingTax?: Partial<SnapshotWithholdingTax>; socialEngine?: { employerCost?: number }; bulletin?: { lines?: Array<{ code?: string; base?: number }> } };
 
 type OrganizationDsnRow = {
   id: string; name: string; siret: string | null; payrollAddress: string | null; payrollPostalCode: string | null; payrollCity: string | null;
@@ -51,7 +51,7 @@ const DSN_UNMAPPED_BULLETIN_LINES = new Set(["ENTRY_EXIT", "SEVERANCE", "PAID_LE
  * d'un coup (et pas seulement le premier), pour que l'entreprise voie d'emblée ce qui reste à
  * déclarer par un autre moyen (logiciel de paie, expert-comptable ou saisie sur net-entreprises).
  */
-export function dsnScopeIssues(snapshot: { variables?: unknown[]; validatedAbsences?: unknown[]; bulletin?: { lines?: Array<{ code?: string }> } }): string[] {
+export function dsnScopeIssues(snapshot: { variables?: unknown[]; validatedAbsences?: unknown[]; bulletin?: { lines?: Array<{ code?: string; base?: number }> } }): string[] {
   const issues: string[] = [];
   if ((snapshot.bulletin?.lines ?? []).some((line) => line.code && DSN_UNMAPPED_BULLETIN_LINES.has(line.code))) issues.push("entrée, sortie ou indemnité de fin de contrat (blocs S21.G00.62 non émis)");
   if ((snapshot.variables?.length ?? 0) > 0) issues.push("primes ou variables du mois (blocs primes et autres revenus non émis)");
@@ -149,6 +149,9 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
 
     const netTaxableAmount = requiredNumber(calculation.netTaxableAmount, `le net imposable du salarié ${employee.id}`);
     const netSocialAmount = requiredNumber(calculation.netSocialAmount, `le montant net social du salarié ${employee.id}`);
+    const cappedBaseLine = snapshot.bulletin?.lines?.find((line) => line.code === "VIEILLESSE_PLAF");
+    if (!cappedBaseLine || cappedBaseLine.base === undefined || cappedBaseLine.base === null) throw new Error(`DSN bloquée : la base vieillesse plafonnée verrouillée du salarié ${employee.id} est absente.`);
+    const cappedContributionBase = requiredNumber(cappedBaseLine.base, "la base vieillesse plafonnée verrouillée");
     const grossAmount = requiredNumber(calculation.grossAmount, `le brut du salarié ${employee.id}`);
     const netBeforeTax = requiredNumber(calculation.netBeforeTax, `le net avant impôt du salarié ${employee.id}`);
     const withholdingTax = requiredNumber(calculation.withholdingTax, `le PAS du salarié ${employee.id}`);
@@ -190,7 +193,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         multipleJobsCode: requiredString(dsnProfile.multipleJobsCode, `le code emplois multiples du salarié ${employee.id}`), multipleEmployersCode: requiredString(dsnProfile.multipleEmployersCode, `le code employeurs multiples du salarié ${employee.id}`),
         workAccidentRegimeCode: requiredString(dsnProfile.workAccidentRegimeCode, `le régime AT/MP du salarié ${employee.id}`), workAccidentRiskCode: riskCode, workAccidentRate: atmpRate,
       },
-      payroll: { baseSalary: baseSalaryCents / 100, grossAmount, netBeforeTax, netTaxableAmount, netSocialAmount, withholdingTax, pas },
+      payroll: { baseSalary: baseSalaryCents / 100, grossAmount, cappedContributionBase, netBeforeTax, netTaxableAmount, netSocialAmount, withholdingTax, pas },
     });
   }
 

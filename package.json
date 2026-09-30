@@ -13,6 +13,7 @@
     "prisma:seed": "tsx prisma/seed.ts",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:dsn-val": "node --import tsx scripts/payroll/verify-dsn-val.ts",
     "typecheck": "tsc --noEmit -p .",
     "check:schema": "prisma migrate diff --from-url \"$DATABASE_URL\" --to-schema-datamodel prisma/schema.prisma --exit-code",
     "verify": "npm run typecheck && npm run lint && npm test"

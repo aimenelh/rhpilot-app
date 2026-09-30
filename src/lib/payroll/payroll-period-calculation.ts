@@ -164,7 +164,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     organizationDates?.companyCreationDate ?? null,
   );
   // Le moteur attend un entier d'au moins 1 ; l'arrondi inférieur place l'entreprise du même côté des seuils de 11, 20 et 50.
-  const headcount = settings.payrollHeadcount ?? Math.max(1, Math.floor(thresholdHeadcount.headcount));
+  const headcount = settings.payrollHeadcount ?? thresholdHeadcount.headcount;
   const globalWarnings: string[] = [];
   if (settings.payrollHeadcount === null) globalWarnings.push(...thresholdHeadcount.warnings);
   if (settings.payrollHeadcount === null) {
@@ -326,6 +326,8 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
         healthPlan: extras?.healthPlanWaiver ? null : { monthlyAmount: socialContext.healthPlanMonthlyAmount, employerShare: socialContext.healthPlanEmployerRate / 100 },
         prevoyance,
         workedSolidarityDay: settings.workedSolidarityDay,
+        sickPayRule: settings.sickPayRule,
+        workAccidentPayRule: settings.workAccidentPayRule,
         ijssSubrogation: settings.ijssSubrogation,
         paidLeaveMethod: settings.paidLeaveMethod,
       },

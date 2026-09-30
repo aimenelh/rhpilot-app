@@ -1,0 +1,34 @@
+[
+  {
+    "file": "dm-sans.woff2",
+    "project": "https://github.com/googlefonts/dm-fonts",
+    "source": "Google Fonts — Latin WOFF2 from the successful application build on 2026-09-30",
+    "sha256": "468d56b6b25b05b70190b6c233d773f6f1770e8579827ce022a57f03fa8002fb",
+    "bytes": 36980,
+    "version": "Version 4.004;gftools[0.9.30]"
+  },
+  {
+    "file": "caveat.woff2",
+    "project": "https://github.com/googlefonts/caveat",
+    "source": "Google Fonts — Latin WOFF2 from the successful application build on 2026-09-30",
+    "sha256": "7a0049db01fdd8fc7af7ef36675862a72a5c76d0cb45ae63c9f5b6f1b769dac7",
+    "bytes": 74572,
+    "version": "Version 2.000"
+  },
+  {
+    "file": "fraunces.woff2",
+    "project": "https://github.com/undercasetype/Fraunces",
+    "source": "Google Fonts — Latin WOFF2 from the successful application build on 2026-09-30",
+    "sha256": "88e17be075f1be50ab67b057b99e3701b828f44ed28f9452df6c02645bb0cba9",
+    "bytes": 36560,
+    "version": "Version 1.000;[b76b70a41]"
+  },
+  {
+    "file": "fraunces-italic.woff2",
+    "project": "https://github.com/undercasetype/Fraunces",
+    "source": "Google Fonts — Latin WOFF2 from the successful application build on 2026-09-30",
+    "sha256": "c9745ee907c02cdd46cc41a65bb711cd861432f679a76c18e3de204a18723040",
+    "bytes": 45624,
+    "version": "Version 1.000;[b76b70a41]"
+  }
+]

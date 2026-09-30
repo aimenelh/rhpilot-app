@@ -1,0 +1,2570 @@
+{
+  "norm": "P26V01",
+  "table": "RAT",
+  "version": "2026-02-09",
+  "dsnValVersion": "2026.1.0.17",
+  "csvSha256": "4c7695a6450da3bc457232ebd32a7ee6cba3c8118df4eaadaf2cf416473dce4b",
+  "source": "https://www.net-entreprises.fr/nomenclatures-dsn-p26v01/",
+  "rows": [
+    {
+      "code": "011AA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "011AAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "111ZC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "111ZCB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "120ZZ",
+      "from": "2013-01-01",
+      "to": null
+    },
+    {
+      "code": "132ZW",
+      "from": "2013-01-01",
+      "to": null
+    },
+    {
+      "code": "132ZZ",
+      "from": "2013-01-01",
+      "to": null
+    },
+    {
+      "code": "141AH",
+      "from": "2015-01-01",
+      "to": null
+    },
+    {
+      "code": "141AHB",
+      "from": "2015-01-01",
+      "to": null
+    },
+    {
+      "code": "141EY",
+      "from": "2013-01-01",
+      "to": null
+    },
+    {
+      "code": "141EZ",
+      "from": "2013-01-01",
+      "to": null
+    },
+    {
+      "code": "143ZZ",
+      "from": "2013-01-01",
+      "to": null
+    },
+    {
+      "code": "144ZZ",
+      "from": "2013-01-01",
+      "to": null
+    },
+    {
+      "code": "145ZM",
+      "from": "2015-01-01",
+      "to": null
+    },
+    {
+      "code": "145ZMB",
+      "from": "2015-01-01",
+      "to": null
+    },
+    {
+      "code": "145ZZ",
+      "from": "2013-01-01",
+      "to": null
+    },
+    {
+      "code": "151AE",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "151AEB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "151EC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "151ECB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "155CC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "155CCB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "158AC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "158ACB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "158CD",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "158CDB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "159SC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "159SCB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "171KB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "171KBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "172AC",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "172ACB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "177AB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "177ABB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "182CB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "182CBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "192ZH",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "192ZHB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "193ZL",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "193ZLB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "201AF",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "201AFB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "201BB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "201BBB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "203ZF",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "203ZFB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "204ZI",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "204ZIB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "212BD",
+      "from": "2015-01-01",
+      "to": null
+    },
+    {
+      "code": "212BDB",
+      "from": "2015-01-01",
+      "to": null
+    },
+    {
+      "code": "222CD",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "222CDB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "233ZA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "233ZAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "241GN",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "241GNB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "243ZC",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "243ZCB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "244CC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "244CCB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "251AC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "251ACB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "252HK",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "252HKB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "261EE",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "261EEB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "262AG",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "262AGB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "262AH",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "262AHB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "262CA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "262CAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "265AB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "265ABB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "266AA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "266AAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "266EB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "266EBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "266JB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "266JBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "267ZD",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "267ZDB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "271ZF",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "271ZFB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "274CH",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "274CHB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "275EB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "275EBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "281AD",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "281ADB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "281CB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "281CBB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "283CG",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "283CGB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "283CH",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "283CHB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "284AD",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "284ADB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "284BI",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "284BIB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "285AA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "285AAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "285DA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "285DAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "285DF",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "285DFB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "285DG",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "285DGB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "286DF",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "286DFB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "286FB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "286FBB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "291AF",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "291AFB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "291FB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "291FBB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "292FI",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "292FIB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "293DC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "293DCB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "312AG",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "312AGB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "321BC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "321BCB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "331BC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "331BCB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "332BK",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "332BKB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "341ZE",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "341ZEB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "342AB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "342ABB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "343ZE",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "343ZEB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "351BF",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "351BFB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "351EB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "351EBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "353BC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "353BCB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "361GC",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "361GCB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "361MD",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "361MDB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "371ZF",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "371ZFB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "401ZE",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "401ZF",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "401ZFB",
+      "from": "2014-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "403ZE",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "403ZEB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "410ZA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "410ZAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "451AA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "451AAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "452BE",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "452BEB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "452CD",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "452CDB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "452ED",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "452EDB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "452JD",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "452JDB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "452PB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "452PBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "453AA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "453AAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "453AF",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "453AFB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "454CE",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "454CEB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "454LE",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "454LEB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "454MC",
+      "from": "2026-01-01",
+      "to": null
+    },
+    {
+      "code": "455ZB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "455ZBB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "501ZF",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "501ZFB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "502ZH",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "502ZHB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "503AD",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "503ADB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "505ZB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "505ZBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "511NB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "511NBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "511RB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "511RBB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "511TG",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "511TH",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "513TC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "513TCB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "515CC",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "515CCB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "515EG",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "515EGB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "515FA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "515FAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "516GC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "516GCB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "516KC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "516KCB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "516LC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "516LCB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "516NC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "516NCB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "521BC",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "521BCB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "521FB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "521FBB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "522CB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "522CBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "523AC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "523ACB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "524CD",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "524CDB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "524HC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "524HCB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "524LA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "524LAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "524PB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "524PBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "524RB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "524WA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "524WAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "524XB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "524XBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "524ZD",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "524ZDB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "526GA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "527AC",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "527ACB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "552EC",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "552ECB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "553AC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "553ACB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "553BC",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "553BCB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "555AA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "555AAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "601ZA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "601ZAB",
+      "from": "2014-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "602BD",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "602BDB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "602CA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "602CAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "602MG",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "602MGB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "602NA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "602NAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "621ZC",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "621ZCB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "631AZ",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "631AZB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "631BE",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "631BEB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "631DA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "631DAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "631EE",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "631EEB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "632CF",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "632CFB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "633ZC",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "633ZCB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "634AA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "634AAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "634CI",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "634CIB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "641AA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "641AAB",
+      "from": "2014-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "641CA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "641CAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "642BB",
+      "from": "2019-01-01",
+      "to": null
+    },
+    {
+      "code": "642BBB",
+      "from": "2019-01-01",
+      "to": null
+    },
+    {
+      "code": "651AB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "651ABB",
+      "from": "2014-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "660AB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "660ABB",
+      "from": "2014-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "703AD",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "703ADB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "703CB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "703CBB",
+      "from": "2014-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "714AB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "714ABB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "714AC",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "714ACB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "723ZA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "723ZAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "731ZB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "731ZBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "731ZE",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "731ZEB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "741GB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "741GBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "741GD",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "741GDB",
+      "from": "2014-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "741JB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "741JBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "742CB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "742CBB",
+      "from": "2014-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "742CE",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "742CEB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "743BA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "743BAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "744BB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "744BBB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "745BC",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "745BCB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "745BD",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "745BDB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "745BE",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "745BEB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "746ZA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "746ZAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "746ZB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "746ZBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "747ZE",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "747ZEB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "747ZF",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "747ZFB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "748DA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "748DAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "748GB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "748GBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "748KC",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "748KCB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "751AG",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "751AGB",
+      "from": "2017-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "751BA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "751BAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "751CC",
+      "from": "2021-01-01",
+      "to": null
+    },
+    {
+      "code": "751CCB",
+      "from": "2021-01-01",
+      "to": null
+    },
+    {
+      "code": "751CD",
+      "from": "2021-01-01",
+      "to": null
+    },
+    {
+      "code": "751CDB",
+      "from": "2023-01-01",
+      "to": null
+    },
+    {
+      "code": "751CE",
+      "from": "2021-01-01",
+      "to": null
+    },
+    {
+      "code": "751CEB",
+      "from": "2021-01-01",
+      "to": null
+    },
+    {
+      "code": "752EC",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "752ED",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "752EE",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "753AA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "753AAB",
+      "from": "2014-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "753AZ",
+      "from": "2013-01-01",
+      "to": null
+    },
+    {
+      "code": "753BB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "753BBB",
+      "from": "2014-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "753CA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "753CB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "753CC",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "801ZA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "802AA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "802CA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "804CA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "851AC",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "851ACB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "851AD",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "851ADB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "851CB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "851CBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "851CD",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "851CDB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "851GA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "851GAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "851JA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "851JAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "851KA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "851KAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "852ZB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "852ZBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853AB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853ABB",
+      "from": "2014-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "853AC",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853ACB",
+      "from": "2014-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "853AD",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853ADB",
+      "from": "2014-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "853AE",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853AEB",
+      "from": "2014-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "853BA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853BAB",
+      "from": "2014-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "853CA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853HA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853HB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853KB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853KC",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853KE",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853KF",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853KG",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853KH",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853KI",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853KJ",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853KL",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "853KZ",
+      "from": "2013-01-01",
+      "to": null
+    },
+    {
+      "code": "900AA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "900AAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "900BF",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "900BFB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "911AA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "911AE",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "913EA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "913EAB",
+      "from": "2014-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "913EC",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "913ED",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "913EE",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "913EF",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "913EG",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "913EH",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "913EHB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "913EJ",
+      "from": "2021-01-01",
+      "to": null
+    },
+    {
+      "code": "921CC",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "921CCB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "923AD",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "923ADB",
+      "from": "2017-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "923FC",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "926AA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "926AAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "926CG",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "926CGB",
+      "from": "2014-01-01",
+      "to": "2021-12-31"
+    },
+    {
+      "code": "926CH",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "926CHB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "926CI",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "926CIB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "927AB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "927ABB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "927CC",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "927CCB",
+      "from": "2017-01-01",
+      "to": null
+    },
+    {
+      "code": "930BA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "930BAB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "930DB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "930DBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "930HB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "930HBB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "930NC",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "930NCB",
+      "from": "2016-01-01",
+      "to": null
+    },
+    {
+      "code": "950ZA",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "950ZB",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "950ZC",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "950ZD",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "999ZZ",
+      "from": "2014-01-01",
+      "to": null
+    },
+    {
+      "code": "RA020",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA110",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA110B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA120",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA120B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA130",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA130B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA133",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA133B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA140",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA140B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA150",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA150B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA160",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA160B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA170",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA170B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA180",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA180B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA190",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA190B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA310",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA310B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA320",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA320B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA330",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA330B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA340",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA340B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA400",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA400B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA410",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA410B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA500",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA500B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA502",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA510",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA510B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA600",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA600B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA610",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA610B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA620",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA620B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA630",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA630B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA640",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA640B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA650",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA650B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA660",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA660B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA670",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA670B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA680",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA680B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA690",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA690B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA760",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA760B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA770",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA770B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA801B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA811B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA821B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA830B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA832B",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA900",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA900B",
+      "from": "2023-04-05",
+      "to": null
+    },
+    {
+      "code": "RA910",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA910B",
+      "from": "2023-04-05",
+      "to": null
+    },
+    {
+      "code": "RA920",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA920B",
+      "from": "2023-04-05",
+      "to": null
+    },
+    {
+      "code": "RA970",
+      "from": "1900-01-01",
+      "to": null
+    },
+    {
+      "code": "RA970B",
+      "from": "2023-04-05",
+      "to": null
+    },
+    {
+      "code": "RA980",
+      "from": "1900-01-01",
+      "to": null
+    }
+  ]
+}
