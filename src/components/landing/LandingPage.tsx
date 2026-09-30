@@ -1,5 +1,6 @@
 import { LandingMotion } from "./LandingMotion";
 import { ArrivalHero } from "./ArrivalHero";
+import { BrandIntro } from "./BrandIntro";
 import Link from "next/link";
 import { MarketingHeader } from "./MarketingHeader";
 import { MarketingFooter } from "./MarketingFooter";
@@ -12,6 +13,7 @@ export function LandingPage() {
   return (
     <div className={s.site} data-landing-motion>
       <LandingMotion />
+      <BrandIntro />
       <MarketingHeader />
       <main id="main-content">
         <ArrivalHero />
