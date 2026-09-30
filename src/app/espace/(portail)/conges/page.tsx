@@ -104,7 +104,7 @@ export default async function EspaceLeavePage() {
             <p className="text-sm font-semibold text-ink-soft">Congés à prendre</p>
             <p className="mt-1 text-[34px] font-semibold leading-none tabular-nums text-ink">{days(previousBalance)}</p>
             <p className="mt-2 text-sm leading-6 text-ink-soft">Acquis sur la période de référence close : {days(latest.balances.previousAcquired)}, dont {days(latest.balances.previousTaken)} déjà pris.</p>
-            {validatedUpcoming > 0 || pendingUpcoming > 0 ? (
+            {validatedUpcoming > 0 || pendingUpcoming > 0 || uncountedUpcoming > 0 ? (
               <p className="mt-3 border-t border-surface-border pt-3 text-sm leading-6 text-ink-soft">
                 Après vos congés à venir : <strong className="font-semibold text-ink">{days(previousBalance - validatedUpcoming)}</strong>
                 {pendingUpcoming > 0 ? `, et ${days(previousBalance - validatedUpcoming - pendingUpcoming)} si vos demandes en attente sont acceptées` : ""}.
