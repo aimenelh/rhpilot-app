@@ -1,3 +1,4 @@
+import type { IdentifiedDsnAffiliation } from "./dsn-complementary-affiliations";
 import type { PayslipInput, PayslipLine, PayslipResult } from "./bulletin/types";
 import type { DsnAggregatedContribution, DsnAssessedBase, DsnIndividualContribution } from "./dsn-p26v01-complete";
 
@@ -20,6 +21,9 @@ export type LockedContributionData = {
   unemploymentBase: number;
   hoursPaid: number;
   grossSubject: number;
+  complementaryAdhesions: NonNullable<import("./dsn-p26v01-complete").DsnP26CompleteInput["complementaryAdhesions"]>;
+  complementaryAffiliations: NonNullable<import("./dsn-p26v01-complete").DsnP26CompleteInput["complementaryAffiliations"]>;
+  complementaryPayments: Array<{ opsIdentifier: string; delegateCode: string | null; contractReference: string; amount: number; period: string }>;
 };
 
 const cents = (value: number): number => {
@@ -87,6 +91,7 @@ export function mapLockedContributions(input: {
   employeeNir: string;
   urssafSiret: string;
   retirementOps: string;
+  complementaryAffiliations?: IdentifiedDsnAffiliation[];
 }): LockedContributionData {
   const { bulletin, inputs } = readLockedContributionSnapshot(input.snapshot);
   if (!/^\d{14}$/.test(input.urssafSiret) || !/^\d{14}$/.test(input.retirementOps)) throw new Error("DSN bloquée : les organismes Urssaf et retraite doivent être renseignés depuis les notifications d'affiliation.");
@@ -118,6 +123,9 @@ export function mapLockedContributions(input: {
   const aggregates = new Map<string, DsnAggregatedContribution>();
   const liabilities = new Map<string, number>();
   const deferred: LockedContributionData["deferred"] = [];
+  const complementaryAdhesions: LockedContributionData["complementaryAdhesions"] = [];
+  const complementaryAffiliations: LockedContributionData["complementaryAffiliations"] = [];
+  const complementaryPayments: LockedContributionData["complementaryPayments"] = [];
   const bases: DsnAssessedBase[] = [];
   const addBase = (code: string, value: number, components?: DsnAssessedBase["components"]): void => { bases.push({ employeeNir: input.employeeNir, code, amount: round(value), ...(components ? { components } : {}) }); };
   const addIndividual = (code: string, baseCode: string, opsIdentifier: string | null, value: number, sources: string[], ratePercent?: number, baseAmount?: number): void => {
@@ -227,6 +235,23 @@ export function mapLockedContributions(input: {
     deferred.push({ employeeNir: input.employeeNir, code: "TAXE_APPRENTISSAGE_SOLDE", amount: value, declaration: "DSN avril 2027, exercice 2026, bloc 82 code 076 (CTP annuel à rapprocher)" });
     mapped.add("TAXE_APPRENTISSAGE_SOLDE");
   }
+  for (const affiliation of input.complementaryAffiliations ?? []) {
+    if (affiliation.validFrom > bulletin.period.first || (affiliation.validUntil && affiliation.validUntil < bulletin.period.last)) throw new Error("DSN bloquée : un changement d'affiliation complémentaire pendant le mois nécessite des périodes segmentées.");
+    const sources = affiliation.coverage === "SANTE" ? ["SANTE"] : ["PREVOYANCE", "PREVOYANCE_T2"];
+    const covered = sources.filter((code) => byCode.has(code));
+    const due = round(covered.reduce((total, code) => total + amount(code), 0));
+    const components = affiliation.coverage === "SANTE" ? [{ code: "20", amount: due }] : [
+      { code: "11", amount: byCode.has("PREVOYANCE") ? base("PREVOYANCE") : t1 },
+      { code: "24", amount: byCode.has("PREVOYANCE_T2") ? base("PREVOYANCE_T2") : t2 },
+    ];
+    bases.push({ employeeNir: input.employeeNir, code: "31", amount: 0, affiliationId: affiliation.affiliationId, components });
+    individual.push({ employeeNir: input.employeeNir, code: "059", baseCode: "31", affiliationId: affiliation.affiliationId, opsIdentifier: null, contributionAmount: due, sourcePayrollCode: sources.join("+"), mappingVersion: LOCKED_CONTRIBUTION_MAPPING_VERSION });
+    complementaryAdhesions.push({ id: affiliation.adhesionId, organismCode: affiliation.organismCode, contractReference: affiliation.contractReference, delegateCode: affiliation.delegateCode });
+    complementaryAffiliations.push({ employeeNir: input.employeeNir, id: affiliation.affiliationId, adhesionId: affiliation.adhesionId, populationCode: affiliation.populationCode, optionCode: affiliation.optionCode, validFrom: new Date(affiliation.validFrom + "T00:00:00Z"), validUntil: affiliation.validUntil ? new Date(affiliation.validUntil + "T00:00:00Z") : null });
+    complementaryPayments.push({ opsIdentifier: affiliation.organismCode, delegateCode: affiliation.delegateCode, contractReference: affiliation.contractReference, amount: due, period: `${bulletin.period.year}M${String(bulletin.period.month).padStart(2, "0")}` });
+    liabilities.set(affiliation.organismCode, round((liabilities.get(affiliation.organismCode) ?? 0) + due));
+    covered.forEach((code) => mapped.add(code));
+  }
   // Une rubrique explicitement nulle ne nécessite pas d'affiliation, mais une rubrique inconnue reste bloquante.
   for (const code of ["PREVOYANCE", "PREVOYANCE_T2", "SANTE", "VERSEMENT_MOBILITE", "FORFAIT_SOCIAL"]) if (byCode.has(code) && amount(code) === 0) mapped.add(code);
   const missing = journal.filter((item) => !mapped.has(item.code)).map((item) => item.code);
@@ -235,7 +260,7 @@ export function mapLockedContributions(input: {
   const deferredTotal = deferred.reduce((total, item) => total + cents(item.amount), 0);
   if (liabilityTotal + deferredTotal !== cents(bulletin.totals.employeeContributions) + cents(bulletin.totals.employerContributions)) throw new Error("DSN bloquée : la ventilation par organisme ne couvre pas exactement les cotisations du bulletin.");
   if ([...liabilities.values()].some((value) => value < 0)) throw new Error("DSN bloquée : un crédit organisme nécessite une déclaration de régularisation et un paiement distinct.");
-  return { bases, individual, aggregates: [...aggregates.values()], liabilities: [...liabilities].map(([opsIdentifier, value]) => ({ opsIdentifier, amount: value })), deferred, atmpRatePercent, unemploymentBase, hoursPaid: numeric(bulletin.totals.hoursPaid, "les heures payées"), grossSubject: g };
+  return { bases, individual, aggregates: [...aggregates.values()], liabilities: [...liabilities].map(([opsIdentifier, value]) => ({ opsIdentifier, amount: value })), deferred, atmpRatePercent, unemploymentBase, hoursPaid: numeric(bulletin.totals.hoursPaid, "les heures payées"), grossSubject: g, complementaryAdhesions, complementaryAffiliations, complementaryPayments };
 }
 
 /** Additionne les assiettes une seule fois par salarié/CTP, pas une fois par cotisation composante. */

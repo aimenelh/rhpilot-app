@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { computedSnapshot, computedDsnFixture } from "../../../scripts/payroll/dsn-computed-fixture";
+import { identifyDsnAffiliations, normalizeDsnComplementaryAffiliations } from "./dsn-complementary-affiliations";
 import { FULL_TIME_SCHEDULE } from "./bulletin/calendar";
 import { mapLockedContributions, mergeLockedAggregates, splitLockedRgdu } from "./dsn-locked-contributions";
 import { buildDsnP26V01Complete } from "./dsn-p26v01-complete";
@@ -84,6 +85,32 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     expect(() => mapLockedContributions({ snapshot: altered, ...ids })).toThrow(/totaux du bulletin/);
     snapshot.bulletin.lines.push({ code: "NEW_LEVY", label: "Cotisation inconnue", section: "AUTRES_EMPLOYEUR", amount: 0, employerAmount: 0, source: "Test" });
     expect(() => mapLockedContributions({ snapshot, ...ids })).toThrow(/NEW_LEVY/);
+  });
+  it("rattache mutuelle et prévoyance à leurs affiliations sans doubler les paiements", () => {
+    const data = computedDsnFixture(6000, 151.67, true);
+    expect(data.assessedBases.filter((base) => base.code === "31")).toHaveLength(2);
+    const payment = data.payments.find((item) => item.opsIdentifier === "P0983")!;
+    expect(payment.components).toHaveLength(2);
+    expect(cents(payment.amount)).toBe(payment.components!.reduce((sum, component) => sum + cents(component.amount), 0));
+    const content = buildDsnP26V01Complete(data);
+    expect(content.match(/S21\.G00\.81\.001,'059'/g)).toHaveLength(2);
+    expect(content).toContain("S21.G00.20.002,'DGFIP_PAS'");
+    expect(content).toContain("S21.G00.55.004,'2026M01'");
+    const altered = structuredClone(data);
+    altered.payments.find((item) => item.opsIdentifier === "P0983")!.amount += 0.01;
+    expect(() => buildDsnP26V01Complete(altered)).toThrow(/dettes/);
+    const unaffiliated = structuredClone(data);
+    unaffiliated.assessedBases = unaffiliated.assessedBases.filter((base) => base.code !== "31");
+    expect(() => buildDsnP26V01Complete(unaffiliated)).toThrow(/affiliation complémentaire/);
+    expect(content).toContain("S21.G00.70.014,'01012024'");
+  });
+  it("bloque une affiliation modifiée en cours de mois", () => {
+    const snapshot = computedSnapshot();
+    const affiliations = identifyDsnAffiliations([normalizeDsnComplementaryAffiliations([{
+      coverage: "SANTE", organismCode: "P0983", contractReference: "SANTE-TEST", validFrom: "2026-01-15",
+      paymentFrequency: "MONTHLY", componentCodes: ["20"], sourceReference: "FPOC test",
+    }])])[0];
+    expect(() => mapLockedContributions({ snapshot, ...ids, complementaryAffiliations: affiliations })).toThrow(/périodes segmentées/);
   });
   it("bloque la complémentaire sans affiliation et les exonérations spécifiques non traduites", () => {
     const ordinary = computedSnapshot();

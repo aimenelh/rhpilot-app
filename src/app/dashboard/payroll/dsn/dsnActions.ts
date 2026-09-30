@@ -1,5 +1,6 @@
 "use server";
 
+import { normalizeDsnComplementaryAffiliations } from "@/lib/payroll/dsn-complementary-affiliations";
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
@@ -266,5 +267,37 @@ export async function saveDsnEmployeeProfile(
     return { success: `Profil DSN de ${employee.firstName} ${employee.lastName} enregistré.` };
   } catch (error) {
     return { error: userFacingError(error, "Impossible d'enregistrer le profil DSN.") };
+  }
+}
+
+export async function saveDsnComplementaryAffiliations(employeeId: string, _previousState: DsnFormState, formData: FormData): Promise<DsnFormState> {
+  try {
+    const { membership, user } = await adminContext();
+    const configurations = ["SANTE", "PREVOYANCE"].filter((coverage) => value(formData, coverage + ".enabled") === "1").map((coverage) => {
+      if (value(formData, coverage + ".confirmed") !== "1") throw new Error("Confirmez les composants et la périodicité figurant dans votre fiche de paramétrage.");
+      return {
+        coverage, organismCode: value(formData, coverage + ".organismCode"), contractReference: value(formData, coverage + ".contractReference"),
+        delegateCode: value(formData, coverage + ".delegateCode"), populationCode: value(formData, coverage + ".populationCode"),
+        optionCode: value(formData, coverage + ".optionCode"), validFrom: value(formData, coverage + ".validFrom"),
+        validUntil: value(formData, coverage + ".validUntil"), paymentFrequency: "MONTHLY",
+        componentCodes: coverage === "SANTE" ? ["20"] : ["11", "24"], sourceReference: value(formData, coverage + ".sourceReference"),
+      };
+    });
+    const affiliations = normalizeDsnComplementaryAffiliations(configurations);
+    await prisma.$transaction(async (tx) => {
+      const changed = await tx.$executeRaw`
+        UPDATE "dsn_employee_profiles" SET "complementaryAffiliations" = ${JSON.stringify(affiliations)}::jsonb, "updatedAt" = CURRENT_TIMESTAMP
+        WHERE "organizationId" = ${membership.organizationId} AND "employeeId" = ${employeeId}
+      `;
+      if (changed !== 1) throw new Error("Enregistrez d'abord le profil DSN du salarié dans cette organisation.");
+      await tx.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id,
+        action: "dsn.employee.affiliations.updated", entityType: "Employee", entityId: employeeId,
+        metadata: { coverages: affiliations.map((item) => item.coverage), normVersion: "P26V01" } } });
+    });
+    revalidatePath("/dashboard/payroll/dsn");
+    revalidatePath(`/dashboard/payroll/dsn/employees/${employeeId}`);
+    return { success: "Affiliations complémentaires enregistrées pour le pré-contrôle DSN." };
+  } catch (error) {
+    return { error: userFacingError(error, "Impossible d'enregistrer les affiliations complémentaires.") };
   }
 }

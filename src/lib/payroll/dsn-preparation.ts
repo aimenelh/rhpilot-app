@@ -1,3 +1,5 @@
+import { identifyDsnAffiliations, normalizeDsnComplementaryAffiliations } from "./dsn-complementary-affiliations";
+import type { DsnOpsPayment } from "./dsn-p26v01-complete";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { DsnP26MonthlyInput } from "./dsn-p26v01";
@@ -23,6 +25,7 @@ type OrganizationDsnRow = {
 };
 
 type DsnEmployeeProfileRow = {
+  complementaryAffiliations: unknown;
   employeeId: string; nirCiphertext: string; birthDate: Date; birthPlace: string; birthDepartment: string; birthCountryCode: string | null; euClassificationCode: string | null;
   addressLine: string; postalCode: string; city: string; countryCode: string | null; contractNumber: string; contractNatureCode: string; publicPolicyCode: string;
   pcsEsecCode: string; conventionalStatusCode: string; retirementStatusCode: string; workUnitCode: string; referenceWorkQuota: unknown; contractWorkQuota: unknown;
@@ -125,7 +128,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
              "addressLine", "postalCode", "city", "countryCode", "contractNumber", "contractNatureCode", "publicPolicyCode", "pcsEsecCode", "conventionalStatusCode",
              "retirementStatusCode", "workUnitCode", "referenceWorkQuota", "contractWorkQuota", "workModalityCode", "baseSchemeSupplementCode", "sicknessRegimeCode",
              "workLocationId", "oldAgeRegimeCode", "foreignWorkerCode", "employmentStatusCode", "multipleJobsCode", "multipleEmployersCode",
-             "workAccidentRegimeCode", "workAccidentRiskCode"
+             "workAccidentRegimeCode", "workAccidentRiskCode", "complementaryAffiliations"
       FROM "dsn_employee_profiles"
       WHERE "organizationId" = ${input.organizationId} AND "employeeId" IN (${Prisma.join(employeeIds)})
     `,
@@ -148,6 +151,8 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
     select: { employeeId: true, calculationSnapshot: true },
   }) : [];
   const previousByEmployee = new Map(previousCalculations.map((item) => [item.employeeId, item.calculationSnapshot]));
+  const identified = identifyDsnAffiliations(calculations.map((calculation) => normalizeDsnComplementaryAffiliations(dsnProfileByEmployee.get(calculation.employeeId)?.complementaryAffiliations)));
+  const complementaryByEmployee = new Map(calculations.map((calculation, index) => [calculation.employeeId, identified[index]]));
   const financial: LockedContributionData[] = [];
   const dsnEmployees: DsnP26MonthlyInput["employees"] = [];
   for (const calculation of calculations) {
@@ -194,7 +199,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
 
     const nir = assertNirFormat(decryptDsnSensitiveValue(dsnProfile.nirCiphertext));
     assertNirBirthYear(nir, dsnProfile.birthDate, employee.id);
-    const contributions = mapLockedContributions({ snapshot: calculation.calculationSnapshot, previousSnapshot: previousByEmployee.get(employee.id), employeeNir: nir, urssafSiret, retirementOps: retirementSiret });
+    const contributions = mapLockedContributions({ snapshot: calculation.calculationSnapshot, previousSnapshot: previousByEmployee.get(employee.id), employeeNir: nir, urssafSiret, retirementOps: retirementSiret, complementaryAffiliations: complementaryByEmployee.get(employee.id) });
     financial.push(contributions);
     const workLocationId = requiredString(dsnProfile.workLocationId, `le lieu de travail du salarié ${employee.id}`).replace(/\s+/g, "");
     if (workLocationId !== siret) throw new Error(`DSN bloquée pour ${employee.firstName} ${employee.lastName} : le périmètre actuel couvre uniquement le lieu de travail correspondant au SIRET employeur. Les autres lieux nécessitent le bloc S21.G00.85.`);
@@ -202,6 +207,9 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
     const riskCode = requiredString(dsnProfile.workAccidentRiskCode, `le code risque AT/MP du salarié ${employee.id}`).toUpperCase();
     if (riskCode === "999ZZ") throw new Error(`DSN bloquée pour ${employee.firstName} ${employee.lastName} : un taux AT/MP est déjà utilisé par le calcul de paie, le code risque d'attente 999ZZ serait incohérent.`);
 
+    if (dsnProfile.workUnitCode !== "10") throw new Error("DSN bloquée : seuls les contrats horaires sont raccordés au moteur actuel.");
+    const expectedNature = locked.inputs.employee.contract === "CDI" ? "01" : locked.inputs.employee.contract === "CDD" ? "02" : null;
+    if (!expectedNature || dsnProfile.contractNatureCode !== expectedNature || dsnProfile.publicPolicyCode !== "99") throw new Error("DSN bloquée : la nature déclarative du contrat ne correspond pas au contrat ordinaire du bulletin verrouillé.");
     const referenceWorkQuota = requiredNumber(dsnProfile.referenceWorkQuota, `la quotité de référence du salarié ${employee.id}`);
     const contractWorkQuota = requiredNumber(dsnProfile.contractWorkQuota, `la quotité contractuelle du salarié ${employee.id}`);
     const lockedMonthlyHours = profileSnapshot.monthlyHours == null ? null : Number(profileSnapshot.monthlyHours);
@@ -231,13 +239,33 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
   const pasTotal = Math.round(dsnEmployees.reduce((total, employee) => total + employee.payroll.withholdingTax, 0) * 100) / 100;
   if (pasTotal > 0) liabilities.set("DGFIP", pasTotal);
   const aggregates = mergeLockedAggregates(financial.map((item) => item.aggregates));
-  const payments = [...liabilities].map(([opsIdentifier, amount]) => ({ opsIdentifier, amount, paymentModeCode: "05", iban: paymentIban, bic: paymentBic }));
+  const complementaryGroups = new Map<string, DsnOpsPayment>();
+  for (const item of financial.flatMap((data) => data.complementaryPayments)) {
+    const key = JSON.stringify([item.opsIdentifier, item.delegateCode]);
+    let payment = complementaryGroups.get(key);
+    if (!payment) {
+      payment = { opsIdentifier: item.opsIdentifier, amount: 0, paymentModeCode: "05", iban: paymentIban, bic: paymentBic, delegateCode: item.delegateCode, components: [] };
+      complementaryGroups.set(key, payment);
+    }
+    payment.amount = Math.round((payment.amount + item.amount) * 100) / 100;
+    const component = payment.components!.find((entry) => entry.contractReference === item.contractReference && entry.period === item.period);
+    if (component) component.amount = Math.round((component.amount + item.amount) * 100) / 100;
+    else payment.components!.push({ amount: item.amount, contractReference: item.contractReference, period: item.period });
+  }
+  const complementaryOps = new Set([...complementaryGroups.values()].map((payment) => payment.opsIdentifier));
+  const payments: DsnOpsPayment[] = [
+    ...[...liabilities].filter(([opsIdentifier]) => !complementaryOps.has(opsIdentifier)).map(([opsIdentifier, amount]) => ({ opsIdentifier, amount, paymentModeCode: "05", iban: paymentIban, bic: paymentBic })),
+    ...complementaryGroups.values(),
+  ];
+  const adhesions = [...new Map(financial.flatMap((item) => item.complementaryAdhesions).map((adhesion) => [adhesion.id, adhesion])).values()];
   const content = buildDsnP26V01Complete({
     testMode: true, declarationOrder: input.declarationOrder ?? 1, fileDate: input.fileDate ?? new Date(),
     emitter: { siret, name: organization.name, address: requiredString(organization.payrollAddress, "l'adresse de paie de l'organisation"), postalCode: requiredString(organization.payrollPostalCode, "le code postal de l'organisation"), city: requiredString(organization.payrollCity, "la ville de l'organisation"), contactName, contactEmail, contactPhone, declaredContactType, enterpriseApenCode },
     establishment: { nafCode: requiredString(organization.payrollNafCode, "le code APET de l'établissement"), collectiveAgreementCode: mainCollectiveAgreementCode },
     period: { year: period.year, month: period.month, paymentDate: period.paymentDate }, employees: dsnEmployees,
     assessedBases: financial.flatMap((item) => item.bases),
+    complementaryAdhesions: adhesions, complementaryAffiliations: financial.flatMap((item) => item.complementaryAffiliations),
+    expectedLiabilities: [...liabilities].map(([opsIdentifier, amount]) => ({ opsIdentifier, amount })),
     contributionBordereau: { opsIdentifier: urssafSiret, totalAmount: liabilities.get(urssafSiret) ?? 0, aggregatedContributions: aggregates, individualContributions: financial.flatMap((item) => item.individual) }, payments,
   });
 

@@ -690,6 +690,7 @@ model dsn_employee_profiles {
   multipleEmployersCode    String?
   workAccidentRegimeCode   String?
   workAccidentRiskCode     String?
+  complementaryAffiliations Json?
   employees                Employee @relation(fields: [organizationId, employeeId], references: [organizationId, id], map: "dsn_employee_profiles_employee_fk")
 
   @@unique([organizationId, employeeId], map: "dsn_employee_profiles_org_employee_unique")

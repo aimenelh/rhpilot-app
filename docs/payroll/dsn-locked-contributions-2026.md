@@ -1,32 +1,20 @@
-# Raccordement des cotisations aux bulletins verrouillés
+# Cotisations DSN depuis les bulletins verrouillés — P26V01
 
-Le pré-contrôle des périodes réelles utilise maintenant le générateur de cotisations. Le mapping P26V01-RG-2026.1 reprend exclusivement les lignes, bases et totaux du bulletin détaillé et ses entrées gelées. Il rapproche, au centime, les dettes Urssaf et retraite et les charges différées avec les cotisations salariales et patronales.
+Le préparateur lit les lignes et entrées du bulletin verrouillé, vérifie les totaux au centime, puis ventile les dettes Urssaf, retraite, organismes complémentaires et DGFiP. Il ne recalcule pas une paie depuis les paramètres vivants.
 
-## Traductions couvertes
-- Maladie 075 et complément 907 / CTP 635, famille 074 et complément 102 / CTP 430, AT, vieillesse plafonnée et déplafonnée, CSA, FNAL, chômage, AGS, dialogue social, CFP, part principale de taxe d'apprentissage et CPF-CDD.
-- CSG/CRDS des rémunérations ordinaires : conservation du total verrouillé et ventilation documentée de la ligne combinée.
-- Retraite unifiée 131 répartie entre bases 02 et 03, APEC 132, données de contrôle 142 et 146. Ces dernières ne créent aucune dette Urssaf supplémentaire. Le bloc 81 ne porte pas d'identifiant OPS pour 131/132/106.
-- RGDU répartie entre Urssaf et retraite sur les cumuls puis différenciée au mois ; récupération du bulletin antérieur si le cumul est non nul. Réduction via 668, reversement via 669. Les changements de seuil FNAL en cours d'année et reprises globales sans détail sont bloqués.
-- SMIC de la période repris par différence des cumuls du moteur, sans substitution du SMIC courant. Le solde de taxe d'apprentissage est conservé comme charge différée, sans être payé chaque mois.
-- Paiements SEPA Urssaf, retraite et DGFiP à partir des montants dus, coordonnées françaises validées et IBAN chiffré. Les dates et SIRET payeur non exploités ne sont pas ajoutés.
-- Les heures payées et l'assiette chômage effectivement plafonnée remplacent la quotité et le brut implicites.
+Mapping versionné P26V01-RG-2026.1 :
+- Maladie et allocations familiales : compléments 635/907 et 430/102 en 2026.
+- Retraite, CEG et CET : 131/132, contrôles patronaux 142/146, sans double paiement.
+- RGDU : ventilation des cumuls Urssaf/retraite avant différence mensuelle, bulletin antérieur obligatoire pour les cumuls repris.
+- Solde de taxe d'apprentissage : charge différée ; déclaration annuelle non encore raccordée.
+- Santé forfaitaire (composant 20) et prévoyance sur tranches A/2 unifiée (11/24) : affiliations et adhésions issues de la fiche de paramétrage saisie par l'administrateur, bases 31, cotisations 059 et paiements 55. Aucun organisme ou code population n'est deviné.
+- Paiements mensuels SEPA : coordonnées chiffrées au repos, mandats confirmés par l'entreprise. Cette confirmation n'enregistre aucun mandat auprès d'un organisme.
 
-Les identifiants des organismes viennent des notifications d'affiliation ; le code groupe retraite n'est pas un identifiant de paiement. La confirmation des mandats n'enregistre pas de mandat auprès d'un organisme. Aucun fichier de test ne déclenche un prélèvement.
+La présence d'une affiliation et la saisie de sa référence ne remplacent pas la vérification de la fiche de paramétrage. Les autres composants, périodicités et changements d'affiliation en cours de mois restent bloqués.
 
-## Limites bloquantes avant ouverture
+Le dépôt réel reste désactivé. Les événements, régularisations historiques, contributions annuelles, archives immuables de déclaration et retours métier ne sont pas encore entièrement raccordés. Les primes, absences, heures supplémentaires/complémentaires, apprentis et régimes spécifiques non traduits sont bloqués explicitement avant export.
 
-Ce raccordement n'est pas l'achèvement de la DSN. Les affiliations santé/prévoyance FPOC, la mobilité et le forfait social non nuls, les apprentis, Alsace-Moselle, heures supplémentaires, primes, absences, fins de contrat, contributions annuelles d'avril, régularisations rattachées à des mois antérieurs et crédits organisme restent bloqués. Les régularisations de tranches/CET qui ne peuvent pas être rattachées au mois sont également exclues.
+## Vérification
+La CI exécute migrations PostgreSQL, validation du schéma, TypeScript, lint, tests et build. Le job Dsn-Val vérifie des fichiers synthétiques, dont des bulletins réellement calculés et une double affiliation santé/prévoyance ; un témoin invalide doit être refusé. Un résultat Dsn-Val accepté établit la conformité structurelle de ces exemples, pas l'acceptation métier de toutes les paies d'une entreprise.
 
-Restent le dossier immuable de déclaration et son historique, le suivi des retours métier, les signalements événementiels, la recette de dépôt sur plateforme éditeurs et une validation financière indépendante. Le mode réel est désactivé. Les paramètres 2026 ne sont pas prolongés en 2027.
-
-## Preuves
-
-Les tests construisent de vrais résultats du moteur pour différents salaires, temps partiel, passages de tranche et reversement RGDU. Le contrôle officiel ajoute trois fichiers issus de ces résultats aux trois fixtures de structure historiques ; les exemples restent synthétiques et ne constituent pas une recette d'une entreprise réelle.
-
-Sources :
-- https://www.urssaf.fr/accueil/actualites/declaration-cotisation-am-af.html
-- https://www.urssaf.fr/accueil/employeur/beneficier-exonerations/reduction-generale-cotisation.html
-- https://net-entreprises.custhelp.com/app/answers/detail_dsn/a_id/2556/
-- https://net-entreprises.custhelp.com/app/answers/detail_dsn/a_id/2537/
-- https://www.net-entreprises.fr/media/documentation/dsn-cahier-technique-2026.1.pdf
-- https://www.audiens.org/files/live/sites/siteAudiens/files/03_documents/entreprise/DSN/FP-Parametrage-DSN.pdf
+Références : cahier technique DSN 2026.1.2, consignes 2556 et 2537, documentation Urssaf maladie/allocations familiales 2026 et RGDU, fiches de paramétrage des organismes.
