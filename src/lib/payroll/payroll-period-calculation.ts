@@ -21,7 +21,7 @@ import { BULLETIN_ENGINE_VERSION, computePayslip } from "./bulletin/compute";
 import { daysBetweenInclusive, monthBounds, toIsoDay } from "./bulletin/calendar";
 import { mapAbsences, mapPayrollVariables, parsePrevoyanceRates, resolveWeeklySchedule } from "./bulletin/inputs";
 import { buildBulletinLedger, contributionDetailsFromBulletin } from "./bulletin/ledger";
-import { BULLETIN_SNAPSHOT_ENGINE, resolvePriorState } from "./bulletin/prior-state";
+import { BULLETIN_SNAPSHOT_ENGINE, assertPriorPayrollCoverage, resolvePriorState } from "./bulletin/prior-state";
 import {
   loadEarlierSickAbsences,
   loadOrganizationBulletinSettings,
@@ -290,6 +290,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     const hireDate = toIsoDay(employee.hireDate);
     const contractEndDate = employee.contractEndDate ? toIsoDay(employee.contractEndDate) : null;
     const chainIds = new Set<string>([...mapped.chainIds.values()].flat());
+    assertPriorPayrollCoverage({ year: period.year, month: period.month, displayName, hireDate, calculations: priorCalculations.get(employee.id) ?? [], payrollOpening: payrollOpenings.get(employee.id) ?? null });
     const prior = resolvePriorState({ year: period.year, month: period.month, displayName, hireDate, calculations: priorCalculations.get(employee.id) ?? [], paidLeaveOpening: paidLeaveOpenings.get(employee.id) ?? null, payrollOpening: payrollOpenings.get(employee.id) ?? null, currentChainAbsenceIds: chainIds });
 
     // --- Sortie ---

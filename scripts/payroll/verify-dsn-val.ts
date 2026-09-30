@@ -30,7 +30,7 @@ multiple.employees.push({ ...multiple.employees[0], nir: secondNir, lastName: "M
 multiple.assessedBases.push(...single.assessedBases.map((base) => ({ ...base, employeeNir: secondNir })));
 multiple.contributionBordereau.individualContributions.push(...single.contributionBordereau.individualContributions.map((contribution) => ({ ...contribution, employeeNir: secondNir })));
 multiple.contributionBordereau.totalAmount *= 2;
-multiple.contributionBordereau.aggregatedContributions = single.contributionBordereau.aggregatedContributions.map((aggregate) => ({ ...aggregate, baseAmount: aggregate.baseAmount! * 2, contributionAmount: aggregate.contributionAmount! * 2 }));
+multiple.contributionBordereau.aggregatedContributions = single.contributionBordereau.aggregatedContributions.map((aggregate) => ({ ...aggregate, payableAmount: aggregate.payableAmount * 2, ...(aggregate.baseAmount === undefined ? {} : { baseAmount: aggregate.baseAmount! * 2 }), ...(aggregate.contributionAmount === undefined ? {} : { contributionAmount: aggregate.contributionAmount! * 2 }) }));
 multiple.payments[0].amount *= 2;
 assertDsnValReportAccepted(validate("plusieurs-salaries", buildDsnP26V01Complete(multiple)));
 

@@ -1,4 +1,5 @@
 import { buildDsnP26V01Monthly, type DsnP26MonthlyInput } from "./dsn-p26v01";
+import { assertUrssafAggregateMapping, assertUrssafIndividualMapping } from "./dsn-urssaf-mapping";
 
 export type DsnIndividualContribution = {
   employeeNir: string;
@@ -23,6 +24,8 @@ export type DsnAggregatedContribution = {
   inseeCommuneCode?: string | null;
   sourcePayrollCodes: string[];
   mappingVersion: string;
+  /** Montant réellement dû, signé, issu du journal de paie (distinct de .23.005). */
+  payableAmount: number;
 };
 
 export type DsnOpsPayment = {
@@ -138,12 +141,27 @@ export function buildDsnP26V01Complete(input: DsnP26CompleteInput): string {
   if (input.contributionBordereau.aggregatedContributions.length === 0) throw new Error("DSN bloquée : aucun mapping de cotisation agrégée n'est disponible.");
   if (input.assessedBases.length === 0) throw new Error("DSN bloquée : aucune base assujettie mappée n’est disponible.");
   if (input.contributionBordereau.individualContributions.length === 0) throw new Error("DSN bloquée : aucun mapping de cotisation individuelle n'est disponible.");
+  const cents = (amount: number): number => {
+    if (!Number.isFinite(amount)) throw new Error("DSN bloquée : montant de rapprochement financier absent ou invalide.");
+    return Math.round(amount * 100);
+  };
+  const assessedTotal = input.contributionBordereau.aggregatedContributions.reduce((sum, aggregate) => sum + cents(aggregate.payableAmount), 0);
+  if (assessedTotal !== cents(input.contributionBordereau.totalAmount)) throw new Error("DSN bloquée : le total du bordereau ne correspond pas aux cotisations et réductions du journal de paie.");
+  const paidTotal = input.payments.filter((payment) => assertOps(payment.opsIdentifier) === ops).reduce((sum, payment) => sum + cents(payment.amount), 0);
+  if (paidTotal !== assessedTotal) throw new Error("DSN bloquée : le paiement Urssaf ne correspond pas au bordereau. Les acomptes, crédits et paiements différés nécessitent un rapprochement distinct avant export.");
+  const aggregateKeys = new Set<string>();
+  for (const aggregate of input.contributionBordereau.aggregatedContributions) {
+    const key = [aggregate.code, aggregate.baseQualifier, aggregate.ratePercent ?? "", aggregate.inseeCommuneCode ?? ""].join("/");
+    if (aggregateKeys.has(key)) throw new Error("DSN bloquée : un CTP est déclaré deux fois avec les mêmes qualifiant, taux et commune.");
+    aggregateKeys.add(key);
+  }
 
   const establishmentIndex = baseRows.findIndex((row) => row.code === "S21.G00.11.022");
   if (establishmentIndex < 0) throw new Error("DSN bloquée : bloc établissement introuvable.");
 
   const establishmentBlocks: ParsedLine[] = [];
   for (const payment of input.payments) {
+    if (!Number.isFinite(payment.amount) || payment.amount < 0) throw new Error("DSN bloquée : montant de paiement OPS invalide.");
     add(establishmentBlocks, "S21.G00.20.001", assertOps(payment.opsIdentifier));
     add(establishmentBlocks, "S21.G00.20.003", payment.bic?.trim() || null);
     add(establishmentBlocks, "S21.G00.20.004", payment.iban?.replace(/\s+/g, "") || null);
@@ -162,9 +180,11 @@ export function buildDsnP26V01Complete(input: DsnP26CompleteInput): string {
 
   for (const aggregate of input.contributionBordereau.aggregatedContributions) {
     assertMappingVersion(aggregate.mappingVersion, aggregate.sourcePayrollCodes.join(","));
+    if (!aggregate.sourcePayrollCodes.length) throw new Error("DSN bloquée : cotisation agrégée sans rubrique de paie source.");
+    assertUrssafAggregateMapping(aggregate);
     add(establishmentBlocks, "S21.G00.23.001", assertContributionCode(aggregate.code, "le code de cotisation agrégée"));
     add(establishmentBlocks, "S21.G00.23.002", aggregate.baseQualifier.trim());
-    add(establishmentBlocks, "S21.G00.23.003", aggregate.ratePercent === null || aggregate.ratePercent === undefined ? null : decimal(aggregate.ratePercent));
+    add(establishmentBlocks, "S21.G00.23.003", aggregate.ratePercent === null || aggregate.ratePercent === undefined ? null : money(aggregate.ratePercent));
     add(establishmentBlocks, "S21.G00.23.004", aggregate.baseAmount === null || aggregate.baseAmount === undefined ? null : money(aggregate.baseAmount));
     add(establishmentBlocks, "S21.G00.23.005", aggregate.contributionAmount === null || aggregate.contributionAmount === undefined ? null : money(aggregate.contributionAmount));
     add(establishmentBlocks, "S21.G00.23.006", aggregate.inseeCommuneCode?.trim() || null);
@@ -214,6 +234,8 @@ export function buildDsnP26V01Complete(input: DsnP26CompleteInput): string {
       }
       for (const contribution of contributions.filter((item) => item.baseCode === base.code)) {
         assertMappingVersion(contribution.mappingVersion, contribution.sourcePayrollCode);
+        if (!contribution.sourcePayrollCode.trim()) throw new Error("DSN bloquée : cotisation individuelle sans rubrique de paie source.");
+        if (assertOps(contribution.opsIdentifier) === ops) assertUrssafIndividualMapping(contribution, input.contributionBordereau.aggregatedContributions);
         if (["018", "106"].includes(contribution.code) && (base.code !== "03" || !base.components?.some((component) => component.code === "01"))) throw new Error("DSN bloquée : la réduction générale exige la base déplafonnée et son composant SMIC.");
         add(individualBlocks, "S21.G00.81.001", assertContributionCode(contribution.code, "le code de cotisation individuelle"));
         add(individualBlocks, "S21.G00.81.002", assertOps(contribution.opsIdentifier));

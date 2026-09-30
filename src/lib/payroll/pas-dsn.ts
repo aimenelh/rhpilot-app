@@ -8,6 +8,7 @@ export type DsnPasData = {
   rateIdentifier: string | null;
   amountSubjectToPas: number;
   withholdingAmount: number;
+  nonTaxableApprenticeIncome?: number;
 };
 
 function roundMoney(value: number): number {
@@ -60,15 +61,18 @@ export function resolveDsnPasRateType(
 
 /**
  * Construit les données PAS du bloc Versement individu S21.G00.50.
- * Dans le périmètre actuellement couvert, le montant soumis au PAS est le net
- * imposable. Les cas où l'assiette diffère (notamment certains CDD courts sans
- * taux personnalisé ou la subrogation IJSS) doivent être bloqués en amont.
+ * L'assiette effectivement calculée est distincte de la RNF : exonération
+ * annuelle des apprentis, abattement CDD court, IJSS subrogées (CT P26 .50.013).
+ * L'abattement CDD court ne doit jamais être déclaré en .50.012, réservé aux
+ * assistants maternels/familiaux.
  */
 export function buildDsnPasData(input: {
   profile: WithholdingTaxProfile;
   payrollDepartment: string;
   netTaxableAmount: number;
   withholdingAmount: number;
+  amountSubjectToPas?: number;
+  nonTaxableApprenticeIncome?: number;
 }): DsnPasData {
   if (!Number.isFinite(input.netTaxableAmount) || input.netTaxableAmount < 0) {
     throw new Error("DSN bloquée : la rémunération nette fiscale est absente ou invalide.");
@@ -84,7 +88,11 @@ export function buildDsnPasData(input: {
     input.profile,
     input.payrollDepartment,
   );
-  const amountSubjectToPas = roundMoney(input.netTaxableAmount);
+  const declaredBase = input.amountSubjectToPas ?? input.netTaxableAmount;
+  if (!Number.isFinite(declaredBase) || declaredBase < 0) throw new Error("DSN bloquée : l'assiette PAS verrouillée est invalide.");
+  const exempt = input.nonTaxableApprenticeIncome;
+  if (exempt !== undefined && (!Number.isFinite(exempt) || exempt < 0 || exempt > input.netTaxableAmount + 0.01)) throw new Error("DSN bloquée : la part non imposable de l'apprenti est invalide.");
+  const amountSubjectToPas = roundMoney(declaredBase);
   const withholdingAmount = roundMoney(input.withholdingAmount);
   const expected = roundMoney(amountSubjectToPas * input.profile.rate);
 
@@ -100,6 +108,7 @@ export function buildDsnPasData(input: {
     rateIdentifier,
     amountSubjectToPas,
     withholdingAmount,
+    ...(exempt === undefined ? {} : { nonTaxableApprenticeIncome: roundMoney(exempt) }),
   };
 }
 

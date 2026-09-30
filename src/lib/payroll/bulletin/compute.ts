@@ -16,6 +16,7 @@ import { addDays, assertSchedule, calendarDays, daysBetweenInclusive, fromIsoDay
 import { valueAbsence, type ValuedAbsence } from "./absences";
 import {
   CONTRIBUTION_RATES,
+  APPRENTICE_ANNUAL_TAX_EXEMPTION,
   ENGINE_FIRST_SUPPORTED_DAY,
   ENGINE_LAST_SUPPORTED_DAY,
   MissingParameterError,
@@ -35,7 +36,7 @@ import { assertAmount, round2, round4 } from "./money";
 import { NO_SEVERANCE, addTerminationLines } from "./termination";
 import type { PaidLeaveBalances, PaidLeaveOutcome, PayslipInput, PayslipLine, PayslipResult, SickPayHistory, YearToDate } from "./types";
 
-export const BULLETIN_ENGINE_VERSION = "rhpilot-bulletin-2026.2";
+export const BULLETIN_ENGINE_VERSION = "rhpilot-bulletin-2026.3";
 
 export function emptyYearToDate(year: number): YearToDate {
   return {
@@ -61,6 +62,7 @@ export function emptyYearToDate(year: number): YearToDate {
     hoursPaid: 0,
     grossTotal: 0,
     employerCost: 0,
+    apprenticeFiscalIncome: 0,
   };
 }
 
@@ -654,9 +656,19 @@ export function computePayslip(input: PayslipInput): PayslipResult {
   // Net social : la fraction d'indemnité de rupture exonérée de cotisations mais soumise à CSG y figure.
   const netSocial = round2(G - employeeContributions + severanceTreatment.netSocialExtra + ijssNetTotal);
 
-  let netTaxable = G - employeeContributions + csgNonDeductibleAmount + healthEmployer - overtimeTaxExempt + ijssTaxableTotal - severanceTreatment.taxExemptWithinSubject;
-  if (isApprentice) netTaxable = Math.max(0, netTaxable - smicMonthlyFull);
-  netTaxable = round2(Math.max(0, netTaxable));
+  const fiscalNetBeforeExemption = round2(Math.max(0, G - employeeContributions + csgNonDeductibleAmount + healthEmployer - overtimeTaxExempt - severanceTreatment.taxExemptWithinSubject));
+  let nonTaxableApprenticeIncome = 0;
+  if (isApprentice) {
+    // Un ancien cumul ne contient pas le net fiscal avant exonération : le brut
+    // ou le net déjà exonéré ne permettent pas de le reconstituer exactement.
+    if (ytd.grossTotal !== 0 && ytd.apprenticeFiscalIncome === undefined) throw new Error("Le cumul fiscal annuel avant exonération de l'apprenti manque : complétez la reprise avant de calculer le PAS.");
+    const previousIncome = ytd.apprenticeFiscalIncome ?? 0;
+    if (!Number.isFinite(previousIncome) || previousIncome < 0) throw new Error("Le cumul fiscal annuel de l'apprenti est invalide.");
+    const exemption = valueAt(APPRENTICE_ANNUAL_TAX_EXEMPTION, fromIsoDay(paymentDate), "exonération fiscale annuelle des apprentis");
+    sources.add(exemption.source);
+    nonTaxableApprenticeIncome = round2(Math.min(fiscalNetBeforeExemption, Math.max(0, exemption.value - previousIncome)));
+  }
+  const netTaxable = round2(Math.max(0, fiscalNetBeforeExemption - nonTaxableApprenticeIncome + ijssTaxableTotal));
 
   // --- Prélèvement à la source --------------------------------------------------------
   let withholdingRate = 0;
@@ -700,6 +712,7 @@ export function computePayslip(input: PayslipInput): PayslipResult {
     rgduAmount: rgduCumulative,
     overtimeTaxExemptGross: round2(ytd.overtimeTaxExemptGross + overtimeTaxExempt),
     netTaxable: round2(ytd.netTaxable + netTaxable),
+    apprenticeFiscalIncome: round2((ytd.apprenticeFiscalIncome ?? 0) + (isApprentice ? fiscalNetBeforeExemption : 0)),
     withholdingTax: round2(ytd.withholdingTax + withholdingTax),
     netPaid: round2(ytd.netPaid + netPaid),
     netSocial: round2(ytd.netSocial + netSocial),
@@ -734,7 +747,7 @@ export function computePayslip(input: PayslipInput): PayslipResult {
       hoursPaid,
     },
     ceiling: { monthly: pmss.value, prorated: ceilingProrated, reason: ceilingReasons.join(", ") || "mois complet" },
-    withholding: { mode: input.withholding.mode, rate: withholdingRate, base: withholdingBase, amount: withholdingTax, shortContractAllowance, rateIdentifier, source: withholdingSource },
+    withholding: { mode: input.withholding.mode, rate: withholdingRate, base: withholdingBase, amount: withholdingTax, shortContractAllowance, rateIdentifier, source: withholdingSource, fiscalNetBeforeExemption, nonTaxableApprenticeIncome, taxableSubrogatedIjss: ijssTaxableTotal },
     yearToDate,
     paidLeave: paidLeaveOutcome,
     sickPayUsed,

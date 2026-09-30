@@ -96,6 +96,7 @@ export function PayrollOpeningSection({ employeeId, paidLeave, cumuls }: { emplo
           <NumberField name="baseT1" label="Base tranche 1" value={c.baseT1} hint="Calculée si vide" />
           <NumberField name="baseT2" label="Base tranche 2" value={c.baseT2} hint="Calculée si vide" />
           <NumberField name="netTaxable" label="Net imposable" value={c.netTaxable} />
+          <NumberField name="apprenticeFiscalIncome" label="Apprenti : cumul net fiscal avant exonération" value={c.apprenticeFiscalIncome} hint="Obligatoire pour un apprenti. Salaires de l'année avant exonération annuelle, sans IJSS subrogées." />
           <NumberField name="withholdingTax" label="Impôt prélevé" value={c.withholdingTax} />
           <NumberField name="netPaid" label="Net payé" value={c.netPaid} />
           <NumberField name="netSocial" label="Montant net social" value={c.netSocial} />

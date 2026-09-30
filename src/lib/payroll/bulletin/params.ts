@@ -56,6 +56,12 @@ export const RGDU_SMIC_HOURLY: readonly Dated<number>[] = [
 
 export const LEGAL_MONTHLY_HOURS = 151.67;
 
+/** Net-entreprises : seuil annuel fiscal, sans proratisation à la durée du contrat. */
+export const APPRENTICE_ANNUAL_TAX_EXEMPTION: readonly Dated<number>[] = [
+  { from: "2026-01-01", value: 21876, source: "https://www.net-entreprises.fr/information-revalorisation-du-smic-et-du-pass-au-1er-janvier-2026/" },
+  { from: "2026-06-01", value: 22184, source: "https://www.net-entreprises.fr/information-revalorisation-du-smic-au-1er-juin-2026/" },
+];
+
 // ---------------------------------------------------------------------------
 // Taux de cotisations (fractions)
 // ---------------------------------------------------------------------------

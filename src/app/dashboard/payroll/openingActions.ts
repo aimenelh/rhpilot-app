@@ -25,7 +25,7 @@ async function authorize(employeeId: string) {
   const user = await getCurrentUser();
   if (!membership || !user) throw new Error("Session expirée, veuillez recharger la page.");
   if (!["OWNER", "ADMIN"].includes(membership.accessRole)) throw new Error("Seuls les administrateurs peuvent saisir une reprise de paie.");
-  const employee = await prisma.employee.findFirst({ where: { id: employeeId, organizationId: membership.organizationId, deletedAt: null }, select: { id: true } });
+  const employee = await prisma.employee.findFirst({ where: { id: employeeId, organizationId: membership.organizationId, deletedAt: null }, select: { id: true, contractType: true } });
   if (!employee) throw new Error("Salarié introuvable dans cette organisation.");
   return { membership, user, employee };
 }
@@ -92,6 +92,7 @@ export async function savePayrollOpening(employeeId: string, _prev: PayrollOpeni
       rgduAmount: readNumber(formData, "rgduAmount") ?? 0,
       overtimeTaxExemptGross: readNumber(formData, "overtimeTaxExemptGross") ?? 0,
       netTaxable: readNumber(formData, "netTaxable") ?? 0,
+      apprenticeFiscalIncome: readNumber(formData, "apprenticeFiscalIncome", { required: employee.contractType === "APPRENTISSAGE" }) ?? 0,
       withholdingTax: readNumber(formData, "withholdingTax") ?? 0,
       netPaid: readNumber(formData, "netPaid") ?? 0,
       netSocial: readNumber(formData, "netSocial") ?? 0,

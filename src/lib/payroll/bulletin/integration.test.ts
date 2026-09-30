@@ -87,6 +87,8 @@ describe("absences validées", () => {
     expect(resolveWeeklySchedule(null, 151.67)).toEqual({ schedule: FULL_TIME_SCHEDULE, derived: false });
     expect(resolveWeeklySchedule(null, 121.33)).toEqual({ schedule: [5.6, 5.6, 5.6, 5.6, 5.6, 0, 0], derived: true });
     expect(resolveWeeklySchedule([7, 7, 7, 7, 0, 0, 0], 121.33).derived).toBe(false);
+    expect(() => resolveWeeklySchedule([7, 7, "7", 7, 7, 0, 0], 151.67)).toThrow(/invalide/);
+    expect(() => resolveWeeklySchedule([7, 7, -1, 7, 7, 0, 0], 151.67)).toThrow(/invalide/);
   });
 });
 
