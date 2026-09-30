@@ -11,6 +11,11 @@ type OrganizationSettingsRow = {
   contactPhone: string | null;
   declaredContactType: string | null;
   enterpriseApenCode: string | null;
+  urssafSiret: string | null;
+  retirementSiret: string | null;
+  paymentBic: string | null;
+  paymentAccountConfigured: boolean;
+  sepaMandatesConfirmed: boolean;
 };
 
 type EmployeeDsnStatusRow = { employeeId: string };
@@ -26,7 +31,7 @@ export default async function DsnPreparationPage() {
 
   const [settingsRows, employees, dsnStatusRows, lockedPeriods] = await Promise.all([
     prisma.$queryRaw<OrganizationSettingsRow[]>`
-      SELECT "contactName", "contactEmail", "contactPhone", "declaredContactType", "enterpriseApenCode"
+      SELECT "contactName", "contactEmail", "contactPhone", "declaredContactType", "enterpriseApenCode", "urssafSiret", "retirementSiret", "paymentBic", ("paymentIbanCiphertext" IS NOT NULL) AS "paymentAccountConfigured", "sepaMandatesConfirmed"
       FROM "dsn_organization_settings"
       WHERE "organizationId" = ${membership.organizationId}
       LIMIT 1
@@ -39,7 +44,7 @@ export default async function DsnPreparationPage() {
   const settings = settingsRows[0];
   const configuredIds = new Set(dsnStatusRows.map((row) => row.employeeId));
   const configuredCount = employees.filter((employee) => configuredIds.has(employee.id)).length;
-  const organizationReady = Boolean(settings?.contactName && settings.contactEmail && settings.contactPhone && settings.declaredContactType && settings.enterpriseApenCode);
+  const organizationReady = Boolean(settings?.contactName && settings.contactEmail && settings.contactPhone && settings.declaredContactType && settings.enterpriseApenCode && settings.urssafSiret && settings.retirementSiret && settings.paymentAccountConfigured && settings.paymentBic && settings.sepaMandatesConfirmed);
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -56,7 +61,7 @@ export default async function DsnPreparationPage() {
         <div className="rounded-xl border border-surface-border bg-white p-5"><p className="text-xs text-ink-faint">Périodes 2026 clôturées</p><p className="mt-2 text-lg font-semibold text-ink">{lockedPeriods.length}</p></div>
       </div>
 
-      <section className="mt-7 rounded-xl border border-surface-border bg-white p-5"><h2 className="font-semibold text-ink">Émetteur et contact chez le déclaré</h2><p className="mt-1 text-xs leading-5 text-ink-faint">Ces données alimentent les blocs S10 et S20.G00.07 obligatoires de la DSN mensuelle.</p><DsnOrganizationForm initial={{ contactName: settings?.contactName ?? "", contactEmail: settings?.contactEmail ?? "", contactPhone: settings?.contactPhone ?? "", declaredContactType: settings?.declaredContactType ?? "", enterpriseApenCode: settings?.enterpriseApenCode ?? "" }} /></section>
+      <section className="mt-7 rounded-xl border border-surface-border bg-white p-5"><h2 className="font-semibold text-ink">Émetteur et contact chez le déclaré</h2><p className="mt-1 text-xs leading-5 text-ink-faint">Ces données alimentent les blocs S10 et S20.G00.07 obligatoires de la DSN mensuelle.</p><DsnOrganizationForm initial={{ contactName: settings?.contactName ?? "", contactEmail: settings?.contactEmail ?? "", contactPhone: settings?.contactPhone ?? "", declaredContactType: settings?.declaredContactType ?? "", enterpriseApenCode: settings?.enterpriseApenCode ?? "", urssafSiret: settings?.urssafSiret ?? "", retirementSiret: settings?.retirementSiret ?? "", paymentBic: settings?.paymentBic ?? "", paymentAccountConfigured: settings?.paymentAccountConfigured ?? false, sepaMandatesConfirmed: settings?.sepaMandatesConfirmed ?? false }} /></section>
 
       <section className="mt-7 rounded-xl border border-surface-border bg-white">
         <div className="border-b border-surface-border px-5 py-4"><h2 className="font-semibold text-ink">Données déclaratives des salariés</h2><p className="mt-1 text-xs leading-5 text-ink-faint">NIR chiffré, identité, adresse, affiliation et codes NEODeS du contrat. Aucune de ces données ne modifie le calcul de paie.</p></div>

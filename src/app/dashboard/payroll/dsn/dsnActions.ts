@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { assertNirFormat, encryptDsnSensitiveValue } from "@/lib/payroll/dsn-pii";
 import { getPayrollMembership } from "@/lib/payrollAccess";
 import { userFacingError } from "@/lib/userFacingError";
+import { dsnOpsSiret, dsnPaymentIban, dsnPaymentBic } from "@/lib/payroll/dsn-payment-settings";
 import { assertDsnWorkAccidentRiskCode } from "@/lib/payroll/dsn-nomenclature";
 
 export type DsnFormState = { error?: string; success?: string } | undefined;
@@ -77,18 +78,30 @@ export async function saveDsnOrganizationSettings(
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) throw new Error("L'adresse e-mail du contact DSN est invalide.");
     if (!/^[+0-9(). /-]{10,20}$/.test(contactPhone)) throw new Error("Le numéro de téléphone du contact DSN doit comporter entre 10 et 20 caractères autorisés.");
 
+    const urssafSiret = value(formData, "urssafSiret") ? dsnOpsSiret(value(formData, "urssafSiret"), "SIRET Urssaf") : null;
+    const retirementSiret = value(formData, "retirementSiret") ? dsnOpsSiret(value(formData, "retirementSiret"), "SIRET de la caisse de retraite") : null;
+    if (urssafSiret && urssafSiret === retirementSiret) throw new Error("Les organismes Urssaf et retraite doivent être distincts.");
+    const paymentIbanCiphertext = value(formData, "paymentIban") ? encryptDsnSensitiveValue(dsnPaymentIban(value(formData, "paymentIban"))) : null;
+    const paymentBic = value(formData, "paymentBic") ? dsnPaymentBic(value(formData, "paymentBic")) : null;
+    const sepaMandatesConfirmed = value(formData, "sepaMandatesConfirmed") === "1";
+
     await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`
         INSERT INTO "dsn_organization_settings"
-          ("organizationId", "contactName", "contactEmail", "contactPhone", "declaredContactType", "enterpriseApenCode", "defaultTestMode", "updatedAt")
+          ("organizationId", "contactName", "contactEmail", "contactPhone", "declaredContactType", "enterpriseApenCode", "urssafSiret", "retirementSiret", "paymentIbanCiphertext", "paymentBic", "sepaMandatesConfirmed", "defaultTestMode", "updatedAt")
         VALUES
-          (${membership.organizationId}, ${contactName}, ${contactEmail}, ${contactPhone}, ${declaredContactType}, ${enterpriseApenCode}, TRUE, CURRENT_TIMESTAMP)
+          (${membership.organizationId}, ${contactName}, ${contactEmail}, ${contactPhone}, ${declaredContactType}, ${enterpriseApenCode}, ${urssafSiret}, ${retirementSiret}, ${paymentIbanCiphertext}, ${paymentBic}, ${sepaMandatesConfirmed}, TRUE, CURRENT_TIMESTAMP)
         ON CONFLICT ("organizationId") DO UPDATE SET
           "contactName" = EXCLUDED."contactName",
           "contactEmail" = EXCLUDED."contactEmail",
           "contactPhone" = EXCLUDED."contactPhone",
           "declaredContactType" = EXCLUDED."declaredContactType",
           "enterpriseApenCode" = EXCLUDED."enterpriseApenCode",
+          "urssafSiret" = EXCLUDED."urssafSiret",
+          "retirementSiret" = EXCLUDED."retirementSiret",
+          "paymentIbanCiphertext" = COALESCE(EXCLUDED."paymentIbanCiphertext", "dsn_organization_settings"."paymentIbanCiphertext"),
+          "paymentBic" = EXCLUDED."paymentBic",
+          "sepaMandatesConfirmed" = EXCLUDED."sepaMandatesConfirmed",
           "defaultTestMode" = TRUE,
           "updatedAt" = CURRENT_TIMESTAMP
       `;

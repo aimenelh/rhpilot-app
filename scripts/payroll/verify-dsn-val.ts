@@ -6,6 +6,7 @@ import { buildDsnP26V01Complete } from "../../src/lib/payroll/dsn-p26v01-complet
 import { buildDsnP26V01Monthly } from "../../src/lib/payroll/dsn-p26v01";
 import { assertDsnValReportAccepted } from "../../src/lib/payroll/dsn-val-report";
 import { mappedDsnFixture } from "./dsn-fixture";
+import { computedDsnFixture } from "./dsn-computed-fixture";
 
 const validatorDirectory = process.env.DSN_VAL_DIR;
 if (!validatorDirectory) throw new Error("Définissez DSN_VAL_DIR vers Dsn-Val Linux 64 bits 2026.1.0.17.");
@@ -34,10 +35,14 @@ multiple.contributionBordereau.aggregatedContributions = single.contributionBord
 multiple.payments[0].amount *= 2;
 assertDsnValReportAccepted(validate("plusieurs-salaries", buildDsnP26V01Complete(multiple)));
 
+for (const [label, gross, hours] of [["bulletin-2500", 2500, 151.67], ["bulletin-6000", 6000, 151.67], ["bulletin-temps-partiel", 1800, 121.33]] as const) {
+  assertDsnValReportAccepted(validate(label, buildDsnP26V01Complete(computedDsnFixture(gross, hours))));
+}
+
 // Témoin négatif : l'outil doit réellement détecter un bloc obligatoire supprimé.
 const rejected = validate("temoin-invalide", content.replace(/^S21\.G00\.71\.002,.*\r\n/m, ""));
 let rejectedAsExpected = false;
 try { assertDsnValReportAccepted(rejected); } catch { rejectedAsExpected = true; }
 if (!rejectedAsExpected) throw new Error("Dsn-Val n'a pas rejeté le témoin invalide.");
-console.log("Dsn-Val 2026.1.0.17 : trois fixtures P26V01 acceptées sans anomalie ; témoin invalide refusé.");
+console.log("Dsn-Val 2026.1.0.17 : six fixtures P26V01 acceptées, dont trois calculées par le moteur, sans anomalie ; témoin invalide refusé.");
 console.log(`Rapports : ${output}`);

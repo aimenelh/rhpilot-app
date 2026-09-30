@@ -6,7 +6,7 @@ export type DsnIndividualContribution = {
   code: string;
   /** Base S21.G00.78 parente (02 plafonnée, 03 déplafonnée, 04 CSG...). */
   baseCode: string;
-  opsIdentifier: string;
+  opsIdentifier: string | null;
   baseAmount?: number | null;
   contributionAmount?: number | null;
   ratePercent?: number | null;
@@ -235,10 +235,11 @@ export function buildDsnP26V01Complete(input: DsnP26CompleteInput): string {
       for (const contribution of contributions.filter((item) => item.baseCode === base.code)) {
         assertMappingVersion(contribution.mappingVersion, contribution.sourcePayrollCode);
         if (!contribution.sourcePayrollCode.trim()) throw new Error("DSN bloquée : cotisation individuelle sans rubrique de paie source.");
-        if (assertOps(contribution.opsIdentifier) === ops) assertUrssafIndividualMapping(contribution, input.contributionBordereau.aggregatedContributions);
+        if (contribution.opsIdentifier !== null && assertOps(contribution.opsIdentifier) === ops && !["142", "146"].includes(contribution.code)) assertUrssafIndividualMapping(contribution, input.contributionBordereau.aggregatedContributions);
         if (["018", "106"].includes(contribution.code) && (base.code !== "03" || !base.components?.some((component) => component.code === "01"))) throw new Error("DSN bloquée : la réduction générale exige la base déplafonnée et son composant SMIC.");
         add(individualBlocks, "S21.G00.81.001", assertContributionCode(contribution.code, "le code de cotisation individuelle"));
-        add(individualBlocks, "S21.G00.81.002", assertOps(contribution.opsIdentifier));
+        if (["131", "132", "106"].includes(contribution.code) && contribution.opsIdentifier !== null) throw new Error("DSN bloquée : l’identifiant OPS est interdit pour cette cotisation retraite.");
+        add(individualBlocks, "S21.G00.81.002", contribution.opsIdentifier === null ? null : assertOps(contribution.opsIdentifier));
         add(individualBlocks, "S21.G00.81.003", contribution.baseAmount === null || contribution.baseAmount === undefined ? null : money(contribution.baseAmount));
         add(individualBlocks, "S21.G00.81.004", contribution.contributionAmount === null || contribution.contributionAmount === undefined ? null : money(contribution.contributionAmount));
         add(individualBlocks, "S21.G00.81.005", contribution.inseeCommuneCode?.trim() || null);

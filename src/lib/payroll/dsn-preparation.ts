@@ -1,6 +1,9 @@
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
-import { buildDsnP26V01Monthly, type DsnP26MonthlyInput } from "./dsn-p26v01";
+import type { DsnP26MonthlyInput } from "./dsn-p26v01";
+import { buildDsnP26V01Complete } from "./dsn-p26v01-complete";
+import { mapLockedContributions, mergeLockedAggregates, readLockedContributionSnapshot, type LockedContributionData } from "./dsn-locked-contributions";
+import { dsnOpsSiret, dsnPaymentIban, dsnPaymentBic } from "./dsn-payment-settings";
 import { decryptDsnSensitiveValue, assertNirFormat } from "./dsn-pii";
 import { assertPasDsnScopeSupported } from "./pas-dsn";
 import { dsnPasFromLockedBulletin } from "./dsn-locked-pas";
@@ -16,6 +19,7 @@ type OrganizationDsnRow = {
   id: string; name: string; siret: string | null; payrollAddress: string | null; payrollPostalCode: string | null; payrollCity: string | null;
   payrollNafCode: string | null; payrollDepartment: string | null; atmpRate: unknown; mainCollectiveAgreementCode: string | null;
   contactName: string | null; contactEmail: string | null; contactPhone: string | null; declaredContactType: string | null; enterpriseApenCode: string | null; defaultTestMode: boolean | null;
+  urssafSiret: string | null; retirementSiret: string | null; paymentIbanCiphertext: string | null; paymentBic: string | null; sepaMandatesConfirmed: boolean;
 };
 
 type DsnEmployeeProfileRow = {
@@ -76,7 +80,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
 
   const organizationRows = await prisma.$queryRaw<OrganizationDsnRow[]>`
     SELECT o."id", o."name", o."siret", o."payrollAddress", o."payrollPostalCode", o."payrollCity", o."payrollNafCode", o."payrollDepartment", o."atmpRate",
-           ca."idcc" AS "mainCollectiveAgreementCode", s."contactName", s."contactEmail", s."contactPhone", s."declaredContactType", s."enterpriseApenCode", s."defaultTestMode"
+           ca."idcc" AS "mainCollectiveAgreementCode", s."contactName", s."contactEmail", s."contactPhone", s."declaredContactType", s."enterpriseApenCode", s."defaultTestMode", s."urssafSiret", s."retirementSiret", s."paymentIbanCiphertext", s."paymentBic", s."sepaMandatesConfirmed"
     FROM "organizations" o
     LEFT JOIN "collective_agreements" ca ON ca."id" = o."collectiveAgreementId"
     LEFT JOIN "dsn_organization_settings" s ON s."organizationId" = o."id"
@@ -95,8 +99,16 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
   const enterpriseApenCode = requiredString(organization.enterpriseApenCode, "le code APEN de l'entreprise");
   const payrollDepartment = requiredString(organization.payrollDepartment, "le département de l'établissement");
   const mainCollectiveAgreementCode = requiredString(organization.mainCollectiveAgreementCode, "l'IDCC principal de l'établissement");
-  const atmpRate = requiredNumber(organization.atmpRate, "le taux AT/MP de l'établissement");
-  if (atmpRate < 0 || atmpRate > 100) throw new Error("DSN bloquée : le taux AT/MP de l'établissement est hors limites.");
+  const urssafSiret = dsnOpsSiret(requiredString(organization.urssafSiret, "le SIRET de l'Urssaf"), "SIRET Urssaf");
+  const retirementSiret = dsnOpsSiret(requiredString(organization.retirementSiret, "le SIRET de la caisse de retraite"), "SIRET retraite");
+  if (urssafSiret === retirementSiret) throw new Error("DSN bloquée : les organismes Urssaf et retraite doivent être distincts.");
+  const paymentIban = dsnPaymentIban(decryptDsnSensitiveValue(requiredString(organization.paymentIbanCiphertext, "le compte bancaire de prélèvement")));
+  const paymentBic = dsnPaymentBic(requiredString(organization.paymentBic, "le BIC"));
+  if (!organization.sepaMandatesConfirmed) throw new Error("DSN bloquée : confirmez les mandats SEPA enregistrés auprès des organismes et de la DGFiP.");
+  const testMode = input.testMode ?? organization.defaultTestMode ?? true;
+  if (!testMode) throw new Error("DSN réelle bloquée : le raccordement des cotisations est en recette. Les affiliations complémentaires, événements et retours métier doivent être validés avant ouverture.");
+  if (period.month === 4) throw new Error("DSN bloquée : la DSN d'avril nécessite également les contributions annuelles de l'établissement au titre de l'exercice précédent.");
+
 
   const calculations = await prisma.payrollCalculation.findMany({
     where: { organizationId: input.organizationId, payrollPeriodId: period.id },
@@ -131,6 +143,12 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
     throw new Error(`DSN préparatoire impossible ce mois-ci. RH Pilot ne déclare pas encore : ${outOfScope.join(" ; ")}. Déposez la DSN de ce mois avec votre expert-comptable ou sur net-entreprises.`);
   }
 
+  const previousCalculations = period.month > 1 ? await prisma.payrollCalculation.findMany({
+    where: { organizationId: input.organizationId, employeeId: { in: employeeIds }, payroll_periods: { year: period.year, month: period.month - 1, status: "LOCKED" } },
+    select: { employeeId: true, calculationSnapshot: true },
+  }) : [];
+  const previousByEmployee = new Map(previousCalculations.map((item) => [item.employeeId, item.calculationSnapshot]));
+  const financial: LockedContributionData[] = [];
   const dsnEmployees: DsnP26MonthlyInput["employees"] = [];
   for (const calculation of calculations) {
     const employee = employeeById.get(calculation.employeeId);
@@ -141,6 +159,10 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
     if (dsnProfile.countryCode?.trim()) throw new Error(`DSN bloquée pour ${employee.firstName} ${employee.lastName} : les adresses étrangères ne sont pas encore couvertes par le code de distribution à l'étranger.`);
 
     const snapshot = asSnapshot(calculation.calculationSnapshot);
+    const locked = readLockedContributionSnapshot(calculation.calculationSnapshot);
+    if (locked.bulletin.period.year !== period.year || locked.bulletin.period.month !== period.month || locked.bulletin.employee.id !== employee.id) throw new Error("DSN bloquée : le bulletin détaillé ne correspond pas à la période et au salarié.");
+    if (locked.inputs.employee.contract !== employee.contractType || locked.inputs.employee.hireDate !== employee.hireDate.toISOString().slice(0, 10) ||
+        (locked.inputs.employee.contractEndDate ?? null) !== (employee.contractEndDate?.toISOString().slice(0, 10) ?? null)) throw new Error("DSN bloquée : le contrat actuel diverge du contrat du bulletin verrouillé. Vérifiez les changements déclaratifs.");
     const profileSnapshot = snapshot.profile;
     if (!profileSnapshot) throw new Error(`DSN bloquée : le profil paie verrouillé du salarié ${employee.id} est absent.`);
     const baseSalaryCents = requiredNumber(profileSnapshot.baseSalaryCents, `le salaire de base verrouillé du salarié ${employee.id}`);
@@ -160,6 +182,10 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
     const employeeContributions = requiredNumber(calculation.employeeContributions, `les cotisations salariales du salarié ${employee.id}`);
     const employerContributions = requiredNumber(calculation.employerContributions, `les cotisations employeur du salarié ${employee.id}`);
     const employerCost = snapshot.socialEngine?.employerCost === undefined ? undefined : Number(snapshot.socialEngine.employerCost);
+    const frozenTotals = locked.bulletin.totals;
+    for (const [actual, frozen] of [[grossAmount, frozenTotals.grossTotal], [employeeContributions, frozenTotals.employeeContributions], [employerContributions, frozenTotals.employerContributions], [netBeforeTax, frozenTotals.netBeforeTax], [netTaxableAmount, frozenTotals.netTaxable], [netSocialAmount, frozenTotals.netSocial], [withholdingTax, frozenTotals.withholdingTax], [netPaid, frozenTotals.netPaid]]) {
+      if (!Number.isFinite(frozen) || Math.round(actual * 100) !== Math.round(frozen * 100)) throw new Error("DSN bloquée : les totaux de la paie et du bulletin détaillé verrouillé divergent.");
+    }
     assertPayrollOutputConsistency({ grossAmount, employeeContributions, employerContributions, netBeforeTax, netTaxableAmount, netSocialAmount, withholdingTax, netPaid, ...(Number.isFinite(employerCost) ? { employerCost } : {}) });
 
     const withholdingProfile = snapshotWithholdingTax(snapshot, employee.id);
@@ -168,6 +194,8 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
 
     const nir = assertNirFormat(decryptDsnSensitiveValue(dsnProfile.nirCiphertext));
     assertNirBirthYear(nir, dsnProfile.birthDate, employee.id);
+    const contributions = mapLockedContributions({ snapshot: calculation.calculationSnapshot, previousSnapshot: previousByEmployee.get(employee.id), employeeNir: nir, urssafSiret, retirementOps: retirementSiret });
+    financial.push(contributions);
     const workLocationId = requiredString(dsnProfile.workLocationId, `le lieu de travail du salarié ${employee.id}`).replace(/\s+/g, "");
     if (workLocationId !== siret) throw new Error(`DSN bloquée pour ${employee.firstName} ${employee.lastName} : le périmètre actuel couvre uniquement le lieu de travail correspondant au SIRET employeur. Les autres lieux nécessitent le bloc S21.G00.85.`);
     if (dsnProfile.sicknessRegimeCode !== "200" || dsnProfile.oldAgeRegimeCode !== "200" || dsnProfile.workAccidentRegimeCode !== "200") throw new Error(`DSN bloquée pour ${employee.firstName} ${employee.lastName} : le moteur social actuel est ouvert au dépôt préparatoire uniquement pour le régime général (codes 200 maladie/vieillesse/AT).`);
@@ -192,21 +220,26 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         collectiveAgreementCode: collectiveAgreement.idcc, sicknessRegimeCode: dsnProfile.sicknessRegimeCode, workLocationId, oldAgeRegimeCode: dsnProfile.oldAgeRegimeCode,
         foreignWorkerCode: requiredString(dsnProfile.foreignWorkerCode, `le statut travailleur étranger du salarié ${employee.id}`), employmentStatusCode: requiredString(dsnProfile.employmentStatusCode, `le statut d'emploi du salarié ${employee.id}`),
         multipleJobsCode: requiredString(dsnProfile.multipleJobsCode, `le code emplois multiples du salarié ${employee.id}`), multipleEmployersCode: requiredString(dsnProfile.multipleEmployersCode, `le code employeurs multiples du salarié ${employee.id}`),
-        workAccidentRegimeCode: requiredString(dsnProfile.workAccidentRegimeCode, `le régime AT/MP du salarié ${employee.id}`), workAccidentRiskCode: riskCode, workAccidentRate: atmpRate,
+        workAccidentRegimeCode: requiredString(dsnProfile.workAccidentRegimeCode, `le régime AT/MP du salarié ${employee.id}`), workAccidentRiskCode: riskCode, workAccidentRate: contributions.atmpRatePercent,
       },
-      payroll: { baseSalary: baseSalaryCents / 100, grossAmount, cappedContributionBase, netBeforeTax, netTaxableAmount: fiscalNet, netSocialAmount, withholdingTax, pas },
+      payroll: { baseSalary: baseSalaryCents / 100, grossAmount, cappedContributionBase, grossSubject: contributions.grossSubject, unemploymentBase: contributions.unemploymentBase, paidHours: contributions.hoursPaid, netBeforeTax, netTaxableAmount: fiscalNet, netSocialAmount, withholdingTax, pas },
     });
   }
 
-  const testMode = input.testMode ?? organization.defaultTestMode ?? true;
-  if (!testMode) throw new Error("DSN réelle bloquée : RH Pilot autorise pour l'instant uniquement l'export de pré-contrôle P26V01. Les blocs de cotisations/paiements organisme doivent être mappés puis le fichier doit passer Dsn-Val avant ouverture du mode réel.");
-
-  const content = buildDsnP26V01Monthly({
+  const liabilities = new Map<string, number>();
+  for (const item of financial) for (const liability of item.liabilities) liabilities.set(liability.opsIdentifier, Math.round(((liabilities.get(liability.opsIdentifier) ?? 0) + liability.amount) * 100) / 100);
+  const pasTotal = Math.round(dsnEmployees.reduce((total, employee) => total + employee.payroll.withholdingTax, 0) * 100) / 100;
+  if (pasTotal > 0) liabilities.set("DGFIP", pasTotal);
+  const aggregates = mergeLockedAggregates(financial.map((item) => item.aggregates));
+  const payments = [...liabilities].map(([opsIdentifier, amount]) => ({ opsIdentifier, amount, paymentModeCode: "05", iban: paymentIban, bic: paymentBic }));
+  const content = buildDsnP26V01Complete({
     testMode: true, declarationOrder: input.declarationOrder ?? 1, fileDate: input.fileDate ?? new Date(),
     emitter: { siret, name: organization.name, address: requiredString(organization.payrollAddress, "l'adresse de paie de l'organisation"), postalCode: requiredString(organization.payrollPostalCode, "le code postal de l'organisation"), city: requiredString(organization.payrollCity, "la ville de l'organisation"), contactName, contactEmail, contactPhone, declaredContactType, enterpriseApenCode },
     establishment: { nafCode: requiredString(organization.payrollNafCode, "le code APET de l'établissement"), collectiveAgreementCode: mainCollectiveAgreementCode },
     period: { year: period.year, month: period.month, paymentDate: period.paymentDate }, employees: dsnEmployees,
+    assessedBases: financial.flatMap((item) => item.bases),
+    contributionBordereau: { opsIdentifier: urssafSiret, totalAmount: liabilities.get(urssafSiret) ?? 0, aggregatedContributions: aggregates, individualContributions: financial.flatMap((item) => item.individual) }, payments,
   });
 
-  return { content, fileName: `dsn-P26V01-${period.year}-${String(period.month).padStart(2, "0")}-precontrole.txt`, normVersion: "P26V01", employeeCount: dsnEmployees.length, warnings: ["Export de pré-contrôle uniquement : le dépôt réel reste désactivé.", "Les blocs de cotisations et paiements organisme ne sont pas encore émis tant qu'un mapping NEODeS vérifié n'est pas disponible.", "Le fichier doit être contrôlé avec Dsn-Val avant toute utilisation déclarative."] };
+  return { content, fileName: `dsn-P26V01-${period.year}-${String(period.month).padStart(2, "0")}-precontrole.txt`, normVersion: "P26V01", employeeCount: dsnEmployees.length, warnings: ["Export de pré-contrôle uniquement : le dépôt réel reste désactivé.", "Les cotisations du périmètre pris en charge sont rapprochées des bulletins verrouillés. Les affiliations complémentaires et événements non couverts bloquent l’export.", ...financial.flatMap((item) => item.deferred.map((deferred) => `Charge différée : ${deferred.code}, ${deferred.amount.toFixed(2)} EUR ; ${deferred.declaration}.`)), "Le fichier doit être contrôlé avec Dsn-Val avant toute utilisation déclarative."] };
 }

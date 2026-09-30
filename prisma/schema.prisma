@@ -708,6 +708,10 @@ model dsn_organization_settings {
   declaredContactType String?
   enterpriseApenCode  String?
   urssafSiret         String?
+  retirementSiret     String?
+  paymentIbanCiphertext String?
+  paymentBic          String?
+  sepaMandatesConfirmed Boolean @default(false)
   organizations       Organization @relation(fields: [organizationId], references: [id], map: "dsn_organization_settings_organization_fk")
 }
 
