@@ -1,4 +1,4 @@
-import { selectPeriodProfile } from "./profile-selection";
+import { assertPeriodWorkTimeStable, selectPeriodProfile } from "./profile-selection";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { resolvePayrollRuleSetFromPrisma } from "./payroll-rule-set-prisma";
@@ -129,6 +129,17 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
   ]);
 
   const { territory, alsaceMoselle } = territoryFromDepartment(socialContext.payrollDepartment);
+  for (const employee of employees) {
+    const employeeProfiles = profilesByEmployee.get(employee.id) ?? [];
+    try {
+      assertPeriodWorkTimeStable(employeeProfiles, start, end, profile => {
+        const extras = profileExtras.get(profile.id);
+        return JSON.stringify([profile.monthlyHours === null ? null : String(profile.monthlyHours), extras?.weeklySchedule ?? null, extras?.structuralOvertimeHours ?? 0, extras?.structuralOvertimeRate ?? null]);
+      });
+    } catch (error) {
+      throw new Error(`Calcul bloqué pour ${employee.firstName} ${employee.lastName} : ${error instanceof Error ? error.message : "profils de temps de travail incohérents"}`);
+    }
+  }
   // Effectif des seuils : saisi par l'entreprise s'il l'a été, sinon moyenne de l'année précédente
   // (hors alternants, temps partiels au prorata) avec la règle des cinq ans de la loi Pacte.
   // L'historique inclut les salariés archivés : un départ reste compté pour les mois où il était présent.

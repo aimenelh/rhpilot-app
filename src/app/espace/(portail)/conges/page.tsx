@@ -63,6 +63,7 @@ export default async function EspaceLeavePage() {
       toIsoDay(candidate.effectiveFrom) <= day && (!candidate.effectiveUntil || toIsoDay(candidate.effectiveUntil) >= day)
     );
     if (!profile || !Array.isArray(profile.weeklySchedule) || profile.weeklySchedule.length !== 7) return null;
+    if (profile.weeklySchedule.some((hours) => typeof hours !== "number")) return null;
     const schedule = profile.weeklySchedule.map(Number);
     if (schedule.some((hours) => !Number.isFinite(hours) || hours < 0 || hours > 12)) return null;
     if (schedule.reduce((sum, hours) => sum + hours, 0) <= 0) return null;

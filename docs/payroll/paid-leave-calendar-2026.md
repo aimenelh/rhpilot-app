@@ -8,6 +8,8 @@ L'intervalle de congé est déterminé avant sa répartition entre les mois. Le 
 
 Le maintien et le dixième sont comparés en cumul sur une même absence ; ce qui a déjà été payé est soustrait. Cette comparaison évite de choisir séparément la meilleure méthode dans chaque mois et de surpayer le congé. Un historique d'indemnité absent ou un changement de période de référence exige une vérification plutôt qu'un résultat implicite. Le changement de planning entre deux mois de paie reste à traiter dans le moteur ; le portail peut déjà utiliser le planning applicable à la date de reprise.
 
+Un changement de durée, de planning ou d'heures supplémentaires structurelles en milieu de mois bloque maintenant le calcul : l'horaire du dernier profil ne s'applique plus silencieusement au mois entier. Un changement au premier jour du mois reste accepté. Le traitement segmenté de deux horaires dans un même bulletin reste à implémenter.
+
 L'espace salarié compare les dates d'effet comme des dates civiles et tient compte du planning à la reprise ainsi que des jours fériés d'Alsace-Moselle. Un calendrier ou un planning inconnu reste « à confirmer ». Le total des demandes à venir n'est plus tronqué aux vingt premières demandes.
 
 Validation ciblée : huit nouveaux cas de calendrier et d'indemnité, plus les tests existants du moteur et de son intégration. La CI vérifie la migration, le schéma, les types, les tests PostgreSQL et le build. Ces changements ne recalculent pas les bulletins déjà verrouillés.
