@@ -6,6 +6,7 @@ import { randomUUID } from "node:crypto";
 import { releaseMembershipResponsibilities } from "@/lib/membershipLifecycle";
 import { stripe } from "@/lib/stripe";
 import { shouldCancelSubscriptionForLastMembership } from "@/lib/billingPolicy";
+import { syncClerkUser } from "@/lib/clerkUserSync";
 
 // Webhook Clerk : synchronise notre table User avec les événements
 // d'identité (création, mise à jour d'email, suppression de compte).
@@ -46,37 +47,8 @@ export async function POST(request: Request) {
   switch (event.type) {
     case "user.created":
     case "user.updated": {
-      const data = event.data as {
-        id: string;
-        email_addresses: { id: string; email_address: string }[];
-        primary_email_address_id: string;
-        first_name: string | null;
-        last_name: string | null;
-      };
-
-      const primaryEmail = data.email_addresses.find(
-        (entry) => entry.id === data.primary_email_address_id
-      )?.email_address;
-
-      if (!primaryEmail) {
-        console.error(`user.created sans email primaire pour ${data.id}`);
-        return new Response("Email primaire manquant", { status: 400 });
-      }
-
-      await prisma.user.upsert({
-        where: { authProviderId: data.id },
-        update: {
-          email: primaryEmail,
-          firstName: data.first_name,
-          lastName: data.last_name,
-        },
-        create: {
-          authProviderId: data.id,
-          email: primaryEmail,
-          firstName: data.first_name,
-          lastName: data.last_name,
-        },
-      });
+      const data = event.data as { id: string };
+      await syncClerkUser(data.id);
       break;
     }
 

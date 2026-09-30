@@ -30,9 +30,11 @@ vi.mock("react", async (importOriginal) => {
  * connecté" au moment de l'appel.
  */
 export const authState: { userId: string | null } = { userId: null };
+export const clerkUserLookup = vi.fn();
 
 vi.mock("@clerk/nextjs/server", () => ({
   auth: () => ({ userId: authState.userId }),
+  clerkClient: { users: { getUser: (...args: unknown[]) => clerkUserLookup(...args) } },
 }));
 
 /**

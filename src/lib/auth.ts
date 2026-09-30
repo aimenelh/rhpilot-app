@@ -1,12 +1,12 @@
 import { cache } from "react";
 import { auth } from "@clerk/nextjs/server";
 import { prisma } from "@/lib/prisma";
+import { syncClerkUser } from "@/lib/clerkUserSync";
 
 /**
  * Résout l'utilisateur RH Pilot correspondant à la session Clerk
- * courante. Retourne null si non connecté ou si le webhook
- * user.created n'a pas encore (ou plus) de correspondance —
- * ce dernier cas doit rester rare et est journalisé pour investigation.
+ * courante. Si le webhook n'a pas abouti, synchronise immédiatement
+ * l'identité vérifiée côté serveur au lieu d'attendre sa livraison.
  *
  * Rappel architecture : Clerk sert uniquement d'identité (authProviderId).
  * L'organisation/l'appartenance restent portées par nos propres tables
@@ -24,14 +24,8 @@ export const getCurrentUser = cache(async function getCurrentUser() {
     where: { authProviderId: clerkUserId },
   });
 
-  if (!user) {
-    console.error(
-      `Aucun User RH Pilot pour authProviderId=${clerkUserId} — webhook Clerk manqué ou en retard ?`
-    );
-    return null;
-  }
-
-  return user;
+  if (user?.deletedAt) return null;
+  return user ?? await syncClerkUser(clerkUserId);
 });
 
 /**
