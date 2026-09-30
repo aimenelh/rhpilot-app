@@ -1,17 +1,13 @@
-import Link from "next/link";
 import { SignOutButton } from "@clerk/nextjs";
 import { requireEmployeeSession } from "@/lib/employee-space/session";
-import { getCurrentMemberships } from "@/lib/auth";
 import { formatLongDate } from "@/lib/employee-space/labels";
 import { PaperToggle } from "./PaperToggle";
-import { startOwnOrganization } from "../../actions";
 
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Mon compte" };
 
 export default async function EspacePreferencesPage() {
   const { account, user } = await requireEmployeeSession();
-  const { memberships } = await getCurrentMemberships();
   return (
     <div className="space-y-5">
       <h1 className="text-[22px] font-semibold text-ink">Mon compte</h1>
@@ -36,17 +32,11 @@ export default async function EspacePreferencesPage() {
       </section>
 
       <div className="flex flex-col gap-2 sm:flex-row">
-        {memberships.length > 0 ? <Link href="/dashboard" className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-surface-border bg-white px-4 text-[15px] font-semibold text-ink hover:bg-surface-subtle">Tableau de bord RH</Link> : null}
         <SignOutButton redirectUrl="/espace/connexion">
           <button type="button" className="inline-flex min-h-[44px] items-center justify-center rounded-xl px-4 text-[15px] font-semibold text-ink-soft hover:bg-white">Me déconnecter</button>
         </SignOutButton>
       </div>
       <p className="px-1 text-xs leading-5 text-ink-faint">Pour changer d&apos;adresse e-mail ou de mot de passe, utilisez le menu de votre profil en haut à droite. Les notifications partent vers votre adresse de connexion.</p>
-      {memberships.length === 0 ? (
-        <form action={startOwnOrganization} className="px-1">
-          <button type="submit" className="text-xs font-semibold text-ink-soft underline-offset-2 hover:text-ink hover:underline">Vous dirigez une entreprise ? Créer votre propre espace RH</button>
-        </form>
-      ) : null}
     </div>
   );
 }
