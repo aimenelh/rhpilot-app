@@ -50,7 +50,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
   const organizationId = membership.organizationId;
   const admin = isOrganizationAdmin(membership);
   const today = new Date();
-  const [employeeCount, eventCount, openTasks, pendingRequests, recentActivity, memberCount] = await Promise.all([
+  const [employeeCount, eventCount, openTasks, pendingRequests, recentActivity, memberCount, teamEmployees, nextArrival] = await Promise.all([
     prisma.employee.count({ where: { organizationId, deletedAt: null, ...employeeAccessWhere(membership) } }),
     prisma.employeeEvent.count({ where: { organizationId, deletedAt: null, employee: { deletedAt: null }, ...eventAccessWhere(membership) } }),
     prisma.task.findMany({
@@ -67,8 +67,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
       select: { id: true, startDate: true, endDate: true, status: true, employee: { select: { firstName: true, lastName: true } } },
       orderBy: [{ createdAt: "asc" }, { id: "asc" }],
     }) : Promise.resolve([]),
-    admin ? prisma.auditLog.findMany({ where: { organizationId }, select: { id: true, action: true, metadata: true, createdAt: true, actor: { select: { firstName: true, lastName: true, email: true } } }, orderBy: { createdAt: "desc" }, take: 3 }) : Promise.resolve([]),
+    admin ? prisma.auditLog.findMany({ where: { organizationId }, select: { id: true, action: true, metadata: true, createdAt: true, actor: { select: { firstName: true, lastName: true, email: true } } }, orderBy: { createdAt: "desc" }, take: 8 }) : Promise.resolve([]),
     admin ? prisma.membership.count({ where: { organizationId, deletedAt: null } }) : Promise.resolve(0),
+    prisma.employee.findMany({ where: { organizationId, deletedAt: null, ...employeeAccessWhere(membership) }, select: { id: true, firstName: true, lastName: true }, orderBy: [{ firstName: "asc" }, { id: "asc" }], take: 3 }),
+    prisma.employee.findFirst({ where: { organizationId, deletedAt: null, hireDate: { gte: today, lte: new Date(today.getTime() + 30 * 86400000) }, ...employeeAccessWhere(membership) }, select: { firstName: true, lastName: true, hireDate: true }, orderBy: { hireDate: "asc" } }),
   ]);
   const tasks: DashboardTask[] = openTasks
     .filter(task => !(task.employeeEvent.eventTemplate.key === "fin_periode_essai" && isProbationHistoricalAtEntry(task.employeeEvent.employee)))
@@ -92,9 +94,10 @@ export default async function DashboardPage({ searchParams }: { searchParams: { 
   ] : [];
   const onboarding = steps.some(step=>!step.done) ? <section className="fil-onboarding"><div><h2>Les premiers fils à poser</h2><p>Préparez votre espace pour suivre les prochaines échéances.</p></div><ul>{steps.map(step=><li key={step.label}>{step.done?<CircleCheck size={17}/>:<Circle size={17}/>}<Link href={step.href} className={step.done?"is-done":""}>{step.label}</Link></li>)}</ul>{employeeCount===0?<div className="fil-onboarding-actions"><Link className="fil-primary" href="/dashboard/employees/new"><Plus size={16}/>Ajouter mon premier salarié</Link><form action={generateDemoOrganization}><DemoOrgSubmitButton/></form></div>:null}</section> : null;
   return <DashboardWorkspace
-    firstName={user.firstName || ""} today={today.toISOString()} admin={admin} employeeCount={employeeCount} eventCount={eventCount}
+    firstName={user.firstName || ""} today={today.toISOString()} admin={admin} employeeCount={employeeCount}
     tasks={tasks} requests={requests} overdueCount={overdueCount} soonCount={soonCount} initialFilter={searchParams.filter || (searchParams.view==="tasks"?"all":undefined)}
     activity={recentActivity.map(entry=>({ id:entry.id,label:AUDIT_LABELS[entry.action]?.(entry.metadata) || "Dossier mis à jour",actor:entry.actor?getUserDisplayName(entry.actor):null,date:entry.createdAt.toISOString() }))}
+    organizationName={membership.organization.name} teamNames={teamEmployees.map(employee => `${employee.firstName} ${employee.lastName}`)} nextArrival={nextArrival ? { name: `${nextArrival.firstName} ${nextArrival.lastName}`, date: nextArrival.hireDate.toISOString() } : undefined}
     onboarding={onboarding} copilot={<AskAboutOrganization aiEnabled={isAiEnabled()} compact/>}
   />;
 }

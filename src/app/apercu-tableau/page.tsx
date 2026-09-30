@@ -19,11 +19,13 @@ export default function DashboardPreviewPage() {
     fixture("preview-5", "Faire le point avec Karim", "2026-10-06", "karim", "Fin de période d’essai", "Karim Benali", "Aïmen El Housseini", true),
     fixture("preview-6", "Accueillir Léa dans l’équipe", "2026-10-05", "lea", "Embauche", "Léa Martin", "Thomas Morel"),
   ];
-  return <AppShell organizationName="Atelier & Co" accessRole="OWNER" payrollEnabled={false} discoveryTourCompleted aiEnabled={false} assistantSummary={{ userDisplayName: "Aïmen", overdueCount: 2, suggestionsCount: 0 }} rhNews={[]} demoExpiresAt={null} preview>
-    <div className="fil-preview-notice">Aperçu du design · Données fictives · <a href="/dashboard">Tester avec mon organisation</a></div>
-    <DashboardWorkspace firstName="Aïmen" today="2026-09-30T09:00:00.000Z" admin employeeCount={12} eventCount={3} tasks={tasks} requests={[
+  tasks[2].previewStatus = "Convocation reçue";
+  tasks[3].previewStatus = "3 étapes sur 5";
+  tasks[4].previewStatus = "Entretien à prévoir";
+  return <AppShell organizationName="Atelier & Co" accessRole="ADMIN" payrollEnabled={false} discoveryTourCompleted aiEnabled={false} assistantSummary={{ userDisplayName: "Aïmen El Housseini", overdueCount: 2, suggestionsCount: 0 }} rhNews={[]} demoExpiresAt={null} employeeCount={12} pendingRequestsCount={2} preview>
+    <DashboardWorkspace organizationName="Atelier & Co" teamNames={["Léa Martin", "Karim Benali", "Julie Dubois"]} nextArrival={{ name: "Léa Martin", date: "2026-10-05T10:00:00.000Z" }} firstName="Aïmen" today="2026-09-30T09:00:00.000Z" admin employeeCount={12} tasks={tasks} requests={[
       { id: "preview-absence-1", employeeName: "Julie Dubois", startDate: "2026-10-12T00:00:00.000Z", endDate: "2026-10-16T00:00:00.000Z", justification: false },
       { id: "preview-absence-2", employeeName: "Hugo Petit", startDate: "2026-09-29T00:00:00.000Z", endDate: "2026-09-29T00:00:00.000Z", justification: true },
-    ]} overdueCount={2} soonCount={4} activity={[{ id: "preview-activity", label: "Contrat de Léa préparé", actor: "Sophie Robert", date: "2026-09-30T07:12:00.000Z" }]} copilot={<div className="fil-preview-copilot"><div><h2>Votre Copilote RH</h2><p>Un peu de clarté pour la suite.</p></div><p>Le Copilote répond à partir de vos données dans l’espace connecté.</p><a href="/dashboard">Ouvrir mon espace</a></div>} preview/>
+    ]} overdueCount={2} soonCount={4} activity={[{ id: "preview-activity", label: "Sophie a préparé le contrat de Léa Martin.", actor: null, date: "2026-09-30T07:12:00.000Z" }]} copilot={<div className="fil-preview-copilot"><div><h2>Votre Copilote RH</h2><p>Un peu de clarté pour la suite.</p></div><p>Le Copilote répond à partir de vos données dans l’espace connecté.</p><a href="/dashboard">Ouvrir mon espace</a></div>} preview/>
   </AppShell>;
 }

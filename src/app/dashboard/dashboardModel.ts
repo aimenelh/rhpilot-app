@@ -12,6 +12,8 @@ export type DashboardTask = {
   isMine: boolean;
   canComplete: boolean;
   proofRequired: boolean;
+  /** Libellé fictif réservé à la maquette, jamais utilisé pour décider d’un état métier. */
+  previewStatus?: string;
 };
 
 export type DashboardRequest = {
