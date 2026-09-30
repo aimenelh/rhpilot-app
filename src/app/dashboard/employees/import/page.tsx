@@ -7,9 +7,9 @@ import { Button } from "@/components/ui/Button";
 import { Label } from "@/components/ui/Field";
 import { importEmployeesCsv } from "../importActions";
 
-const EXAMPLE = `prenom,nom,civilite,poste,date_embauche,type_contrat,duree_periode_essai,unite_duree,prochaine_visite_medicale
-Julie,Martin,MME,Comptable,2026-01-15,CDI,3,MONTHS,
-Karim,Belhaj,M,Apprenti technicien,2026-06-01,APPRENTISSAGE,45,DAYS,`;
+const EXAMPLE = `prenom,nom,civilite,poste,categorie_professionnelle,date_embauche,type_contrat,date_fin_contrat,heures_hebdomadaires,lundi,mardi,mercredi,jeudi,vendredi,samedi,dimanche,salaire_brut_mensuel,duree_periode_essai,unite_duree,prochaine_visite_medicale
+Julie,Martin,MME,Comptable,EMPLOYE,2026-01-15,CDI,,35,7,7,7,7,7,0,0,2300,2,MONTHS,
+Karim,Belhaj,M,Apprenti technicien,EMPLOYE,2026-06-01,APPRENTISSAGE,2028-05-31,35,7,7,7,7,7,0,0,1850,45,DAYS,`;
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -39,15 +39,18 @@ export default function ImportEmployeesPage() {
           <code className="rounded bg-surface-subtle px-1 py-0.5 text-xs">prenom</code>,{" "}
           <code className="rounded bg-surface-subtle px-1 py-0.5 text-xs">nom</code> et{" "}
           <code className="rounded bg-surface-subtle px-1 py-0.5 text-xs">date_embauche</code>{" "}
-          (format AAAA-MM-JJ) sont obligatoires, le reste peut rester vide.
+          (format AAAA-MM-JJ) restent obligatoires pour conserver la compatibilité avec les anciens fichiers. Pour un démarrage complet, ajoutez le contrat, la catégorie et le temps de travail.
         </p>
         <pre className="mt-3 overflow-x-auto rounded-lg bg-ink px-4 py-3 text-xs text-white">
           {EXAMPLE}
         </pre>
         <p className="mt-2 text-xs text-ink-faint">
-          civilite : MME, M ou AUTRE · type_contrat : CDI, CDD, APPRENTISSAGE ou
-          PROFESSIONNALISATION · unite_duree : DAYS, WEEKS ou MONTHS. Une ligne mal formée est
-          ignorée individuellement, le reste de l&apos;import continue normalement.
+          civilite : MME, M ou AUTRE · categorie_professionnelle : CADRE, AGENT_DE_MAITRISE,
+          EMPLOYE, OUVRIER ou AUTRE · type_contrat : CDI, CDD, APPRENTISSAGE ou
+          PROFESSIONNALISATION · heures_hebdomadaires : ex. 35, 39 ou 24 · lundi à dimanche :
+          heures prévues chaque jour · salaire_brut_mensuel : facultatif · unite_duree : DAYS,
+          WEEKS ou MONTHS. Si le temps de travail manque, le salarié est importé mais RH Pilot le
+          signale comme à compléter ; aucune hypothèse de 35 h n&apos;est créée silencieusement.
         </p>
       </Card>
 
