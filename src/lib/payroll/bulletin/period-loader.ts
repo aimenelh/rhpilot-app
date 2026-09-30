@@ -2,6 +2,8 @@
  * Lectures en base propres au moteur de bulletin (colonnes ajoutées par SQL
  * brut, reprises, solde de tout compte, calculs antérieurs).
  */
+import { validateMaintenanceRule } from "./maintenance-settings";
+import type { SickPayRule } from "./params";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { PasTerritory } from "./params";
@@ -9,6 +11,8 @@ import type { PaidLeaveBalances, TerminationReason } from "./types";
 import type { PaidLeaveOpening, PayrollOpening, PriorCalculation } from "./prior-state";
 
 export type OrganizationBulletinSettings = {
+  sickPayRule?: SickPayRule;
+  workAccidentPayRule?: SickPayRule;
   payrollHeadcount: number | null;
   mobilityRatePercent: number | null;
   ijssSubrogation: boolean;
@@ -28,13 +32,15 @@ const toNumber = (value: unknown): number | null => {
 
 export async function loadOrganizationBulletinSettings(organizationId: string): Promise<OrganizationBulletinSettings> {
   const rows = await prisma.$queryRaw<Array<Record<string, unknown>>>`
-    SELECT "payrollHeadcount", "mobilityRate", "ijssSubrogation", "paidLeaveMethod", "workedSolidarityDay", "prevoyanceRates",
+    SELECT "sickPayRule", "workAccidentPayRule", "payrollHeadcount", "mobilityRate", "ijssSubrogation", "paidLeaveMethod", "workedSolidarityDay", "prevoyanceRates",
            "mealVoucherFaceValue", "mealVoucherEmployerShare", "transportEmployerShare"
     FROM "organizations" WHERE "id" = ${organizationId} LIMIT 1
   `;
   const row = rows[0];
   if (!row) throw new Error("Organisation introuvable.");
   return {
+    sickPayRule: validateMaintenanceRule(row.sickPayRule, "sickPayRule"),
+    workAccidentPayRule: validateMaintenanceRule(row.workAccidentPayRule, "workAccidentPayRule"),
     payrollHeadcount: toNumber(row.payrollHeadcount),
     mobilityRatePercent: toNumber(row.mobilityRate),
     ijssSubrogation: row.ijssSubrogation !== false,

@@ -46,7 +46,7 @@
 | Maternité, paternité | 🟠 | Retenue, IJSS et subrogation ; pas de maintien conventionnel automatique (signalé) |
 | IJSS | ✅ | Montant de l'attestation, ou estimation signalée sur les trois mois précédant l'arrêt ; imposables sur les 60 premiers jours d'arrêt maladie |
 | Subrogation | ✅ | Paramètre de l'entreprise ; IJSS nettes reversées, intégrées au net social |
-| Maintien conventionnel plus favorable | 🟠 | Règle paramétrable dans le moteur, pas encore saisissable dans l'interface |
+| Maintien conventionnel plus favorable | 🟠 | Règle saisissable dans Configuration > Organisation et appliquée au bulletin (maladie et AT/MP, deux taux, paliers d’ancienneté). Référence obligatoire et règle moins favorable refusée. Garanties en net et règles distinctes par population à compléter |
 | Activité partielle | ❌ | |
 
 ## 4. Avantages, frais, titres-restaurant, transport
@@ -67,7 +67,7 @@
 | Régularisation progressive des tranches | ✅ | T1, T2, 4 plafonds, CET cumulés sur l'année |
 | RGDU | ✅ | Calcul annuel cumulé, Smic figé au 1er janvier 2026 |
 | Apprentis | ✅ | Exonérations salariales 50 % / 79 % du Smic, CSG, impôt jusqu'au Smic |
-| Effectif et seuils | ✅ | Effectif moyen annuel saisi (à défaut, salariés actifs avec avertissement) |
+| Effectif et seuils | ✅ | Moyenne de l’année précédente, première embauche et neutralisation Pacte ; prorata des temps partiels conservé à deux décimales. Saisie de l’effectif Urssaf possible |
 | Complémentaire santé | ✅ | Proratisée à l'entrée et à la sortie ; dispense par salarié |
 | Prévoyance | ✅ | Taux T1 / T2 par population, minimum cadre de 1,50 % |
 | Forfait social | ✅ | 8 % sur la prévoyance à partir de 11 salariés |
@@ -93,4 +93,4 @@
 | Cycle préparer, calculer, contrôler, valider, clôturer | ✅ | Calcul séquentiel : un mois précédent non validé bloque le suivant |
 | Bulletin clarifié | ✅ | Rubriques par risque, allègements, net social, PAS, congés, cumuls, mentions obligatoires |
 | Points d'attention du calcul | ✅ | Affichés avant validation |
-| DSN | 🟠 | Fichier de pré-contrôle pour les mois simples ; les variables, absences, entrées, sorties et indemnités bloquent l'export tant que les blocs de cotisations (S21.G00.78 / 81 / 23), primes, arrêts et fin de contrat ne sont pas mappés sur les tables officielles P26V01 et validés avec DSN-Val |
+| DSN | 🟠 | Fichier de pré-contrôle pour les mois simples (bases 02/03, retraite et ancienneté). Trois fixtures synthétiques acceptées sans anomalie par Dsn-Val 2026.1.0.17 ; cela ne valide pas les montants ni une DSN réelle. Le générateur de cotisations impose les bases parentes et le composant SMIC mais son mapping vers les paies de l’application reste à intégrer ; les variables, absences, entrées, sorties et indemnités bloquent l'export tant que les blocs de cotisations (S21.G00.78 / 81 / 23), primes, arrêts et fin de contrat ne sont pas mappés sur les tables officielles P26V01 et validés avec DSN-Val |

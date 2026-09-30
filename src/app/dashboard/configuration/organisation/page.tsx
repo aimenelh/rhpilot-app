@@ -1,3 +1,4 @@
+import { validateMaintenanceRule } from "@/lib/payroll/bulletin/maintenance-settings";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
@@ -44,6 +45,8 @@ type SocialRow = {
   paidLeaveMethod: string | null;
   ijssSubrogation: boolean | null;
   workedSolidarityDay: boolean | null;
+  sickPayRule: unknown;
+  workAccidentPayRule: unknown;
   prevoyanceRates: unknown;
   mealVoucherFaceValue: unknown;
   mealVoucherEmployerShare: unknown;
@@ -72,6 +75,8 @@ function payrollSettingsValues(row: SocialRow | undefined, automaticHeadcount: n
   const storedRate = row?.mobilityRate === null || row?.mobilityRate === undefined ? null : Number(row.mobilityRate);
   const manual = row?.mobilityRateSource === "MANUEL";
   return {
+    sickPayRule: validateMaintenanceRule(row?.sickPayRule, "sickPayRule"),
+    workAccidentPayRule: validateMaintenanceRule(row?.workAccidentPayRule, "workAccidentPayRule"),
     payrollHeadcount: asText(row?.payrollHeadcount),
     automaticHeadcount: frNumber(automaticHeadcount),
     mobilityRate: manual ? asText(row?.mobilityRate) : "",
@@ -148,7 +153,7 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
         select: { id: true, idcc: true, name: true },
         orderBy: { name: "asc" },
       }),
-      prisma.$queryRaw<SocialRow[]>`SELECT "legalCategory", "atmpRate", "healthPlanMonthlyAmount", "healthPlanEmployerRate", "companyCreationDate", "payrollDepartment", "payrollCommuneCode", "payrollHeadcount", "mobilityRate", "mobilityRateSource", "mobilityRateCheckedAt", "mobilityRateDetail", "registrySyncedAt", "registrySnapshot", "paidLeaveMethod", "ijssSubrogation", "workedSolidarityDay", "prevoyanceRates", "mealVoucherFaceValue", "mealVoucherEmployerShare", "transportEmployerShare" FROM "organizations" WHERE "id" = ${membership.organizationId} LIMIT 1`,
+      prisma.$queryRaw<SocialRow[]>`SELECT "legalCategory", "atmpRate", "healthPlanMonthlyAmount", "healthPlanEmployerRate", "companyCreationDate", "payrollDepartment", "payrollCommuneCode", "payrollHeadcount", "mobilityRate", "mobilityRateSource", "mobilityRateCheckedAt", "mobilityRateDetail", "registrySyncedAt", "registrySnapshot", "paidLeaveMethod", "ijssSubrogation", "workedSolidarityDay", "sickPayRule", "workAccidentPayRule", "prevoyanceRates", "mealVoucherFaceValue", "mealVoucherEmployerShare", "transportEmployerShare" FROM "organizations" WHERE "id" = ${membership.organizationId} LIMIT 1`,
       prisma.employee.findMany({ where: { organizationId: membership.organizationId, deletedAt: null }, select: { id: true, contractType: true, hireDate: true, contractEndDate: true } }),
       prisma.payrollProfile.findMany({ where: { organizationId: membership.organizationId, effectiveFrom: { lte: lastDayOfMonth }, OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: lastDayOfMonth } }] }, select: { employeeId: true, monthlyHours: true } }),
     ]);

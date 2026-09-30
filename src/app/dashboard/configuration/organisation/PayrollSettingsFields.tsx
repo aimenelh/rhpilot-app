@@ -1,8 +1,13 @@
+import { MaintenanceSettingsFields } from "./MaintenanceSettingsFields";
+import type { SickPayRule } from "@/lib/payroll/bulletin/params";
+
 import { Card } from "@/components/ui/Card";
 import { FieldHint, Input, Label, Select } from "@/components/ui/Field";
 
 export type PayrollSettingsValues = {
   /** Effectif saisi par l'entreprise (vide : calcul automatique). */
+  sickPayRule?: SickPayRule;
+  workAccidentPayRule?: SickPayRule;
   payrollHeadcount: string;
   automaticHeadcount: string;
   /** Taux saisi par l'entreprise (vide : barème Urssaf). */
@@ -37,7 +42,7 @@ export function PayrollSettingsFields({ values }: { values: PayrollSettingsValue
         <div>
           <Label htmlFor="payrollHeadcount">Effectif pour les seuils de cotisations</Label>
           <p className="mt-1 text-sm text-ink">Calculé automatiquement : {values.automaticHeadcount} salarié{values.automaticHeadcount === "0" || values.automaticHeadcount === "1" ? "" : "s"} ce mois-ci</p>
-          <Input id="payrollHeadcount" name="payrollHeadcount" type="number" min="1" step="1" defaultValue={values.payrollHeadcount} placeholder="Laisser vide" className="mt-2" />
+          <Input id="payrollHeadcount" name="payrollHeadcount" type="number" min="0" step="0.01" defaultValue={values.payrollHeadcount} placeholder="Laisser vide" className="mt-2" />
           <FieldHint>RH Pilot compte chaque mois vos salariés, hors apprentis et contrats de professionnalisation, temps partiels au prorata. Ne saisissez un effectif que si l&apos;Urssaf en retient un autre, par exemple si vous avez franchi le seuil de 11 ou de 50 salariés depuis moins de 5 ans (règle de la loi Pacte).</FieldHint>
         </div>
         <div>
@@ -91,6 +96,9 @@ export function PayrollSettingsFields({ values }: { values: PayrollSettingsValue
           <FieldHint>Entre 50 % et 60 % de la valeur du titre pour bénéficier de l&apos;exonération.</FieldHint>
         </div>
       </div>
+
+      <MaintenanceSettingsFields kind="sickPayRule" rule={values.sickPayRule} />
+      <MaintenanceSettingsFields kind="workAccidentPayRule" rule={values.workAccidentPayRule} />
 
       <div className="mt-6 border-t border-surface-border pt-5">
         <h3 className="text-sm font-semibold text-ink">Prévoyance (taux en %)</h3>

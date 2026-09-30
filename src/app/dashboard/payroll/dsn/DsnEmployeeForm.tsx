@@ -65,7 +65,7 @@ export default function DsnEmployeeForm({ employeeId, initial }: { employeeId: s
           <SelectField name="multipleJobsCode" label="Emplois multiples" defaultValue={initial.multipleJobsCode} options={[["01","Emploi unique"],["02","Emplois multiples"],["03","Situation non connue"]]} />
           <SelectField name="multipleEmployersCode" label="Employeurs multiples" defaultValue={initial.multipleEmployersCode} options={[["01","Employeur unique"],["02","Employeurs multiples"],["03","Situation non connue"]]} />
           <Field name="workAccidentRegimeCode" label="Régime AT/MP" defaultValue={initial.workAccidentRegimeCode} placeholder="200 = régime général" />
-          <Field name="workAccidentRiskCode" label="Code risque AT/MP" defaultValue={initial.workAccidentRiskCode} placeholder="Ex. 602MD" help="Reprenez exactement le code notifié par la CARSAT/MSA. 999ZZ uniquement avant première notification." />
+          <Field name="workAccidentRiskCode" label="Code risque AT/MP" defaultValue={initial.workAccidentRiskCode} placeholder="Code de votre notification" help="Reprenez exactement le code notifié par la CARSAT/MSA. 999ZZ uniquement avant première notification." />
         </div>
       </section>
 

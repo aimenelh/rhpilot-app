@@ -1,8 +1,13 @@
+import { parseMaintenanceForm } from "./maintenance-settings";
+import type { SickPayRule } from "./params";
+
 /**
  * Lecture et validation du formulaire « Paramètres de paie » de l'organisation.
  * Les pourcentages saisis sont stockés en fraction (1,5 % → 0,015).
  */
 export type PayrollSettingsInput = {
+  sickPayRule: SickPayRule | null;
+  workAccidentPayRule: SickPayRule | null;
   payrollHeadcount: number | null;
   mobilityRate: number | null;
   paidLeaveMethod: "OUVRABLES" | "OUVRES";
@@ -26,7 +31,7 @@ function number(get: Getter, name: string): number | null {
 
 export function parsePayrollSettingsForm(get: Getter): PayrollSettingsInput {
   const headcount = number(get, "payrollHeadcount");
-  if (headcount !== null && (!Number.isInteger(headcount) || headcount < 1 || headcount > 100000)) throw new Error("L'effectif moyen annuel doit être un nombre entier d'au moins 1.");
+  if (headcount !== null && (headcount < 0 || headcount > 100000 || Math.abs(headcount * 100 - Math.round(headcount * 100)) > 1e-7)) throw new Error("L'effectif moyen annuel doit être positif ou nul, avec au plus deux décimales.");
   const mobilityRate = number(get, "mobilityRate");
   if (mobilityRate !== null && (mobilityRate < 0 || mobilityRate > 3.2)) throw new Error("Le taux de versement mobilité doit être compris entre 0 et 3,2 %.");
   const faceValue = number(get, "mealVoucherFaceValue");
@@ -54,6 +59,8 @@ export function parsePayrollSettingsForm(get: Getter): PayrollSettingsInput {
   const nonCadre = population("nonCadre");
 
   return {
+    sickPayRule: parseMaintenanceForm(get, "sickPayRule"),
+    workAccidentPayRule: parseMaintenanceForm(get, "workAccidentPayRule"),
     payrollHeadcount: headcount,
     mobilityRate,
     paidLeaveMethod: get("paidLeaveMethod") === "OUVRES" ? "OUVRES" : "OUVRABLES",

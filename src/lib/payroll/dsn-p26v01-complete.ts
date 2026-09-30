@@ -3,6 +3,8 @@ import { buildDsnP26V01Monthly, type DsnP26MonthlyInput } from "./dsn-p26v01";
 export type DsnIndividualContribution = {
   employeeNir: string;
   code: string;
+  /** Base S21.G00.78 parente (02 plafonnée, 03 déplafonnée, 04 CSG...). */
+  baseCode: string;
   opsIdentifier: string;
   baseAmount?: number | null;
   contributionAmount?: number | null;
@@ -33,7 +35,17 @@ export type DsnOpsPayment = {
   bic?: string | null;
 };
 
+export type DsnAssessedBase = {
+  employeeNir: string;
+  code: string;
+  amount: number;
+  periodStart?: Date;
+  periodEnd?: Date;
+  components?: Array<{ code: string; amount: number }>;
+};
+
 export type DsnP26CompleteInput = DsnP26MonthlyInput & {
+  assessedBases: DsnAssessedBase[];
   contributionBordereau: {
     opsIdentifier: string;
     totalAmount: number;
@@ -63,7 +75,7 @@ function money(value: number): string {
 
 function decimal(value: number): string {
   if (!Number.isFinite(value)) throw new Error("DSN bloquée : taux de cotisation invalide.");
-  return (Math.round((value + Number.EPSILON) * 10000) / 10000).toFixed(4).replace(/0+$/, "").replace(/\.$/, "");
+  return (Math.round((value + Number.EPSILON) * 1000) / 1000).toFixed(3);
 }
 
 function dsnDate(date: Date): string {
@@ -83,7 +95,8 @@ function monthBounds(year: number, month: number): { start: string; end: string 
 function add(rows: ParsedLine[], code: string, value: string | number | null | undefined): void {
   if (value === null || value === undefined || value === "") return;
   const rendered = String(value);
-  if (/[\r\n\0']/.test(rendered)) throw new Error(`DSN bloquée : valeur interdite dans ${code}.`);
+  if (/[\u0000-\u001f\u007f-\u009f]/.test(rendered) || /[^\u0020-\u00ff]/.test(rendered)) throw new Error(`DSN bloquée : valeur interdite dans ${code}.`);
+  if (`${code},'${rendered}'`.length > 256) throw new Error(`DSN bloquée : la rubrique ${code} dépasse 256 caractères.`);
   rows.push({ code, value: rendered });
 }
 
@@ -118,11 +131,12 @@ function serialize(rows: ParsedLine[]): string {
  * d'une cotisation : ils doivent provenir d'un mapping DSN validé et versionné.
  */
 export function buildDsnP26V01Complete(input: DsnP26CompleteInput): string {
-  const baseRows = parseBaseFile(buildDsnP26V01Monthly(input));
+  const baseRows = parseBaseFile(buildDsnP26V01Monthly(input)).filter((row) => !row.code.startsWith("S21.G00.78."));
   const { start, end } = monthBounds(input.period.year, input.period.month);
   const ops = assertOps(input.contributionBordereau.opsIdentifier);
   if (!Number.isFinite(input.contributionBordereau.totalAmount) || input.contributionBordereau.totalAmount < 0) throw new Error("DSN bloquée : total du bordereau invalide.");
   if (input.contributionBordereau.aggregatedContributions.length === 0) throw new Error("DSN bloquée : aucun mapping de cotisation agrégée n'est disponible.");
+  if (input.assessedBases.length === 0) throw new Error("DSN bloquée : aucune base assujettie mappée n’est disponible.");
   if (input.contributionBordereau.individualContributions.length === 0) throw new Error("DSN bloquée : aucun mapping de cotisation individuelle n'est disponible.");
 
   const establishmentIndex = baseRows.findIndex((row) => row.code === "S21.G00.11.022");
@@ -159,16 +173,19 @@ export function buildDsnP26V01Complete(input: DsnP26CompleteInput): string {
   baseRows.splice(establishmentIndex + 1, 0, ...establishmentBlocks);
 
   const employeeNirs = input.employees.map((employee) => employee.nir.replace(/\s+/g, ""));
+  const knownEmployees = new Set(employeeNirs);
+  if (knownEmployees.size !== employeeNirs.length) throw new Error("DSN bloquée : un salarié est déclaré plusieurs fois.");
+  if ([...input.assessedBases, ...input.contributionBordereau.individualContributions].some((item) => !knownEmployees.has(item.employeeNir.replace(/\s+/g, "")))) throw new Error("DSN bloquée : une base ou cotisation appartient à un salarié absent de la déclaration.");
   for (const employeeNir of employeeNirs) {
     const indexes = baseRows
       .map((row, index) => ({ row, index }))
       .filter(({ row }) => row.code === "S21.G00.30.001" && row.value === employeeNir)
       .map(({ index }) => index);
-    if (indexes.length !== 1) throw new Error(`DSN bloquée : impossible d'identifier de façon unique le bloc du salarié ${employeeNir}.`);
+    if (indexes.length !== 1) throw new Error("DSN bloquée : impossible d'identifier de façon unique le bloc d'un salarié.");
     const employeeStart = indexes[0];
     let insertAt = baseRows.length;
     for (let index = employeeStart + 1; index < baseRows.length; index += 1) {
-      if (baseRows[index].code === "S21.G00.30.001" || baseRows[index].code.startsWith("S90.G00.90.")) {
+      if (baseRows[index].code === "S21.G00.30.001" || baseRows[index].code.startsWith("S21.G00.86.") || baseRows[index].code.startsWith("S90.G00.90.")) {
         insertAt = index;
         break;
       }
@@ -176,15 +193,35 @@ export function buildDsnP26V01Complete(input: DsnP26CompleteInput): string {
 
     const individualBlocks: ParsedLine[] = [];
     const contributions = input.contributionBordereau.individualContributions.filter((item) => item.employeeNir.replace(/\s+/g, "") === employeeNir);
-    if (contributions.length === 0) throw new Error(`DSN bloquée : aucune cotisation individuelle mappée pour le salarié ${employeeNir}.`);
+    if (contributions.length === 0) throw new Error("DSN bloquée : aucune cotisation individuelle mappée pour un salarié.");
+    const bases = input.assessedBases.filter((base) => base.employeeNir.replace(/\s+/g, "") === employeeNir);
+    if (bases.length === 0) throw new Error("DSN bloquée : bases assujetties absentes pour un salarié.");
+    const baseCodes = new Set(bases.map((base) => base.code));
+    if (baseCodes.size !== bases.length) throw new Error("DSN bloquée : une base assujettie est déclarée plusieurs fois pour le salarié.");
     for (const contribution of contributions) {
-      assertMappingVersion(contribution.mappingVersion, contribution.sourcePayrollCode);
-      add(individualBlocks, "S21.G00.81.001", assertContributionCode(contribution.code, "le code de cotisation individuelle"));
-      add(individualBlocks, "S21.G00.81.002", assertOps(contribution.opsIdentifier));
-      add(individualBlocks, "S21.G00.81.003", contribution.baseAmount === null || contribution.baseAmount === undefined ? null : money(contribution.baseAmount));
-      add(individualBlocks, "S21.G00.81.004", contribution.contributionAmount === null || contribution.contributionAmount === undefined ? null : money(contribution.contributionAmount));
-      add(individualBlocks, "S21.G00.81.005", contribution.inseeCommuneCode?.trim() || null);
-      add(individualBlocks, "S21.G00.81.007", contribution.ratePercent === null || contribution.ratePercent === undefined ? null : decimal(contribution.ratePercent));
+      if (!baseCodes.has(contribution.baseCode)) throw new Error(`DSN bloquée : la cotisation ${contribution.code} n'a pas de base assujettie parente.`);
+    }
+    for (const base of bases) {
+      if (!/^\d{2}$/.test(base.code)) throw new Error("DSN bloquée : le code de base assujettie doit contenir deux chiffres.");
+      add(individualBlocks, "S21.G00.78.001", base.code);
+      add(individualBlocks, "S21.G00.78.002", base.periodStart ? dsnDate(base.periodStart) : start);
+      add(individualBlocks, "S21.G00.78.003", base.periodEnd ? dsnDate(base.periodEnd) : end);
+      add(individualBlocks, "S21.G00.78.004", money(base.amount));
+      for (const component of base.components ?? []) {
+        if (!/^\d{2}$/.test(component.code)) throw new Error("DSN bloquée : le code de composant de base est invalide.");
+        add(individualBlocks, "S21.G00.79.001", component.code);
+        add(individualBlocks, "S21.G00.79.004", money(component.amount));
+      }
+      for (const contribution of contributions.filter((item) => item.baseCode === base.code)) {
+        assertMappingVersion(contribution.mappingVersion, contribution.sourcePayrollCode);
+        if (["018", "106"].includes(contribution.code) && (base.code !== "03" || !base.components?.some((component) => component.code === "01"))) throw new Error("DSN bloquée : la réduction générale exige la base déplafonnée et son composant SMIC.");
+        add(individualBlocks, "S21.G00.81.001", assertContributionCode(contribution.code, "le code de cotisation individuelle"));
+        add(individualBlocks, "S21.G00.81.002", assertOps(contribution.opsIdentifier));
+        add(individualBlocks, "S21.G00.81.003", contribution.baseAmount === null || contribution.baseAmount === undefined ? null : money(contribution.baseAmount));
+        add(individualBlocks, "S21.G00.81.004", contribution.contributionAmount === null || contribution.contributionAmount === undefined ? null : money(contribution.contributionAmount));
+        add(individualBlocks, "S21.G00.81.005", contribution.inseeCommuneCode?.trim() || null);
+        add(individualBlocks, "S21.G00.81.007", contribution.ratePercent === null || contribution.ratePercent === undefined ? null : decimal(contribution.ratePercent));
+      }
     }
     baseRows.splice(insertAt, 0, ...individualBlocks);
   }

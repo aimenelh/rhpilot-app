@@ -7,6 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { assertNirFormat, encryptDsnSensitiveValue } from "@/lib/payroll/dsn-pii";
 import { getPayrollMembership } from "@/lib/payrollAccess";
 import { userFacingError } from "@/lib/userFacingError";
+import { assertDsnWorkAccidentRiskCode } from "@/lib/payroll/dsn-nomenclature";
 
 export type DsnFormState = { error?: string; success?: string } | undefined;
 
@@ -180,6 +181,7 @@ export async function saveDsnEmployeeProfile(
     const workAccidentRegimeCode = exactCode(formData, "workAccidentRegimeCode", "Le régime AT/MP", 3);
     const workAccidentRiskCode = code(formData, "workAccidentRiskCode", "Le code risque AT/MP", 6);
     if (workAccidentRiskCode.length < 5) throw new Error("Le code risque AT/MP doit comporter 5 ou 6 caractères et provenir de la notification CARSAT/MSA.");
+    assertDsnWorkAccidentRiskCode(workAccidentRiskCode);
     const id = existing[0]?.id ?? randomUUID();
 
     await prisma.$transaction(async (tx) => {

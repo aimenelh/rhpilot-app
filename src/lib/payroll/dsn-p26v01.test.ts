@@ -7,7 +7,7 @@ function input() {
     declarationOrder: 1,
     fileDate: new Date("2026-09-15T12:00:00.000Z"),
     emitter: {
-      siret: "12345678900017",
+      siret: "12345678200010",
       name: "RH Pilot Test",
       address: "1 rue du Test",
       postalCode: "34000",
@@ -56,19 +56,19 @@ function input() {
           baseSchemeSupplementCode: "99",
           collectiveAgreementCode: "1486",
           sicknessRegimeCode: "200",
-          workLocationId: "12345678900017",
+          workLocationId: "12345678200010",
           oldAgeRegimeCode: "200",
           foreignWorkerCode: "99",
           employmentStatusCode: "99",
           multipleJobsCode: "01",
           multipleEmployersCode: "01",
           workAccidentRegimeCode: "200",
-          workAccidentRiskCode: "602MD",
+          workAccidentRiskCode: "723ZA",
           workAccidentRate: 1.5,
         },
         payroll: {
           baseSalary: 2500,
-          grossAmount: 2500,
+          grossAmount: 2500, cappedContributionBase: 2500,
           netBeforeTax: 1980,
           netTaxableAmount: 2050,
           netSocialAmount: 1960,
@@ -100,13 +100,13 @@ describe("DSN P26V01 builder", () => {
     expect(content).toContain("S21.G00.30.015,'FR'\r\n");
     expect(content).not.toContain("S21.G00.30.005,");
     expect(content).toContain("S21.G00.40.016,'99'\r\n");
-    expect(content).toContain("S21.G00.40.019,'12345678900017'\r\n");
+    expect(content).toContain("S21.G00.40.019,'12345678200010'\r\n");
     expect(content).toContain("S21.G00.40.024,'99'\r\n");
     expect(content).toContain("S21.G00.40.026,'99'\r\n");
     expect(content).toContain("S21.G00.40.036,'01'\r\n");
     expect(content).toContain("S21.G00.40.037,'01'\r\n");
     expect(content).toContain("S21.G00.40.039,'200'\r\n");
-    expect(content).toContain("S21.G00.40.040,'602MD'\r\n");
+    expect(content).toContain("S21.G00.40.040,'723ZA'\r\n");
     expect(content).toContain("S21.G00.40.043,'1.50'\r\n");
     expect(content).toContain("S21.G00.50.007,'01'\r\n");
     expect(content).toContain("S21.G00.50.008,'123456789'\r\n");
