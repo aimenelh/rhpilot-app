@@ -8,6 +8,7 @@ import { getCurrentMembership, getCurrentUser } from "@/lib/auth";
 import { parseEmployeeCsv } from "@/lib/employeeCsv";
 import { employeeIdentityKey } from "@/lib/employeeIdentity";
 import { checkFreeTierLimit } from "./actions";
+import { saveEmployeeWorkProfile } from "@/lib/employeeWorkProfile";
 
 export type ImportState = { error: string } | undefined;
 
@@ -78,20 +79,33 @@ export async function importEmployeesCsv(
   try {
     await prisma.$transaction(async (tx) => {
       for (const row of rows) {
-        await tx.employee.create({
+        const created = await tx.employee.create({
           data: {
             organizationId: membership.organizationId,
             firstName: row.firstName,
             lastName: row.lastName,
             civility: row.civility,
+            professionalCategory: row.professionalCategory,
             position: row.position,
             hireDate: row.hireDate,
             contractType: row.contractType,
+            contractEndDate: row.contractEndDate,
             probationDuration: row.probationDuration,
             probationDurationUnit: row.probationDurationUnit,
             nextMedicalVisitDate: row.nextMedicalVisitDate,
           },
+          select: { id: true },
         });
+        if (row.weeklyHours !== null) {
+          await saveEmployeeWorkProfile(tx, {
+            organizationId: membership.organizationId,
+            employeeId: created.id,
+            effectiveFrom: row.hireDate,
+            weeklyHours: row.weeklyHours,
+            weeklySchedule: row.weeklySchedule,
+            baseSalaryCents: row.baseSalaryCents,
+          });
+        }
       }
 
       await tx.auditLog.create({
@@ -114,7 +128,11 @@ export async function importEmployeesCsv(
     };
   }
 
+  const missingWorkTime = rows.filter((row) => row.weeklyHours === null).length;
   const parts = [`${rows.length} salarié${rows.length > 1 ? "s" : ""} importé${rows.length > 1 ? "s" : ""}`];
+  if (missingWorkTime > 0) {
+    parts.push(`${missingWorkTime} temps de travail à compléter`);
+  }
   if (errors.length > 0) {
     parts.push(`${errors.length} ligne${errors.length > 1 ? "s" : ""} ignorée${errors.length > 1 ? "s" : ""}`);
   }
