@@ -5,6 +5,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
+import { Logomark, Wordmark } from "./Brand";
 import { Users, Route, CalendarDays, Settings, Bell, Menu, X, LayoutGrid, Leaf, FileText, Sparkles, ChevronDown, MessageCircle, type LucideIcon } from "lucide-react";
 import { FlashToast } from "./ui/FlashToast";
 import { GlobalSearch } from "./GlobalSearch";
@@ -114,7 +115,7 @@ export function AppShell({
 
   const userInitials = assistantSummary.userDisplayName.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase();
   const navContent = <>
-    <Link href="/dashboard" className="workspace-brand" onClick={() => setMobileNavOpen(false)}><span className="workspace-brand-mark" aria-hidden="true">R</span><span>RH <em>Pilot</em></span></Link>
+    <Link href="/dashboard" className="workspace-brand" aria-label="RH Pilot — Tableau de bord" onClick={() => setMobileNavOpen(false)}><Logomark/><Wordmark/></Link>
     <Link href="/dashboard/configuration/organisation" className="workspace-organization"><span>{organizationName.charAt(0)}</span><div><strong>{organizationName}</strong><small>Votre organisation</small></div><ChevronDown size={14}/></Link>
     <nav aria-label="Navigation principale" className="workspace-nav">
       {NAV_ITEMS.map(item => {
