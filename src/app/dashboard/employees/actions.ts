@@ -10,6 +10,8 @@ import { isOrganizationAdmin } from "@/lib/accessPolicy";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
 import { billableEmployeeWhere } from "@/lib/billingEmployeeScope";
 import { FREE_TIER_LIMIT, hasProAccess } from "@/lib/billingPolicy";
+import { buildContractWorkTime } from "@/lib/contractWorkTime";
+import { saveEmployeeWorkProfile } from "@/lib/employeeWorkProfile";
 
 // Sécurité : l'organisation courante est TOUJOURS résolue côté serveur
 // à partir de la session (getCurrentMembership), jamais à partir d'un
@@ -57,6 +59,11 @@ function readEmployeeFields(formData: FormData) {
   const probationRaw = String(formData.get("probationDuration") ?? "");
   const probationUnitRaw = String(formData.get("probationDurationUnit") ?? "");
   const nextMedicalVisitDateRaw = String(formData.get("nextMedicalVisitDate") ?? "");
+  const weeklyHoursRaw = String(formData.get("weeklyHours") ?? "").trim().replace(",", ".");
+  const weeklyScheduleRaw = Array.from({ length: 7 }, (_, index) =>
+    String(formData.get(`schedule.${index}`) ?? "").trim().replace(",", ".")
+  );
+  const workScheduleEffectiveFromRaw = String(formData.get("workScheduleEffectiveFrom") ?? "").trim();
 
   const validContractTypes = ["CDI", "CDD", "APPRENTISSAGE", "PROFESSIONNALISATION"];
   const validCivilities = ["MME", "M", "AUTRE"];
@@ -83,6 +90,9 @@ function readEmployeeFields(formData: FormData) {
         ? probationUnitRaw
         : "MONTHS") as DurationUnit | null,
     nextMedicalVisitDateRaw: nextMedicalVisitDateRaw === "" ? null : nextMedicalVisitDateRaw,
+    weeklyHoursRaw,
+    weeklyScheduleRaw,
+    workScheduleEffectiveFromRaw,
     managerMembershipId: parseOptionalManagerId(formData.get("managerMembershipId")),
   };
 }
@@ -112,7 +122,33 @@ function validateEmployeeFields(fields: ReturnType<typeof readEmployeeFields>): 
   ) {
     return "La date de prochaine visite médicale n'est pas valide.";
   }
+  if (!fields.weeklyHoursRaw) {
+    return "La durée hebdomadaire contractuelle est obligatoire.";
+  }
+  const weeklyHours = Number(fields.weeklyHoursRaw);
+  const schedule = fields.weeklyScheduleRaw.some((value) => value !== "")
+    ? fields.weeklyScheduleRaw.map((value) => (value === "" ? 0 : Number(value)))
+    : null;
+  try {
+    buildContractWorkTime(weeklyHours, schedule);
+  } catch (error) {
+    return error instanceof Error ? error.message : "Le temps de travail contractuel est invalide.";
+  }
+  const effectiveRaw = fields.workScheduleEffectiveFromRaw || fields.hireDateRaw;
+  if (!parseIsoDateOnly(effectiveRaw)) {
+    return "La date d'effet de l'horaire de travail n'est pas valide.";
+  }
   return null;
+}
+
+function resolveEmployeeWorkTime(fields: ReturnType<typeof readEmployeeFields>) {
+  const weeklyHours = Number(fields.weeklyHoursRaw);
+  const weeklySchedule = fields.weeklyScheduleRaw.some((value) => value !== "")
+    ? fields.weeklyScheduleRaw.map((value) => (value === "" ? 0 : Number(value)))
+    : null;
+  const effectiveFrom = parseIsoDateOnly(fields.workScheduleEffectiveFromRaw || fields.hireDateRaw)!;
+  const work = buildContractWorkTime(weeklyHours, weeklySchedule);
+  return { ...work, effectiveFrom };
 }
 
 export async function createEmployee(
@@ -134,6 +170,7 @@ export async function createEmployee(
   const fields = readEmployeeFields(formData);
   const validationError = validateEmployeeFields(fields);
   if (validationError) return { error: validationError };
+  const workTime = resolveEmployeeWorkTime(fields);
 
   // Isolation multi-tenant : le manager choisi doit appartenir à
   // cette organisation, jamais faire confiance à l'id transmis par le
@@ -163,6 +200,13 @@ export async function createEmployee(
         nextMedicalVisitDate: fields.nextMedicalVisitDateRaw ? parseIsoDateOnly(fields.nextMedicalVisitDateRaw) : null,
         managerMembershipId: fields.managerMembershipId,
       },
+    });
+    await saveEmployeeWorkProfile(tx, {
+      organizationId: membership.organizationId,
+      employeeId: created.id,
+      effectiveFrom: workTime.effectiveFrom,
+      weeklyHours: workTime.weeklyHours,
+      weeklySchedule: workTime.schedule,
     });
     await tx.auditLog.create({
       data: {
@@ -211,6 +255,7 @@ export async function updateEmployee(
   const fields = readEmployeeFields(formData);
   const validationError = validateEmployeeFields(fields);
   if (validationError) return { error: validationError };
+  const workTime = resolveEmployeeWorkTime(fields);
 
   // Isolation multi-tenant : même contrôle qu'à la création — voir
   // createEmployee.
@@ -221,8 +266,8 @@ export async function updateEmployee(
     if (!manager) return { error: "Ce manager ne fait pas partie de votre organisation." };
   }
 
-  await prisma.$transaction([
-    prisma.employee.update({
+  await prisma.$transaction(async (tx) => {
+    await tx.employee.update({
       where: { id: employeeId },
       data: {
         firstName: fields.firstName,
@@ -238,8 +283,15 @@ export async function updateEmployee(
         nextMedicalVisitDate: fields.nextMedicalVisitDateRaw ? parseIsoDateOnly(fields.nextMedicalVisitDateRaw) : null,
         managerMembershipId: fields.managerMembershipId,
       },
-    }),
-    prisma.auditLog.create({
+    });
+    await saveEmployeeWorkProfile(tx, {
+      organizationId: membership.organizationId,
+      employeeId,
+      effectiveFrom: workTime.effectiveFrom,
+      weeklyHours: workTime.weeklyHours,
+      weeklySchedule: workTime.schedule,
+    });
+    await tx.auditLog.create({
       data: {
         id: randomUUID(),
         organizationId: membership.organizationId,
@@ -247,9 +299,13 @@ export async function updateEmployee(
         action: "employee.updated",
         entityType: "Employee",
         entityId: employeeId,
+        metadata: {
+          weeklyHours: workTime.weeklyHours,
+          workScheduleEffectiveFrom: workTime.effectiveFrom.toISOString(),
+        },
       },
-    }),
-  ]);
+    });
+  });
 
   revalidatePath("/dashboard");
   revalidatePath("/dashboard/employees");
