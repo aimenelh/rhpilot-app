@@ -13,6 +13,7 @@ export function LandingPage() {
   return (
     <div className={s.site} data-landing-motion>
       <LandingMotion />
+      {/* Brand intro intentionally mounted on the public homepage. */}
       <BrandIntro />
       <MarketingHeader />
       <main id="main-content">
