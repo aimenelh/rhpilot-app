@@ -57,7 +57,7 @@ export function buildContractWorkTime(
   return {
     weeklyHours: ROUND(weeklyHours),
     monthlyHours: monthlyHoursFromWeekly(weeklyHours),
-    schedule: rawSchedule as WeeklySchedule,
+    schedule: rawSchedule as unknown as WeeklySchedule,
     structuralOvertimeMonthlyHours: structuralOvertimeMonthlyHours(weeklyHours),
   };
 }
