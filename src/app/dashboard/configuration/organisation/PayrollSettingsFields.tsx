@@ -15,6 +15,7 @@ export type PayrollSettingsValues = {
   mobilityAutomatic: { rate: string; detail: string | null; checkedAt: string | null } | null;
   mobilityCommuneKnown: boolean;
   paidLeaveMethod: "OUVRABLES" | "OUVRES";
+  paidLeaveWorkingDays: boolean[] | null;
   ijssSubrogation: boolean;
   workedSolidarityDay: boolean;
   mealVoucherFaceValue: string;
@@ -66,6 +67,11 @@ export function PayrollSettingsFields({ values }: { values: PayrollSettingsValue
             <option value="OUVRABLES">Jours ouvrables (30 jours par an)</option>
             <option value="OUVRES">Jours ouvrés (25 jours par an)</option>
           </Select>
+          <p className="mt-3 text-xs font-medium text-ink-soft">Calendrier des congés en jours ouvrés</p>
+          <div className="mt-2 flex flex-wrap gap-3">
+            {["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"].map((label, day) => <label key={label} className="flex items-center gap-1.5 text-xs text-ink-soft"><input type="checkbox" name={`paidLeaveWorkingDays.${day}`} value="1" defaultChecked={values.paidLeaveWorkingDays?.[day] === true} />{label}</label>)}
+          </div>
+          <FieldHint>Avec 25 jours ouvrés, cochez les cinq jours du calendrier de congés de l&apos;entreprise. Il s&apos;applique aussi aux temps partiels et diffère de leurs jours de présence. Il n&apos;est pas utilisé pour les 30 jours ouvrables.</FieldHint>
         </div>
         <div>
           <Label htmlFor="ijssSubrogation">Subrogation des indemnités journalières</Label>

@@ -47,6 +47,7 @@ model Organization {
   mobilityRate                 Decimal?                       @db.Decimal(6, 3)
   ijssSubrogation              Boolean                        @default(true)
   paidLeaveMethod              String                         @default("OUVRABLES")
+  paidLeaveWorkingDays         Json?
   workedSolidarityDay          Boolean                        @default(false)
   sickPayRule                  Json?
   workAccidentPayRule          Json?

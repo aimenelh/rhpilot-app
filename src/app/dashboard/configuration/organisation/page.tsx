@@ -43,6 +43,7 @@ type SocialRow = {
   registrySyncedAt: Date | null;
   registrySnapshot: unknown;
   paidLeaveMethod: string | null;
+  paidLeaveWorkingDays: unknown;
   ijssSubrogation: boolean | null;
   workedSolidarityDay: boolean | null;
   sickPayRule: unknown;
@@ -85,6 +86,7 @@ function payrollSettingsValues(row: SocialRow | undefined, automaticHeadcount: n
       : null,
     mobilityCommuneKnown: Boolean(row?.payrollCommuneCode),
     paidLeaveMethod: row?.paidLeaveMethod === "OUVRES" ? "OUVRES" : "OUVRABLES",
+    paidLeaveWorkingDays: Array.isArray(row?.paidLeaveWorkingDays) ? row.paidLeaveWorkingDays as boolean[] : null,
     ijssSubrogation: row?.ijssSubrogation !== false,
     workedSolidarityDay: row?.workedSolidarityDay === true,
     mealVoucherFaceValue: asText(row?.mealVoucherFaceValue),
@@ -153,7 +155,7 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
         select: { id: true, idcc: true, name: true },
         orderBy: { name: "asc" },
       }),
-      prisma.$queryRaw<SocialRow[]>`SELECT "legalCategory", "atmpRate", "healthPlanMonthlyAmount", "healthPlanEmployerRate", "companyCreationDate", "payrollDepartment", "payrollCommuneCode", "payrollHeadcount", "mobilityRate", "mobilityRateSource", "mobilityRateCheckedAt", "mobilityRateDetail", "registrySyncedAt", "registrySnapshot", "paidLeaveMethod", "ijssSubrogation", "workedSolidarityDay", "sickPayRule", "workAccidentPayRule", "prevoyanceRates", "mealVoucherFaceValue", "mealVoucherEmployerShare", "transportEmployerShare" FROM "organizations" WHERE "id" = ${membership.organizationId} LIMIT 1`,
+      prisma.$queryRaw<SocialRow[]>`SELECT "legalCategory", "atmpRate", "healthPlanMonthlyAmount", "healthPlanEmployerRate", "companyCreationDate", "payrollDepartment", "payrollCommuneCode", "payrollHeadcount", "mobilityRate", "mobilityRateSource", "mobilityRateCheckedAt", "mobilityRateDetail", "registrySyncedAt", "registrySnapshot", "paidLeaveMethod", "paidLeaveWorkingDays", "ijssSubrogation", "workedSolidarityDay", "sickPayRule", "workAccidentPayRule", "prevoyanceRates", "mealVoucherFaceValue", "mealVoucherEmployerShare", "transportEmployerShare" FROM "organizations" WHERE "id" = ${membership.organizationId} LIMIT 1`,
       prisma.employee.findMany({ where: { organizationId: membership.organizationId, deletedAt: null }, select: { id: true, contractType: true, hireDate: true, contractEndDate: true } }),
       prisma.payrollProfile.findMany({ where: { organizationId: membership.organizationId, effectiveFrom: { lte: lastDayOfMonth }, OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: lastDayOfMonth } }] }, select: { employeeId: true, monthlyHours: true } }),
     ]);

@@ -129,9 +129,16 @@ function isWorkingDay(day: IsoDay, schedule: WeeklySchedule, holidays: ReadonlyM
   return !holidays.has(day) && schedule[weekdayIndex(day)] > 0;
 }
 
+export function paidLeaveCompanySchedule(stored: unknown): WeeklySchedule {
+  if (!Array.isArray(stored) || stored.length !== 7 || stored.some((day) => typeof day !== "boolean") || stored.filter(Boolean).length !== 5) {
+    throw new Error("Le décompte de 25 jours ouvrés exige les cinq jours du calendrier de congés de l'entreprise. Renseignez-les dans les paramètres de paie ; ils sont distincts du planning d'un salarié à temps partiel.");
+  }
+  return stored.map((day) => day ? 1 : 0) as unknown as WeeklySchedule;
+}
+
 /**
  * Jours de congés payés décomptés pour une absence, limitée aux bornes du mois.
- * Ouvrés : jours habituellement travaillés. Ouvrables : du premier jour où le
+ * Ouvrés : calendrier des cinq jours de l'entreprise. Ouvrables : du premier jour où le
  * salarié aurait dû travailler jusqu'à la veille de la reprise, samedis compris
  * (une semaine du lundi au vendredi compte 6 jours ouvrables).
  */
@@ -142,21 +149,29 @@ export function paidLeaveDaysForAbsence(input: {
   windowEnd: IsoDay;
   method: "OUVRABLES" | "OUVRES";
   schedule: WeeklySchedule;
+  companyWorkingDays?: readonly boolean[] | null;
+  scheduleAt?: (day: IsoDay) => WeeklySchedule | null;
   holidays: ReadonlyMap<IsoDay, string>;
 }): number {
-  const from = input.absenceStart > input.windowStart ? input.absenceStart : input.windowStart;
-  const to = input.absenceEnd < input.windowEnd ? input.absenceEnd : input.windowEnd;
-  if (to < from) return 0;
-  if (input.method === "OUVRES") return leaveDaysBetween(from, to, "OUVRES", input.schedule, input.holidays);
-  let start = from;
-  while (start <= to && !isWorkingDay(start, input.schedule, input.holidays)) start = addDays(start, 1);
-  if (start > to) return 0;
-  let end = to;
-  if (input.absenceEnd <= input.windowEnd) {
-    // Prolonge jusqu'à la veille de la reprise (dans la limite du mois).
-    let next = addDays(end, 1);
-    let guard = 0;
-    while (next <= input.windowEnd && !isWorkingDay(next, input.schedule, input.holidays) && guard < 7) { end = next; next = addDays(next, 1); guard += 1; }
-  }
-  return leaveDaysBetween(start, end, "OUVRABLES", input.schedule, input.holidays);
+  assertSchedule(input.schedule);
+  const works = (day: IsoDay): boolean => {
+    const schedule = input.scheduleAt ? input.scheduleAt(day) : input.schedule;
+    if (!schedule) throw new Error("Le planning applicable pendant le congé ou à la reprise reste à confirmer.");
+    assertSchedule(schedule);
+    return isWorkingDay(day, schedule, input.holidays);
+  };
+  const countingSchedule = input.method === "OUVRES" ? paidLeaveCompanySchedule(input.companyWorkingDays) : input.schedule;
+  // Déterminer l'intervalle entier avant de le couper au mois : sinon le samedi
+  // suivant le vendredi du mois précédent disparaît des compteurs.
+  let start = input.absenceStart;
+  while (start <= input.absenceEnd && !works(start)) start = addDays(start, 1);
+  if (start > input.absenceEnd) return 0;
+  let next = addDays(input.absenceEnd, 1);
+  let guard = 0;
+  while (!works(next) && guard < 31) { next = addDays(next, 1); guard += 1; }
+  if (guard === 31) throw new Error("La date de reprise après le congé ne peut pas être déterminée à partir du planning.");
+  const end = addDays(next, -1);
+  const from = start > input.windowStart ? start : input.windowStart;
+  const to = end < input.windowEnd ? end : input.windowEnd;
+  return to < from ? 0 : leaveDaysBetween(from, to, input.method, countingSchedule, input.holidays);
 }

@@ -9,7 +9,7 @@
  * exonérée d'impôt et la contribution patronale spécifique sont renvoyées au
  * moteur de bulletin.
  */
-import { fromIsoDay, type IsoDay } from "./calendar";
+import { fromIsoDay, paidLeaveCompanySchedule, type IsoDay } from "./calendar";
 import { assertAmount, round2 } from "./money";
 import { SEVERANCE, valueAt } from "./params";
 import type { PaidLeaveBalances, PaidLeaveOutcome, PayslipInput, PayslipLine, TerminationReason } from "./types";
@@ -136,7 +136,7 @@ export function addTerminationLines(context: {
     const previousRemaining = Math.max(0, after.previousAcquired - after.previousTaken);
     const currentRemaining = Math.max(0, after.currentAcquired - after.currentTaken);
     // Maintien : valeur d'une journée selon le mode de décompte (26 jours ouvrables, ou jours ouvrés de l'horaire × 52 / 12).
-    const workedDaysPerWeek = pay.schedule.filter((hours) => hours > 0).length;
+    const workedDaysPerWeek = org.paidLeaveMethod === "OUVRES" ? paidLeaveCompanySchedule(org.paidLeaveWorkingDays).filter((day) => day > 0).length : 6;
     const daysPerMonth = org.paidLeaveMethod === "OUVRABLES" ? 26 : (workedDaysPerWeek * 52) / 12;
     const dailyValue = pay.monthlyBaseSalary / daysPerMonth;
     const bucket = (days: number, referenceGross: number | null, referenceDays: number) => {

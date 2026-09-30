@@ -8,7 +8,7 @@
  */
 import { round2 } from "./money";
 import { paidLeaveReferenceYear, parseYearToDate, rollPaidLeaveBalances } from "./inputs";
-import type { PaidLeaveBalances, PayslipResult, SickPayHistory, YearToDate } from "./types";
+import type { PaidLeaveBalances, PayslipInput, PayslipResult, SickPayHistory, YearToDate } from "./types";
 
 export const BULLETIN_SNAPSHOT_ENGINE = "RHPILOT_BULLETIN";
 
@@ -26,6 +26,7 @@ export type PayrollOpening = { year: number; throughMonth: number; cumuls: unkno
 export type PriorState = {
   yearToDate: YearToDate | null;
   paidLeave: PaidLeaveBalances;
+  paidLeaveIndemnities: NonNullable<PayslipInput["priorPaidLeaveIndemnities"]>;
   sickPayHistory: SickPayHistory;
   previousGrossSalaries: number[];
   grossSalaryHistory: Array<{ year: number; month: number; gross: number }>;
@@ -190,5 +191,22 @@ export function resolvePriorState(input: {
     return { year: calculation.year, month: calculation.month, gross: round2(bulletin ? bulletin.totals.grossSubject : calculation.grossAmount) };
   });
 
-  return { yearToDate, paidLeave, sickPayHistory, previousGrossSalaries, grossSalaryHistory, contractGrossBefore, contractGrossComplete, warnings };
+  const paidLeaveIndemnities: NonNullable<PayslipInput["priorPaidLeaveIndemnities"]> = {};
+  for (const calculation of [...prior].reverse()) {
+    const bulletin = bulletinFromSnapshot(calculation.snapshot);
+    for (const line of bulletin?.lines ?? []) {
+      const absenceId = line.detail?.absenceId;
+      if (line.code !== "CP_INDEMNITY" || typeof absenceId !== "string") continue;
+      const previous = paidLeaveIndemnities[absenceId];
+      const deduction = bulletin?.lines.find((item) => item.code === "ABS_PAID_LEAVE" && item.detail?.absenceId === absenceId);
+      paidLeaveIndemnities[absenceId] = {
+        days: round2((previous?.days ?? 0) + (line.quantity ?? 0)),
+        maintenance: round2((previous?.maintenance ?? 0) - (deduction?.amount ?? 0)),
+        paid: round2((previous?.paid ?? 0) + (line.amount ?? 0)),
+        referenceGross: bulletin?.paidLeave?.balancesAfter.referenceGross ?? null,
+        referenceDays: bulletin?.paidLeave?.balancesAfter.referenceAcquiredDays ?? null,
+      };
+    }
+  }
+  return { yearToDate, paidLeave, paidLeaveIndemnities, sickPayHistory, previousGrossSalaries, grossSalaryHistory, contractGrossBefore, contractGrossComplete, warnings };
 }
