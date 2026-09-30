@@ -35,6 +35,9 @@ export async function saveEmployeeWorkProfile(
   input: SaveEmployeeWorkProfileInput,
 ): Promise<void> {
   const work = buildContractWorkTime(input.weeklyHours, input.weeklySchedule);
+  const storedSchedule = input.weeklySchedule === null
+    ? Prisma.DbNull
+    : work.schedule as unknown as Prisma.InputJsonValue;
   const effectiveFrom = new Date(Date.UTC(
     input.effectiveFrom.getUTCFullYear(),
     input.effectiveFrom.getUTCMonth(),
@@ -56,7 +59,7 @@ export async function saveEmployeeWorkProfile(
       where: { id: exact.id },
       data: {
         monthlyHours: work.monthlyHours,
-        weeklySchedule: work.schedule as unknown as Prisma.InputJsonValue,
+        weeklySchedule: storedSchedule,
         structuralOvertimeHours: work.structuralOvertimeMonthlyHours,
         ...(input.baseSalaryCents !== undefined ? { baseSalaryCents: input.baseSalaryCents } : {}),
       },
@@ -104,7 +107,7 @@ export async function saveEmployeeWorkProfile(
       coefficient: source?.coefficient ?? null,
       seniorityDate: source?.seniorityDate ?? null,
       employeeAddress: source?.employeeAddress ?? null,
-      weeklySchedule: work.schedule as unknown as Prisma.InputJsonValue,
+      weeklySchedule: storedSchedule,
       structuralOvertimeHours: work.structuralOvertimeMonthlyHours,
       structuralOvertimeRate: source?.structuralOvertimeRate ?? null,
       healthPlanWaiver: source?.healthPlanWaiver ?? false,
