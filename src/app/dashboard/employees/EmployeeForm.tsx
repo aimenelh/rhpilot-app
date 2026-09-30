@@ -410,8 +410,9 @@ export function EmployeeForm({
             name="contractType"
             value={contractType}
             onChange={(event) => setContractType(event.target.value)}
+            required
           >
-            <option value="">Non défini</option>
+            <option value="">Choisir le type de contrat</option>
             <option value="CDI">CDI</option>
             <option value="CDD">CDD</option>
             <option value="APPRENTISSAGE">Contrat d&apos;apprentissage</option>
