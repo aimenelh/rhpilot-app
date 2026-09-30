@@ -60,7 +60,7 @@ export default async function EspaceLeavePage() {
     }
   }
   const scheduleAt = (day: string): WeeklySchedule | null => {
-    const at = new Date(`${day}T12:00:00.000Z`);
+    const at = new Date(`${day}T00:00:00.000Z`);
     const profile = [...workProfiles].reverse().find((candidate) =>
       candidate.effectiveFrom <= at && (!candidate.effectiveUntil || candidate.effectiveUntil >= at)
     );
