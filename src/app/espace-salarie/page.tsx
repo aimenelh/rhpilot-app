@@ -74,6 +74,9 @@ export default function EmployeeSpaceMarketingPage() {
               <Link href="/sign-up" className={s.primary}>
                 Créer mon espace
               </Link>
+              <Link href="/espace/connexion" className={s.secondary}>
+                Accéder à mon espace salarié
+              </Link>
               <Link href="/tarifs" className={s.secondary}>
                 Voir les tarifs
               </Link>
