@@ -31,5 +31,6 @@ describe("contractWorkTime", () => {
 
   it("refuse une répartition incohérente avec le contrat", () => {
     expect(() => buildContractWorkTime(35, [8, 8, 8, 8, 8, 0, 0])).toThrow(/totalise/i);
+    expect(() => buildContractWorkTime(35, [7, 7, 7])).toThrow(/sept jours/);
   });
 });
