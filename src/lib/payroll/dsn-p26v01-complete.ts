@@ -261,7 +261,7 @@ export function buildDsnP26V01Complete(input: DsnP26CompleteInput): string {
       add(affiliationBlocks, "S21.G00.70.014", dsnDate(affiliation.validFrom));
       add(affiliationBlocks, "S21.G00.70.015", affiliation.validUntil ? dsnDate(affiliation.validUntil) : null);
     }
-    const paymentIndex = baseRows.findIndex((row, index) => index > employeeStart && row.code === "S21.G00.50.001");
+    const paymentIndex = baseRows.findIndex((row, index) => index > employeeStart && row.code.startsWith("S21.G00.71."));
     if (paymentIndex < 0 || paymentIndex >= insertAt) throw new Error("DSN bloquée : versement du salarié introuvable pour rattacher les affiliations.");
     baseRows.splice(paymentIndex, 0, ...affiliationBlocks);
     insertAt += affiliationBlocks.length;

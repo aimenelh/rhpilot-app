@@ -93,6 +93,7 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     expect(payment.components).toHaveLength(2);
     expect(cents(payment.amount)).toBe(payment.components!.reduce((sum, component) => sum + cents(component.amount), 0));
     const content = buildDsnP26V01Complete(data);
+    expect(content.indexOf("S21.G00.70.012")).toBeLessThan(content.indexOf("S21.G00.71.002"));
     expect(content.match(/S21\.G00\.81\.001,'059'/g)).toHaveLength(2);
     expect(content).toContain("S21.G00.20.002,'DGFIP_PAS'");
     expect(content).toContain("S21.G00.55.004,'2026M01'");
