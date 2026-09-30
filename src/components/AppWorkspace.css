@@ -40,3 +40,18 @@
 .app-workspace .text-accent-teal{color:#087f73}
 .app-workspace .text-accent-amber{color:#a85208}
 .app-workspace button.bg-brand-primary,.app-workspace a.bg-brand-primary{background:#c43b28}
+
+/* Le nouvel accueil garde les routes et la navigation de l'application. */
+.dashboard-fil-shell{background:#f6f5f0;color:#252923;--workspace-muted:#62685e}
+.dashboard-fil-shell .workspace-sidebar{width:224px;padding-top:28px;border-color:#e3e6dc}
+.dashboard-fil-shell .workspace-header{min-height:76px;border-color:#e3e6dc;background:rgba(255,255,255,.85);box-shadow:none}
+.dashboard-fil-shell .workspace-main{padding-top:32px}
+.workspace-organization{display:flex;align-items:center;gap:10px;background:#f5f7f0;border:1px solid #e3e6dc;border-radius:9px;padding:12px 10px;margin-top:27px;min-width:0}
+.workspace-organization>span{display:grid;place-items:center;flex-shrink:0;width:30px;height:32px;background:#e9edde;border-radius:6px;color:#68765b}
+.workspace-organization>div{min-width:0}.workspace-organization strong{font-size:13px;font-weight:600;display:block;overflow-wrap:anywhere}.workspace-organization small{font-size:12px;color:#62685e;display:block;margin-top:2px}
+.dashboard-fil-shell .workspace-nav{margin-top:4px}.dashboard-fil-shell .workspace-nav p{color:#747b6a;font-weight:500;letter-spacing:.1em}
+.dashboard-fil-shell .workspace-nav a{border-color:transparent;border-radius:7px}.dashboard-fil-shell .workspace-nav a[aria-current=page]{background:#fbede7;color:#b33421;box-shadow:inset 3px 0 #c63c27;border-color:transparent}
+.dashboard-fil-shell .workspace-nav a:hover{transform:none}
+.workspace-preview-user{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#e9dfd1;color:#755b3f;font-size:11px}
+@media(max-width:1200px){.dashboard-fil-shell .workspace-sidebar{width:205px}.dashboard-fil-shell .workspace-main{padding-inline:24px}}
+@media(max-width:767px){.dashboard-fil-shell .workspace-header{min-height:64px}.dashboard-fil-shell .workspace-main{padding:22px 16px 6rem}.workspace-organization{margin-top:25px}}

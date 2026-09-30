@@ -21,6 +21,7 @@ import {
   WalletCards,
   ClipboardCheck,
   FileCheck2,
+  Building2,
   type LucideIcon,
 } from "lucide-react";
 import { Logomark, Wordmark } from "./Brand";
@@ -115,6 +116,7 @@ export function AppShell({
   aiEnabled,
   demoExpiresAt,
   children,
+  preview = false,
 }: {
   organizationName: string;
   accessRole: string;
@@ -125,8 +127,10 @@ export function AppShell({
   aiEnabled: boolean;
   demoExpiresAt: Date | null;
   children: React.ReactNode;
+  preview?: boolean;
 }) {
   const pathname = usePathname();
+  const filDashboard = pathname === "/dashboard" || preview;
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -157,10 +161,12 @@ export function AppShell({
         <Wordmark />
       </div>
 
+      {filDashboard ? <Link href="/dashboard/configuration/organisation" className="workspace-organization"><span><Building2 size={18}/></span><div><strong>{organizationName}</strong><small>{roleLabel}</small></div></Link> : null}
+
       <nav aria-label="Navigation principale" className="workspace-nav mt-6 flex flex-col gap-1">
         {NAV_ITEMS.map((item) => {
           const isActive =
-            item.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.href);
+            item.href === "/dashboard" ? pathname === "/dashboard" || preview : pathname.startsWith(item.href);
           const isPreview = item.previewOwnerAccess === true;
           const isAdmin = accessRole === "OWNER" || accessRole === "ADMIN";
           // Un module réservé aux administrateurs n'apparaît pas du tout pour un membre.
@@ -245,7 +251,7 @@ export function AppShell({
   );
 
   return (
-    <div className="app-workspace flex min-h-screen">
+    <div className={`app-workspace flex min-h-screen ${filDashboard ? "dashboard-fil-shell" : ""}`}>
       <a href="#workspace-main" className="workspace-skip">Aller au contenu</a>
       <aside className="workspace-sidebar hidden w-60 shrink-0 flex-col border-r border-surface-border bg-white px-4 py-5 md:flex">
         {navContent}
@@ -296,21 +302,23 @@ export function AppShell({
           </button>
 
           <div className="min-w-0 flex-1 sm:flex-none">
-            <p className="truncate text-sm font-semibold text-ink">{organizationName}</p>
-            <p className="truncate text-xs text-ink-faint">{roleLabel}</p>
+            <p className="truncate text-sm font-semibold text-ink">{filDashboard ? "Tableau de bord" : organizationName}</p>
+            <p className="truncate text-xs text-ink-faint">{preview ? "Aperçu · données fictives" : filDashboard ? organizationName : roleLabel}</p>
           </div>
 
           <div className="hidden flex-1 sm:block">
+            {preview ? null :
             <GlobalSearch />
+            }
           </div>
 
           <div className="shrink-0">
-            <UserButton afterSignOutUrl="/sign-in" />
+            {preview ? <span className="workspace-preview-user">AE</span> : <UserButton afterSignOutUrl="/sign-in" />}
           </div>
         </header>
 
         <main id="workspace-main" tabIndex={-1} className="workspace-main flex-1 px-4 py-6 md:px-8 md:py-8">
-          <div className="mb-4 sm:hidden"><GlobalSearch /></div>
+          {!preview ? <div className="mb-4 sm:hidden"><GlobalSearch /></div> : null}
           <div key={pathname} className="page-fade-in">
             {children}
           </div>
@@ -321,8 +329,8 @@ export function AppShell({
         <NavigationProgress />
       </Suspense>
       <FlashToast />
-      <AppCopilote summary={assistantSummary} aiEnabled={aiEnabled} />
-      <DiscoveryTour accessRole={accessRole} payrollEnabled={payrollEnabled} userName={assistantSummary.userDisplayName} completed={discoveryTourCompleted} />
+      {!preview ? <AppCopilote summary={assistantSummary} aiEnabled={aiEnabled} /> : null}
+      {!preview ? <DiscoveryTour accessRole={accessRole} payrollEnabled={payrollEnabled} userName={assistantSummary.userDisplayName} completed={discoveryTourCompleted} /> : null}
       <RhNewsToast items={rhNews} />
       <IosInstallHint />
     </div>
