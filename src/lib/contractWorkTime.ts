@@ -39,7 +39,8 @@ export function buildContractWorkTime(
     throw new Error("La durée hebdomadaire contractuelle est invalide.");
   }
 
-  const rawSchedule = scheduleInput && scheduleInput.length === 7
+  if (scheduleInput && scheduleInput.length !== 7) throw new Error("L'horaire doit contenir les sept jours de la semaine.");
+  const rawSchedule = scheduleInput
     ? [...scheduleInput]
     : [...defaultScheduleForWeeklyHours(weeklyHours)];
 

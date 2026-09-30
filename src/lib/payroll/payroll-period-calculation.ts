@@ -308,6 +308,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
 
     const baseSalary = (selected.baseSalaryCents ?? profile.baseSalaryCents) / 100;
     const extras = profileExtras.get(profile.id);
+    if (!Array.isArray(extras?.weeklySchedule) || extras.weeklySchedule.length !== 7) throw new Error(`Calcul bloqué pour ${displayName} : renseignez la répartition contractuelle des heures sur les sept jours. La durée mensuelle seule ne permet pas de déduire le planning.`);
     const schedule = resolveWeeklySchedule(extras?.weeklySchedule ?? null, monthlyHours);
     const warnings = [...mapped.warnings, ...prior.warnings, ...terminationWarnings];
     if (selected.warning) warnings.push(selected.warning);

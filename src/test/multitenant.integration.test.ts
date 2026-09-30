@@ -88,6 +88,7 @@ async function cleanupFixtures(f: Fixtures) {
   await prisma.anomalyDismissal.deleteMany({ where: { organizationId: { in: [f.orgA.id, f.orgB.id] } } });
   await prisma.task.deleteMany({ where: { organizationId: { in: [f.orgA.id, f.orgB.id] } } });
   await prisma.employeeEvent.deleteMany({ where: { organizationId: { in: [f.orgA.id, f.orgB.id] } } });
+  await prisma.payrollProfile.deleteMany({ where: { organizationId: { in: [f.orgA.id, f.orgB.id] } } });
   await prisma.employee.deleteMany({ where: { organizationId: { in: [f.orgA.id, f.orgB.id] } } });
   await prisma.taskTemplate.deleteMany({ where: { id: f.taskTemplate.id } });
   await prisma.eventTemplate.deleteMany({ where: { id: f.eventTemplate.id } });
@@ -164,6 +165,9 @@ describe("Isolation multi-tenant — mutations critiques", () => {
     formData.set("firstName", "Karim");
     formData.set("lastName", "Test");
     formData.set("hireDate", "2026-01-15");
+    formData.set("contractType", "CDI");
+    formData.set("weeklyHours", "35");
+    [7, 7, 7, 7, 7, 0, 0].forEach((hours, day) => formData.set(`schedule.${day}`, String(hours)));
     formData.set("managerMembershipId", fixtures.membershipB.id); // appartient à l'organisation B
 
     const result = await createEmployee(undefined, formData);
@@ -182,6 +186,9 @@ describe("Isolation multi-tenant — mutations critiques", () => {
     formData.set("firstName", "Karim");
     formData.set("lastName", "Test2");
     formData.set("hireDate", "2026-01-15");
+    formData.set("contractType", "CDI");
+    formData.set("weeklyHours", "35");
+    [7, 7, 7, 7, 7, 0, 0].forEach((hours, day) => formData.set(`schedule.${day}`, String(hours)));
     formData.set("managerMembershipId", fixtures.membershipA.id); // appartient bien à l'organisation A
 
     // Un createEmployee réussi se termine par un redirect(), comme
@@ -195,6 +202,11 @@ describe("Isolation multi-tenant — mutations critiques", () => {
     expect(created?.managerMembershipId).toBe(fixtures.membershipA.id);
 
     // Nettoyage immédiat, ce salarié n'est pas géré par cleanupFixtures.
-    if (created) await prisma.employee.delete({ where: { id: created.id } });
+    if (created) {
+      await prisma.payrollProfile.deleteMany({
+        where: { organizationId: fixtures.orgA.id, employeeId: created.id },
+      });
+      await prisma.employee.delete({ where: { id: created.id } });
+    }
   });
 });

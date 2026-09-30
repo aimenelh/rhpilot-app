@@ -265,7 +265,7 @@ export function EmployeeForm({
   useEffect(() => {
     if (scheduleTouched) return;
     const parsed = Number(weeklyHours.replace(",", "."));
-    if (!Number.isFinite(parsed) || parsed <= 0) {
+    if (!Number.isFinite(parsed) || parsed <= 0 || parsed > 60) {
       setWeeklySchedule(["", "", "", "", "", "", ""]);
       return;
     }
@@ -466,7 +466,7 @@ export function EmployeeForm({
                 type="number"
                 min={0.25}
                 max={84}
-                step={0.25}
+                step={0.01}
                 value={weeklyHours}
                 onChange={(event) => setWeeklyHours(event.target.value)}
                 placeholder="35"

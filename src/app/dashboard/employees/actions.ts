@@ -127,6 +127,9 @@ function validateEmployeeFields(fields: ReturnType<typeof readEmployeeFields>): 
     return "La durée hebdomadaire contractuelle est obligatoire.";
   }
   const weeklyHours = Number(fields.weeklyHoursRaw);
+  if (fields.weeklyScheduleRaw.some((value) => value === "")) {
+    return "Renseignez les sept jours de l'horaire contractuel (0 pour un jour non travaillé).";
+  }
   const schedule = fields.weeklyScheduleRaw.some((value) => value !== "")
     ? fields.weeklyScheduleRaw.map((value) => (value === "" ? 0 : Number(value)))
     : null;

@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { buildContractWorkTime } from "@/lib/contractWorkTime";
 
 type Db = Prisma.TransactionClient;
