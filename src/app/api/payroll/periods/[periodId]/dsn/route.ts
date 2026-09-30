@@ -1,63 +1,59 @@
 import { NextResponse } from "next/server";
-
-import { prepareDsnP26V01 } from "@/lib/payroll/dsn-preparation";
+import { getCurrentUser } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import { createDsnPrecontrolArchive } from "@/lib/payroll/dsn-archive-server";
+import { openDsnArchive } from "@/lib/payroll/dsn-archive";
 import { getPayrollMembership } from "@/lib/payrollAccess";
 import { userFacingError } from "@/lib/userFacingError";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+type Archive = Awaited<ReturnType<typeof createDsnPrecontrolArchive>>;
+function fileResponse(archive: Archive) {
+  const body = openDsnArchive(archive);
+  return new NextResponse(body as unknown as BodyInit, { status: 200, headers: {
+    "Content-Type": "text/plain; charset=iso-8859-1", "Content-Disposition": `attachment; filename="${archive.fileName}"`,
+    "Content-Length": String(body.length), "Cache-Control": "private, no-store, max-age=0",
+    "X-RH-Pilot-DSN-Norm": archive.normVersion, "X-RH-Pilot-DSN-Mode": "precontrole",
+    "X-RH-Pilot-DSN-Archive": archive.id, "X-RH-Pilot-DSN-SHA256": archive.sha256,
+  } });
+}
+function failure(error: unknown) {
+  const message = userFacingError(error, "Impossible de préparer ou de lire le fichier DSN.");
+  return NextResponse.json({ error: message }, { status: message.startsWith("DSN bloquée") || message.startsWith("Contrôle paie bloquant") ? 409 : 500 });
+}
 export async function GET(request: Request, { params }: { params: { periodId: string } }) {
   const membership = await getPayrollMembership();
   if (!membership) return NextResponse.json({ error: "Session expirée, veuillez vous reconnecter." }, { status: 401 });
-  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {
-    return NextResponse.json({ error: "Accès DSN réservé aux administrateurs." }, { status: 403 });
-  }
-
+  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return NextResponse.json({ error: "Accès DSN réservé aux administrateurs." }, { status: 403 });
   const url = new URL(request.url);
-  const mode = url.searchParams.get("mode") ?? "test";
-  if (mode !== "test") {
-    return NextResponse.json(
-      {
-        error: "Le dépôt réel est volontairement bloqué. Utilisez d'abord l'export de pré-contrôle et Dsn-Val 2026.",
-      },
-      { status: 409 },
-    );
-  }
-
+  if ((url.searchParams.get("mode") ?? "test") !== "test") return NextResponse.json({ error: "Le dépôt réel reste bloqué." }, { status: 409 });
   try {
-    const result = await prepareDsnP26V01({
-      organizationId: membership.organizationId,
-      periodId: params.periodId,
-      testMode: true,
-    });
-
-    // NEODeS impose l'alphabet Latin-1 pour le fichier physique.
-    // Toute donnée non représentable est rejetée au lieu d'être translittérée.
-    for (const character of result.content) {
-      if (character.charCodeAt(0) > 255) {
-        return NextResponse.json(
-          { error: `DSN bloquée : le fichier contient un caractère hors ISO-8859-1 (${JSON.stringify(character)}).` },
-          { status: 409 },
-        );
-      }
-    }
-    const body = Buffer.from(result.content, "latin1");
-
-    return new NextResponse(body as unknown as BodyInit, {
-      status: 200,
-      headers: {
-        "Content-Type": "text/plain; charset=iso-8859-1",
-        "Content-Disposition": `attachment; filename="${result.fileName}"`,
-        "Content-Length": String(body.length),
-        "Cache-Control": "private, no-store, max-age=0",
-        "X-RH-Pilot-DSN-Norm": result.normVersion,
-        "X-RH-Pilot-DSN-Mode": "precontrole",
-      },
-    });
+    const archiveId = url.searchParams.get("archiveId");
+    const archive = await prisma.dsn_declarations.findFirst({ where: { organizationId: membership.organizationId, payrollPeriodId: params.periodId, ...(archiveId ? { id: archiveId } : {}) }, orderBy: { version: "desc" } });
+    if (!archive) return NextResponse.json({ error: "Archive DSN introuvable. Générez d'abord une version de pré-contrôle." }, { status: 404 });
+    return fileResponse(archive);
+  } catch (error) { return failure(error); }
+}
+export async function POST(request: Request, { params }: { params: { periodId: string } }) {
+  const membership = await getPayrollMembership();
+  if (!membership) return NextResponse.json({ error: "Session expirée, veuillez vous reconnecter." }, { status: 401 });
+  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return NextResponse.json({ error: "Accès DSN réservé aux administrateurs." }, { status: 403 });
+  if (request.headers.get("origin") !== new URL(request.url).origin) return NextResponse.json({ error: "Origine de la requête invalide." }, { status: 403 });
+  if (!request.headers.get("content-type")?.startsWith("application/json")) return NextResponse.json({ error: "Requête JSON attendue." }, { status: 400 });
+  try {
+    const body = await request.text();
+    if (body.length > 4096) return NextResponse.json({ error: "Requête trop volumineuse." }, { status: 413 });
+    const payload = JSON.parse(body) as { mode?: unknown; requestKey?: unknown };
+    if (!payload || payload.mode !== "test") return NextResponse.json({ error: "Seul le pré-contrôle est disponible ; le dépôt réel reste bloqué." }, { status: 409 });
+    if (typeof payload.requestKey !== "string" || !/^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i.test(payload.requestKey)) return NextResponse.json({ error: "Identifiant de requête invalide." }, { status: 400 });
+    const user = await getCurrentUser();
+    if (!user) return NextResponse.json({ error: "Session expirée." }, { status: 401 });
+    const archive = await createDsnPrecontrolArchive({ organizationId: membership.organizationId, periodId: params.periodId, actorUserId: user.id, requestKey: payload.requestKey });
+    return fileResponse(archive);
   } catch (error) {
-    const message = userFacingError(error, "Impossible de préparer le fichier DSN.");
-    const status = message.startsWith("DSN bloquée") || message.startsWith("Contrôle paie bloquant") ? 409 : 500;
-    return NextResponse.json({ error: message }, { status });
+    if (error instanceof SyntaxError) return NextResponse.json({ error: "Requête JSON invalide." }, { status: 400 });
+    return failure(error);
   }
 }

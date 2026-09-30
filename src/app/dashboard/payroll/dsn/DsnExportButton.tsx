@@ -1,8 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useRef, useState } from "react";
 
 export default function DsnExportButton({ periodId }: { periodId: string }) {
+  const router = useRouter();
+  const requestKey = useRef<string | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -10,8 +13,11 @@ export default function DsnExportButton({ periodId }: { periodId: string }) {
     setPending(true);
     setError(null);
     try {
+      requestKey.current ??= crypto.randomUUID();
       const response = await fetch(`/api/payroll/periods/${periodId}/dsn?mode=test`, {
-        method: "GET",
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: "test", requestKey: requestKey.current }),
         cache: "no-store",
       });
       if (!response.ok) {
@@ -30,6 +36,8 @@ export default function DsnExportButton({ periodId }: { periodId: string }) {
       anchor.click();
       anchor.remove();
       URL.revokeObjectURL(url);
+      requestKey.current = null;
+      router.refresh();
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Impossible de préparer la DSN.");
     } finally {

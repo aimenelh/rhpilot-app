@@ -525,6 +525,7 @@ model PayrollProfile {
 }
 
 model PayrollPeriod {
+  dsn_declarations dsn_declarations[]
   id                    String                  @id
   organizationId        String
   year                  Int
@@ -1019,4 +1020,28 @@ enum PayrollImpactStatus {
   PENDING
   READY
   INTEGRATED
+}
+
+model dsn_declarations {
+  id String @id
+  organizationId String
+  payrollPeriodId String
+  version Int
+  requestKey String
+  normVersion String @default("P26V01")
+  mode String @default("PRECONTROL")
+  fileName String
+  contentCiphertext String
+  sha256 String
+  sizeBytes Int
+  employeeCount Int
+  warnings Json
+  createdByUserId String
+  createdAt DateTime @default(now())
+  payroll_periods PayrollPeriod @relation(fields: [organizationId, payrollPeriodId], references: [organizationId, id], onDelete: Restrict, map: "dsn_declarations_period_fk")
+
+  @@unique([organizationId, id], map: "dsn_declarations_organization_id_id_key")
+  @@unique([organizationId, payrollPeriodId, version], map: "dsn_declarations_period_version_key")
+  @@unique([organizationId, requestKey], map: "dsn_declarations_request_key")
+  @@index([organizationId, payrollPeriodId, createdAt], map: "dsn_declarations_period_created_idx")
 }

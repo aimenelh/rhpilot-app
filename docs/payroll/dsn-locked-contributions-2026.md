@@ -12,9 +12,16 @@ Mapping versionné P26V01-RG-2026.1 :
 
 La présence d'une affiliation et la saisie de sa référence ne remplacent pas la vérification de la fiche de paramétrage. Les autres composants, périodicités et changements d'affiliation en cours de mois restent bloqués.
 
-Le dépôt réel reste désactivé. Les événements, régularisations historiques, contributions annuelles, archives immuables de déclaration et retours métier ne sont pas encore entièrement raccordés. Les primes, absences, heures supplémentaires/complémentaires, apprentis et régimes spécifiques non traduits sont bloqués explicitement avant export.
+Le dépôt réel reste désactivé. Les événements, régularisations historiques, contributions annuelles, retours métier ne sont pas encore entièrement raccordés. Les primes, absences, heures supplémentaires/complémentaires, apprentis et régimes spécifiques non traduits sont bloqués explicitement avant export.
 
 ## Vérification
 La CI exécute migrations PostgreSQL, validation du schéma, TypeScript, lint, tests et build. Le job Dsn-Val vérifie des fichiers synthétiques, dont des bulletins réellement calculés et une double affiliation santé/prévoyance ; un témoin invalide doit être refusé. Un résultat Dsn-Val accepté établit la conformité structurelle de ces exemples, pas l'acceptation métier de toutes les paies d'une entreprise.
 
 Références : cahier technique DSN 2026.1.2, consignes 2556 et 2537, documentation Urssaf maladie/allocations familiales 2026 et RGDU, fiches de paramétrage des organismes.
+
+## Archives de pré-contrôle
+La génération utilise une requête POST authentifiée, réservée aux administrateurs et vérifiée sur la même origine. Une clé de requête évite une nouvelle version lors d'un nouvel essai du même téléchargement. Chaque génération volontaire produit une version distincte.
+
+Les octets ISO-8859-1 et CRLF sont chiffrés au repos avec les identifiants de l'entreprise, de la période et de l'archive dans l'enveloppe chiffrée. Le téléchargement vérifie cette identité, la taille et l'empreinte SHA-256. Les fichiers ne sont jamais reconstruits lors d'un téléchargement GET.
+
+PostgreSQL interdit les mises à jour et suppressions des archives et impose une clé étrangère entreprise/période. Cette archive de pré-contrôle n'est ni une preuve de dépôt ni un accusé d'acceptation des organismes. La gestion de conservation et rotation de clé doit être définie avant l'ouverture du dépôt réel.
