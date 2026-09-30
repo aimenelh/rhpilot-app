@@ -10,8 +10,13 @@ import {
   Download,
   Upload,
   TriangleAlert,
+  UsersRound,
+  CreditCard,
+  ClipboardCheck,
+  WalletCards,
 } from "lucide-react";
 import { getCurrentMembership } from "@/lib/auth";
+import { canUsePayroll } from "@/lib/payrollAccess";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -70,6 +75,13 @@ export default async function ConfigurationPage() {
           </Card>
         </Link>
       )}
+
+      {canManageData ? <Card className="mt-6 divide-y divide-surface-border p-0">{[
+        { href: "/dashboard/team", title: "Gestion des membres", description: "Invitations, rôles et accès à votre organisation.", icon: UsersRound },
+        { href: "/dashboard/billing", title: "Facturation", description: "Votre abonnement et vos factures.", icon: CreditCard },
+        { href: "/dashboard/obligations", title: "Obligations RH", description: "Les obligations à suivre dans votre entreprise.", icon: ClipboardCheck },
+        ...(canUsePayroll(membership) ? [{ href: "/dashboard/payroll", title: "Paie · Accès anticipé", description: "Accéder à votre module de paie.", icon: WalletCards }] : []),
+      ].map(item => <Link key={item.href} href={item.href} className="flex items-start gap-3 px-5 py-4 transition-colors hover:bg-surface-subtle"><item.icon size={18} className="mt-0.5 shrink-0 text-ink-faint"/><div className="min-w-0 flex-1"><h2 className="text-sm font-semibold text-ink">{item.title}</h2><p className="mt-0.5 text-sm text-ink-soft">{item.description}</p></div><ChevronRight size={16} className="mt-0.5 shrink-0 text-ink-faint"/></Link>)}</Card> : null}
 
       <Card className="mt-4 divide-y divide-surface-border p-0">
         {!organizationSectionIncomplete && (

@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
-import { Info, CheckCheck } from "lucide-react";
+import { Info, CheckCheck, Sparkles } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Field";
 import { Logomark } from "@/components/Brand";
@@ -39,7 +39,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
     </button>
   );
 }
-export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean }) {
+export function AskAboutOrganization({ aiEnabled = true, compact = false }: { aiEnabled?: boolean; compact?: boolean }) {
   const [state, formAction] = useFormState<AskAboutOrganizationState, FormData>(
     askAboutOrganizationAction,
     undefined
@@ -67,15 +67,15 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
     });
   }, [messages]);
   return (
-    <Card className="flex h-[22rem] min-h-0 flex-col overflow-hidden border-brand-primary-dark/25 bg-gradient-to-br from-brand-primary-dark/[0.04] to-brand-primary/[0.04]">
-      <div className="flex shrink-0 items-center justify-between">
+    <Card className={compact ? "fil-ask" : "flex h-[22rem] min-h-0 flex-col overflow-hidden border-brand-primary-dark/25 bg-gradient-to-br from-brand-primary-dark/[0.04] to-brand-primary/[0.04]"}>
+      <div className={compact ? "fil-ask-heading" : "flex shrink-0 items-center justify-between"}>
         <div className="flex items-center gap-2.5">
           <div className="relative shrink-0">
-            <Logomark size={30} />
+            {compact ? <span className="fil-ask-mark"><Sparkles size={23}/></span> : <Logomark size={30} />}
           </div>
-          <p className="text-sm font-semibold text-ink">Copilote RH Pilot</p>
+          <div><p className={compact ? "fil-ask-title" : "text-sm font-semibold text-ink"}>{compact ? "Votre Copilote RH" : "Copilote RH Pilot"}</p>{compact ? <p className="fil-ask-subtitle">Un peu de clarté pour la suite.</p> : null}</div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className={compact ? "fil-ask-availability" : "flex items-center gap-2"}>
           <span className="flex items-center gap-1.5 text-xs font-medium text-ink-faint">
             <span className={`h-1.5 w-1.5 rounded-full ${aiEnabled ? "bg-accent-teal" : "bg-ink-faint"}`} />
             {aiEnabled ? "En ligne" : "Indisponible"}
@@ -88,7 +88,7 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
         </div>
       </div>
 
-      <div className="mt-2 min-h-0 flex-1">
+      <div className={compact ? `fil-ask-content ${messages.length ? "has-messages" : ""}` : "mt-2 min-h-0 flex-1"}>
         {messages.length === 0 ? (
           <p className="text-xs text-ink-faint">
             Posez une question sur votre organisation. Recevez des réponses basées sur vos données RH.
@@ -96,6 +96,7 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
         ) : (
           <div
             ref={scrollRef}
+            aria-live="polite"
             className="flex h-full min-h-0 flex-col gap-3 overflow-y-auto overscroll-contain pr-1"
           >
             {messages.map((m, i) =>
@@ -127,15 +128,16 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
       </div>
 
       {state?.error && (
-        <p role="alert" className="mt-2 shrink-0 text-sm text-accent-rose">
+        <p role="alert" className="fil-ask-error mt-2 shrink-0 text-sm text-accent-rose">
           {state.error}
         </p>
       )}
-      <form action={formAction} className="mt-3 flex shrink-0 flex-wrap gap-2 border-t border-surface-border/70 pt-3">
+      <form action={formAction} className={compact ? "fil-ask-form" : "mt-3 flex shrink-0 flex-wrap gap-2 border-t border-surface-border/70 pt-3"}>
         <Input
+          id={compact ? "dashboard-copilot-question" : undefined}
           aria-label="Votre question au Copilote"
           name="question"
-          placeholder="Posez votre question..."
+          placeholder={compact ? "Que souhaitez-vous vérifier aujourd’hui ?" : "Posez votre question..."}
           required
           maxLength={500}
           disabled={!aiEnabled}
@@ -145,6 +147,7 @@ export function AskAboutOrganization({ aiEnabled = true }: { aiEnabled?: boolean
         />
         <SubmitButton disabled={!aiEnabled} />
       </form>
+      {compact ? <div className="fil-ask-suggestions">{["Les fins de période d’essai", "Les prochaines arrivées", "Mes urgences du jour"].map((label, index) => <button key={label} type="button" disabled={!aiEnabled} onClick={() => { setQuestion(["Quelles périodes d’essai se terminent bientôt ?", "Quelles arrivées faut-il préparer ?", "Quelles actions urgentes nécessitent mon attention ?"][index]); document.getElementById("dashboard-copilot-question")?.focus(); }}>{label}</button>)}</div> : null}
     </Card>
   );
 }

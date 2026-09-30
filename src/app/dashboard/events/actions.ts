@@ -100,7 +100,7 @@ export async function triggerEventQuick(formData: FormData) {
   );
 }
 
-export async function updateTaskStatus(taskId: string, formData: FormData) {
+async function persistTaskStatus(taskId: string, formData: FormData, quick = false) {
   const membership = await getCurrentMembership();
   const user = await getCurrentUser();
   if (!membership || !user) {
@@ -116,6 +116,9 @@ export async function updateTaskStatus(taskId: string, formData: FormData) {
   if (!task) throw new Error("Tâche introuvable dans cette organisation");
   if (!canUpdateTask(membership, task)) {
     throw new Error("Vous n'êtes pas autorisé à modifier cette tâche.");
+  }
+  if (quick && task.proofRequired) {
+    throw new Error("Ouvrez le parcours pour vérifier la pièce attendue avant de terminer cette étape.");
   }
 
   const statusRaw = String(formData.get("status") ?? "");
@@ -145,9 +148,32 @@ export async function updateTaskStatus(taskId: string, formData: FormData) {
     }),
   ]);
 
+  return task.employeeEventId;
+}
+
+export async function updateTaskStatus(taskId: string, formData: FormData) {
+  const employeeEventId = await persistTaskStatus(taskId, formData);
   redirect(
-    `/dashboard/events/${task.employeeEventId}?flash=${encodeURIComponent("Statut mis à jour")}`
+    `/dashboard/events/${employeeEventId}?flash=${encodeURIComponent("Statut mis à jour")}`
   );
+}
+
+export async function completeDashboardTask(
+  taskId: string,
+  _previous: { error: string } | undefined,
+  _formData: FormData
+): Promise<{ error: string } | undefined> {
+  try {
+    // Même validation de session, d'organisation et de droits que dans le parcours.
+    const data = new FormData();
+    data.set("status", "DONE");
+    const eventId = await persistTaskStatus(taskId, data, true);
+    revalidatePath("/dashboard", "layout");
+    revalidatePath(`/dashboard/events/${eventId}`);
+    return undefined;
+  } catch (error) {
+    return { error: userFacingError(error, "Cette action n'a pas pu être enregistrée. Réessayez.") };
+  }
 }
 
 /**

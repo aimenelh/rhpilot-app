@@ -5,25 +5,8 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
-import {
-  Mail,
-  Compass,
-  Users,
-  Route,
-  CalendarDays,
-  UsersRound,
-  Settings,
-  Bell,
-  CreditCard,
-  HelpCircle,
-  Menu,
-  X,
-  WalletCards,
-  ClipboardCheck,
-  FileCheck2,
-  type LucideIcon,
-} from "lucide-react";
 import { Logomark, Wordmark } from "./Brand";
+import { Users, Route, CalendarDays, Settings, Bell, Menu, X, LayoutGrid, Leaf, FileText, Sparkles, ChevronDown, MessageCircle, type LucideIcon } from "lucide-react";
 import { FlashToast } from "./ui/FlashToast";
 import { GlobalSearch } from "./GlobalSearch";
 import { RhNewsToast } from "./RhNewsToast";
@@ -36,46 +19,18 @@ import { NavigationProgress } from "@/components/app/NavigationProgress";
 const AppCopilote = dynamic(() => import("./AppCopilote").then((mod) => mod.AppCopilote), { ssr: false });
 const DiscoveryTour = dynamic(() => import("./tour/DiscoveryTour").then((mod) => mod.DiscoveryTour), { ssr: false });
 
-type NavItem = {
-  href: string;
-  label: string;
-  available: boolean;
-  icon: LucideIcon;
-  section?: string;
-  previewOwnerAccess?: boolean;
-  adminOnly?: boolean;
-  badge?: string;
-};
+type NavItem = { href: string; label: string; icon: LucideIcon; section?: string; adminOnly?: boolean };
 
 const NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard", label: "Tableau de bord", available: true, icon: Compass, section: "Accueil" },
-  { href: "/dashboard/employees", label: "Salariés", available: true, icon: Users, section: "Gestion RH" },
-  { href: "/dashboard/absences", label: "Absences", available: true, icon: ClipboardCheck, adminOnly: true },
-  { href: "/dashboard/obligations", label: "Obligations RH", available: true, icon: FileCheck2, adminOnly: true },
-  {
-    href: "/dashboard/payroll",
-    label: "Paie",
-    available: false,
-    previewOwnerAccess: true,
-    badge: "Bientôt disponible",
-    icon: WalletCards,
-  },
-  { href: "/dashboard/events", label: "Parcours", available: true, icon: Route },
-  { href: "/dashboard/calendar", label: "Calendrier", available: true, icon: CalendarDays },
-  {
-    href: "/dashboard/team",
-    label: "Équipe",
-    available: true,
-    adminOnly: true,
-    icon: UsersRound,
-    section: "Espace",
-  },
-  { href: "/dashboard/billing", label: "Facturation", available: true, icon: CreditCard, adminOnly: true },
-  { href: "/dashboard/configuration", label: "Configuration", available: true, icon: Settings },
-  { href: "/dashboard/notifications", label: "Notifications", available: true, icon: Bell },
+  { href: "/dashboard", label: "Tableau de bord", icon: LayoutGrid, section: "Votre espace" },
+  { href: "/dashboard/employees", label: "Salariés", icon: Users },
+  { href: "/dashboard/events", label: "Parcours RH", icon: Route },
+  { href: "/dashboard/calendar", label: "Calendrier", icon: CalendarDays },
+  { href: "/dashboard/absences", label: "Congés & absences", icon: Leaf, adminOnly: true },
+  { href: "/dashboard/documents", label: "Documents", icon: FileText, adminOnly: true },
+  { href: "/dashboard#copilote", label: "Copilote RH", icon: Sparkles, section: "Pour aller plus loin" },
+  { href: "/dashboard/configuration", label: "Configuration", icon: Settings },
 ];
-
-const HELP_ITEM: NavItem = { href: "/dashboard/help", label: "Aide", available: true, icon: HelpCircle };
 
 function useDemoCountdownLabel(target: Date | null) {
   const [label, setLabel] = useState<string | null>(null);
@@ -115,6 +70,9 @@ export function AppShell({
   aiEnabled,
   demoExpiresAt,
   children,
+  preview = false,
+  employeeCount = 0,
+  pendingRequestsCount = 0,
 }: {
   organizationName: string;
   accessRole: string;
@@ -125,8 +83,12 @@ export function AppShell({
   aiEnabled: boolean;
   demoExpiresAt: Date | null;
   children: React.ReactNode;
+  preview?: boolean;
+  employeeCount?: number;
+  pendingRequestsCount?: number;
 }) {
   const pathname = usePathname();
+  const filDashboard = pathname === "/dashboard" || preview;
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuButtonRef = useRef<HTMLButtonElement>(null);
@@ -135,6 +97,7 @@ export function AppShell({
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     const panel = menuRef.current;
+    const menuButton = menuButtonRef.current;
     panel?.querySelector<HTMLButtonElement>("button")?.focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") setMobileNavOpen(false);
@@ -145,107 +108,28 @@ export function AppShell({
       else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
     };
     document.addEventListener("keydown", onKey);
-    return () => { document.body.style.overflow = previousOverflow; document.removeEventListener("keydown", onKey); menuButtonRef.current?.focus(); };
+    return () => { document.body.style.overflow = previousOverflow; document.removeEventListener("keydown", onKey); menuButton?.focus(); };
   }, [mobileNavOpen]);
   const roleLabel = ({ OWNER: "Propriétaire", ADMIN: "Administrateur", MEMBER: "Membre" } as Record<string, string>)[accessRole] ?? accessRole;
   const demoCountdownLabel = useDemoCountdownLabel(demoExpiresAt);
 
-  const navContent = (
-    <>
-      <div className="flex items-center gap-2 px-2">
-        <Logomark />
-        <Wordmark />
-      </div>
-
-      <nav aria-label="Navigation principale" className="workspace-nav mt-6 flex flex-col gap-1">
-        {NAV_ITEMS.map((item) => {
-          const isActive =
-            item.href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(item.href);
-          const isPreview = item.previewOwnerAccess === true;
-          const isAdmin = accessRole === "OWNER" || accessRole === "ADMIN";
-          // Un module réservé aux administrateurs n'apparaît pas du tout pour un membre.
-          if (item.adminOnly && !isAdmin) return null;
-          const canOpen = item.available || (isPreview && payrollEnabled);
-          const badge = isPreview && payrollEnabled ? "Accès anticipé" : item.badge;
-
-          return (
-            <div key={item.href}>
-              {item.section && (
-                <p className="mb-1.5 mt-5 px-3 text-[10px] font-normal uppercase tracking-wider text-ink-faint/70">
-                  {item.section}
-                </p>
-              )}
-              {canOpen ? (
-                <Link
-                  href={item.href}
-                  aria-current={isActive ? "page" : undefined}
-                  onClick={() => setMobileNavOpen(false)}
-                  className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
-                    isPreview
-                      ? isActive
-                        ? "bg-surface-subtle text-ink"
-                        : "text-ink-faint hover:bg-surface-subtle hover:text-ink-soft"
-                      : isActive
-                        ? "bg-brand-primary/10 text-brand-primary"
-                        : "text-ink-soft hover:translate-x-0.5 hover:bg-surface-subtle hover:text-ink"
-                  }`}
-                  title={isPreview ? "Paie en accès anticipé" : undefined}
-                >
-                  <item.icon size={16} strokeWidth={2.5} />
-                  <span className="min-w-0 flex-1">{item.label}</span>
-                  {badge ? (
-                    <span className="rounded-full bg-surface-border/70 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-ink-faint">
-                      {badge}
-                    </span>
-                  ) : null}
-                </Link>
-              ) : (
-                <div
-                  aria-disabled="true"
-                  className="flex cursor-not-allowed items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium text-ink-faint/55"
-                  title="Bientôt disponible"
-                >
-                  <item.icon size={16} strokeWidth={2.5} />
-                  <span className="min-w-0 flex-1">{item.label}</span>
-                  {item.badge ? (
-                    <span className="rounded-full bg-surface-subtle px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-ink-faint/70">
-                      {item.badge}
-                    </span>
-                  ) : null}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </nav>
-
-      <div className="mt-auto flex flex-col gap-1 pt-4">
-        <Link
-          href={HELP_ITEM.href}
-          aria-current={pathname.startsWith(HELP_ITEM.href) ? "page" : undefined}
-          onClick={() => setMobileNavOpen(false)}
-          className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150 ${
-            pathname.startsWith(HELP_ITEM.href)
-              ? "bg-brand-primary/10 text-brand-primary"
-              : "text-ink-faint hover:translate-x-0.5 hover:bg-surface-subtle hover:text-ink-soft"
-          }`}
-        >
-          <HELP_ITEM.icon size={16} strokeWidth={2.5} />
-          {HELP_ITEM.label}
-        </Link>
-        <a
-          href="mailto:contact@rhpilot.fr?subject=Retour%20RH%20Pilot"
-          className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-ink-faint transition-colors hover:bg-surface-subtle hover:text-ink-soft"
-        >
-          <Mail size={15} />
-          Envoyer un retour
-        </a>
-      </div>
-    </>
-  );
+  const userInitials = assistantSummary.userDisplayName.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase();
+  const navContent = <>
+    <Link href="/dashboard" className="workspace-brand" aria-label="RH Pilot — Tableau de bord" onClick={() => setMobileNavOpen(false)}><Logomark/><Wordmark/></Link>
+    <Link href="/dashboard/configuration/organisation" className="workspace-organization"><span>{organizationName.charAt(0)}</span><div><strong>{organizationName}</strong><small>Votre organisation</small></div><ChevronDown size={14}/></Link>
+    <nav aria-label="Navigation principale" className="workspace-nav">
+      {NAV_ITEMS.map(item => {
+        if (item.adminOnly && accessRole !== "OWNER" && accessRole !== "ADMIN") return null;
+        const isActive = item.href === "/dashboard" ? filDashboard : !item.href.includes("#") && pathname.startsWith(item.href);
+        const count = item.href === "/dashboard/employees" ? employeeCount : item.href === "/dashboard/absences" ? pendingRequestsCount : 0;
+        return <div key={item.href}>{item.section ? <p className="workspace-nav-label">{item.section}</p> : null}<Link href={preview && item.href === "/dashboard#copilote" ? "#copilote" : item.href} aria-current={isActive ? "page" : undefined} onClick={() => setMobileNavOpen(false)}><item.icon size={20} strokeWidth={1.6}/><span>{item.label}</span>{count > 0 ? <span className="workspace-nav-badge">{count}</span> : null}</Link></div>;
+      })}
+    </nav>
+    <div className="workspace-side-bottom"><div className="workspace-support"><MessageCircle size={17}/><strong>On garde le fil ensemble.</strong><p>Un doute sur votre suivi RH ?</p><Link href="/dashboard/help" onClick={() => setMobileNavOpen(false)}>Parlons-en</Link></div><div className="workspace-profile"><span className="workspace-preview-user">{userInitials}</span><div><strong>{assistantSummary.userDisplayName}</strong><small>{roleLabel}</small></div><Link href="/dashboard/configuration" aria-label="Configurer mon espace"><Settings size={17}/></Link></div></div>
+  </>;
 
   return (
-    <div className="app-workspace flex min-h-screen">
+    <div className="app-workspace dashboard-fil-shell flex min-h-screen">
       <a href="#workspace-main" className="workspace-skip">Aller au contenu</a>
       <aside className="workspace-sidebar hidden w-60 shrink-0 flex-col border-r border-surface-border bg-white px-4 py-5 md:flex">
         {navContent}
@@ -295,22 +179,16 @@ export function AppShell({
             <Menu size={18} />
           </button>
 
-          <div className="min-w-0 flex-1 sm:flex-none">
-            <p className="truncate text-sm font-semibold text-ink">{organizationName}</p>
-            <p className="truncate text-xs text-ink-faint">{roleLabel}</p>
-          </div>
-
-          <div className="hidden flex-1 sm:block">
-            <GlobalSearch />
-          </div>
-
-          <div className="shrink-0">
-            <UserButton afterSignOutUrl="/sign-in" />
+          <div className="workspace-crumb"><LayoutGrid size={20}/><span>/</span><span>{filDashboard ? "Tableau de bord" : NAV_ITEMS.find(item => !item.href.includes("#") && item.href !== "/dashboard" && pathname.startsWith(item.href))?.label || organizationName}</span></div>
+          <div className="workspace-top-actions">
+            {preview ? <span className="workspace-preview-label">Proposition · données fictives</span> : !filDashboard ? <div className="workspace-search"><GlobalSearch/></div> : null}
+            <Link href="/dashboard/notifications" className="workspace-bell" aria-label="Voir les notifications"><Bell size={20}/></Link>
+            {preview ? <span className="workspace-preview-user">{userInitials}</span> : <UserButton afterSignOutUrl="/sign-in" />}
           </div>
         </header>
 
         <main id="workspace-main" tabIndex={-1} className="workspace-main flex-1 px-4 py-6 md:px-8 md:py-8">
-          <div className="mb-4 sm:hidden"><GlobalSearch /></div>
+          {!preview && !filDashboard ? <div className="mb-4 sm:hidden"><GlobalSearch /></div> : null}
           <div key={pathname} className="page-fade-in">
             {children}
           </div>
@@ -321,8 +199,8 @@ export function AppShell({
         <NavigationProgress />
       </Suspense>
       <FlashToast />
-      <AppCopilote summary={assistantSummary} aiEnabled={aiEnabled} />
-      <DiscoveryTour accessRole={accessRole} payrollEnabled={payrollEnabled} userName={assistantSummary.userDisplayName} completed={discoveryTourCompleted} />
+      {!preview ? <AppCopilote summary={assistantSummary} aiEnabled={aiEnabled} /> : null}
+      {!preview ? <DiscoveryTour accessRole={accessRole} payrollEnabled={payrollEnabled} userName={assistantSummary.userDisplayName} completed={discoveryTourCompleted} /> : null}
       <RhNewsToast items={rhNews} />
       <IosInstallHint />
     </div>

@@ -13,7 +13,7 @@ import { canUsePayroll } from "@/lib/payrollAccess";
 import { Logomark, Wordmark } from "@/components/Brand";
 import { InitializingScreen } from "@/components/InitializingScreen";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
-import { isOrganizationAdmin, taskAccessWhere } from "@/lib/accessPolicy";
+import { employeeAccessWhere, isOrganizationAdmin, taskAccessWhere } from "@/lib/accessPolicy";
 
 // Chaque onglet porte le nom de sa page : « Salariés · RH Pilot ».
 export const metadata = { title: { default: "Tableau de bord · RH Pilot", template: "%s · RH Pilot" }, robots: { index: false } };
@@ -59,7 +59,7 @@ export default async function DashboardLayout({
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
 
-  const [overdueCount, anomalies, rhNews, oldestDemoEmployee, organizationSubscription] =
+  const [overdueCount, anomalies, rhNews, oldestDemoEmployee, organizationSubscription, employeeCount, pendingRequestsCount] =
     await Promise.all([
       prisma.task.count({
         where: {
@@ -88,6 +88,8 @@ export default async function DashboardLayout({
         where: { id: currentMembership.organizationId },
         select: { subscriptionStatus: true },
       }),
+      prisma.employee.count({ where: { organizationId: currentMembership.organizationId, deletedAt: null, ...employeeAccessWhere(currentMembership) } }),
+      isOrganizationAdmin(currentMembership) ? prisma.absence.count({ where: { organizationId: currentMembership.organizationId, status: { in: ["TO_VALIDATE", "TO_REVIEW_JUSTIFICATION"] }, employee: { deletedAt: null } } }) : Promise.resolve(0),
     ]);
 
   const isOnGratuit = organizationSubscription?.subscriptionStatus !== "active";
@@ -110,6 +112,8 @@ export default async function DashboardLayout({
       rhNews={rhNews}
       aiEnabled={isAiEnabled()}
       demoExpiresAt={demoExpiresAt}
+      employeeCount={employeeCount}
+      pendingRequestsCount={pendingRequestsCount}
     >
       {children}
     </AppShell>
