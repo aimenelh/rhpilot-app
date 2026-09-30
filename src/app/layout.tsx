@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { DM_Sans, Caveat, Fraunces } from "next/font/google";
+import localFont from "next/font/local";
 import { ClerkProvider } from "@clerk/nextjs";
 import { frFR } from "@clerk/localizations";
 import { CookieConsent } from "@/components/CookieConsent";
@@ -11,16 +11,17 @@ import { CANONICAL_SITE_URL } from "@/lib/appUrl";
 // des formes douces et une présence plus humaine qu'une police
 // géométrique de type Space Grotesk. Elle est utilisée dans toute
 // l'application pour garder une identité typographique homogène.
-const dmSans = DM_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+// Fichiers embarqués : une réponse Google Fonts ne doit pas bloquer un build.
+const dmSans = localFont({
+  src: "./fonts/dm-sans.woff2",
+  weight: "400 700",
   display: "swap",
   variable: "--font-dm-sans",
 });
 
-const caveat = Caveat({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
+const caveat = localFont({
+  src: "./fonts/caveat.woff2",
+  weight: "500 700",
   display: "swap",
   variable: "--font-handwriting",
 });
@@ -29,10 +30,11 @@ const caveat = Caveat({
 // (hero, titres de page) : un sérif chaleureux et légèrement décalé,
 // à côté de DM Sans qui reste la police de tout le reste (interface,
 // texte courant, application). Jamais utilisée dans le produit lui-même.
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  style: ["normal", "italic"],
+const fraunces = localFont({
+  src: [
+    { path: "./fonts/fraunces.woff2", weight: "500 700", style: "normal" },
+    { path: "./fonts/fraunces-italic.woff2", weight: "500 700", style: "italic" },
+  ],
   display: "swap",
   variable: "--font-fraunces",
 });
