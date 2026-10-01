@@ -14,9 +14,11 @@ describe("périmètre de la DSN préparatoire", () => {
     expect(issues).toEqual([]);
   });
 
-  it("accepte désormais une absence sans solde seule", () => {
-    const issues = dsnScopeIssues({ validatedAbsences: [{ type: "UNPAID_LEAVE" }], bulletin: { lines: [{ code: "ABS_UNPAID_LEAVE" }] } });
-    expect(issues).toEqual([]);
+  it("accepte les absences désormais raccordées", () => {
+    for (const type of ["UNPAID_LEAVE", "SICK_LEAVE", "WORK_ACCIDENT", "MATERNITY", "PATERNITY"]) {
+      const issues = dsnScopeIssues({ validatedAbsences: [{ type }], bulletin: { lines: [{ code: `ABS_${type}` }] } });
+      expect(issues).toEqual([]);
+    }
   });
 
   it("liste encore les événements de contrat et les autres absences non déclarables", () => {
