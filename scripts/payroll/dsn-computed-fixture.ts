@@ -63,6 +63,7 @@ export function computedDsnFixture(
     pas: { rateType: "01", ratePercent: employeePas.rate * 100, rateIdentifier: "123456789", amountSubjectToPas: employeePas.base, withholdingAmount: employeePas.amount },
     overtimeRemunerations: mapped.overtime.remunerations,
     overtimeTaxExemptNetAmount: mapped.overtime.taxExemptNetAmount,
+    unpaidAbsenceHours: mapped.unpaidAbsence.hours,
   };
   data.assessedBases = mapped.bases;
   data.contributionBordereau = {
