@@ -23,6 +23,8 @@ export type LockedContributionData = {
   atmpRatePercent: number;
   unemploymentBase: number;
   hoursPaid: number;
+  /** Volume DSN d'activité 01 au lissé : quotité contractuelle - absence réelle + HS/HC aléatoires. */
+  activityPaidHours: number;
   grossSubject: number;
   overtime: LockedOvertimeDeclaration;
   unpaidAbsence: LockedUnpaidAbsenceDeclaration;
@@ -238,6 +240,8 @@ export function mapLockedContributions(input: {
   const byCode = new Map(journal.map((line) => [line.code, line]));
   const overtime = readLockedOvertimeDeclaration(input.snapshot);
   const unpaidAbsence = readLockedUnpaidAbsenceDeclaration(input.snapshot);
+  const randomAdditionalHours = overtime.remunerations.filter((item) => item.type === "017").reduce((total, item) => total + item.hours, 0);
+  const activityPaidHours = round(Math.max(0, numeric(inputs.pay.contractMonthlyHours, "la quotité mensuelle contractuelle") - unpaidAbsence.hours + randomAdditionalHours));
   const line = (code: string): PayslipLine => {
     const found = byCode.get(code);
     if (!found) throw new Error(`DSN bloquée : la cotisation ${code} manque dans le bulletin verrouillé.`);
@@ -448,7 +452,7 @@ export function mapLockedContributions(input: {
   const deferredTotal = deferred.reduce((total, item) => total + cents(item.amount), 0);
   if (liabilityTotal + deferredTotal !== cents(bulletin.totals.employeeContributions) + cents(bulletin.totals.employerContributions)) throw new Error("DSN bloquée : la ventilation par organisme ne couvre pas exactement les cotisations du bulletin.");
   if ([...liabilities.values()].some((value) => value < 0)) throw new Error("DSN bloquée : un crédit organisme nécessite une déclaration de régularisation et un paiement distinct.");
-  return { bases, individual, aggregates: [...aggregates.values()], liabilities: [...liabilities].map(([opsIdentifier, value]) => ({ opsIdentifier, amount: value })), deferred, atmpRatePercent, unemploymentBase, hoursPaid: numeric(bulletin.totals.hoursPaid, "les heures payées"), grossSubject: g, overtime, unpaidAbsence, complementaryAdhesions, complementaryAffiliations, complementaryPayments };
+  return { bases, individual, aggregates: [...aggregates.values()], liabilities: [...liabilities].map(([opsIdentifier, value]) => ({ opsIdentifier, amount: value })), deferred, atmpRatePercent, unemploymentBase, hoursPaid: numeric(bulletin.totals.hoursPaid, "les heures payées"), activityPaidHours, grossSubject: g, overtime, unpaidAbsence, complementaryAdhesions, complementaryAffiliations, complementaryPayments };
 }
 
 /** Additionne les assiettes une seule fois par salarié/CTP, pas une fois par cotisation composante. */
