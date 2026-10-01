@@ -335,9 +335,10 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         workAccidentRegimeCode: requiredString(dsnProfile.workAccidentRegimeCode, `le régime AT/MP du salarié ${employee.id}`), workAccidentRiskCode: riskCode, workAccidentRate: contributions.atmpRatePercent,
         suspensions: contributions.absenceActivity.unpaidSuspensions.map((item) => ({
           reasonCode: item.reasonCode,
-          startDate: new Date(`${item.start}T00:00:00.000Z`),
-          endDate: new Date(`${item.end}T00:00:00.000Z`),
+          startDate: new Date(item.start + "T00:00:00.000Z"),
+          endDate: new Date(item.end + "T00:00:00.000Z"),
         })),
+        workStoppages,
       },
       payroll: {
         baseSalary: baseSalaryCents / 100,
@@ -354,6 +355,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         overtimeRemunerations: contributions.overtime.remunerations,
         overtimeTaxExemptNetAmount: contributions.overtime.taxExemptNetAmount,
         unpaidAbsenceHours: contributions.absenceActivity.hours,
+        subrogatedIjssNetAmount,
       },
     });
   }
