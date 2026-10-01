@@ -2,13 +2,15 @@ import type { IdentifiedDsnAffiliation } from "./dsn-complementary-affiliations"
 import type { PayslipInput, PayslipLine, PayslipResult } from "./bulletin/types";
 import type { DsnAggregatedContribution, DsnAssessedBase, DsnIndividualContribution } from "./dsn-p26v01-complete";
 
-export const LOCKED_CONTRIBUTION_MAPPING_VERSION = "P26V01-RG-2026.2";
+export const LOCKED_CONTRIBUTION_MAPPING_VERSION = "P26V01-RG-2026.3";
 export const LOCKED_CONTRIBUTION_SOURCES = [
   "https://open.urssaf.fr/explore/dataset/equivalence-dida/export/",
   "https://www.urssaf.fr/accueil/actualites/declaration-cotisation-am-af.html",
   "https://www.urssaf.fr/accueil/employeur/beneficier-exonerations/reduction-generale-cotisation.html",
   "https://net-entreprises.custhelp.com/app/answers/detail_dsn/a_id/2556/",
   "https://net-entreprises.custhelp.com/app/answers/detail_dsn/a_id/2537/",
+  "https://net-entreprises.custhelp.com/app/answers/detail/a_id/2066/",
+  "https://www.urssaf.fr/accueil/employeur/beneficier-exonerations/exonerations-heures/deduction-forfaitaire-patronale.html",
 ] as const;
 
 type LockedSnapshot = { bulletin: PayslipResult; inputs: PayslipInput };
@@ -22,6 +24,7 @@ export type LockedContributionData = {
   unemploymentBase: number;
   hoursPaid: number;
   grossSubject: number;
+  overtime: LockedOvertimeDeclaration;
   complementaryAdhesions: NonNullable<import("./dsn-p26v01-complete").DsnP26CompleteInput["complementaryAdhesions"]>;
   complementaryAffiliations: NonNullable<import("./dsn-p26v01-complete").DsnP26CompleteInput["complementaryAffiliations"]>;
   complementaryPayments: Array<{ opsIdentifier: string; delegateCode: string | null; contractReference: string; amount: number; period: string }>;
@@ -53,6 +56,79 @@ export function readLockedContributionSnapshot(value: unknown): LockedSnapshot {
     throw new Error("DSN bloquée : la période ou le salarié du bulletin et de ses entrées verrouillées divergent.");
   }
   return result;
+}
+
+export type LockedOvertimeDeclaration = {
+  remunerations: Array<{ type: "017" | "018"; hours: number; amount: number }>;
+  totalAmount: number;
+  employerEligibleAmount: number;
+  taxExemptGrossAmount: number;
+  taxExemptNetAmount: number;
+};
+
+/**
+ * Traduit uniquement les lignes d'heures du bulletin verrouillé.
+ * 017 = HS/HC aléatoires ; 018 = heures supplémentaires structurelles.
+ * Le net fiscal exonéré est dérivé des cumuls et des taux CSG figés dans le bulletin,
+ * jamais d'un paramètre vivant relu au moment de préparer la DSN.
+ */
+export function readLockedOvertimeDeclaration(value: unknown): LockedOvertimeDeclaration {
+  const { bulletin, inputs } = readLockedContributionSnapshot(value);
+  const grossLines = bulletin.lines.filter((line) => line.section === "GROSS");
+  const expected = [
+    ["HS_STRUCT", inputs.pay.structuralOvertimeMonthlyHours ?? 0],
+    ["HS_25", inputs.overtime?.hoursFirstBand ?? 0],
+    ["HS_50", inputs.overtime?.hoursSecondBand ?? 0],
+    ["HC_10", inputs.complementaryHours?.hoursWithinTenth ?? 0],
+    ["HC_25", inputs.complementaryHours?.hoursBeyondTenth ?? 0],
+  ] as const;
+
+  const found = new Map<string, PayslipLine>();
+  for (const [code, expectedHours] of expected) {
+    const matches = grossLines.filter((line) => line.code === code);
+    if (matches.length > 1) throw new Error(`DSN bloquée : la rubrique ${code} est dupliquée dans le bulletin verrouillé.`);
+    const line = matches[0];
+    if (expectedHours > 0) {
+      if (!line) throw new Error(`DSN bloquée : la rémunération ${code} manque dans le bulletin verrouillé.`);
+      const hours = numeric(line.quantity, `le volume ${code}`);
+      const amount = numeric(line.amount, `le montant ${code}`);
+      if (Math.abs(hours - expectedHours) > 0.01 || amount <= 0 || line.unit !== "HOURS") throw new Error(`DSN bloquée : la rémunération ${code} ne correspond pas aux heures verrouillées.`);
+      found.set(code, line);
+    } else if (line) {
+      throw new Error(`DSN bloquée : la rémunération ${code} existe sans heures correspondantes dans les entrées verrouillées.`);
+    }
+  }
+
+  const structural = found.get("HS_STRUCT");
+  const random = ["HS_25", "HS_50", "HC_10", "HC_25"].map((code) => found.get(code)).filter((line): line is PayslipLine => Boolean(line));
+  const structuralAmount = structural ? round(numeric(structural.amount, "le montant des heures structurelles")) : 0;
+  const structuralHours = structural ? numeric(structural.quantity, "les heures structurelles") : 0;
+  const randomAmount = round(random.reduce((total, line) => total + numeric(line.amount, line.code), 0));
+  const randomHours = round(random.reduce((total, line) => total + numeric(line.quantity, line.code), 0));
+  const totalAmount = round(structuralAmount + randomAmount);
+  const employerEligibleAmount = round(["HS_STRUCT", "HS_25", "HS_50"].reduce((total, code) => total + (found.has(code) ? numeric(found.get(code)!.amount, code) : 0), 0));
+
+  const previousExemptGross = numeric(inputs.yearToDate?.overtimeTaxExemptGross ?? 0, "le cumul antérieur d'heures défiscalisées");
+  const currentExemptGross = numeric(bulletin.yearToDate.overtimeTaxExemptGross, "le cumul d'heures défiscalisées");
+  const taxExemptGrossAmount = round(currentExemptGross - previousExemptGross);
+  if (taxExemptGrossAmount < 0 || taxExemptGrossAmount > totalAmount + 0.01) throw new Error("DSN bloquée : le cumul fiscal des heures supplémentaires/complémentaires est incohérent avec le bulletin du mois.");
+
+  let taxExemptNetAmount = 0;
+  if (taxExemptGrossAmount > 0) {
+    const overtimeCsg = bulletin.lines.find((line) => line.code === "CSG_NON_IMPOSABLE");
+    const ordinaryCsg = bulletin.lines.find((line) => line.code === "CSG_DEDUCTIBLE");
+    if (!overtimeCsg || !ordinaryCsg) throw new Error("DSN bloquée : les bases CSG verrouillées des heures défiscalisées sont absentes.");
+    const overtimeCsgBase = numeric(overtimeCsg.base, "l'assiette CSG des heures défiscalisées");
+    const deductibleCsgRate = numeric(ordinaryCsg.rate, "le taux de CSG déductible");
+    if (overtimeCsgBase <= 0 || deductibleCsgRate <= 0) throw new Error("DSN bloquée : les paramètres CSG verrouillés des heures défiscalisées sont invalides.");
+    taxExemptNetAmount = round(taxExemptGrossAmount - round(overtimeCsgBase * deductibleCsgRate));
+    if (taxExemptNetAmount <= 0 || taxExemptNetAmount > taxExemptGrossAmount) throw new Error("DSN bloquée : le net fiscal des heures défiscalisées est incohérent.");
+  }
+
+  const remunerations: LockedOvertimeDeclaration["remunerations"] = [];
+  if (structuralAmount > 0) remunerations.push({ type: "018", hours: structuralHours, amount: structuralAmount });
+  if (randomAmount > 0) remunerations.push({ type: "017", hours: randomHours, amount: randomAmount });
+  return { remunerations, totalAmount, employerEligibleAmount, taxExemptGrossAmount, taxExemptNetAmount };
 }
 
 /** Ventilation des cumuls, puis différence mensuelle : pas d'arrondi séparé chaque mois. */
@@ -98,10 +174,6 @@ export function mapLockedContributions(input: {
   if (!/^\d{14}$/.test(input.urssafSiret) || !/^\d{14}$/.test(input.retirementOps)) throw new Error("DSN bloquée : les organismes Urssaf et retraite doivent être renseignés depuis les notifications d'affiliation.");
   if (inputs.employee.contract === "APPRENTISSAGE") throw new Error("DSN bloquée : les exonérations sociales spécifiques des apprentis nécessitent encore leur mapping déclaratif.");
   if (inputs.organization.territory !== "METROPOLE" || inputs.organization.alsaceMoselle) throw new Error("DSN bloquée : le mapping social actuel couvre la métropole hors régime local Alsace-Moselle.");
-  if ((inputs.pay.structuralOvertimeMonthlyHours ?? 0) > 0 || Object.values(inputs.overtime ?? {}).some((v) => typeof v === "number" && v !== 0) ||
-      Object.values(inputs.complementaryHours ?? {}).some((v) => typeof v === "number" && v !== 0)) {
-    throw new Error("DSN bloquée : les heures supplémentaires ou complémentaires nécessitent leurs blocs de rémunération spécifiques.");
-  }
   if ([inputs.absences, inputs.bonuses, inputs.benefitsInKind, inputs.expenses, inputs.netAdjustments].some((items) => (items?.length ?? 0) > 0) || inputs.termination || inputs.mealVouchers || inputs.publicTransport) throw new Error("DSN bloquée : les événements et autres revenus du bulletin nécessitent leurs blocs déclaratifs spécifiques.");
   const journal = bulletin.lines.filter((line) => line.section !== "GROSS" && line.section !== "NET_ITEMS");
   if (journal.some((line) => !line || !line.code || !line.section)) throw new Error("DSN bloquée : une rubrique du journal de cotisations est invalide.");
@@ -112,6 +184,7 @@ export function mapLockedContributions(input: {
     throw new Error("DSN bloquée : le détail des cotisations ne correspond pas aux totaux du bulletin verrouillé.");
   }
   const byCode = new Map(journal.map((line) => [line.code, line]));
+  const overtime = readLockedOvertimeDeclaration(input.snapshot);
   const line = (code: string): PayslipLine => {
     const found = byCode.get(code);
     if (!found) throw new Error(`DSN bloquée : la cotisation ${code} manque dans le bulletin verrouillé.`);
@@ -193,17 +266,44 @@ export function mapLockedContributions(input: {
     addAggregate(ctp, "920", amount(source), [source], { baseAmount: b });
     mapped.add(source);
   }
-  const csgBase = base("CSG_DEDUCTIBLE");
-  if (cents(csgBase) !== cents(base("CSG_CRDS_NON_DEDUCTIBLE"))) throw new Error("DSN bloquée : les assiettes CSG diffèrent.");
+  const csgMainBase = base("CSG_DEDUCTIBLE");
+  if (cents(csgMainBase) !== cents(base("CSG_CRDS_NON_DEDUCTIBLE"))) throw new Error("DSN bloquée : les assiettes CSG ordinaires diffèrent.");
+  const overtimeCsgLine = byCode.get("CSG_NON_IMPOSABLE");
+  const overtimeCsgBase = overtimeCsgLine ? numeric(overtimeCsgLine.base, "l'assiette CSG des heures défiscalisées") : 0;
   const crdsBase = numeric(line("CSG_CRDS_NON_DEDUCTIBLE").detail?.crdsBase, "l'assiette CRDS");
-  if (cents(crdsBase) !== cents(csgBase)) throw new Error("DSN bloquée : la CSG des heures défiscalisées nécessite son mapping distinct.");
+  if (cents(crdsBase) !== cents(csgMainBase + overtimeCsgBase)) throw new Error("DSN bloquée : l'assiette CSG/CRDS ne couvre pas exactement les heures défiscalisées.");
   const crdsAmount = round(crdsBase * 0.005);
-  const combinedCsg = round(amount("CSG_DEDUCTIBLE") + amount("CSG_CRDS_NON_DEDUCTIBLE"));
-  addBase("04", csgBase);
-  addIndividual("072", "04", input.urssafSiret, round(combinedCsg - crdsAmount), ["CSG_DEDUCTIBLE", "CSG_CRDS_NON_DEDUCTIBLE"], 9.2, csgBase);
-  addIndividual("079", "04", input.urssafSiret, crdsAmount, ["CSG_CRDS_NON_DEDUCTIBLE"], 0.5, crdsBase);
-  addAggregate("260", "920", combinedCsg, ["CSG_DEDUCTIBLE", "CSG_CRDS_NON_DEDUCTIBLE"], { baseAmount: csgBase });
+  const csgSources = ["CSG_DEDUCTIBLE", "CSG_CRDS_NON_DEDUCTIBLE", ...(overtimeCsgLine ? ["CSG_NON_IMPOSABLE"] : [])];
+  const combinedCsg = round(amount("CSG_DEDUCTIBLE") + amount("CSG_CRDS_NON_DEDUCTIBLE") + (overtimeCsgLine ? amount("CSG_NON_IMPOSABLE") : 0));
+  addBase("04", crdsBase);
+  addIndividual("072", "04", input.urssafSiret, round(combinedCsg - crdsAmount), csgSources, 9.2, crdsBase);
+  addIndividual("079", "04", input.urssafSiret, crdsAmount, csgSources, 0.5, crdsBase);
+  addAggregate("260", "920", combinedCsg, csgSources, { baseAmount: crdsBase });
   mapped.add("CSG_DEDUCTIBLE"); mapped.add("CSG_CRDS_NON_DEDUCTIBLE");
+  if (overtimeCsgLine) mapped.add("CSG_NON_IMPOSABLE");
+
+  if (overtime.totalAmount > 0) {
+    const employeeReduction = amount("REDUCTION_HS_SALARIALE");
+    if (employeeReduction >= 0) throw new Error("DSN bloquée : la réduction salariale HS/HC doit être négative dans le bulletin.");
+    addIndividual("114", "03", input.urssafSiret, employeeReduction, ["REDUCTION_HS_SALARIALE"], undefined, overtime.totalAmount);
+    addAggregate("003", "921", employeeReduction, ["REDUCTION_HS_SALARIALE"], { contributionAmount: -employeeReduction });
+    mapped.add("REDUCTION_HS_SALARIALE");
+
+    const employerReductionLine = byCode.get("DEDUCTION_HS_PATRONALE");
+    if (overtime.employerEligibleAmount > 0) {
+      if (!employerReductionLine) throw new Error("DSN bloquée : la déduction patronale des heures supplémentaires manque dans le bulletin.");
+      if (cents(overtime.employerEligibleAmount) !== cents(overtime.totalAmount)) throw new Error("DSN bloquée : un même salarié mélange heures supplémentaires éligibles et heures complémentaires ; la déduction patronale doit être ventilée.");
+      const employerReduction = amount("DEDUCTION_HS_PATRONALE");
+      if (employerReduction >= 0) throw new Error("DSN bloquée : la déduction patronale HS doit être négative dans le bulletin.");
+      addIndividual("021", "03", input.urssafSiret, employerReduction, ["DEDUCTION_HS_PATRONALE"], undefined, overtime.employerEligibleAmount);
+      addAggregate("004", "921", employerReduction, ["DEDUCTION_HS_PATRONALE"], { contributionAmount: -employerReduction });
+      mapped.add("DEDUCTION_HS_PATRONALE");
+    } else if (employerReductionLine) {
+      throw new Error("DSN bloquée : une déduction patronale est présente alors que le bulletin ne contient que des heures complémentaires.");
+    }
+  } else if (byCode.has("REDUCTION_HS_SALARIALE") || byCode.has("DEDUCTION_HS_PATRONALE") || byCode.has("CSG_NON_IMPOSABLE")) {
+    throw new Error("DSN bloquée : des exonérations d'heures sont présentes sans rémunération 017/018 correspondante.");
+  }
 
   const retirementLines = ["RETRAITE_T1", "RETRAITE_T2", "CET", "APEC"].filter((code) => byCode.has(code));
   let retirementDue = round(retirementLines.reduce((total, code) => total + amount(code), 0));
@@ -295,7 +395,7 @@ export function mapLockedContributions(input: {
   const deferredTotal = deferred.reduce((total, item) => total + cents(item.amount), 0);
   if (liabilityTotal + deferredTotal !== cents(bulletin.totals.employeeContributions) + cents(bulletin.totals.employerContributions)) throw new Error("DSN bloquée : la ventilation par organisme ne couvre pas exactement les cotisations du bulletin.");
   if ([...liabilities.values()].some((value) => value < 0)) throw new Error("DSN bloquée : un crédit organisme nécessite une déclaration de régularisation et un paiement distinct.");
-  return { bases, individual, aggregates: [...aggregates.values()], liabilities: [...liabilities].map(([opsIdentifier, value]) => ({ opsIdentifier, amount: value })), deferred, atmpRatePercent, unemploymentBase, hoursPaid: numeric(bulletin.totals.hoursPaid, "les heures payées"), grossSubject: g, complementaryAdhesions, complementaryAffiliations, complementaryPayments };
+  return { bases, individual, aggregates: [...aggregates.values()], liabilities: [...liabilities].map(([opsIdentifier, value]) => ({ opsIdentifier, amount: value })), deferred, atmpRatePercent, unemploymentBase, hoursPaid: numeric(bulletin.totals.hoursPaid, "les heures payées"), grossSubject: g, overtime, complementaryAdhesions, complementaryAffiliations, complementaryPayments };
 }
 
 /** Additionne les assiettes une seule fois par salarié/CTP, pas une fois par cotisation composante. */
