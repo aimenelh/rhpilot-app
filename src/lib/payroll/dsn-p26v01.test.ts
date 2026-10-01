@@ -66,6 +66,18 @@ function input() {
           workAccidentRiskCode: "723ZA",
           workAccidentRate: 1.5,
           suspensions: [] as Array<{ reasonCode: "501"; startDate: Date; endDate: Date }>,
+          workStoppages: [] as Array<{
+            reasonCode: "01" | "02" | "03" | "06";
+            lastWorkedDate: Date;
+            expectedEndDate: Date;
+            subrogation: boolean;
+            subrogationStartDate?: Date | null;
+            subrogationEndDate?: Date | null;
+            subrogationIban?: string | null;
+            subrogationBic?: string | null;
+            returnDate?: Date | null;
+            returnReasonCode?: "01" | "02" | "03" | null;
+          }>,
         },
         payroll: {
           baseSalary: 2500,
@@ -76,6 +88,7 @@ function input() {
           withholdingTax: 153.75,
           paidHours: 151.67,
           unpaidAbsenceHours: 0,
+          subrogatedIjssNetAmount: 0,
           overtimeRemunerations: [] as Array<{ type: "017" | "018"; hours: number; amount: number }>,
           overtimeTaxExemptNetAmount: 0,
           pas: {
