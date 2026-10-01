@@ -91,6 +91,25 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     expect(data.contributionBordereau.aggregatedContributions.some((item) => item.code === "004")).toBe(false);
   });
 
+  it("laisse passer une prime mensuelle ordinaire dans les rémunérations et assiettes sans inventer un bloc 52", () => {
+    const data = computedDsnFixture(2500, 151.67, false, undefined, false, {
+      bonuses: [{ code: "ACTIVITY_BONUS", label: "Prime d'activité", amount: 250 }],
+    });
+    expect(data.employees[0].payroll.grossAmount).toBe(2750);
+    expect(data.employees[0].payroll.unemploymentBase).toBe(2750);
+    const content = buildDsnP26V01Complete(data);
+    expect(content).toContain("S21.G00.51.011,'001'");
+    expect(content).toContain("S21.G00.51.013,'2750.00'");
+    expect(content).not.toContain("S21.G00.52.");
+  });
+
+  it("bloque une prime annuelle ou exceptionnelle sans type et période S21.G00.52 explicites", () => {
+    const snapshot = computedSnapshot({
+      bonuses: [{ code: "YEAR_END_BONUS", label: "13e mois", amount: 1000, excludedFromPaidLeaveBase: true }],
+    });
+    expect(() => mapLockedContributions({ snapshot, ...ids })).toThrow(/S21\.G00\.52.*période de rattachement/i);
+  });
+
   it("conserve les arrondis en cumul sur la réduction générale", () => {
     const january = computedSnapshot();
     const february = computedSnapshot({ period: { year: 2026, month: 2 }, yearToDate: january.bulletin.yearToDate });
