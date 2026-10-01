@@ -84,6 +84,10 @@ export type DsnP26MonthlyInput = {
       netSocialAmount: number;
       withholdingTax: number;
       pas: DsnPasData;
+      /** Rémunérations d'heures supplémentaires/complémentaires à déclarer en S21.G00.51. */
+      overtimeRemunerations?: Array<{ type: "017" | "018"; hours: number; amount: number }>;
+      /** Montant net fiscal des HS/HC exonérées à déclarer en S21.G00.58 type 01. */
+      overtimeTaxExemptNetAmount?: number;
     };
   }>;
 };
@@ -176,11 +180,24 @@ function siretParts(siretValue: string): { siren: string; nic: string; siret: st
   return { siren: siret.slice(0, 9), nic: siret.slice(9), siret };
 }
 
-function addRemuneration(lines: DsnLine[], periodStart: Date, periodEnd: Date, contractNumber: string, type: "001" | "002" | "003" | "010", amount: number, activity?: { measure: number; unit: string }): void {
+function addRemuneration(
+  lines: DsnLine[],
+  periodStart: Date,
+  periodEnd: Date,
+  contractNumber: string,
+  type: "001" | "002" | "003" | "010" | "017" | "018",
+  amount: number,
+  activity?: { measure: number; unit: string },
+  overtimeHours?: number,
+): void {
+  if (overtimeHours !== undefined && type !== "017" && type !== "018") throw new Error("DSN bloquée : le volume d'heures spécifique est réservé aux rémunérations 017/018.");
+  if ((type === "017" || type === "018") && (overtimeHours === undefined || !Number.isFinite(overtimeHours) || overtimeHours <= 0)) throw new Error("DSN bloquée : les heures supplémentaires ou complémentaires doivent avoir un volume strictement positif.");
+  if (!Number.isFinite(amount) || amount < 0) throw new Error("DSN bloquée : un montant de rémunération est invalide.");
   add(lines, "S21.G00.51.001", dsnDate(periodStart));
   add(lines, "S21.G00.51.002", dsnDate(periodEnd));
   add(lines, "S21.G00.51.010", contractNumber);
   add(lines, "S21.G00.51.011", type);
+  if (overtimeHours !== undefined) add(lines, "S21.G00.51.012", decimal(overtimeHours));
   add(lines, "S21.G00.51.013", money(amount));
   if (activity) {
     add(lines, "S21.G00.53.001", "01");
@@ -318,6 +335,16 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "002", employee.payroll.unemploymentBase ?? employee.payroll.grossAmount, { measure: employee.payroll.paidHours ?? employee.contract.contractWorkQuota, unit: workUnitCode });
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "003", employee.payroll.baseSalary);
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "010", employee.payroll.baseSalary);
+
+    const overtimeRemunerations = employee.payroll.overtimeRemunerations ?? [];
+    if (new Set(overtimeRemunerations.map((item) => item.type)).size !== overtimeRemunerations.length) throw new Error("DSN bloquée : les rémunérations 017/018 doivent être agrégées par type.");
+    for (const remuneration of overtimeRemunerations) addRemuneration(lines, periodStart, periodEnd, contractNumber, remuneration.type, remuneration.amount, undefined, remuneration.hours);
+    const overtimeTaxExemptNetAmount = employee.payroll.overtimeTaxExemptNetAmount ?? 0;
+    if (!Number.isFinite(overtimeTaxExemptNetAmount) || overtimeTaxExemptNetAmount < 0) throw new Error("DSN bloquée : le montant net fiscal des heures exonérées est invalide.");
+    if (overtimeTaxExemptNetAmount > 0) {
+      add(lines, "S21.G00.58.003", "01");
+      add(lines, "S21.G00.58.004", money(overtimeTaxExemptNetAmount));
+    }
 
     add(lines, "S21.G00.58.001", dsnDate(periodStart));
     add(lines, "S21.G00.58.002", dsnDate(periodEnd));

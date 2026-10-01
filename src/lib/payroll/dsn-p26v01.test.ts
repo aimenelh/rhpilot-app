@@ -73,6 +73,8 @@ function input() {
           netTaxableAmount: 2050,
           netSocialAmount: 1960,
           withholdingTax: 153.75,
+          overtimeRemunerations: [] as Array<{ type: "017" | "018"; hours: number; amount: number }>,
+          overtimeTaxExemptNetAmount: 0,
           pas: {
             rateType: "01" as const,
             ratePercent: 7.5,
@@ -121,6 +123,35 @@ describe("DSN P26V01 builder", () => {
     expect(content).toContain("S21.G00.58.003,'03'\r\n");
     expect(content).toContain("S21.G00.78.001,'03'\r\n");
     expect(content.endsWith("\r\n")).toBe(true);
+  });
+
+  it("déclare les HS/HC 017/018 et le net fiscal exonéré P26V01", () => {
+    const data = input();
+    data.employees[0].payroll.overtimeRemunerations = [
+      { type: "018", hours: 17.33, amount: 320 },
+      { type: "017", hours: 5, amount: 125 },
+    ];
+    data.employees[0].payroll.overtimeTaxExemptNetAmount = 415.28;
+    const content = buildDsnP26V01Monthly(data);
+    expect(content).toContain("S21.G00.51.011,'018'\r\nS21.G00.51.012,'17.33'\r\nS21.G00.51.013,'320.00'");
+    expect(content).toContain("S21.G00.51.011,'017'\r\nS21.G00.51.012,'5.00'\r\nS21.G00.51.013,'125.00'");
+    expect(content).toContain("S21.G00.58.003,'01'\r\nS21.G00.58.004,'415.28'");
+    const exemptIndex = content.indexOf("S21.G00.58.003,'01'");
+    const datedNetSocialIndex = content.indexOf("S21.G00.58.003,'03'");
+    expect(exemptIndex).toBeGreaterThan(-1);
+    expect(exemptIndex).toBeLessThan(datedNetSocialIndex);
+  });
+
+  it("refuse des rémunérations d'heures non agrégées ou sans volume", () => {
+    const duplicate = input();
+    duplicate.employees[0].payroll.overtimeRemunerations = [
+      { type: "017", hours: 2, amount: 50 },
+      { type: "017", hours: 1, amount: 25 },
+    ];
+    expect(() => buildDsnP26V01Monthly(duplicate)).toThrow(/agrégées par type/);
+    const invalid = input();
+    invalid.employees[0].payroll.overtimeRemunerations = [{ type: "018", hours: 0, amount: 100 }];
+    expect(() => buildDsnP26V01Monthly(invalid)).toThrow(/volume strictement positif/);
   });
 
   it("counts S90 totals including both total rubrics", () => {

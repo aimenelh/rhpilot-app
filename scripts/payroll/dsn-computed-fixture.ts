@@ -19,8 +19,16 @@ export function computedSnapshot(input?: Partial<PayslipInput>) {
 }
 
 /** Fichier synthétique dont chaque montant financier vient effectivement du moteur. */
-export function computedDsnFixture(gross = 2500, monthlyHours = 151.67, complementary = false, organizationOverrides?: Partial<PayslipInput["organization"]>, executive = false): DsnP26CompleteInput {
-  const snapshot = computedSnapshot({ pay: { monthlyBaseSalary: gross, contractMonthlyHours: monthlyHours, schedule: [monthlyHours * 12 / 52 / 5, monthlyHours * 12 / 52 / 5, monthlyHours * 12 / 52 / 5, monthlyHours * 12 / 52 / 5, monthlyHours * 12 / 52 / 5, 0, 0] as WeeklySchedule } });
+export function computedDsnFixture(
+  gross = 2500,
+  monthlyHours = 151.67,
+  complementary = false,
+  organizationOverrides?: Partial<PayslipInput["organization"]>,
+  executive = false,
+  inputOverrides?: Partial<PayslipInput>,
+): DsnP26CompleteInput {
+  const basePay = { monthlyBaseSalary: gross, contractMonthlyHours: monthlyHours, schedule: [monthlyHours * 12 / 52 / 5, monthlyHours * 12 / 52 / 5, monthlyHours * 12 / 52 / 5, monthlyHours * 12 / 52 / 5, monthlyHours * 12 / 52 / 5, 0, 0] as WeeklySchedule };
+  const snapshot = computedSnapshot({ ...inputOverrides, pay: { ...basePay, ...(inputOverrides?.pay ?? {}) } });
   if (organizationOverrides) Object.assign(snapshot.inputs.organization, organizationOverrides);
   snapshot.inputs.employee.executive = executive;
   if (complementary) {
@@ -30,7 +38,7 @@ export function computedDsnFixture(gross = 2500, monthlyHours = 151.67, compleme
       cadre: { employeeT1: 0, employerT1: 0.015, employeeT2: 0, employerT2: 0.015 },
     };
   }
-  if (complementary || organizationOverrides || executive) snapshot.bulletin = computePayslip(snapshot.inputs);
+  if (complementary || organizationOverrides || executive || inputOverrides) snapshot.bulletin = computePayslip(snapshot.inputs);
   const affiliations = complementary ? identifyDsnAffiliations([normalizeDsnComplementaryAffiliations([
     { coverage: "SANTE", organismCode: "P0983", contractReference: "SANTE-TEST", delegateCode: null, populationCode: null, optionCode: null, validFrom: "2024-01-01", validUntil: null, paymentFrequency: "MONTHLY", componentCodes: ["20"], sourceReference: "FPOC synthétique santé" },
     { coverage: "PREVOYANCE", organismCode: "P0983", contractReference: "PREVO-TEST", delegateCode: null, populationCode: null, optionCode: null, validFrom: "2024-01-01", validUntil: null, paymentFrequency: "MONTHLY", componentCodes: ["11", "24"], sourceReference: "FPOC synthétique prévoyance" },
@@ -44,15 +52,17 @@ export function computedDsnFixture(gross = 2500, monthlyHours = 151.67, compleme
   employee.contract.workAccidentRate = mapped.atmpRatePercent;
   employee.contract.conventionalStatusCode = executive ? "04" : "06";
   employee.contract.retirementStatusCode = executive ? "01" : "04";
-  employee.contract.contractWorkQuota = monthlyHours;
-  employee.contract.workModalityCode = monthlyHours < 151.67 ? "20" : "10";
+  employee.contract.contractWorkQuota = snapshot.inputs.pay.contractMonthlyHours;
+  employee.contract.workModalityCode = snapshot.inputs.pay.contractMonthlyHours < 151.67 ? "20" : "10";
   employee.payroll = {
-    baseSalary: gross, grossAmount: totals.grossTotal, grossSubject: totals.grossSubject,
+    baseSalary: snapshot.inputs.pay.monthlyBaseSalary, grossAmount: totals.grossTotal, grossSubject: totals.grossSubject,
     cappedContributionBase: mapped.bases.find((base) => base.code === "02")!.amount,
     unemploymentBase: mapped.unemploymentBase, paidHours: mapped.hoursPaid,
     netBeforeTax: totals.netBeforeTax, netTaxableAmount: totals.netTaxable, netSocialAmount: totals.netSocial,
     withholdingTax: totals.withholdingTax,
     pas: { rateType: "01", ratePercent: employeePas.rate * 100, rateIdentifier: "123456789", amountSubjectToPas: employeePas.base, withholdingAmount: employeePas.amount },
+    overtimeRemunerations: mapped.overtime.remunerations,
+    overtimeTaxExemptNetAmount: mapped.overtime.taxExemptNetAmount,
   };
   data.assessedBases = mapped.bases;
   data.contributionBordereau = {

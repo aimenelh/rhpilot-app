@@ -37,6 +37,60 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     expect(data.employees[0].payroll.paidHours).toBe(121.33);
     expect(buildDsnP26V01Complete(data)).toContain("S21.G00.53.002,'121.33'");
   });
+  it("raccorde un contrat 39 h en rémunération 018 et ses deux réductions", () => {
+    const snapshot = computedSnapshot({
+      pay: { monthlyBaseSalary: 3000, contractMonthlyHours: 169, structuralOvertimeMonthlyHours: 17.33, structuralOvertimeRate: 0.25, schedule: [7.8, 7.8, 7.8, 7.8, 7.8, 0, 0] },
+    });
+    const mapped = mapLockedContributions({ snapshot, ...ids });
+    expect(mapped.overtime.remunerations).toHaveLength(1);
+    expect(mapped.overtime.remunerations[0]).toMatchObject({ type: "018", hours: 17.33 });
+    expect(mapped.individual.find((item) => item.code === "114")).toMatchObject({ baseCode: "03", baseAmount: mapped.overtime.totalAmount });
+    expect(mapped.individual.find((item) => item.code === "021")).toMatchObject({ baseCode: "03", baseAmount: mapped.overtime.totalAmount });
+    expect(mapped.aggregates.find((item) => item.code === "003")).toMatchObject({ baseQualifier: "921" });
+    expect(mapped.aggregates.find((item) => item.code === "004")).toMatchObject({ baseQualifier: "921" });
+    const csgBase = mapped.bases.find((base) => base.code === "04")!.amount;
+    expect(csgBase).toBe(snapshot.bulletin.lines.find((line) => line.code === "CSG_CRDS_NON_DEDUCTIBLE")!.detail!.crdsBase);
+    const due = mapped.liabilities.reduce((sum, item) => sum + cents(item.amount), 0);
+    const deferred = mapped.deferred.reduce((sum, item) => sum + cents(item.amount), 0);
+    expect(due + deferred).toBe(cents(snapshot.bulletin.totals.employeeContributions) + cents(snapshot.bulletin.totals.employerContributions));
+
+    const data = computedDsnFixture(3000, 169, false, undefined, false, {
+      pay: { monthlyBaseSalary: 3000, contractMonthlyHours: 169, structuralOvertimeMonthlyHours: 17.33, structuralOvertimeRate: 0.25, schedule: [7.8, 7.8, 7.8, 7.8, 7.8, 0, 0] },
+    });
+    const content = buildDsnP26V01Complete(data);
+    expect(content).toContain("S21.G00.51.011,'018'");
+    expect(content).toContain("S21.G00.51.012,'17.33'");
+    expect(content).toContain("S21.G00.58.003,'01'");
+    expect(content).toContain("S21.G00.81.001,'114'");
+    expect(content).toContain("S21.G00.81.001,'021'");
+    expect(() => buildDsnP26V01Complete(data)).not.toThrow();
+  });
+
+  it("raccorde les heures supplémentaires aléatoires en 017", () => {
+    const data = computedDsnFixture(2500, 151.67, false, undefined, false, { overtime: { hoursFirstBand: 5 } });
+    const content = buildDsnP26V01Complete(data);
+    expect(data.employees[0].payroll.overtimeRemunerations).toEqual([
+      expect.objectContaining({ type: "017", hours: 5 }),
+    ]);
+    expect(content).toContain("S21.G00.51.011,'017'");
+    expect(content).toContain("S21.G00.51.012,'5.00'");
+    expect(data.contributionBordereau.aggregatedContributions.some((item) => item.code === "003")).toBe(true);
+    expect(data.contributionBordereau.aggregatedContributions.some((item) => item.code === "004")).toBe(true);
+  });
+
+  it("raccorde les heures complémentaires en 017 sans déduction patronale", () => {
+    const data = computedDsnFixture(1800, 121.33, false, undefined, false, { complementaryHours: { hoursWithinTenth: 4 } });
+    const content = buildDsnP26V01Complete(data);
+    expect(data.employees[0].payroll.overtimeRemunerations).toEqual([
+      expect.objectContaining({ type: "017", hours: 4 }),
+    ]);
+    expect(content).toContain("S21.G00.51.011,'017'");
+    expect(data.contributionBordereau.individualContributions.some((item) => item.code === "114")).toBe(true);
+    expect(data.contributionBordereau.individualContributions.some((item) => item.code === "021")).toBe(false);
+    expect(data.contributionBordereau.aggregatedContributions.some((item) => item.code === "003")).toBe(true);
+    expect(data.contributionBordereau.aggregatedContributions.some((item) => item.code === "004")).toBe(false);
+  });
+
   it("conserve les arrondis en cumul sur la réduction générale", () => {
     const january = computedSnapshot();
     const february = computedSnapshot({ period: { year: 2026, month: 2 }, yearToDate: january.bulletin.yearToDate });
