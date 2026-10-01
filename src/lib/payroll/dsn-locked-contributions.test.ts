@@ -112,7 +112,7 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
   });
 
   it("continue de bloquer les absences nécessitant un signalement métier", () => {
-    const snapshot = computedSnapshot({ absences: [{ id: "sick-1", kind: "SICK_LEAVE", start: "2026-01-12", end: "2026-01-16" }] });
+    const snapshot = computedSnapshot({ absences: [{ id: "rtt-1", kind: "RTT", start: "2026-01-12", end: "2026-01-12" }] });
     expect(() => mapLockedContributions({ snapshot, ...ids })).toThrow(/absences autres que sans solde|blocs déclaratifs propres/i);
   });
 
