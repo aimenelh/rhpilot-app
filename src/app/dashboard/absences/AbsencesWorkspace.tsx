@@ -62,6 +62,12 @@ export type AbsenceWorkspaceItem = {
   notes: string | null;
   rejectedReason: string | null;
   payrollImpactStatus: string;
+  lastWorkedDate: string | null;
+  subrogationStartDate: string | null;
+  subrogationEndDate: string | null;
+  workAccidentDate: string | null;
+  returnDate: string | null;
+  returnReasonCode: string | null;
   justification: Justification | null;
 };
 
@@ -625,6 +631,9 @@ function AbsenceDrawer({ mode, absence, employees, isAdmin, isPending, onClose, 
   runAction: (action: () => Promise<ActionResult>, fallback?: string, afterSuccess?: () => void) => void;
 }) {
   const integrated = absence?.payrollImpactStatus === "INTEGRATED";
+  const [selectedType, setSelectedType] = useState(absence?.type ?? "");
+  useEffect(() => { setSelectedType(absence?.type ?? ""); }, [absence?.id, absence?.type, mode]);
+  const isWorkStoppage = ["SICK_LEAVE", "WORK_ACCIDENT", "MATERNITY", "PATERNITY"].includes(selectedType);
 
   // Échap ferme le panneau (sauf si une fenêtre de confirmation est ouverte par-dessus).
   useEffect(() => {
@@ -661,8 +670,22 @@ function AbsenceDrawer({ mode, absence, employees, isAdmin, isPending, onClose, 
             {integrated && <div className="mb-4 rounded-xl border border-surface-border bg-surface-subtle px-4 py-3 text-xs leading-relaxed text-ink-soft">Cette absence a déjà été intégrée à la paie. Elle reste consultable mais sa modification et sa suppression sont bloquées afin de préserver la traçabilité.</div>}
             <div className="space-y-4">
               <label className="block"><span className="mb-1.5 block text-xs font-medium text-ink">Salarié</span><select name="employeeId" defaultValue={absence?.employeeId ?? ""} required disabled={!isAdmin || integrated} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle"><option value="">Sélectionner...</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}</select></label>
-              <label className="block"><span className="mb-1.5 block text-xs font-medium text-ink">Type d'absence</span><select name="type" defaultValue={absence?.type ?? ""} required disabled={!isAdmin || integrated} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle"><option value="">Sélectionner...</option>{Object.entries(TYPE_META).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}</select></label>
+              <label className="block"><span className="mb-1.5 block text-xs font-medium text-ink">Type d'absence</span><select name="type" value={selectedType} onChange={(event) => setSelectedType(event.target.value)} required disabled={!isAdmin || integrated} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle"><option value="">Sélectionner...</option>{Object.entries(TYPE_META).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}</select></label>
               <div className="grid grid-cols-2 gap-3"><label className="block"><span className="mb-1.5 block text-xs font-medium text-ink">Du</span><input name="startDate" type="date" defaultValue={absence?.startDate.slice(0, 10) ?? dateKey(currentUtcDay())} required disabled={!isAdmin || integrated} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle" /></label><label className="block"><span className="mb-1.5 block text-xs font-medium text-ink">Au</span><input name="endDate" type="date" defaultValue={absence?.endDate.slice(0, 10) ?? dateKey(currentUtcDay())} required disabled={!isAdmin || integrated} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle" /></label></div>
+              {isWorkStoppage && (
+                <div className="rounded-xl border border-surface-border bg-surface-subtle/40 p-3">
+                  <p className="text-sm font-medium text-ink">Informations DSN de l'arrêt</p>
+                  <p className="mt-1 text-xs leading-relaxed text-ink-faint">Ces données servent au bloc arrêt de travail. Ne renseignez pas une date estimée si vous disposez du justificatif ou du signalement réel.</p>
+                  <div className="mt-3 grid grid-cols-2 gap-3">
+                    <label className="block col-span-2 sm:col-span-1"><span className="mb-1.5 block text-xs font-medium text-ink">Dernier jour travaillé</span><input name="lastWorkedDate" type="date" defaultValue={absence?.lastWorkedDate?.slice(0, 10) ?? ""} required disabled={!isAdmin || integrated} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle" /></label>
+                    {selectedType === "WORK_ACCIDENT" && <label className="block col-span-2 sm:col-span-1"><span className="mb-1.5 block text-xs font-medium text-ink">Date de l'accident</span><input name="workAccidentDate" type="date" defaultValue={absence?.workAccidentDate?.slice(0, 10) ?? ""} required disabled={!isAdmin || integrated} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle" /></label>}
+                    <label className="block"><span className="mb-1.5 block text-xs font-medium text-ink">Début de subrogation</span><input name="subrogationStartDate" type="date" defaultValue={absence?.subrogationStartDate?.slice(0, 10) ?? ""} disabled={!isAdmin || integrated} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle" /></label>
+                    <label className="block"><span className="mb-1.5 block text-xs font-medium text-ink">Fin de subrogation</span><input name="subrogationEndDate" type="date" defaultValue={absence?.subrogationEndDate?.slice(0, 10) ?? ""} disabled={!isAdmin || integrated} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle" /></label>
+                    <label className="block"><span className="mb-1.5 block text-xs font-medium text-ink">Date de reprise réelle</span><input name="returnDate" type="date" defaultValue={absence?.returnDate?.slice(0, 10) ?? ""} disabled={!isAdmin || integrated} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle" /></label>
+                    <label className="block"><span className="mb-1.5 block text-xs font-medium text-ink">Motif de reprise</span><select name="returnReasonCode" defaultValue={absence?.returnReasonCode ?? ""} disabled={!isAdmin || integrated} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle"><option value="">Non renseigné</option><option value="01">01 · Reprise normale</option><option value="02">02 · Temps partiel thérapeutique</option><option value="03">03 · Temps partiel raison personnelle</option></select></label>
+                  </div>
+                </div>
+              )}
               <label className="flex items-start gap-3 rounded-xl border border-surface-border bg-surface-subtle/40 p-3"><input name="justificationRequired" type="checkbox" defaultChecked={absence?.justificationRequired ?? false} disabled={!isAdmin || integrated} className="mt-0.5 h-4 w-4 rounded border-surface-border" /><span><span className="block text-sm font-medium text-ink">Justificatif demandé</span><span className="mt-0.5 block text-xs leading-relaxed text-ink-faint">Le document devra être reçu puis vérifié avant validation du dossier.</span></span></label>
               <label className="block"><span className="mb-1.5 block text-xs font-medium text-ink">Note interne</span><textarea name="notes" defaultValue={absence?.notes ?? ""} rows={4} maxLength={1000} disabled={!isAdmin || integrated} placeholder="Informations utiles pour le suivi RH..." className="w-full resize-y rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle" /></label>
             </div>
