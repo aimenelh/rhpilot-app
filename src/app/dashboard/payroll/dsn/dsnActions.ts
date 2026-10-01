@@ -93,7 +93,7 @@ export async function saveDsnOrganizationSettings(
         INSERT INTO "dsn_organization_settings"
           ("organizationId", "contactName", "contactEmail", "contactPhone", "declaredContactType", "enterpriseApenCode", "urssafSiret", "retirementSiret", "paymentIbanCiphertext", "paymentBic", "subrogationIbanCiphertext", "subrogationBic", "sepaMandatesConfirmed", "defaultTestMode", "updatedAt")
         VALUES
-          (${membership.organizationId}, ${contactName}, ${contactEmail}, ${contactPhone}, ${declaredContactType}, ${enterpriseApenCode}, ${urssafSiret}, ${retirementSiret}, ${paymentIbanCiphertext}, ${paymentBic}, ${sepaMandatesConfirmed}, TRUE, CURRENT_TIMESTAMP)
+          (${membership.organizationId}, ${contactName}, ${contactEmail}, ${contactPhone}, ${declaredContactType}, ${enterpriseApenCode}, ${urssafSiret}, ${retirementSiret}, ${paymentIbanCiphertext}, ${paymentBic}, ${subrogationIbanCiphertext}, ${subrogationBic}, ${sepaMandatesConfirmed}, TRUE, CURRENT_TIMESTAMP)
         ON CONFLICT ("organizationId") DO UPDATE SET
           "contactName" = EXCLUDED."contactName",
           "contactEmail" = EXCLUDED."contactEmail",
