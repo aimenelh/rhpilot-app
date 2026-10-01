@@ -62,7 +62,7 @@ export function computedDsnFixture(
   employee.payroll = {
     baseSalary: snapshot.inputs.pay.monthlyBaseSalary, grossAmount: totals.grossTotal, grossSubject: totals.grossSubject,
     cappedContributionBase: mapped.bases.find((base) => base.code === "02")!.amount,
-    unemploymentBase: mapped.unemploymentBase, paidHours: mapped.hoursPaid,
+    unemploymentBase: mapped.unemploymentBase, paidHours: mapped.activityPaidHours,
     netBeforeTax: totals.netBeforeTax, netTaxableAmount: totals.netTaxable, netSocialAmount: totals.netSocial,
     withholdingTax: totals.withholdingTax,
     pas: { rateType: "01", ratePercent: employeePas.rate * 100, rateIdentifier: "123456789", amountSubjectToPas: employeePas.base, withholdingAmount: employeePas.amount },
