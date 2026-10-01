@@ -303,6 +303,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
     const nir = assertNirFormat(decryptDsnSensitiveValue(dsnProfile.nirCiphertext));
     assertNirBirthYear(nir, dsnProfile.birthDate, employee.id);
     const contributions = mapLockedContributions({ snapshot: calculation.calculationSnapshot, previousSnapshot: previousByEmployee.get(employee.id), employeeNir: nir, urssafSiret, retirementOps: retirementSiret, complementaryAffiliations: complementaryByEmployee.get(employee.id) });
+    const workStoppages = buildLockedWorkStoppages({ snapshot, locked, subrogationIban, subrogationBic });
     financial.push(contributions);
     const workLocationId = requiredString(dsnProfile.workLocationId, `le lieu de travail du salarié ${employee.id}`).replace(/\s+/g, "");
     if (workLocationId !== siret) throw new Error(`DSN bloquée pour ${employee.firstName} ${employee.lastName} : le périmètre actuel couvre uniquement le lieu de travail correspondant au SIRET employeur. Les autres lieux nécessitent le bloc S21.G00.85.`);
