@@ -52,10 +52,13 @@ const mobilityReport = validate("bulletin-forfait-social-mobilite", buildDsnP26V
 })));
 try { assertDsnValReportAccepted(mobilityReport); } catch (error) { console.error("Rapport synthétique forfait/mobilité :", mobilityReport); throw error; }
 
+const executiveReport = validate("bulletin-cadre-seuil-50", buildDsnP26V01Complete(computedDsnFixture(3000, 151.67, true, { headcount: 50 }, true)));
+try { assertDsnValReportAccepted(executiveReport); } catch (error) { console.error("Rapport synthétique cadre/FNAL :", executiveReport); throw error; }
+
 // Témoin négatif : l'outil doit réellement détecter un bloc obligatoire supprimé.
 const rejected = validate("temoin-invalide", content.replace(/^S21\.G00\.71\.002,.*\r\n/m, ""));
 let rejectedAsExpected = false;
 try { assertDsnValReportAccepted(rejected); } catch { rejectedAsExpected = true; }
 if (!rejectedAsExpected) throw new Error("Dsn-Val n'a pas rejeté le témoin invalide.");
-console.log("Dsn-Val 2026.1.0.17 : huit fixtures P26V01 acceptées, dont cinq calculées par le moteur, sans anomalie ; témoin invalide refusé.");
+console.log("Dsn-Val 2026.1.0.17 : neuf fixtures P26V01 acceptées, dont six calculées par le moteur, sans anomalie ; témoin invalide refusé.");
 console.log(`Rapports : ${output}`);

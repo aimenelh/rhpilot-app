@@ -8,7 +8,7 @@ Les administrateurs configurent les organismes, les coordonnées SEPA chiffrées
 
 Chaque export de pré-contrôle possède une version conservée chiffrée, une empreinte SHA-256 et un historique. PostgreSQL empêche les mises à jour et suppressions de ces archives. Le téléchargement vérifie l'identité entreprise/période/archive et restitue les octets Latin-1 conservés.
 
-La CI précédente a accepté 624 tests dans 100 fichiers, les migrations PostgreSQL, le schéma, les types, le lint et le build. Le contrôle local étendu vérifie huit fichiers synthétiques P26V01 avec Dsn-Val 2026.1.0.17, dont cinq calculés par le moteur : la double affiliation santé/prévoyance et le forfait social avec VM/VMA/VMR sont couverts. Le témoin invalide doit être rejeté. La CI complète reste la condition de fusion de ce lot.
+La CI précédente a accepté 624 tests dans 100 fichiers, les migrations PostgreSQL, le schéma, les types, le lint et le build. Le contrôle local étendu vérifie neuf fichiers synthétiques P26V01 avec Dsn-Val 2026.1.0.17, dont six calculés par le moteur : la double affiliation santé/prévoyance, le forfait social avec VM/VMA/VMR, le cadre/APEC et le FNAL déplafonné sont couverts. Le témoin invalide doit être rejeté. La CI complète reste la condition de fusion de ce lot.
 
 ## Corrections de ce lot
 

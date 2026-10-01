@@ -57,7 +57,7 @@
 | Frais professionnels | ✅ | Remboursements hors brut (montants saisis dans les limites d'exonération) |
 | Titres-restaurant | ✅ | Part patronale 50 à 60 %, exonération plafonnée par titre, excédent réintégré |
 | Transport public | ✅ | Prise en charge ≥ 50 %, exonération jusqu'à 75 % |
-| Forfait mobilités durables, prime transport | 🟠 | Saisis en montant exonéré ; plafond annuel non suivi |
+| Forfait mobilités durables, prime transport | ✅ | Plafonds annuels et cumul avec le transport public suivis ; excédent réintégré. Export DSN encore bloqué |
 
 ## 5. Cotisations et protection sociale
 
@@ -71,7 +71,7 @@
 | Complémentaire santé | ✅ | Proratisée à l'entrée et à la sortie ; dispense par salarié |
 | Prévoyance | ✅ | Taux T1 / T2 par population, minimum cadre de 1,50 % |
 | Forfait social | ✅ | 8 % sur la prévoyance à partir de 11 salariés |
-| Versement mobilité | ✅ | Taux saisi, obligatoire à partir de 11 salariés |
+| Versement mobilité | 🟠 | Barème Urssaf par commune et date, ventilation VM/VMA/VMR conservée dans le bulletin. Lieux multiples et assujettissement par zone/région à compléter. Un taux manuel sans ventilation ne permet pas l'export DSN |
 | Réintégration de la prévoyance au-delà des limites | ⛔ | Calcul bloqué |
 | Régime local Alsace-Moselle | 🟠 | Cotisation maladie de 1,30 %, taxe d'apprentissage à 0,44 % sans solde, Vendredi saint et 26 décembre fériés, validés par l'oracle Urssaf ; maintien de salaire du droit local (art. L1226-23) signalé, à compléter selon la durée de l'arrêt |
 | Outre-mer (LODEOM) | ⛔ | Calcul bloqué |
@@ -93,4 +93,4 @@
 | Cycle préparer, calculer, contrôler, valider, clôturer | ✅ | Calcul séquentiel : un mois précédent non validé bloque le suivant |
 | Bulletin clarifié | ✅ | Rubriques par risque, allègements, net social, PAS, congés, cumuls, mentions obligatoires |
 | Points d'attention du calcul | ✅ | Affichés avant validation |
-| DSN | 🟠 | Fichier de pré-contrôle pour les mois simples (bases 02/03, retraite et ancienneté). Trois fixtures synthétiques acceptées sans anomalie par Dsn-Val 2026.1.0.17 ; cela ne valide pas les montants ni une DSN réelle. Le générateur de cotisations impose les bases parentes et le composant SMIC mais son mapping vers les paies de l’application reste à intégrer ; les variables, absences, entrées, sorties et indemnités bloquent l'export tant que les blocs de cotisations (S21.G00.78 / 81 / 23), primes, arrêts et fin de contrat ne sont pas mappés sur les tables officielles P26V01 et validés avec DSN-Val |
+| DSN | 🟠 | Générateur complet intégré aux périodes verrouillées, mapping P26V01 versionné, dettes rapprochées au centime, paiements SEPA et affiliations mensuelles santé/prévoyance limités aux composants 20/11/24. Archives de pré-contrôle chiffrées, immuables et versionnées. Neuf exemples synthétiques (six issus du moteur) contrôlés par Dsn-Val 2026.1.0.17 ; cela ne vaut ni recette financière ni acceptation métier. Événements, HS/HC, apprentis, régularisations et contributions annuelles non raccordés restent bloqués. Dépôt réel et retours métier à terminer |

@@ -117,6 +117,17 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     expect(data.contributionBordereau.aggregatedContributions.filter((item) => ["479", "900", "901", "820"].includes(item.code))).toHaveLength(4);
     expect(() => buildDsnP26V01Complete(data)).not.toThrow();
   });
+  it("déclare un cadre et le FNAL déplafonné au seuil de 50 salariés", () => {
+    const data = computedDsnFixture(3000, 151.67, true, { headcount: 50 }, true);
+    expect(data.employees[0].contract.retirementStatusCode).toBe("01");
+    const individual = data.contributionBordereau.individualContributions;
+    expect(individual.find((item) => item.code === "132")!.contributionAmount).toBe(1.8);
+    expect(individual.find((item) => item.code === "049")).toMatchObject({ baseCode: "03", baseAmount: 3000, contributionAmount: 15 });
+    const aggregate = data.contributionBordereau.aggregatedContributions;
+    expect(aggregate.some((item) => item.code === "236")).toBe(true);
+    expect(aggregate.some((item) => item.code === "332")).toBe(false);
+    expect(() => buildDsnP26V01Complete(data)).not.toThrow();
+  });
   it("conserve le centime d'arrondi mobilité et refuse une provenance incomplète", () => {
     const ordinary = computedSnapshot();
     const organization = { ...ordinary.inputs.organization, headcount: 15, mobilityRatePercent: 1.85,
