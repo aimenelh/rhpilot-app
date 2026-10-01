@@ -95,8 +95,8 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     const absence = { id: "unpaid-1", kind: "UNPAID_LEAVE" as const, start: "2026-01-12" as const, end: "2026-01-16" as const };
     const snapshot = computedSnapshot({ absences: [absence] });
     const mapped = mapLockedContributions({ snapshot, ...ids });
-    expect(mapped.unpaidAbsence.hours).toBe(35);
-    expect(mapped.unpaidAbsence.suspensions).toEqual([{ reasonCode: "501", start: "2026-01-12", end: "2026-01-16" }]);
+    expect(mapped.absenceActivity.hours).toBe(35);
+    expect(mapped.absenceActivity.suspensions).toEqual([{ reasonCode: "501", start: "2026-01-12", end: "2026-01-16" }]);
     const due = mapped.liabilities.reduce((sum, item) => sum + cents(item.amount), 0);
     const deferred = mapped.deferred.reduce((sum, item) => sum + cents(item.amount), 0);
     expect(due + deferred).toBe(cents(snapshot.bulletin.totals.employeeContributions) + cents(snapshot.bulletin.totals.employerContributions));
