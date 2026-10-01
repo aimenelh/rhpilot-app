@@ -104,6 +104,8 @@ export async function saveDsnOrganizationSettings(
           "retirementSiret" = EXCLUDED."retirementSiret",
           "paymentIbanCiphertext" = COALESCE(EXCLUDED."paymentIbanCiphertext", "dsn_organization_settings"."paymentIbanCiphertext"),
           "paymentBic" = EXCLUDED."paymentBic",
+          "subrogationIbanCiphertext" = COALESCE(EXCLUDED."subrogationIbanCiphertext", "dsn_organization_settings"."subrogationIbanCiphertext"),
+          "subrogationBic" = EXCLUDED."subrogationBic",
           "sepaMandatesConfirmed" = EXCLUDED."sepaMandatesConfirmed",
           "defaultTestMode" = TRUE,
           "updatedAt" = CURRENT_TIMESTAMP
