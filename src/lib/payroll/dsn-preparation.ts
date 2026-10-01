@@ -16,13 +16,13 @@ import type { WithholdingTaxProfile } from "./withholding-tax-profile";
 export type DsnPreparationResult = { content: string; fileName: string; normVersion: "P26V01"; employeeCount: number; warnings: string[] };
 
 type SnapshotWithholdingTax = { rate: number; amount: number; validFrom: string; validUntil: string | null; source: string; sourceReference: string | null };
-type CalculationSnapshot = { profile?: { id?: string; baseSalaryCents?: number; monthlyHours?: string | null; collectiveAgreementId?: string | null }; variables?: unknown[]; validatedAbsences?: Array<{ type?: string }>; withholdingTax?: Partial<SnapshotWithholdingTax>; socialEngine?: { employerCost?: number }; bulletin?: { lines?: Array<{ code?: string; base?: number }> } };
+type CalculationSnapshot = { profile?: { id?: string; baseSalaryCents?: number; monthlyHours?: string | null; collectiveAgreementId?: string | null }; variables?: unknown[]; validatedAbsences?: Array<{ absenceId?: string; type?: string; startDate?: string; endDate?: string; lastWorkedDate?: string | null; subrogationStartDate?: string | null; subrogationEndDate?: string | null; workAccidentDate?: string | null; returnDate?: string | null; returnReasonCode?: string | null }>; withholdingTax?: Partial<SnapshotWithholdingTax>; socialEngine?: { employerCost?: number }; bulletin?: { lines?: Array<{ code?: string; base?: number; amount?: number }> } };
 
 type OrganizationDsnRow = {
   id: string; name: string; siret: string | null; payrollAddress: string | null; payrollPostalCode: string | null; payrollCity: string | null;
   payrollNafCode: string | null; payrollDepartment: string | null; atmpRate: unknown; mainCollectiveAgreementCode: string | null;
   contactName: string | null; contactEmail: string | null; contactPhone: string | null; declaredContactType: string | null; enterpriseApenCode: string | null; defaultTestMode: boolean | null;
-  urssafSiret: string | null; retirementSiret: string | null; paymentIbanCiphertext: string | null; paymentBic: string | null; sepaMandatesConfirmed: boolean;
+  urssafSiret: string | null; retirementSiret: string | null; paymentIbanCiphertext: string | null; paymentBic: string | null; subrogationIbanCiphertext: string | null; subrogationBic: string | null; ijssSubrogation: boolean; sepaMandatesConfirmed: boolean;
 };
 
 type DsnEmployeeProfileRow = {
@@ -63,9 +63,9 @@ const DSN_UNMAPPED_BULLETIN_LINES = new Set(["ENTRY_EXIT", "SEVERANCE", "PAID_LE
 export function dsnScopeIssues(snapshot: { variables?: unknown[]; validatedAbsences?: Array<{ type?: string }>; bulletin?: { lines?: Array<{ code?: string; base?: number }> } }): string[] {
   const issues: string[] = [];
   if ((snapshot.bulletin?.lines ?? []).some((line) => line.code && DSN_UNMAPPED_BULLETIN_LINES.has(line.code))) issues.push("entrée, sortie ou indemnité de fin de contrat (blocs S21.G00.62 non émis)");
-  const supportedAbsences = new Set(["UNPAID_LEAVE", "RTT", "FAMILY_EVENT", "SICK_LEAVE", "MATERNITY", "PATERNITY"]);
+  const supportedAbsences = new Set(["UNPAID_LEAVE", "RTT", "FAMILY_EVENT", "SICK_LEAVE", "MATERNITY", "PATERNITY", "WORK_ACCIDENT"]);
   const unsupportedAbsences = (snapshot.validatedAbsences ?? []).filter((absence) => !supportedAbsences.has(absence?.type ?? ""));
-  if (unsupportedAbsences.length > 0) issues.push("absences non encore raccordées (AT/MP, congés payés ou autre suspension)");
+  if (unsupportedAbsences.length > 0) issues.push("absences non encore raccordées (congés payés ou autre suspension)");
   return issues;
 }
 
@@ -85,7 +85,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
 
   const organizationRows = await prisma.$queryRaw<OrganizationDsnRow[]>`
     SELECT o."id", o."name", o."siret", o."payrollAddress", o."payrollPostalCode", o."payrollCity", o."payrollNafCode", o."payrollDepartment", o."atmpRate",
-           ca."idcc" AS "mainCollectiveAgreementCode", s."contactName", s."contactEmail", s."contactPhone", s."declaredContactType", s."enterpriseApenCode", s."defaultTestMode", s."urssafSiret", s."retirementSiret", s."paymentIbanCiphertext", s."paymentBic", s."sepaMandatesConfirmed"
+           ca."idcc" AS "mainCollectiveAgreementCode", o."ijssSubrogation", s."contactName", s."contactEmail", s."contactPhone", s."declaredContactType", s."enterpriseApenCode", s."defaultTestMode", s."urssafSiret", s."retirementSiret", s."paymentIbanCiphertext", s."paymentBic", s."subrogationIbanCiphertext", s."subrogationBic", s."sepaMandatesConfirmed"
     FROM "organizations" o
     LEFT JOIN "collective_agreements" ca ON ca."id" = o."collectiveAgreementId"
     LEFT JOIN "dsn_organization_settings" s ON s."organizationId" = o."id"
