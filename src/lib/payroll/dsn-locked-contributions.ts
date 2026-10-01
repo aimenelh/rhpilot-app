@@ -25,6 +25,7 @@ export type LockedContributionData = {
   hoursPaid: number;
   grossSubject: number;
   overtime: LockedOvertimeDeclaration;
+  unpaidAbsence: LockedUnpaidAbsenceDeclaration;
   complementaryAdhesions: NonNullable<import("./dsn-p26v01-complete").DsnP26CompleteInput["complementaryAdhesions"]>;
   complementaryAffiliations: NonNullable<import("./dsn-p26v01-complete").DsnP26CompleteInput["complementaryAffiliations"]>;
   complementaryPayments: Array<{ opsIdentifier: string; delegateCode: string | null; contractReference: string; amount: number; period: string }>;
@@ -56,6 +57,55 @@ export function readLockedContributionSnapshot(value: unknown): LockedSnapshot {
     throw new Error("DSN bloquée : la période ou le salarié du bulletin et de ses entrées verrouillées divergent.");
   }
   return result;
+}
+
+export type LockedUnpaidAbsenceDeclaration = {
+  hours: number;
+  suspensions: Array<{ reasonCode: "501"; start: string; end: string }>;
+};
+
+/**
+ * Déclare uniquement l'absence sans solde générique déjà calculée par le bulletin.
+ * Les autres absences restent bloquées jusqu'à leur signalement/bloc métier propre.
+ */
+export function readLockedUnpaidAbsenceDeclaration(value: unknown): LockedUnpaidAbsenceDeclaration {
+  const { bulletin, inputs } = readLockedContributionSnapshot(value);
+  const absences = inputs.absences ?? [];
+  const unsupported = absences.filter((absence) => absence.kind !== "UNPAID_LEAVE");
+  if (unsupported.length > 0) throw new Error("DSN bloquée : seules les absences sans solde sont raccordées à ce stade ; les autres absences nécessitent leurs blocs déclaratifs propres.");
+
+  const grossLines = bulletin.lines.filter((line) => line.section === "GROSS" && line.code === "ABS_UNPAID_LEAVE");
+  const matchedLines = new Set<PayslipLine>();
+  let hours = 0;
+  const suspensions: LockedUnpaidAbsenceDeclaration["suspensions"] = [];
+
+  for (const absence of absences) {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(absence.start) || !/^\d{4}-\d{2}-\d{2}$/.test(absence.end) || absence.end < absence.start) {
+      throw new Error("DSN bloquée : les dates d'une absence sans solde verrouillée sont invalides.");
+    }
+    const partialDays = Object.keys(absence.partialDayHours ?? {});
+    if (partialDays.length > 0 && absence.start !== absence.end) {
+      throw new Error("DSN bloquée : une absence sans solde multi-jours avec journée partielle nécessite une segmentation déclarative explicite.");
+    }
+
+    const matches = grossLines.filter((line) => line.detail?.absenceId === absence.id);
+    if (matches.length > 1) throw new Error("DSN bloquée : une absence sans solde possède plusieurs lignes de retenue dans le bulletin verrouillé.");
+    if (matches.length === 1) {
+      const line = matches[0];
+      const quantity = numeric(line.quantity, "le volume de l'absence sans solde");
+      const amount = numeric(line.amount, "la retenue d'absence sans solde");
+      if (line.unit !== "HOURS" || quantity <= 0 || amount >= 0) throw new Error("DSN bloquée : la retenue d'absence sans solde du bulletin est incohérente.");
+      hours = round(hours + quantity);
+      matchedLines.add(line);
+    }
+
+    // Une absence strictement infra-journalière ne porte pas de bloc 65.
+    const isPartialSingleDay = absence.start === absence.end && partialDays.length > 0;
+    if (!isPartialSingleDay) suspensions.push({ reasonCode: "501", start: absence.start, end: absence.end });
+  }
+
+  if (grossLines.some((line) => !matchedLines.has(line))) throw new Error("DSN bloquée : une ligne d'absence sans solde du bulletin n'est rattachée à aucune absence verrouillée.");
+  return { hours, suspensions };
 }
 
 export type LockedOvertimeDeclaration = {
@@ -175,7 +225,8 @@ export function mapLockedContributions(input: {
   if (inputs.employee.contract === "APPRENTISSAGE") throw new Error("DSN bloquée : les exonérations sociales spécifiques des apprentis nécessitent encore leur mapping déclaratif.");
   if (inputs.organization.territory !== "METROPOLE" || inputs.organization.alsaceMoselle) throw new Error("DSN bloquée : le mapping social actuel couvre la métropole hors régime local Alsace-Moselle.");
   if ((inputs.bonuses ?? []).some((bonus) => bonus.excludedFromPaidLeaveBase)) throw new Error("DSN bloquée : une prime annuelle ou exceptionnelle nécessite son type S21.G00.52 et sa période de rattachement explicites.");
-  if ([inputs.absences, inputs.benefitsInKind, inputs.expenses, inputs.netAdjustments].some((items) => (items?.length ?? 0) > 0) || inputs.termination || inputs.mealVouchers || inputs.publicTransport) throw new Error("DSN bloquée : les événements et autres revenus du bulletin nécessitent leurs blocs déclaratifs spécifiques.");
+  if ((inputs.absences ?? []).some((absence) => absence.kind !== "UNPAID_LEAVE")) throw new Error("DSN bloquée : les absences autres que sans solde nécessitent leurs blocs déclaratifs spécifiques.");
+  if ([inputs.benefitsInKind, inputs.expenses, inputs.netAdjustments].some((items) => (items?.length ?? 0) > 0) || inputs.termination || inputs.mealVouchers || inputs.publicTransport) throw new Error("DSN bloquée : les événements et autres revenus du bulletin nécessitent leurs blocs déclaratifs spécifiques.");
   const journal = bulletin.lines.filter((line) => line.section !== "GROSS" && line.section !== "NET_ITEMS");
   if (journal.some((line) => !line || !line.code || !line.section)) throw new Error("DSN bloquée : une rubrique du journal de cotisations est invalide.");
   if (new Set(journal.map((line) => line.code)).size !== journal.length) throw new Error("DSN bloquée : une rubrique de cotisation est dupliquée dans le bulletin.");
@@ -186,6 +237,7 @@ export function mapLockedContributions(input: {
   }
   const byCode = new Map(journal.map((line) => [line.code, line]));
   const overtime = readLockedOvertimeDeclaration(input.snapshot);
+  const unpaidAbsence = readLockedUnpaidAbsenceDeclaration(input.snapshot);
   const line = (code: string): PayslipLine => {
     const found = byCode.get(code);
     if (!found) throw new Error(`DSN bloquée : la cotisation ${code} manque dans le bulletin verrouillé.`);
@@ -396,7 +448,7 @@ export function mapLockedContributions(input: {
   const deferredTotal = deferred.reduce((total, item) => total + cents(item.amount), 0);
   if (liabilityTotal + deferredTotal !== cents(bulletin.totals.employeeContributions) + cents(bulletin.totals.employerContributions)) throw new Error("DSN bloquée : la ventilation par organisme ne couvre pas exactement les cotisations du bulletin.");
   if ([...liabilities.values()].some((value) => value < 0)) throw new Error("DSN bloquée : un crédit organisme nécessite une déclaration de régularisation et un paiement distinct.");
-  return { bases, individual, aggregates: [...aggregates.values()], liabilities: [...liabilities].map(([opsIdentifier, value]) => ({ opsIdentifier, amount: value })), deferred, atmpRatePercent, unemploymentBase, hoursPaid: numeric(bulletin.totals.hoursPaid, "les heures payées"), grossSubject: g, overtime, complementaryAdhesions, complementaryAffiliations, complementaryPayments };
+  return { bases, individual, aggregates: [...aggregates.values()], liabilities: [...liabilities].map(([opsIdentifier, value]) => ({ opsIdentifier, amount: value })), deferred, atmpRatePercent, unemploymentBase, hoursPaid: numeric(bulletin.totals.hoursPaid, "les heures payées"), grossSubject: g, overtime, unpaidAbsence, complementaryAdhesions, complementaryAffiliations, complementaryPayments };
 }
 
 /** Additionne les assiettes une seule fois par salarié/CTP, pas une fois par cotisation composante. */
