@@ -169,19 +169,11 @@ export function readLockedWorkStoppageDeclaration(value: unknown): LockedWorkSto
 
     const partialFirstDay = Number(absence.partialDayHours?.[absence.start] ?? 0) > 0;
     const lastDayWorked = absence.start === inputs.employee.hireDate ? absence.start : partialFirstDay ? absence.start : addIsoDays(absence.start, -1);
-    const dayAfter = addIsoDays(absence.end, 1);
-    const followedByAnotherStoppage = (inputs.absences ?? []).some((candidate) =>
-      candidate.id !== absence.id && supportedKinds.has(candidate.kind) && candidate.start === dayAfter
-    );
-    const contractContinues = !inputs.employee.contractEndDate || absence.end < inputs.employee.contractEndDate;
-    const recoveryDate = absence.end <= bulletin.period.last && !followedByAnotherStoppage && contractContinues ? dayAfter : undefined;
-
     stoppages.push({
       reasonCode: codeByKind[absence.kind as keyof typeof codeByKind],
       lastDayWorked,
       expectedEnd: absence.end,
       subrogationCode: "02",
-      ...(recoveryDate ? { recoveryDate, recoveryReasonCode: "01" as const } : {}),
     });
   }
 
