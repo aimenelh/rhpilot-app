@@ -73,6 +73,19 @@ export type DsnP26MonthlyInput = {
       workAccidentRate: number | null;
       /** Suspensions mensuelles rattachées au contrat. */
       suspensions?: Array<{ reasonCode: "501"; startDate: Date; endDate: Date }>;
+      /** Arrêts de travail reportés dans la DSN mensuelle. */
+      workStoppages?: Array<{
+        reasonCode: "01" | "02" | "03" | "06";
+        lastWorkedDate: Date;
+        expectedEndDate: Date;
+        subrogation: boolean;
+        subrogationStartDate?: Date | null;
+        subrogationEndDate?: Date | null;
+        subrogationIban?: string | null;
+        subrogationBic?: string | null;
+        returnDate?: Date | null;
+        returnReasonCode?: "01" | "02" | "03" | null;
+      }>;
     };
     payroll: {
       baseSalary: number;
@@ -92,6 +105,8 @@ export type DsnP26MonthlyInput = {
       overtimeTaxExemptNetAmount?: number;
       /** Volume d'absence partiellement ou pas du tout rémunérée (S21.G00.53 type 02). */
       unpaidAbsenceHours?: number;
+      /** IJSS subrogées nettes prises en compte dans le MNS (S21.G00.58 type 10). */
+      subrogatedIjssNetAmount?: number;
     };
   }>;
 };
@@ -328,6 +343,29 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
       add(lines, "S21.G00.65.003", dsnDate(suspension.endDate));
     }
 
+    for (const stoppage of employee.contract.workStoppages ?? []) {
+      if (stoppage.expectedEndDate < stoppage.lastWorkedDate) throw new Error("DSN bloquée : la fin prévisionnelle d'un arrêt précède le dernier jour travaillé.");
+      add(lines, "S21.G00.60.001", stoppage.reasonCode);
+      add(lines, "S21.G00.60.002", dsnDate(stoppage.lastWorkedDate));
+      add(lines, "S21.G00.60.003", dsnDate(stoppage.expectedEndDate));
+      add(lines, "S21.G00.60.004", stoppage.subrogation ? "01" : "02");
+      if (stoppage.subrogation) {
+        if (!stoppage.subrogationStartDate || !stoppage.subrogationEndDate || !stoppage.subrogationIban || !stoppage.subrogationBic) throw new Error("DSN bloquée : une subrogation nécessite ses dates et le compte bancaire de réception.");
+        if (stoppage.subrogationEndDate < stoppage.subrogationStartDate) throw new Error("DSN bloquée : la fin de subrogation précède son début.");
+        add(lines, "S21.G00.60.005", dsnDate(stoppage.subrogationStartDate));
+        add(lines, "S21.G00.60.006", dsnDate(stoppage.subrogationEndDate));
+        add(lines, "S21.G00.60.007", text(stoppage.subrogationIban, "l'IBAN de subrogation"));
+        add(lines, "S21.G00.60.008", text(stoppage.subrogationBic, "le BIC de subrogation"));
+      } else if (stoppage.subrogationStartDate || stoppage.subrogationEndDate || stoppage.subrogationIban || stoppage.subrogationBic) {
+        throw new Error("DSN bloquée : des données de subrogation sont présentes alors que la subrogation est déclarée à non.");
+      }
+      if (stoppage.returnDate || stoppage.returnReasonCode) {
+        if (!stoppage.returnDate || !stoppage.returnReasonCode) throw new Error("DSN bloquée : la date et le motif de reprise doivent être renseignés ensemble.");
+        add(lines, "S21.G00.60.010", dsnDate(stoppage.returnDate));
+        add(lines, "S21.G00.60.011", stoppage.returnReasonCode);
+      }
+    }
+
     // Régime général couvert par le moteur : retraite unifiée Agirc-Arrco.
     const retirementScheme = employee.contract.retirementSchemeCode ?? (employee.contract.oldAgeRegimeCode === "200" ? "RUAA" : null);
     if (!retirementScheme) throw new Error("DSN bloquée : le régime de retraite complémentaire est absent.");
@@ -363,6 +401,13 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
     if (overtimeTaxExemptNetAmount > 0) {
       add(lines, "S21.G00.58.003", "01");
       add(lines, "S21.G00.58.004", money(overtimeTaxExemptNetAmount));
+    }
+
+    const subrogatedIjssNetAmount = employee.payroll.subrogatedIjssNetAmount ?? 0;
+    if (!Number.isFinite(subrogatedIjssNetAmount) || subrogatedIjssNetAmount < 0) throw new Error("DSN bloquée : le montant net des IJSS subrogées est invalide.");
+    if (subrogatedIjssNetAmount > 0) {
+      add(lines, "S21.G00.58.003", "10");
+      add(lines, "S21.G00.58.004", money(subrogatedIjssNetAmount));
     }
 
     add(lines, "S21.G00.58.001", dsnDate(periodStart));
