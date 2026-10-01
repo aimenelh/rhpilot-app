@@ -9,10 +9,15 @@ describe("périmètre de la DSN préparatoire", () => {
     expect(dsnScopeIssues({ variables: [], validatedAbsences: [], bulletin: { lines: [{ code: "BASE_SALARY" }] } })).toEqual([]);
   });
 
-  it("liste tous les éléments non déclarables d'un salarié, pas seulement le premier", () => {
+  it("ne bloque plus toutes les variables puisque les HS/HC sont désormais raccordées", () => {
+    const issues = dsnScopeIssues({ variables: [{}], validatedAbsences: [], bulletin: { lines: [{ code: "BASE_SALARY" }] } });
+    expect(issues).toEqual([]);
+  });
+
+  it("liste encore les événements de contrat et absences non déclarables", () => {
     const issues = dsnScopeIssues({ variables: [{}], validatedAbsences: [{}], bulletin: { lines: [{ code: "ENTRY_EXIT" }] } });
-    expect(issues).toHaveLength(3);
-    expect(issues.join(" ")).toMatch(/primes/);
+    expect(issues).toHaveLength(2);
+    expect(issues.join(" ")).toMatch(/entrée|sortie/);
     expect(issues.join(" ")).toMatch(/absences/);
   });
 });
