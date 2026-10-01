@@ -1,4 +1,4 @@
-# Clôture du socle PAIE — suivi du 30 septembre 2026
+# Clôture du socle PAIE — suivi du 1er octobre 2026
 
 **Statut : en cours. Le module ne peut pas encore être présenté comme un logiciel de paie et de déclaration entièrement terminé.**
 
@@ -24,15 +24,15 @@ Dsn-Val Linux 64 bits **2026.1.0.17**, téléchargement officiel et empreinte SH
 DSN_VAL_DIR=/chemin/vers/dsn-val npm run test:dsn-val
 ```
 
-Le script produit un pré-contrôle identité/PAS, une déclaration avec cotisations pour un salarié synthétique et une pour deux salariés synthétiques. Il exige un bilan XML **P26V01 / test / OK / zéro anomalie**, puis contrôle qu'un fichier privé d'un bloc obligatoire est refusé. Il ne se fie pas au code de sortie du processus. Tous les fichiers sont synthétiques, traités localement et ne sont pas déposés sur net-entreprises.
+Le script contrôle neuf fichiers synthétiques, dont six alimentés par le moteur : salaire ordinaire, brut supérieur au plafond, temps partiel, deux affiliations complémentaires, forfait social/VM/VMA/VMR, cadre et FNAL au seuil de 50 salariés. Il exige un bilan XML **P26V01 / test / OK / zéro anomalie**, puis vérifie qu'un fichier privé d'un bloc obligatoire est refusé. Tous les fichiers sont traités localement, sans dépôt sur net-entreprises.
 
-Résultat local du 30/09/2026 : **trois fichiers acceptés sans anomalie, témoin invalide refusé**. Les montants de ces fixtures servent au contrôle de structure et **ne constituent pas des paies de référence**.
+Les exemples testent la structure et le raccordement des montants verrouillés ; ils ne constituent pas une recette financière indépendante ni une acceptation par les organismes.
 
 ## Conditions de clôture restantes
 
 | Condition | État et travail restant |
 |---|---|
-| DSN des paies calculées par l'application | Générateur de cotisations renforcé, mais mapping exhaustif et versionné des rubriques du moteur vers CTP et cotisations individuelles à construire et intégrer à `prepareDsnP26V01`. Les OPS retraite, santé et prévoyance doivent venir des affiliations de l'entreprise. |
+| DSN des paies calculées par l'application | Générateur complet intégré à `prepareDsnP26V01`, mapping `P26V01-RG-2026.2`, rapprochement des dettes au centime. OPS configurés par entreprise ; santé/prévoyance mensuelles limitées aux composants 20/11/24. Les autres périmètres restent bloqués. |
 | DSN des mois avec événements | Primes, absences, fins de contrat et régularisations doivent avoir leurs blocs et contrôles. Leur export reste bloqué. |
 | Vérification financière indépendante | Comparer des bulletins de référence pour les cas retenus : temps partiel, entrée/sortie, maladie traversant deux mois, HS, congés, cadre, apprenti, fin de CDD, rupture et régularisations annuelles. L'oracle Urssaf couvre déjà les mois simples, mais ne remplace pas cette recette. |
 | Prévoyance au-delà des limites | Réintégrations sociales/fiscales annuelles à implémenter avec cumuls et reprise. Blocage maintenu. |
@@ -40,4 +40,4 @@ Résultat local du 30/09/2026 : **trois fichiers acceptés sans anomalie, témoi
 | Parcours connecté | Vérifier avec un compte autorisé : paramètres → calcul → contrôle → validation → verrouillage → PDF → export. Un écran de connexion ne valide pas ce parcours. |
 | Dépôt et retours déclaratifs | Dépôt de test autorisé, compte net-entreprises et affiliations exactes nécessaires pour la recette métier et le traitement des retours. Un bilan Dsn-Val OK ne vaut pas acceptation par les organismes. |
 
-La DSN réelle et l'ouverture générale du module restent désactivées tant que ces conditions ne sont pas satisfaites. Les anciennes paies validées/verrouillées ne sont pas recalculées par cette livraison. Le moteur des nouveaux calculs est versionné `rhpilot-bulletin-2026.2`.
+Les pré-contrôles sont archivés chiffrés et immuables, avec version, empreinte et téléchargement des octets conservés. La DSN réelle et l'ouverture générale restent désactivées tant que les conditions ci-dessus ne sont pas satisfaites. Les anciennes paies validées/verrouillées ne sont pas recalculées. Le moteur des nouveaux calculs est versionné `rhpilot-bulletin-2026.4`. Le suivi détaillé figure dans `payroll-launch-progress-2026.md`.

@@ -6,7 +6,8 @@ export type DsnIndividualContribution = {
   code: string;
   /** Base S21.G00.78 parente (02 plafonnée, 03 déplafonnée, 04 CSG...). */
   baseCode: string;
-  opsIdentifier: string;
+  affiliationId?: string;
+  opsIdentifier: string | null;
   baseAmount?: number | null;
   contributionAmount?: number | null;
   ratePercent?: number | null;
@@ -36,12 +37,15 @@ export type DsnOpsPayment = {
   payerSiret?: string | null;
   iban?: string | null;
   bic?: string | null;
+  delegateCode?: string | null;
+  components?: Array<{ amount: number; contractReference: string; period: string }>;
 };
 
 export type DsnAssessedBase = {
   employeeNir: string;
   code: string;
   amount: number;
+  affiliationId?: string;
   periodStart?: Date;
   periodEnd?: Date;
   components?: Array<{ code: string; amount: number }>;
@@ -56,6 +60,9 @@ export type DsnP26CompleteInput = DsnP26MonthlyInput & {
     aggregatedContributions: DsnAggregatedContribution[];
   };
   payments: DsnOpsPayment[];
+  expectedLiabilities?: Array<{ opsIdentifier: string; amount: number }>;
+  complementaryAdhesions?: Array<{ id: string; organismCode: string; contractReference: string; delegateCode: string | null }>;
+  complementaryAffiliations?: Array<{ employeeNir: string; id: string; adhesionId: string; populationCode: string | null; optionCode: string | null; validFrom: Date; validUntil: Date | null }>;
 };
 
 type ParsedLine = { code: string; value: string };
@@ -149,6 +156,13 @@ export function buildDsnP26V01Complete(input: DsnP26CompleteInput): string {
   if (assessedTotal !== cents(input.contributionBordereau.totalAmount)) throw new Error("DSN bloquée : le total du bordereau ne correspond pas aux cotisations et réductions du journal de paie.");
   const paidTotal = input.payments.filter((payment) => assertOps(payment.opsIdentifier) === ops).reduce((sum, payment) => sum + cents(payment.amount), 0);
   if (paidTotal !== assessedTotal) throw new Error("DSN bloquée : le paiement Urssaf ne correspond pas au bordereau. Les acomptes, crédits et paiements différés nécessitent un rapprochement distinct avant export.");
+  if (input.expectedLiabilities) {
+    const expected = new Map(input.expectedLiabilities.map((item) => [assertOps(item.opsIdentifier), cents(item.amount)]));
+    if (expected.size !== input.expectedLiabilities.length) throw new Error("DSN bloquée : dette organisme dupliquée.");
+    const declared = new Map<string, number>();
+    for (const payment of input.payments) declared.set(assertOps(payment.opsIdentifier), (declared.get(assertOps(payment.opsIdentifier)) ?? 0) + cents(payment.amount));
+    if (declared.size !== expected.size || [...expected].some(([id, amount]) => declared.get(id) !== amount)) throw new Error("DSN bloquée : les paiements ne correspondent pas aux dettes de tous les organismes.");
+  }
   const aggregateKeys = new Set<string>();
   for (const aggregate of input.contributionBordereau.aggregatedContributions) {
     const key = [aggregate.code, aggregate.baseQualifier, aggregate.ratePercent ?? "", aggregate.inseeCommuneCode ?? ""].join("/");
@@ -160,17 +174,40 @@ export function buildDsnP26V01Complete(input: DsnP26CompleteInput): string {
   if (establishmentIndex < 0) throw new Error("DSN bloquée : bloc établissement introuvable.");
 
   const establishmentBlocks: ParsedLine[] = [];
+  const adhesions = input.complementaryAdhesions ?? [];
+  const affiliationRows = input.complementaryAffiliations ?? [];
+  if (new Set(adhesions.map((item) => item.id)).size !== adhesions.length) throw new Error("DSN bloquée : identifiant d'adhésion complémentaire dupliqué.");
+  for (const adhesion of adhesions) {
+    if (!affiliationRows.some((affiliation) => affiliation.adhesionId === adhesion.id)) throw new Error("DSN bloquée : une adhésion est déclarée couverte sans salarié affilié.");
+    if (!/^[1-9]\d{0,2}$/.test(adhesion.id)) throw new Error("DSN bloquée : identifiant technique d'adhésion invalide.");
+    add(establishmentBlocks, "S21.G00.15.001", adhesion.contractReference);
+    add(establishmentBlocks, "S21.G00.15.002", adhesion.organismCode);
+    add(establishmentBlocks, "S21.G00.15.003", adhesion.delegateCode);
+    add(establishmentBlocks, "S21.G00.15.004", "01");
+    add(establishmentBlocks, "S21.G00.15.005", adhesion.id);
+  }
   for (const payment of input.payments) {
     if (!Number.isFinite(payment.amount) || payment.amount < 0) throw new Error("DSN bloquée : montant de paiement OPS invalide.");
     add(establishmentBlocks, "S21.G00.20.001", assertOps(payment.opsIdentifier));
+    add(establishmentBlocks, "S21.G00.20.002", assertOps(payment.opsIdentifier) === "DGFIP" ? "DGFIP_PAS" : null);
     add(establishmentBlocks, "S21.G00.20.003", payment.bic?.trim() || null);
     add(establishmentBlocks, "S21.G00.20.004", payment.iban?.replace(/\s+/g, "") || null);
     add(establishmentBlocks, "S21.G00.20.005", money(payment.amount));
-    add(establishmentBlocks, "S21.G00.20.006", start);
-    add(establishmentBlocks, "S21.G00.20.007", end);
+    add(establishmentBlocks, "S21.G00.20.006", payment.components ? "01012000" : start);
+    add(establishmentBlocks, "S21.G00.20.007", payment.components ? "01012000" : end);
+    add(establishmentBlocks, "S21.G00.20.008", payment.delegateCode);
     add(establishmentBlocks, "S21.G00.20.010", payment.paymentModeCode.trim());
     add(establishmentBlocks, "S21.G00.20.011", payment.paymentDate ? dsnDate(payment.paymentDate) : null);
     add(establishmentBlocks, "S21.G00.20.012", payment.payerSiret?.replace(/\s+/g, "") || null);
+    if (payment.components) {
+      if (payment.components.reduce((total, component) => total + cents(component.amount), 0) !== cents(payment.amount)) throw new Error("DSN bloquée : les composants de paiement complémentaire divergent du total.");
+      for (const component of payment.components) {
+        if (!adhesions.some((adhesion) => adhesion.organismCode === payment.opsIdentifier && adhesion.delegateCode === (payment.delegateCode ?? null) && adhesion.contractReference === component.contractReference)) throw new Error("DSN bloquée : un paiement complémentaire ne correspond à aucune adhésion.");
+        add(establishmentBlocks, "S21.G00.55.001", money(component.amount));
+        add(establishmentBlocks, "S21.G00.55.003", component.contractReference);
+        add(establishmentBlocks, "S21.G00.55.004", component.period);
+      }
+    }
   }
 
   add(establishmentBlocks, "S21.G00.22.001", ops);
@@ -196,6 +233,7 @@ export function buildDsnP26V01Complete(input: DsnP26CompleteInput): string {
   const knownEmployees = new Set(employeeNirs);
   if (knownEmployees.size !== employeeNirs.length) throw new Error("DSN bloquée : un salarié est déclaré plusieurs fois.");
   if ([...input.assessedBases, ...input.contributionBordereau.individualContributions].some((item) => !knownEmployees.has(item.employeeNir.replace(/\s+/g, "")))) throw new Error("DSN bloquée : une base ou cotisation appartient à un salarié absent de la déclaration.");
+  if (affiliationRows.some((item) => !knownEmployees.has(item.employeeNir))) throw new Error("DSN bloquée : une affiliation appartient à un salarié absent du fichier.");
   for (const employeeNir of employeeNirs) {
     const indexes = baseRows
       .map((row, index) => ({ row, index }))
@@ -211,34 +249,60 @@ export function buildDsnP26V01Complete(input: DsnP26CompleteInput): string {
       }
     }
 
+    const employeeAffiliations = affiliationRows.filter((item) => item.employeeNir === employeeNir);
+    if (new Set(employeeAffiliations.map((item) => item.id)).size !== employeeAffiliations.length) throw new Error("DSN bloquée : affiliation complémentaire dupliquée.");
+    const affiliationBlocks: ParsedLine[] = [];
+    for (const affiliation of employeeAffiliations) {
+      if (!/^[1-9]\d{0,2}$/.test(affiliation.id) || !adhesions.some((item) => item.id === affiliation.adhesionId)) throw new Error("DSN bloquée : affiliation complémentaire sans adhésion valide.");
+      add(affiliationBlocks, "S21.G00.70.004", affiliation.optionCode);
+      add(affiliationBlocks, "S21.G00.70.005", affiliation.populationCode);
+      add(affiliationBlocks, "S21.G00.70.012", affiliation.id);
+      add(affiliationBlocks, "S21.G00.70.013", affiliation.adhesionId);
+      add(affiliationBlocks, "S21.G00.70.014", dsnDate(affiliation.validFrom));
+      add(affiliationBlocks, "S21.G00.70.015", affiliation.validUntil ? dsnDate(affiliation.validUntil) : null);
+    }
+    const paymentIndex = baseRows.findIndex((row, index) => index > employeeStart && row.code.startsWith("S21.G00.71."));
+    if (paymentIndex < 0 || paymentIndex >= insertAt) throw new Error("DSN bloquée : versement du salarié introuvable pour rattacher les affiliations.");
+    baseRows.splice(paymentIndex, 0, ...affiliationBlocks);
+    insertAt += affiliationBlocks.length;
     const individualBlocks: ParsedLine[] = [];
     const contributions = input.contributionBordereau.individualContributions.filter((item) => item.employeeNir.replace(/\s+/g, "") === employeeNir);
     if (contributions.length === 0) throw new Error("DSN bloquée : aucune cotisation individuelle mappée pour un salarié.");
     const bases = input.assessedBases.filter((base) => base.employeeNir.replace(/\s+/g, "") === employeeNir);
     if (bases.length === 0) throw new Error("DSN bloquée : bases assujetties absentes pour un salarié.");
-    const baseCodes = new Set(bases.map((base) => base.code));
+    if (employeeAffiliations.some((affiliation) => !bases.some((base) => base.code === "31" && base.affiliationId === affiliation.id))) throw new Error("DSN bloquée : une affiliation complémentaire n’a pas de base assujettie.");
+    const baseKey = (code: string, id?: string): string => `${code}/${id ?? ""}`;
+    const baseCodes = new Set(bases.map((base) => baseKey(base.code, base.affiliationId)));
     if (baseCodes.size !== bases.length) throw new Error("DSN bloquée : une base assujettie est déclarée plusieurs fois pour le salarié.");
     for (const contribution of contributions) {
-      if (!baseCodes.has(contribution.baseCode)) throw new Error(`DSN bloquée : la cotisation ${contribution.code} n'a pas de base assujettie parente.`);
+      if (!baseCodes.has(baseKey(contribution.baseCode, contribution.affiliationId))) throw new Error(`DSN bloquée : la cotisation ${contribution.code} n'a pas de base assujettie parente.`);
     }
     for (const base of bases) {
       if (!/^\d{2}$/.test(base.code)) throw new Error("DSN bloquée : le code de base assujettie doit contenir deux chiffres.");
+      if (base.code === "31") {
+        if (cents(base.amount) !== 0 || !employeeAffiliations.some((item) => item.id === base.affiliationId) || !(base.components?.length)) throw new Error("DSN bloquée : la base complémentaire doit être nulle, affiliée et détaillée.");
+        const attached = contributions.filter((item) => item.baseCode === "31" && item.affiliationId === base.affiliationId);
+        if (attached.length !== 1 || attached[0].code !== "059" || attached[0].opsIdentifier !== null || attached[0].baseAmount != null || attached[0].ratePercent != null) throw new Error("DSN bloquée : chaque affiliation exige une seule cotisation 059 sans OPS, taux ni assiette individuelle.");
+        if (base.components.some((item) => !/^(1[0-9]|20|21|23|24)$/.test(item.code)) || new Set(base.components.map((item) => item.code)).size !== base.components.length) throw new Error("DSN bloquée : les composants de base complémentaire sont invalides ou dupliqués.");
+      } else if (base.affiliationId) throw new Error("DSN bloquée : une affiliation est interdite sur cette base.");
       add(individualBlocks, "S21.G00.78.001", base.code);
       add(individualBlocks, "S21.G00.78.002", base.periodStart ? dsnDate(base.periodStart) : start);
       add(individualBlocks, "S21.G00.78.003", base.periodEnd ? dsnDate(base.periodEnd) : end);
       add(individualBlocks, "S21.G00.78.004", money(base.amount));
+      add(individualBlocks, "S21.G00.78.005", base.affiliationId);
       for (const component of base.components ?? []) {
         if (!/^\d{2}$/.test(component.code)) throw new Error("DSN bloquée : le code de composant de base est invalide.");
         add(individualBlocks, "S21.G00.79.001", component.code);
         add(individualBlocks, "S21.G00.79.004", money(component.amount));
       }
-      for (const contribution of contributions.filter((item) => item.baseCode === base.code)) {
+      for (const contribution of contributions.filter((item) => item.baseCode === base.code && item.affiliationId === base.affiliationId)) {
         assertMappingVersion(contribution.mappingVersion, contribution.sourcePayrollCode);
         if (!contribution.sourcePayrollCode.trim()) throw new Error("DSN bloquée : cotisation individuelle sans rubrique de paie source.");
-        if (assertOps(contribution.opsIdentifier) === ops) assertUrssafIndividualMapping(contribution, input.contributionBordereau.aggregatedContributions);
+        if (contribution.opsIdentifier !== null && assertOps(contribution.opsIdentifier) === ops && !["142", "146"].includes(contribution.code)) assertUrssafIndividualMapping(contribution, input.contributionBordereau.aggregatedContributions);
         if (["018", "106"].includes(contribution.code) && (base.code !== "03" || !base.components?.some((component) => component.code === "01"))) throw new Error("DSN bloquée : la réduction générale exige la base déplafonnée et son composant SMIC.");
         add(individualBlocks, "S21.G00.81.001", assertContributionCode(contribution.code, "le code de cotisation individuelle"));
-        add(individualBlocks, "S21.G00.81.002", assertOps(contribution.opsIdentifier));
+        if (["131", "132", "106"].includes(contribution.code) && contribution.opsIdentifier !== null) throw new Error("DSN bloquée : l’identifiant OPS est interdit pour cette cotisation retraite.");
+        add(individualBlocks, "S21.G00.81.002", contribution.opsIdentifier === null ? null : assertOps(contribution.opsIdentifier));
         add(individualBlocks, "S21.G00.81.003", contribution.baseAmount === null || contribution.baseAmount === undefined ? null : money(contribution.baseAmount));
         add(individualBlocks, "S21.G00.81.004", contribution.contributionAmount === null || contribution.contributionAmount === undefined ? null : money(contribution.contributionAmount));
         add(individualBlocks, "S21.G00.81.005", contribution.inseeCommuneCode?.trim() || null);

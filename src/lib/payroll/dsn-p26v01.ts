@@ -76,6 +76,9 @@ export type DsnP26MonthlyInput = {
       baseSalary: number;
       grossAmount: number;
       cappedContributionBase: number;
+      grossSubject?: number;
+      unemploymentBase?: number;
+      paidHours?: number;
       netBeforeTax: number;
       netTaxableAmount: number;
       netSocialAmount: number;
@@ -312,7 +315,7 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
     add(lines, "S21.G00.50.013", money(employee.payroll.pas.amountSubjectToPas));
 
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "001", employee.payroll.grossAmount);
-    addRemuneration(lines, periodStart, periodEnd, contractNumber, "002", employee.payroll.grossAmount, { measure: employee.contract.contractWorkQuota, unit: workUnitCode });
+    addRemuneration(lines, periodStart, periodEnd, contractNumber, "002", employee.payroll.unemploymentBase ?? employee.payroll.grossAmount, { measure: employee.payroll.paidHours ?? employee.contract.contractWorkQuota, unit: workUnitCode });
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "003", employee.payroll.baseSalary);
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "010", employee.payroll.baseSalary);
 
@@ -329,7 +332,7 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
     add(lines, "S21.G00.78.001", "03");
     add(lines, "S21.G00.78.002", dsnDate(periodStart));
     add(lines, "S21.G00.78.003", dsnDate(periodEnd));
-    add(lines, "S21.G00.78.004", money(employee.payroll.grossAmount));
+    add(lines, "S21.G00.78.004", money(employee.payroll.grossSubject ?? employee.payroll.grossAmount));
 
     const seniorityStart = employee.contract.seniorityDate ?? employee.contract.startDate;
     const seniorityEnd = employee.contract.endDate && employee.contract.endDate < periodEnd ? employee.contract.endDate : periodEnd;

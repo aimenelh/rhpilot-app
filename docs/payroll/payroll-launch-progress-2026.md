@@ -1,6 +1,19 @@
-# Préparation à l'ouverture commerciale — 30 septembre 2026
+# Préparation à l'ouverture commerciale — 1er octobre 2026
+
+## Avancement DSN et archives
+
+L'export des périodes verrouillées utilise désormais le générateur de cotisations complet. Il rapproche les lignes du bulletin, les dettes Urssaf/retraite/complémentaires et les paiements au centime, avec une ventilation cumulative de la RGDU. Le taux AT/MP et les assiettes d'activité et de chômage viennent du bulletin verrouillé.
+
+Les administrateurs configurent les organismes, les coordonnées SEPA chiffrées et les affiliations santé/prévoyance depuis leurs fiches de paramétrage. Le périmètre complémentaire raccordé est limité aux paiements mensuels, à la santé forfaitaire (20) et à la prévoyance sur tranches A/2 unifiée (11/24). Les autres composants et changements en cours de mois restent bloqués.
+
+Chaque export de pré-contrôle possède une version conservée chiffrée, une empreinte SHA-256 et un historique. PostgreSQL empêche les mises à jour et suppressions de ces archives. Le téléchargement vérifie l'identité entreprise/période/archive et restitue les octets Latin-1 conservés.
+
+La CI précédente a accepté 624 tests dans 100 fichiers, les migrations PostgreSQL, le schéma, les types, le lint et le build. Le contrôle local étendu vérifie neuf fichiers synthétiques P26V01 avec Dsn-Val 2026.1.0.17, dont six calculés par le moteur : la double affiliation santé/prévoyance, le forfait social avec VM/VMA/VMR, le cadre/APEC et le FNAL déplafonné sont couverts. Le témoin invalide doit être rejeté. La CI complète reste la condition de fusion de ce lot.
 
 ## Corrections de ce lot
+
+- Mapping `P26V01-RG-2026.2` : forfait social à 8 % et ventilation des versements mobilité VM/VMA/VMR depuis la provenance Urssaf conservée dans le bulletin ; arrondissement de travail conservé pour Paris/Lyon/Marseille.
+- Contrats : refus des sorties au dernier jour, rappels après sortie et changements de contrat/statut non déclarés. Le code retraite est rapproché du statut cadre/non-cadre réellement utilisé par le moteur ; les extensions cadre restent hors périmètre.
 
 - Moteur `rhpilot-bulletin-2026.3` : exonération fiscale **annuelle** des salaires d'apprentissage, cumul du net fiscal avant exonération hors IJSS, franchissement du seuil et reprise explicite des données historiques. Seuils datés : 21 876 € à compter de janvier, 22 184 € à compter de juin, selon les publications Net-entreprises.
 - DSN : reprise de l'assiette et du taux du bulletin verrouillé ; distinction RNF / part non imposable des apprentis / montant soumis au PAS. La rubrique .50.012 n'est pas utilisée pour l'abattement des CDD courts. Les CDD courts et les absences restent bloqués par les contrôles de périmètre existants : ce lot ne les ouvre pas au dépôt.
@@ -20,9 +33,11 @@ Contrôle officiel : `DSN_VAL_DIR=/chemin/vers/dsn-val npm run test:dsn-val`. Le
 
 ## L'ouverture complète reste à démontrer
 
-Ce lot corrige des erreurs identifiées ; il ne constitue ni une homologation ni l'achèvement du module DSN. Le générateur complet n'est toujours pas le générateur utilisé par l'export des périodes réelles : le raccordement exhaustif des cotisations, les affiliations retraite et organismes complémentaires, leurs contrats et les modalités de paiement restent à intégrer.
+Ce lot corrige des erreurs identifiées ; il ne constitue ni une homologation ni l'achèvement du module DSN. Le générateur complet est raccordé à l'export de pré-contrôle. L'ouverture du dépôt réel exige encore de couvrir les éléments ci-dessous et de valider les retours des organismes.
 
-Restent également les événements (absences, entrées/sorties, fins de contrat), régularisations déclaratives, retours métier et recette financière indépendante. La continuité annuelle doit être vérifiée sur les changements de plafond, d'horaire, de seuil et d'exonération, y compris une éventuelle correction fiscale des périodes antérieures lors d'une revalorisation du seuil des apprentis. Le décompte des congés à temps partiel en jours ouvrés et les changements contractuels en cours de mois doivent être corrigés avant ouverture générale.
+Restent les événements (absences, entrées/sorties, fins de contrat), primes et heures supplémentaires/complémentaires en DSN, apprentis/régimes spécifiques, régularisations déclaratives (dont la CET rétroactive), contributions annuelles, autres assiettes de forfait social et régularisations mobilité, retours métier et recette financière indépendante. La continuité annuelle doit être vérifiée sur les changements de plafond, d'horaire, de seuil et d'exonération, y compris une éventuelle correction fiscale des périodes antérieures lors d'une revalorisation du seuil des apprentis. Le décompte des congés à temps partiel et les reports entre deux mois ont été corrigés par le moteur 2026.4 ; les changements contractuels en cours de mois restent bloqués et exigent un calcul segmenté.
+
+Le contrôle des événements ne doit pas dépendre du seul montant d'une ligne de prorata : une sortie le dernier jour du mois et une transformation de contrat peuvent nécessiter des blocs déclaratifs avec un salaire mensuel entier. Ces cas restent bloqués jusqu'au raccordement des blocs de fin/changement.
 
 La préparation de janvier 2027 nécessite la norme et les paramètres 2027 vérifiés. Les bornes 2026 restent actives : les taux 2026 ne doivent pas se prolonger silencieusement.
 

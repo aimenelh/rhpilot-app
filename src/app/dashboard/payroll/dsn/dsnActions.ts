@@ -1,5 +1,6 @@
 "use server";
 
+import { normalizeDsnComplementaryAffiliations } from "@/lib/payroll/dsn-complementary-affiliations";
 import { randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
@@ -7,6 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { assertNirFormat, encryptDsnSensitiveValue } from "@/lib/payroll/dsn-pii";
 import { getPayrollMembership } from "@/lib/payrollAccess";
 import { userFacingError } from "@/lib/userFacingError";
+import { dsnOpsSiret, dsnPaymentIban, dsnPaymentBic } from "@/lib/payroll/dsn-payment-settings";
 import { assertDsnWorkAccidentRiskCode } from "@/lib/payroll/dsn-nomenclature";
 
 export type DsnFormState = { error?: string; success?: string } | undefined;
@@ -77,18 +79,30 @@ export async function saveDsnOrganizationSettings(
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(contactEmail)) throw new Error("L'adresse e-mail du contact DSN est invalide.");
     if (!/^[+0-9(). /-]{10,20}$/.test(contactPhone)) throw new Error("Le numéro de téléphone du contact DSN doit comporter entre 10 et 20 caractères autorisés.");
 
+    const urssafSiret = value(formData, "urssafSiret") ? dsnOpsSiret(value(formData, "urssafSiret"), "SIRET Urssaf") : null;
+    const retirementSiret = value(formData, "retirementSiret") ? dsnOpsSiret(value(formData, "retirementSiret"), "SIRET de la caisse de retraite") : null;
+    if (urssafSiret && urssafSiret === retirementSiret) throw new Error("Les organismes Urssaf et retraite doivent être distincts.");
+    const paymentIbanCiphertext = value(formData, "paymentIban") ? encryptDsnSensitiveValue(dsnPaymentIban(value(formData, "paymentIban"))) : null;
+    const paymentBic = value(formData, "paymentBic") ? dsnPaymentBic(value(formData, "paymentBic")) : null;
+    const sepaMandatesConfirmed = value(formData, "sepaMandatesConfirmed") === "1";
+
     await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`
         INSERT INTO "dsn_organization_settings"
-          ("organizationId", "contactName", "contactEmail", "contactPhone", "declaredContactType", "enterpriseApenCode", "defaultTestMode", "updatedAt")
+          ("organizationId", "contactName", "contactEmail", "contactPhone", "declaredContactType", "enterpriseApenCode", "urssafSiret", "retirementSiret", "paymentIbanCiphertext", "paymentBic", "sepaMandatesConfirmed", "defaultTestMode", "updatedAt")
         VALUES
-          (${membership.organizationId}, ${contactName}, ${contactEmail}, ${contactPhone}, ${declaredContactType}, ${enterpriseApenCode}, TRUE, CURRENT_TIMESTAMP)
+          (${membership.organizationId}, ${contactName}, ${contactEmail}, ${contactPhone}, ${declaredContactType}, ${enterpriseApenCode}, ${urssafSiret}, ${retirementSiret}, ${paymentIbanCiphertext}, ${paymentBic}, ${sepaMandatesConfirmed}, TRUE, CURRENT_TIMESTAMP)
         ON CONFLICT ("organizationId") DO UPDATE SET
           "contactName" = EXCLUDED."contactName",
           "contactEmail" = EXCLUDED."contactEmail",
           "contactPhone" = EXCLUDED."contactPhone",
           "declaredContactType" = EXCLUDED."declaredContactType",
           "enterpriseApenCode" = EXCLUDED."enterpriseApenCode",
+          "urssafSiret" = EXCLUDED."urssafSiret",
+          "retirementSiret" = EXCLUDED."retirementSiret",
+          "paymentIbanCiphertext" = COALESCE(EXCLUDED."paymentIbanCiphertext", "dsn_organization_settings"."paymentIbanCiphertext"),
+          "paymentBic" = EXCLUDED."paymentBic",
+          "sepaMandatesConfirmed" = EXCLUDED."sepaMandatesConfirmed",
           "defaultTestMode" = TRUE,
           "updatedAt" = CURRENT_TIMESTAMP
       `;
@@ -253,5 +267,37 @@ export async function saveDsnEmployeeProfile(
     return { success: `Profil DSN de ${employee.firstName} ${employee.lastName} enregistré.` };
   } catch (error) {
     return { error: userFacingError(error, "Impossible d'enregistrer le profil DSN.") };
+  }
+}
+
+export async function saveDsnComplementaryAffiliations(employeeId: string, _previousState: DsnFormState, formData: FormData): Promise<DsnFormState> {
+  try {
+    const { membership, user } = await adminContext();
+    const configurations = ["SANTE", "PREVOYANCE"].filter((coverage) => value(formData, coverage + ".enabled") === "1").map((coverage) => {
+      if (value(formData, coverage + ".confirmed") !== "1") throw new Error("Confirmez les composants et la périodicité figurant dans votre fiche de paramétrage.");
+      return {
+        coverage, organismCode: value(formData, coverage + ".organismCode"), contractReference: value(formData, coverage + ".contractReference"),
+        delegateCode: value(formData, coverage + ".delegateCode"), populationCode: value(formData, coverage + ".populationCode"),
+        optionCode: value(formData, coverage + ".optionCode"), validFrom: value(formData, coverage + ".validFrom"),
+        validUntil: value(formData, coverage + ".validUntil"), paymentFrequency: "MONTHLY",
+        componentCodes: coverage === "SANTE" ? ["20"] : ["11", "24"], sourceReference: value(formData, coverage + ".sourceReference"),
+      };
+    });
+    const affiliations = normalizeDsnComplementaryAffiliations(configurations);
+    await prisma.$transaction(async (tx) => {
+      const changed = await tx.$executeRaw`
+        UPDATE "dsn_employee_profiles" SET "complementaryAffiliations" = ${JSON.stringify(affiliations)}::jsonb, "updatedAt" = CURRENT_TIMESTAMP
+        WHERE "organizationId" = ${membership.organizationId} AND "employeeId" = ${employeeId}
+      `;
+      if (changed !== 1) throw new Error("Enregistrez d'abord le profil DSN du salarié dans cette organisation.");
+      await tx.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id,
+        action: "dsn.employee.affiliations.updated", entityType: "Employee", entityId: employeeId,
+        metadata: { coverages: affiliations.map((item) => item.coverage), normVersion: "P26V01" } } });
+    });
+    revalidatePath("/dashboard/payroll/dsn");
+    revalidatePath(`/dashboard/payroll/dsn/employees/${employeeId}`);
+    return { success: "Affiliations complémentaires enregistrées pour le pré-contrôle DSN." };
+  } catch (error) {
+    return { error: userFacingError(error, "Impossible d'enregistrer les affiliations complémentaires.") };
   }
 }

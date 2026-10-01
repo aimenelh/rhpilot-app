@@ -1,3 +1,5 @@
+import DsnComplementaryForm from "../../DsnComplementaryForm";
+import { normalizeDsnComplementaryAffiliations } from "@/lib/payroll/dsn-complementary-affiliations";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -6,6 +8,7 @@ import DsnEmployeeForm, { type DsnEmployeeFormInitial } from "../../DsnEmployeeF
 import { getPayrollMembership } from "@/lib/payrollAccess";
 
 type DsnProfileRow = {
+  complementaryAffiliations: unknown;
   nirCiphertext: string; birthDate: Date; birthPlace: string; birthDepartment: string; birthCountryCode: string | null; euClassificationCode: string | null;
   addressLine: string; postalCode: string; city: string; countryCode: string | null; contractNumber: string; contractNatureCode: string;
   publicPolicyCode: string; pcsEsecCode: string; conventionalStatusCode: string; retirementStatusCode: string; workUnitCode: string;
@@ -30,7 +33,7 @@ export default async function DsnEmployeeSetupPage({ params }: { params: { emplo
              "addressLine", "postalCode", "city", "countryCode", "contractNumber", "contractNatureCode", "publicPolicyCode", "pcsEsecCode",
              "conventionalStatusCode", "retirementStatusCode", "workUnitCode", "referenceWorkQuota", "contractWorkQuota", "workModalityCode",
              "baseSchemeSupplementCode", "sicknessRegimeCode", "workLocationId", "oldAgeRegimeCode", "foreignWorkerCode", "employmentStatusCode",
-             "multipleJobsCode", "multipleEmployersCode", "workAccidentRegimeCode", "workAccidentRiskCode"
+             "multipleJobsCode", "multipleEmployersCode", "workAccidentRegimeCode", "workAccidentRiskCode", "complementaryAffiliations"
       FROM "dsn_employee_profiles"
       WHERE "organizationId" = ${membership.organizationId} AND "employeeId" = ${employee.id}
       LIMIT 1
@@ -39,6 +42,7 @@ export default async function DsnEmployeeSetupPage({ params }: { params: { emplo
     prisma.organization.findUnique({ where: { id: membership.organizationId }, select: { siret: true } }),
   ]);
   const row = rows[0];
+  const complementary = normalizeDsnComplementaryAffiliations(row?.complementaryAffiliations);
   const safeContractNature = employee.contractType === "CDI" ? "01" : employee.contractType === "CDD" ? "02" : "";
   const safePublicPolicy = employee.contractType === "CDI" || employee.contractType === "CDD" ? "99" : "";
   const monthlyHours = payrollProfile?.monthlyHours ? String(payrollProfile.monthlyHours) : "";
@@ -61,6 +65,7 @@ export default async function DsnEmployeeSetupPage({ params }: { params: { emplo
       <div className="mt-5"><p className="text-xs font-semibold uppercase tracking-wider text-brand-primary">Paie · DSN P26V01</p><h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink">{employee.firstName} {employee.lastName}</h1><p className="mt-1 text-sm text-ink-soft">{employee.position || "Poste non renseigné"} · {employee.contractType || "Contrat non renseigné"}</p></div>
       <div className="mt-6 rounded-xl border border-accent-amber/30 bg-accent-amber/5 px-4 py-3 text-sm leading-6 text-ink-soft">Les codes NEODeS sont des données déclaratives. Les valeurs préremplies correspondent uniquement au périmètre privé/régime général déjà supporté par le moteur social et doivent être confirmées avant export.</div>
       <div className="mt-6"><DsnEmployeeForm employeeId={employee.id} initial={initial} /></div>
+      <div className="mt-6">{row ? <DsnComplementaryForm employeeId={employee.id} initial={complementary} /> : <p className="text-sm text-ink-soft">Enregistrez le profil DSN pour configurer les affiliations complémentaires.</p>}</div>
     </div>
   );
 }

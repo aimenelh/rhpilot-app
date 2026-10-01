@@ -14,6 +14,14 @@ export type OrganizationPayrollContext = {
   atmpRatePercent: number;
   /** Taux de versement mobilité de la commune, en pourcentage (0 si non assujetti). */
   mobilityRatePercent: number;
+  /** Ventilation officielle et commune retenues au calcul, nécessaires à la DSN. */
+  mobilityDsn?: {
+    communeCode: string;
+    components: { vm: number; vma: number; vmr: number };
+    validFrom: string | null;
+    validUntil: string | null;
+    source: "URSSAF";
+  } | null;
   territory: PasTerritory;
   alsaceMoselle?: boolean;
   /** Complémentaire santé obligatoire : cotisation mensuelle totale et part employeur (0,5 à 1). */

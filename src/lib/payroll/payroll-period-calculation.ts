@@ -333,6 +333,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
         headcount,
         atmpRatePercent: socialContext.atmpRate,
         mobilityRatePercent: mobility.ratePercent,
+        mobilityDsn: mobility.dsnDetails,
         territory,
         alsaceMoselle,
         healthPlan: extras?.healthPlanWaiver ? null : { monthlyAmount: socialContext.healthPlanMonthlyAmount, employerShare: socialContext.healthPlanEmployerRate / 100 },

@@ -11,6 +11,7 @@
 import { prisma } from "@/lib/prisma";
 import { lookupCommuneCode } from "@/lib/company-registry";
 import { describeMobilityRate, fetchMobilityRate } from "./mobility-rate";
+import type { OrganizationPayrollContext } from "./bulletin/types";
 
 type MobilityRow = {
   mobilityRate: unknown;
@@ -23,8 +24,8 @@ type MobilityRow = {
 
 const frDay = (date: Date) => date.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" });
 
-export async function resolvePeriodMobilityRate(input: { organizationId: string; periodFirstDay: string; headcount: number }): Promise<{ ratePercent: number; warning: string | null }> {
-  if (input.headcount < 11) return { ratePercent: 0, warning: null };
+export async function resolvePeriodMobilityRate(input: { organizationId: string; periodFirstDay: string; headcount: number }): Promise<{ ratePercent: number; warning: string | null; dsnDetails: OrganizationPayrollContext["mobilityDsn"] }> {
+  if (input.headcount < 11) return { ratePercent: 0, warning: null, dsnDetails: null };
 
   const rows = await prisma.$queryRaw<MobilityRow[]>`
     SELECT "mobilityRate", "mobilityRateSource", "mobilityRateCheckedAt", "payrollCommuneCode", "payrollCity", "payrollPostalCode"
@@ -34,7 +35,7 @@ export async function resolvePeriodMobilityRate(input: { organizationId: string;
   const storedRate = row?.mobilityRate === null || row?.mobilityRate === undefined ? null : Number(row.mobilityRate);
   const stored = storedRate !== null && Number.isFinite(storedRate) ? storedRate : null;
 
-  if (row?.mobilityRateSource === "MANUEL" && stored !== null) return { ratePercent: stored, warning: null };
+  if (row?.mobilityRateSource === "MANUEL" && stored !== null) return { ratePercent: stored, warning: null, dsnDetails: null };
 
   let communeCode = row?.payrollCommuneCode?.trim() ?? "";
   // Organisation paramétrée avant la reprise automatique : on retrouve le code Insee de sa commune.
@@ -54,7 +55,12 @@ export async function resolvePeriodMobilityRate(input: { organizationId: string;
           WHERE "id" = ${input.organizationId} AND ("mobilityRateSource" IS NULL OR "mobilityRateSource" <> 'MANUEL')
         `;
       }
-      return { ratePercent: resolution.ratePercent, warning: null };
+      return { ratePercent: resolution.ratePercent, warning: null, dsnDetails: {
+        // Conserver la commune de travail (arrondissement pour Paris/Lyon/Marseille),
+        // même lorsque le barème est publié sous le code de la ville parente.
+        communeCode, components: resolution.components,
+        validFrom: resolution.validFrom, validUntil: resolution.validUntil, source: "URSSAF",
+      } };
     }
   }
 
@@ -62,6 +68,7 @@ export async function resolvePeriodMobilityRate(input: { organizationId: string;
     const checked = row?.mobilityRateCheckedAt ? ` vérifié le ${frDay(row.mobilityRateCheckedAt)}` : "";
     return {
       ratePercent: stored,
+      dsnDetails: null,
       warning: `Le barème du versement mobilité de l'Urssaf n'a pas pu être consulté : le dernier taux connu (${String(stored).replace(".", ",")} %${checked}) est appliqué. Recalculez plus tard pour le confirmer.`,
     };
   }
