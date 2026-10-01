@@ -91,6 +91,31 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     expect(data.contributionBordereau.aggregatedContributions.some((item) => item.code === "004")).toBe(false);
   });
 
+  it("raccorde une absence sans solde en activité 02 et suspension 501", () => {
+    const absence = { id: "unpaid-1", kind: "UNPAID_LEAVE" as const, start: "2026-01-12" as const, end: "2026-01-16" as const };
+    const snapshot = computedSnapshot({ absences: [absence] });
+    const mapped = mapLockedContributions({ snapshot, ...ids });
+    expect(mapped.unpaidAbsence.hours).toBe(35);
+    expect(mapped.unpaidAbsence.suspensions).toEqual([{ reasonCode: "501", start: "2026-01-12", end: "2026-01-16" }]);
+    const due = mapped.liabilities.reduce((sum, item) => sum + cents(item.amount), 0);
+    const deferred = mapped.deferred.reduce((sum, item) => sum + cents(item.amount), 0);
+    expect(due + deferred).toBe(cents(snapshot.bulletin.totals.employeeContributions) + cents(snapshot.bulletin.totals.employerContributions));
+
+    const data = computedDsnFixture(2500, 151.67, false, undefined, false, { absences: [absence] });
+    const content = buildDsnP26V01Complete(data);
+    expect(content).toContain("S21.G00.65.001,'501'");
+    expect(content).toContain("S21.G00.65.002,'12012026'");
+    expect(content).toContain("S21.G00.65.003,'16012026'");
+    expect(content).toContain("S21.G00.53.001,'02'");
+    expect(content).toContain("S21.G00.53.002,'35.00'");
+    expect(() => buildDsnP26V01Complete(data)).not.toThrow();
+  });
+
+  it("continue de bloquer les absences nécessitant un signalement métier", () => {
+    const snapshot = computedSnapshot({ absences: [{ id: "sick-1", kind: "SICK_LEAVE", start: "2026-01-12", end: "2026-01-16" }] });
+    expect(() => mapLockedContributions({ snapshot, ...ids })).toThrow(/absences autres que sans solde|blocs déclaratifs propres/i);
+  });
+
   it("laisse passer une prime mensuelle ordinaire dans les rémunérations et assiettes sans inventer un bloc 52", () => {
     const data = computedDsnFixture(2500, 151.67, false, undefined, false, {
       bonuses: [{ code: "ACTIVITY_BONUS", label: "Prime d'activité", amount: 250 }],
