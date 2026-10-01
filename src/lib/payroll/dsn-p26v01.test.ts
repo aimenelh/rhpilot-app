@@ -128,6 +128,51 @@ describe("DSN P26V01 builder", () => {
     expect(content.endsWith("\r\n")).toBe(true);
   });
 
+  it("déclare un arrêt maladie non subrogé dans le bloc S21.G00.60", () => {
+    const data = input();
+    data.employees[0].contract.workStoppages = [{
+      reasonCode: "01",
+      lastWorkedDate: new Date("2026-08-09T00:00:00.000Z"),
+      expectedEndDate: new Date("2026-08-14T00:00:00.000Z"),
+      subrogation: false,
+      returnDate: new Date("2026-08-15T00:00:00.000Z"),
+      returnReasonCode: "01",
+    }];
+    const content = buildDsnP26V01Monthly(data);
+    expect(content).toContain("S21.G00.60.001,'01'\r\nS21.G00.60.002,'09082026'\r\nS21.G00.60.003,'14082026'\r\nS21.G00.60.004,'02'");
+    expect(content).toContain("S21.G00.60.010,'15082026'\r\nS21.G00.60.011,'01'");
+    expect(content).not.toContain("S21.G00.60.005,");
+  });
+
+  it("déclare une subrogation complète et les IJSS nettes en S21.G00.58 type 10", () => {
+    const data = input();
+    data.employees[0].contract.workStoppages = [{
+      reasonCode: "01",
+      lastWorkedDate: new Date("2026-08-09T00:00:00.000Z"),
+      expectedEndDate: new Date("2026-08-20T00:00:00.000Z"),
+      subrogation: true,
+      subrogationStartDate: new Date("2026-08-10T00:00:00.000Z"),
+      subrogationEndDate: new Date("2026-08-20T00:00:00.000Z"),
+      subrogationIban: "FR7630006000011234567890189",
+      subrogationBic: "AGRIFRPPXXX",
+    }];
+    data.employees[0].payroll.subrogatedIjssNetAmount = 368.12;
+    const content = buildDsnP26V01Monthly(data);
+    expect(content).toContain("S21.G00.60.004,'01'\r\nS21.G00.60.005,'10082026'\r\nS21.G00.60.006,'20082026'\r\nS21.G00.60.007,'FR7630006000011234567890189'\r\nS21.G00.60.008,'AGRIFRPPXXX'");
+    expect(content).toContain("S21.G00.58.003,'10'\r\nS21.G00.58.004,'368.12'");
+  });
+
+  it("refuse une subrogation incomplète", () => {
+    const data = input();
+    data.employees[0].contract.workStoppages = [{
+      reasonCode: "02",
+      lastWorkedDate: new Date("2026-08-01T00:00:00.000Z"),
+      expectedEndDate: new Date("2026-08-31T00:00:00.000Z"),
+      subrogation: true,
+    }];
+    expect(() => buildDsnP26V01Monthly(data)).toThrow(/subrogation nécessite ses dates et le compte bancaire/i);
+  });
+
   it("déclare le congé sans solde en suspension 501 et activité 02", () => {
     const data = input();
     data.employees[0].contract.suspensions = [{
