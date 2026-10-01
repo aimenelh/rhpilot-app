@@ -241,13 +241,25 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         foreignWorkerCode: requiredString(dsnProfile.foreignWorkerCode, `le statut travailleur étranger du salarié ${employee.id}`), employmentStatusCode: requiredString(dsnProfile.employmentStatusCode, `le statut d'emploi du salarié ${employee.id}`),
         multipleJobsCode: requiredString(dsnProfile.multipleJobsCode, `le code emplois multiples du salarié ${employee.id}`), multipleEmployersCode: requiredString(dsnProfile.multipleEmployersCode, `le code employeurs multiples du salarié ${employee.id}`),
         workAccidentRegimeCode: requiredString(dsnProfile.workAccidentRegimeCode, `le régime AT/MP du salarié ${employee.id}`), workAccidentRiskCode: riskCode, workAccidentRate: contributions.atmpRatePercent,
-        workStoppages: contributions.workStoppages.stoppages.map((item) => ({
-          reasonCode: item.reasonCode,
-          lastDayWorked: new Date(item.lastDayWorked + "T00:00:00.000Z"),
-          expectedEndDate: new Date(item.expectedEnd + "T00:00:00.000Z"),
-          subrogationCode: item.subrogationCode,
-          ...(item.recoveryDate ? { recoveryDate: new Date(item.recoveryDate + "T00:00:00.000Z"), recoveryReasonCode: item.recoveryReasonCode } : {}),
-        })),
+        workStoppages: contributions.workStoppages.stoppages.map((item) => {
+          if (item.subrogationCode === "01" && (!subrogationIban || !subrogationBic)) {
+            throw new Error(`DSN bloquée pour ${employee.firstName} ${employee.lastName} : renseignez le compte de réception des IJSS subrogées.`);
+          }
+          return {
+            reasonCode: item.reasonCode,
+            lastDayWorked: new Date(item.lastDayWorked + "T00:00:00.000Z"),
+            expectedEndDate: new Date(item.expectedEnd + "T00:00:00.000Z"),
+            subrogationCode: item.subrogationCode,
+            ...(item.subrogationCode === "01" ? {
+              subrogationStartDate: new Date(item.subrogationStart! + "T00:00:00.000Z"),
+              subrogationEndDate: new Date(item.subrogationEnd! + "T00:00:00.000Z"),
+              subrogationIban: subrogationIban!,
+              subrogationBic: subrogationBic!,
+            } : {}),
+            ...(item.recoveryDate ? { recoveryDate: new Date(item.recoveryDate + "T00:00:00.000Z"), recoveryReasonCode: item.recoveryReasonCode } : {}),
+            ...(item.accidentDate ? { accidentDate: new Date(item.accidentDate + "T00:00:00.000Z") } : {}),
+          };
+        }),
         suspensions: contributions.unpaidAbsence.suspensions.map((item) => ({
           reasonCode: item.reasonCode,
           startDate: new Date(`${item.start}T00:00:00.000Z`),
@@ -269,6 +281,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         overtimeRemunerations: contributions.overtime.remunerations,
         overtimeTaxExemptNetAmount: contributions.overtime.taxExemptNetAmount,
         absenceActivityHours: contributions.activityAbsenceHours,
+        subrogatedIjssNetAmount,
       },
     });
   }
