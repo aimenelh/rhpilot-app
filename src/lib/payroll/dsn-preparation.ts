@@ -245,7 +245,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         cappedContributionBase,
         grossSubject: contributions.grossSubject,
         unemploymentBase: contributions.unemploymentBase,
-        paidHours: contributions.hoursPaid,
+        paidHours: contributions.activityPaidHours,
         netBeforeTax,
         netTaxableAmount: fiscalNet,
         netSocialAmount,
