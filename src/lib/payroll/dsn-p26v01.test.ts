@@ -143,6 +143,42 @@ describe("DSN P26V01 builder", () => {
     expect(content).toContain("S21.G00.53.001,'01'\r\nS21.G00.53.002,'116.67'\r\nS21.G00.53.003,'10'\r\nS21.G00.53.001,'02'\r\nS21.G00.53.002,'35.00'\r\nS21.G00.53.003,'10'");
   });
 
+  it("déclare un arrêt maladie non subrogé et son activité 02", () => {
+    const data = input();
+    data.employees[0].contract.workStoppages = [{
+      reasonCode: "01" as const,
+      lastDayWorked: new Date("2026-08-02T00:00:00.000Z"),
+      expectedEndDate: new Date("2026-08-07T00:00:00.000Z"),
+      subrogationCode: "02" as const,
+    }];
+    data.employees[0].payroll.paidHours = 116.67;
+    data.employees[0].payroll.absenceActivityHours = 35;
+    const content = buildDsnP26V01Monthly(data);
+    expect(content).toContain("S21.G00.60.001,'01'\r\nS21.G00.60.002,'02082026'\r\nS21.G00.60.003,'07082026'\r\nS21.G00.60.004,'02'");
+    expect(content).toContain("S21.G00.53.001,'02'\r\nS21.G00.53.002,'35.00'\r\nS21.G00.53.003,'10'");
+    expect(content).not.toContain("S21.G00.60.010,");
+  });
+
+  it("refuse une subrogation incomplète et un AT sans date d'accident", () => {
+    const subrogated = input();
+    subrogated.employees[0].contract.workStoppages = [{
+      reasonCode: "01" as const,
+      lastDayWorked: new Date("2026-08-02T00:00:00.000Z"),
+      expectedEndDate: new Date("2026-08-07T00:00:00.000Z"),
+      subrogationCode: "01" as const,
+    }];
+    expect(() => buildDsnP26V01Monthly(subrogated)).toThrow(/subrogation exige/i);
+
+    const at = input();
+    at.employees[0].contract.workStoppages = [{
+      reasonCode: "06" as const,
+      lastDayWorked: new Date("2026-08-02T00:00:00.000Z"),
+      expectedEndDate: new Date("2026-08-07T00:00:00.000Z"),
+      subrogationCode: "02" as const,
+    }];
+    expect(() => buildDsnP26V01Monthly(at)).toThrow(/date de l'accident/i);
+  });
+
   it("déclare les HS/HC 017/018 et le net fiscal exonéré P26V01", () => {
     const data = input();
     data.employees[0].payroll.overtimeRemunerations = [
