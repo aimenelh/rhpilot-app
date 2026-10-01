@@ -116,6 +116,22 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     expect(() => mapLockedContributions({ snapshot, ...ids })).toThrow(/absences autres que sans solde|blocs déclaratifs propres/i);
   });
 
+  it.each([
+    ["RTT", "rtt-1"],
+    ["FAMILY_EVENT", "family-1"],
+  ] as const)("conserve %s dans le travail rémunéré type 01", (kind, id) => {
+    const data = computedDsnFixture(2500, 151.67, false, undefined, false, {
+      absences: [{ id, kind, start: "2026-01-12", end: "2026-01-12" }],
+    });
+    const content = buildDsnP26V01Complete(data);
+    expect(data.employees[0].payroll.paidHours).toBe(151.67);
+    expect(data.employees[0].payroll.unpaidAbsenceHours).toBe(0);
+    expect(content).toContain("S21.G00.53.001,'01'");
+    expect(content).toContain("S21.G00.53.002,'151.67'");
+    expect(content).not.toContain("S21.G00.53.001,'02'");
+    expect(content).not.toContain("S21.G00.65.");
+  });
+
   it("laisse passer une prime mensuelle ordinaire dans les rémunérations et assiettes sans inventer un bloc 52", () => {
     const data = computedDsnFixture(2500, 151.67, false, undefined, false, {
       bonuses: [{ code: "ACTIVITY_BONUS", label: "Prime d'activité", amount: 250 }],
