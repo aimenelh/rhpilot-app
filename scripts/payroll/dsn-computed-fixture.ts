@@ -54,6 +54,11 @@ export function computedDsnFixture(
   employee.contract.retirementStatusCode = executive ? "01" : "04";
   employee.contract.contractWorkQuota = snapshot.inputs.pay.contractMonthlyHours;
   employee.contract.workModalityCode = snapshot.inputs.pay.contractMonthlyHours < 151.67 ? "20" : "10";
+  employee.contract.suspensions = mapped.unpaidAbsence.suspensions.map((item) => ({
+    reasonCode: item.reasonCode,
+    startDate: new Date(item.start + "T00:00:00.000Z"),
+    endDate: new Date(item.end + "T00:00:00.000Z"),
+  }));
   employee.payroll = {
     baseSalary: snapshot.inputs.pay.monthlyBaseSalary, grossAmount: totals.grossTotal, grossSubject: totals.grossSubject,
     cappedContributionBase: mapped.bases.find((base) => base.code === "02")!.amount,
