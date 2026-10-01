@@ -233,7 +233,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         foreignWorkerCode: requiredString(dsnProfile.foreignWorkerCode, `le statut travailleur étranger du salarié ${employee.id}`), employmentStatusCode: requiredString(dsnProfile.employmentStatusCode, `le statut d'emploi du salarié ${employee.id}`),
         multipleJobsCode: requiredString(dsnProfile.multipleJobsCode, `le code emplois multiples du salarié ${employee.id}`), multipleEmployersCode: requiredString(dsnProfile.multipleEmployersCode, `le code employeurs multiples du salarié ${employee.id}`),
         workAccidentRegimeCode: requiredString(dsnProfile.workAccidentRegimeCode, `le régime AT/MP du salarié ${employee.id}`), workAccidentRiskCode: riskCode, workAccidentRate: contributions.atmpRatePercent,
-        suspensions: contributions.absenceActivity.suspensions.map((item) => ({
+        suspensions: contributions.absenceActivity.unpaidSuspensions.map((item) => ({
           reasonCode: item.reasonCode,
           startDate: new Date(`${item.start}T00:00:00.000Z`),
           endDate: new Date(`${item.end}T00:00:00.000Z`),
@@ -253,7 +253,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         pas,
         overtimeRemunerations: contributions.overtime.remunerations,
         overtimeTaxExemptNetAmount: contributions.overtime.taxExemptNetAmount,
-        absenceActivityHours: contributions.absenceActivity.hours,
+        unpaidAbsenceHours: contributions.absenceActivity.hours,
       },
     });
   }
