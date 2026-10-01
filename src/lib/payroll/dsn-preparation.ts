@@ -63,8 +63,9 @@ const DSN_UNMAPPED_BULLETIN_LINES = new Set(["ENTRY_EXIT", "SEVERANCE", "PAID_LE
 export function dsnScopeIssues(snapshot: { variables?: unknown[]; validatedAbsences?: Array<{ type?: string }>; bulletin?: { lines?: Array<{ code?: string; base?: number }> } }): string[] {
   const issues: string[] = [];
   if ((snapshot.bulletin?.lines ?? []).some((line) => line.code && DSN_UNMAPPED_BULLETIN_LINES.has(line.code))) issues.push("entrée, sortie ou indemnité de fin de contrat (blocs S21.G00.62 non émis)");
-  const unsupportedAbsences = (snapshot.validatedAbsences ?? []).filter((absence) => absence?.type !== "UNPAID_LEAVE");
-  if (unsupportedAbsences.length > 0) issues.push("absences hors congé sans solde (signalements/blocs d'arrêt ou d'activité non encore émis)");
+  const supportedAbsences = new Set(["UNPAID_LEAVE", "SICK_LEAVE", "MATERNITY", "PATERNITY"]);
+  const unsupportedAbsences = (snapshot.validatedAbsences ?? []).filter((absence) => !supportedAbsences.has(absence?.type ?? ""));
+  if (unsupportedAbsences.length > 0) issues.push("absences non encore raccordées (AT/MP, congés payés/RTT ou autre suspension)");
   return issues;
 }
 
@@ -233,6 +234,13 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         foreignWorkerCode: requiredString(dsnProfile.foreignWorkerCode, `le statut travailleur étranger du salarié ${employee.id}`), employmentStatusCode: requiredString(dsnProfile.employmentStatusCode, `le statut d'emploi du salarié ${employee.id}`),
         multipleJobsCode: requiredString(dsnProfile.multipleJobsCode, `le code emplois multiples du salarié ${employee.id}`), multipleEmployersCode: requiredString(dsnProfile.multipleEmployersCode, `le code employeurs multiples du salarié ${employee.id}`),
         workAccidentRegimeCode: requiredString(dsnProfile.workAccidentRegimeCode, `le régime AT/MP du salarié ${employee.id}`), workAccidentRiskCode: riskCode, workAccidentRate: contributions.atmpRatePercent,
+        workStoppages: contributions.workStoppages.stoppages.map((item) => ({
+          reasonCode: item.reasonCode,
+          lastDayWorked: new Date(item.lastDayWorked + "T00:00:00.000Z"),
+          expectedEndDate: new Date(item.expectedEnd + "T00:00:00.000Z"),
+          subrogationCode: item.subrogationCode,
+          ...(item.recoveryDate ? { recoveryDate: new Date(item.recoveryDate + "T00:00:00.000Z"), recoveryReasonCode: item.recoveryReasonCode } : {}),
+        })),
         suspensions: contributions.unpaidAbsence.suspensions.map((item) => ({
           reasonCode: item.reasonCode,
           startDate: new Date(`${item.start}T00:00:00.000Z`),
@@ -253,7 +261,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         pas,
         overtimeRemunerations: contributions.overtime.remunerations,
         overtimeTaxExemptNetAmount: contributions.overtime.taxExemptNetAmount,
-        unpaidAbsenceHours: contributions.unpaidAbsence.hours,
+        absenceActivityHours: contributions.activityAbsenceHours,
       },
     });
   }
