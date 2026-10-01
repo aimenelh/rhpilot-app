@@ -11,6 +11,12 @@ export type ValidatedAbsencePayrollImpact = {
   type: string;
   startDate: Date;
   endDate: Date;
+  lastWorkedDate: Date | null;
+  subrogationStartDate: Date | null;
+  subrogationEndDate: Date | null;
+  workAccidentDate: Date | null;
+  returnDate: Date | null;
+  returnReasonCode: string | null;
   periodStart: Date;
   periodEnd: Date;
   calendarDaysInPeriod: number;
@@ -89,6 +95,12 @@ export async function resolveValidatedAbsencesForPayrollPeriod(input: {
       type: true,
       startDate: true,
       endDate: true,
+      lastWorkedDate: true,
+      subrogationStartDate: true,
+      subrogationEndDate: true,
+      workAccidentDate: true,
+      returnDate: true,
+      returnReasonCode: true,
       payrollImpactStatus: true,
     },
     orderBy: [{ employeeId: "asc" }, { startDate: "asc" }],
@@ -102,6 +114,12 @@ export async function resolveValidatedAbsencesForPayrollPeriod(input: {
     type: absence.type,
     startDate: absence.startDate,
     endDate: absence.endDate,
+    lastWorkedDate: absence.lastWorkedDate,
+    subrogationStartDate: absence.subrogationStartDate,
+    subrogationEndDate: absence.subrogationEndDate,
+    workAccidentDate: absence.workAccidentDate,
+    returnDate: absence.returnDate,
+    returnReasonCode: absence.returnReasonCode,
     periodStart: clampToPeriod(absence.startDate, periodStart, periodEnd),
     periodEnd: clampToPeriod(absence.endDate, periodStart, periodEnd),
     calendarDaysInPeriod: getCalendarOverlapDays(absence.startDate, absence.endDate, periodStart, periodEnd),
