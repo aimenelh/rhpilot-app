@@ -16,7 +16,7 @@ import type { WithholdingTaxProfile } from "./withholding-tax-profile";
 export type DsnPreparationResult = { content: string; fileName: string; normVersion: "P26V01"; employeeCount: number; warnings: string[] };
 
 type SnapshotWithholdingTax = { rate: number; amount: number; validFrom: string; validUntil: string | null; source: string; sourceReference: string | null };
-type CalculationSnapshot = { profile?: { id?: string; baseSalaryCents?: number; monthlyHours?: string | null; collectiveAgreementId?: string | null }; variables?: unknown[]; validatedAbsences?: unknown[]; withholdingTax?: Partial<SnapshotWithholdingTax>; socialEngine?: { employerCost?: number }; bulletin?: { lines?: Array<{ code?: string; base?: number }> } };
+type CalculationSnapshot = { profile?: { id?: string; baseSalaryCents?: number; monthlyHours?: string | null; collectiveAgreementId?: string | null }; variables?: unknown[]; validatedAbsences?: Array<{ type?: string }>; withholdingTax?: Partial<SnapshotWithholdingTax>; socialEngine?: { employerCost?: number }; bulletin?: { lines?: Array<{ code?: string; base?: number }> } };
 
 type OrganizationDsnRow = {
   id: string; name: string; siret: string | null; payrollAddress: string | null; payrollPostalCode: string | null; payrollCity: string | null;
@@ -60,10 +60,11 @@ const DSN_UNMAPPED_BULLETIN_LINES = new Set(["ENTRY_EXIT", "SEVERANCE", "PAID_LE
  * d'un coup (et pas seulement le premier), pour que l'entreprise voie d'emblée ce qui reste à
  * déclarer par un autre moyen (logiciel de paie, expert-comptable ou saisie sur net-entreprises).
  */
-export function dsnScopeIssues(snapshot: { variables?: unknown[]; validatedAbsences?: unknown[]; bulletin?: { lines?: Array<{ code?: string; base?: number }> } }): string[] {
+export function dsnScopeIssues(snapshot: { variables?: unknown[]; validatedAbsences?: Array<{ type?: string }>; bulletin?: { lines?: Array<{ code?: string; base?: number }> } }): string[] {
   const issues: string[] = [];
   if ((snapshot.bulletin?.lines ?? []).some((line) => line.code && DSN_UNMAPPED_BULLETIN_LINES.has(line.code))) issues.push("entrée, sortie ou indemnité de fin de contrat (blocs S21.G00.62 non émis)");
-  if ((snapshot.validatedAbsences?.length ?? 0) > 0) issues.push("absences du mois (blocs d'arrêt et d'activité non émis)");
+  const unsupportedAbsences = (snapshot.validatedAbsences ?? []).filter((absence) => absence?.type !== "UNPAID_LEAVE");
+  if (unsupportedAbsences.length > 0) issues.push("absences hors congé sans solde (signalements/blocs d'arrêt ou d'activité non encore émis)");
   return issues;
 }
 
@@ -232,6 +233,11 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         foreignWorkerCode: requiredString(dsnProfile.foreignWorkerCode, `le statut travailleur étranger du salarié ${employee.id}`), employmentStatusCode: requiredString(dsnProfile.employmentStatusCode, `le statut d'emploi du salarié ${employee.id}`),
         multipleJobsCode: requiredString(dsnProfile.multipleJobsCode, `le code emplois multiples du salarié ${employee.id}`), multipleEmployersCode: requiredString(dsnProfile.multipleEmployersCode, `le code employeurs multiples du salarié ${employee.id}`),
         workAccidentRegimeCode: requiredString(dsnProfile.workAccidentRegimeCode, `le régime AT/MP du salarié ${employee.id}`), workAccidentRiskCode: riskCode, workAccidentRate: contributions.atmpRatePercent,
+        suspensions: contributions.unpaidAbsence.suspensions.map((item) => ({
+          reasonCode: item.reasonCode,
+          startDate: new Date(`${item.start}T00:00:00.000Z`),
+          endDate: new Date(`${item.end}T00:00:00.000Z`),
+        })),
       },
       payroll: {
         baseSalary: baseSalaryCents / 100,
@@ -239,7 +245,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         cappedContributionBase,
         grossSubject: contributions.grossSubject,
         unemploymentBase: contributions.unemploymentBase,
-        paidHours: contributions.hoursPaid,
+        paidHours: contributions.activityPaidHours,
         netBeforeTax,
         netTaxableAmount: fiscalNet,
         netSocialAmount,
@@ -247,6 +253,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         pas,
         overtimeRemunerations: contributions.overtime.remunerations,
         overtimeTaxExemptNetAmount: contributions.overtime.taxExemptNetAmount,
+        unpaidAbsenceHours: contributions.unpaidAbsence.hours,
       },
     });
   }

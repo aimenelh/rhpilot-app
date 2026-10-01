@@ -54,15 +54,21 @@ export function computedDsnFixture(
   employee.contract.retirementStatusCode = executive ? "01" : "04";
   employee.contract.contractWorkQuota = snapshot.inputs.pay.contractMonthlyHours;
   employee.contract.workModalityCode = snapshot.inputs.pay.contractMonthlyHours < 151.67 ? "20" : "10";
+  employee.contract.suspensions = mapped.unpaidAbsence.suspensions.map((item) => ({
+    reasonCode: item.reasonCode,
+    startDate: new Date(item.start + "T00:00:00.000Z"),
+    endDate: new Date(item.end + "T00:00:00.000Z"),
+  }));
   employee.payroll = {
     baseSalary: snapshot.inputs.pay.monthlyBaseSalary, grossAmount: totals.grossTotal, grossSubject: totals.grossSubject,
     cappedContributionBase: mapped.bases.find((base) => base.code === "02")!.amount,
-    unemploymentBase: mapped.unemploymentBase, paidHours: mapped.hoursPaid,
+    unemploymentBase: mapped.unemploymentBase, paidHours: mapped.activityPaidHours,
     netBeforeTax: totals.netBeforeTax, netTaxableAmount: totals.netTaxable, netSocialAmount: totals.netSocial,
     withholdingTax: totals.withholdingTax,
     pas: { rateType: "01", ratePercent: employeePas.rate * 100, rateIdentifier: "123456789", amountSubjectToPas: employeePas.base, withholdingAmount: employeePas.amount },
     overtimeRemunerations: mapped.overtime.remunerations,
     overtimeTaxExemptNetAmount: mapped.overtime.taxExemptNetAmount,
+    unpaidAbsenceHours: mapped.unpaidAbsence.hours,
   };
   data.assessedBases = mapped.bases;
   data.contributionBordereau = {

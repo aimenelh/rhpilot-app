@@ -71,6 +71,8 @@ export type DsnP26MonthlyInput = {
       workAccidentRegimeCode: string;
       workAccidentRiskCode: string;
       workAccidentRate: number | null;
+      /** Suspensions mensuelles rattachées au contrat. */
+      suspensions?: Array<{ reasonCode: "501"; startDate: Date; endDate: Date }>;
     };
     payroll: {
       baseSalary: number;
@@ -88,6 +90,8 @@ export type DsnP26MonthlyInput = {
       overtimeRemunerations?: Array<{ type: "017" | "018"; hours: number; amount: number }>;
       /** Montant net fiscal des HS/HC exonérées à déclarer en S21.G00.58 type 01. */
       overtimeTaxExemptNetAmount?: number;
+      /** Volume d'absence partiellement ou pas du tout rémunérée (S21.G00.53 type 02). */
+      unpaidAbsenceHours?: number;
     };
   }>;
 };
@@ -187,7 +191,7 @@ function addRemuneration(
   contractNumber: string,
   type: "001" | "002" | "003" | "010" | "017" | "018",
   amount: number,
-  activity?: { measure: number; unit: string },
+  activities?: Array<{ type: "01" | "02"; measure: number; unit: string }>,
   overtimeHours?: number,
 ): void {
   if (overtimeHours !== undefined && type !== "017" && type !== "018") throw new Error("DSN bloquée : le volume d'heures spécifique est réservé aux rémunérations 017/018.");
@@ -199,8 +203,10 @@ function addRemuneration(
   add(lines, "S21.G00.51.011", type);
   if (overtimeHours !== undefined) add(lines, "S21.G00.51.012", decimal(overtimeHours));
   add(lines, "S21.G00.51.013", money(amount));
-  if (activity) {
-    add(lines, "S21.G00.53.001", "01");
+  for (const activity of activities ?? []) {
+    if (type !== "002") throw new Error("DSN bloquée : les activités en heures sont rattachées à la rémunération 002.");
+    if (!Number.isFinite(activity.measure) || activity.measure < 0) throw new Error("DSN bloquée : un volume d'activité est invalide.");
+    add(lines, "S21.G00.53.001", activity.type);
     add(lines, "S21.G00.53.002", decimal(activity.measure));
     add(lines, "S21.G00.53.003", assertCode(activity.unit, "l'unité de l'activité", 2, 2));
   }
@@ -315,6 +321,13 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
       add(lines, "S21.G00.40.043", decimal(employee.contract.workAccidentRate));
     }
 
+    for (const suspension of employee.contract.suspensions ?? []) {
+      if (suspension.endDate < suspension.startDate) throw new Error("DSN bloquée : une suspension de contrat se termine avant de commencer.");
+      add(lines, "S21.G00.65.001", suspension.reasonCode);
+      add(lines, "S21.G00.65.002", dsnDate(suspension.startDate));
+      add(lines, "S21.G00.65.003", dsnDate(suspension.endDate));
+    }
+
     // Régime général couvert par le moteur : retraite unifiée Agirc-Arrco.
     const retirementScheme = employee.contract.retirementSchemeCode ?? (employee.contract.oldAgeRegimeCode === "200" ? "RUAA" : null);
     if (!retirementScheme) throw new Error("DSN bloquée : le régime de retraite complémentaire est absent.");
@@ -332,7 +345,13 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
     add(lines, "S21.G00.50.013", money(employee.payroll.pas.amountSubjectToPas));
 
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "001", employee.payroll.grossAmount);
-    addRemuneration(lines, periodStart, periodEnd, contractNumber, "002", employee.payroll.unemploymentBase ?? employee.payroll.grossAmount, { measure: employee.payroll.paidHours ?? employee.contract.contractWorkQuota, unit: workUnitCode });
+    const paidHours = employee.payroll.paidHours ?? employee.contract.contractWorkQuota;
+    const unpaidAbsenceHours = employee.payroll.unpaidAbsenceHours ?? 0;
+    if (!Number.isFinite(unpaidAbsenceHours) || unpaidAbsenceHours < 0) throw new Error("DSN bloquée : le volume d'absence non rémunérée est invalide.");
+    addRemuneration(lines, periodStart, periodEnd, contractNumber, "002", employee.payroll.unemploymentBase ?? employee.payroll.grossAmount, [
+      { type: "01", measure: paidHours, unit: workUnitCode },
+      ...(unpaidAbsenceHours > 0 ? [{ type: "02" as const, measure: unpaidAbsenceHours, unit: workUnitCode }] : []),
+    ]);
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "003", employee.payroll.baseSalary);
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "010", employee.payroll.baseSalary);
 

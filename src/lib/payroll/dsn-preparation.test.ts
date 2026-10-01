@@ -14,8 +14,13 @@ describe("périmètre de la DSN préparatoire", () => {
     expect(issues).toEqual([]);
   });
 
-  it("liste encore les événements de contrat et absences non déclarables", () => {
-    const issues = dsnScopeIssues({ variables: [{}], validatedAbsences: [{}], bulletin: { lines: [{ code: "ENTRY_EXIT" }] } });
+  it("accepte désormais une absence sans solde seule", () => {
+    const issues = dsnScopeIssues({ validatedAbsences: [{ type: "UNPAID_LEAVE" }], bulletin: { lines: [{ code: "ABS_UNPAID_LEAVE" }] } });
+    expect(issues).toEqual([]);
+  });
+
+  it("liste encore les événements de contrat et les autres absences non déclarables", () => {
+    const issues = dsnScopeIssues({ variables: [{}], validatedAbsences: [{ type: "SICK_LEAVE" }], bulletin: { lines: [{ code: "ENTRY_EXIT" }] } });
     expect(issues).toHaveLength(2);
     expect(issues.join(" ")).toMatch(/entrée|sortie/);
     expect(issues.join(" ")).toMatch(/absences/);
