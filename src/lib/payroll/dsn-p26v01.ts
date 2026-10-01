@@ -105,8 +105,8 @@ export type DsnP26MonthlyInput = {
       overtimeRemunerations?: Array<{ type: "017" | "018"; hours: number; amount: number }>;
       /** Montant net fiscal des HS/HC exonérées à déclarer en S21.G00.58 type 01. */
       overtimeTaxExemptNetAmount?: number;
-      /** Volume d'absence partiellement ou pas du tout rémunérée (S21.G00.53 type 02). */
-      unpaidAbsenceHours?: number;
+      /** Volume réel d'absence partiellement ou pas du tout rémunérée (S21.G00.53 type 02). */
+      absenceActivityHours?: number;
     };
   }>;
 };
@@ -391,11 +391,11 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
 
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "001", employee.payroll.grossAmount);
     const paidHours = employee.payroll.paidHours ?? employee.contract.contractWorkQuota;
-    const unpaidAbsenceHours = employee.payroll.unpaidAbsenceHours ?? 0;
-    if (!Number.isFinite(unpaidAbsenceHours) || unpaidAbsenceHours < 0) throw new Error("DSN bloquée : le volume d'absence non rémunérée est invalide.");
+    const absenceActivityHours = employee.payroll.absenceActivityHours ?? 0;
+    if (!Number.isFinite(absenceActivityHours) || absenceActivityHours < 0) throw new Error("DSN bloquée : le volume d'absence partiellement ou pas du tout rémunérée est invalide.");
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "002", employee.payroll.unemploymentBase ?? employee.payroll.grossAmount, [
       { type: "01", measure: paidHours, unit: workUnitCode },
-      ...(unpaidAbsenceHours > 0 ? [{ type: "02" as const, measure: unpaidAbsenceHours, unit: workUnitCode }] : []),
+      ...(absenceActivityHours > 0 ? [{ type: "02" as const, measure: absenceActivityHours, unit: workUnitCode }] : []),
     ]);
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "003", employee.payroll.baseSalary);
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "010", employee.payroll.baseSalary);
