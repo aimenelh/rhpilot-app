@@ -12,6 +12,8 @@ Paies mensuelles 2026 du régime général en France métropolitaine : CDI, CDD 
 - Les libellés du bulletin affichent les taux de maintien effectivement appliqués, y compris 100 %, et le message « maintien légal appliqué » n'est plus affiché lorsqu'une règle conventionnelle est utilisée.
 - Effectif : la saisie et le stockage conservent deux décimales. Le calcul ne transforme plus un prorata en entier, et accepte zéro lorsque les seuls salariés sont exclus de l'effectif social. La migration convertit la colonne en `DECIMAL(10,2)`.
 - DSN P26V01 : adresse de l'entreprise, retraite complémentaire RUAA pour le périmètre régime général, ancienneté et base vieillesse plafonnée verrouillée. Cotisations individuelles placées sous leur véritable base assujettie, avant l'ancienneté. Composant SMIC obligatoire pour la réduction générale. Taux au format normatif, contrôles des salariés inconnus et des caractères du fichier.
+- DSN des variables courantes : 39 h/HS/HC, réductions associées et primes mensuelles ordinaires sont raccordées.
+- DSN mensuelle des absences : congé sans solde, RTT, événements familiaux rémunérés et arrêts maladie/maternité/paternité non subrogés sont raccordés. Les arrêts subrogés, AT/MP et signalements événementiels restent à terminer.
 - Le SIRET doit passer le contrôle de clé. Le code risque AT/MP est vérifié dans la table officielle RAT P26V01, y compris sa validité au mois déclaré. Le faux exemple `602MD` du formulaire est supprimé ; aucun code réel n'est choisi à la place de celui de la notification de l'employeur.
 
 ## Contrôle officiel reproductible
@@ -32,8 +34,8 @@ Les exemples testent la structure et le raccordement des montants verrouillés ;
 
 | Condition | État et travail restant |
 |---|---|
-| DSN des paies calculées par l'application | Générateur complet intégré à `prepareDsnP26V01`, mapping `P26V01-RG-2026.2`, rapprochement des dettes au centime. OPS configurés par entreprise ; santé/prévoyance mensuelles limitées aux composants 20/11/24. Les autres périmètres restent bloqués. |
-| DSN des mois avec événements | Primes, absences, fins de contrat et régularisations doivent avoir leurs blocs et contrôles. Leur export reste bloqué. |
+| DSN des paies calculées par l'application | Générateur complet intégré à `prepareDsnP26V01`, mapping `P26V01-RG-2026.3`, rapprochement des dettes au centime. OPS configurés par entreprise ; santé/prévoyance mensuelles limitées aux composants 20/11/24. Les autres périmètres restent bloqués. |
+| DSN des mois avec événements | 39 h/HS/HC, primes mensuelles ordinaires, congé sans solde, RTT, événements familiaux et blocs mensuels maladie/maternité/paternité non subrogés sont raccordés. Restent notamment signalements événementiels, subrogation, AT/MP, congés payés déclaratifs, sorties et régularisations. |
 | Vérification financière indépendante | Comparer des bulletins de référence pour les cas retenus : temps partiel, entrée/sortie, maladie traversant deux mois, HS, congés, cadre, apprenti, fin de CDD, rupture et régularisations annuelles. L'oracle Urssaf couvre déjà les mois simples, mais ne remplace pas cette recette. |
 | Prévoyance au-delà des limites | Réintégrations sociales/fiscales annuelles à implémenter avec cumuls et reprise. Blocage maintenu. |
 | Conventions collectives | Vérifier les références applicables et les règles non représentables par les deux taux de maintien. |

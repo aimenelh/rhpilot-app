@@ -23,6 +23,10 @@ describe("périmètre de la DSN préparatoire", () => {
     expect(dsnScopeIssues({ validatedAbsences: [{ type: "SICK_LEAVE" }, { type: "MATERNITY" }, { type: "PATERNITY" }] })).toEqual([]);
   });
 
+  it.each(["RTT", "FAMILY_EVENT"] as const)("accepte l'absence rémunérée %s", (type) => {
+    expect(dsnScopeIssues({ validatedAbsences: [{ type }], bulletin: { lines: [] } })).toEqual([]);
+  });
+
   it("liste encore les événements de contrat et les absences non raccordées", () => {
     const issues = dsnScopeIssues({ variables: [{}], validatedAbsences: [{ type: "WORK_ACCIDENT" }], bulletin: { lines: [{ code: "ENTRY_EXIT" }] } });
     expect(issues).toHaveLength(2);

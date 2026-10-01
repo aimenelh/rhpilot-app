@@ -16,8 +16,8 @@
 | Salaire de base mensualisé | ✅ | Horaire contractuel, taux horaire affiché |
 | Temps partiel | ✅ | Plafond proratisé, heures complémentaires 10 % / 25 %, limites du dixième et du tiers |
 | Entrée et sortie en cours de mois | ✅ | Méthode de l'horaire réel sur l'horaire hebdomadaire du salarié ; plafond aux jours civils |
-| Heures supplémentaires | ✅ | 25 % / 50 % (ou taux conventionnel ≥ 10 %), réduction salariale ≤ 11,31 %, déduction patronale 1,50 / 0,50 €, défiscalisation dans la limite de 7 500 € nets par an (cumul suivi) |
-| Heures supplémentaires structurelles (39 h) | ✅ | Ventilation base / majoration, exonérations proratisées en cas d'absence |
+| Heures supplémentaires | ✅ | 25 % / 50 % (ou taux conventionnel ≥ 10 %), réduction salariale ≤ 11,31 %, déduction patronale 1,50 / 0,50 €, défiscalisation dans la limite de 7 500 € nets par an (cumul suivi). Export DSN 017 raccordé |
+| Heures supplémentaires structurelles (39 h) | ✅ | Ventilation base / majoration, exonérations proratisées en cas d'absence. Export DSN 018 raccordé |
 | Majorations nuit, dimanche, férié, astreinte | 🟠 | Saisies en montant brut ; pas de calcul conventionnel automatique |
 | Forfait jours | 🟠 | Traité sur un horaire de référence (7 h par jour) |
 | Modulation, annualisation | ❌ | |
@@ -26,7 +26,8 @@
 
 | Domaine | État | Notes |
 |---|---|---|
-| Primes mensuelles et annuelles | ✅ | Les primes annuelles sont exclues de l'assiette du dixième des congés |
+| Primes mensuelles | ✅ | Calcul et DSN courante raccordés dans le brut et les assiettes lorsqu'aucun bloc 52 spécifique n'est requis |
+| Primes annuelles / exceptionnelles | 🟠 | Calculées par le moteur ; export DSN bloqué tant que le type S21.G00.52 et la période de rattachement ne sont pas explicitement saisis |
 | Rappel de salaire | 🟠 | Saisi en montant ; pas de recalcul rétroactif des périodes antérieures |
 | Indemnité compensatrice de congés payés | ✅ | Par période d'acquisition, au plus favorable du maintien et du dixième ; compteurs soldés |
 | Indemnité compensatrice de préavis | ✅ | Soumise comme un salaire, intégrée au dixième |
@@ -39,11 +40,11 @@
 | Domaine | État | Notes |
 |---|---|---|
 | Congés payés | ✅ | Jours ouvrables ou ouvrés, maintien comparé au dixième, acquisition 2,5 j (2 j pendant la maladie), bascule au 1er juin avec report signalé |
-| RTT, événements familiaux | ✅ | Absences rémunérées |
-| Absence sans solde | ✅ | Retenue à l'horaire réel, plafond réduit des jours civils entiers |
-| Maladie | ✅ | Carence de 7 jours, 90 % puis 66,66 %, paliers d'ancienneté, historique des 12 derniers mois, prolongations reliées, IJSS déduites |
+| RTT, événements familiaux | ✅ | Absences normalement rémunérées ; restent dans l'activité DSN 01 |
+| Absence sans solde | ✅ | Retenue à l'horaire réel, plafond réduit des jours civils entiers ; DSN activité 02 et suspension 501 raccordées |
+| Maladie | ✅ | Calcul paie complet ; bloc mensuel S21.G00.60 + activité 02 raccordés hors subrogation. Signalement événementiel et subrogation restent à terminer |
 | Accident du travail | ✅ | Jour de l'accident payé, sans carence, IJSS imposables à 50 % |
-| Maternité, paternité | 🟠 | Retenue, IJSS et subrogation ; pas de maintien conventionnel automatique (signalé) |
+| Maternité, paternité | 🟠 | Retenue et IJSS ; bloc mensuel S21.G00.60 + activité 02 raccordés hors subrogation. Maintien conventionnel, signalement événementiel et subrogation restent à terminer |
 | IJSS | ✅ | Montant de l'attestation, ou estimation signalée sur les trois mois précédant l'arrêt ; imposables sur les 60 premiers jours d'arrêt maladie |
 | Subrogation | ✅ | Paramètre de l'entreprise ; IJSS nettes reversées, intégrées au net social |
 | Maintien conventionnel plus favorable | 🟠 | Règle saisissable dans Configuration > Organisation et appliquée au bulletin (maladie et AT/MP, deux taux, paliers d’ancienneté). Référence obligatoire et règle moins favorable refusée. Garanties en net et règles distinctes par population à compléter |
@@ -93,4 +94,4 @@
 | Cycle préparer, calculer, contrôler, valider, clôturer | ✅ | Calcul séquentiel : un mois précédent non validé bloque le suivant |
 | Bulletin clarifié | ✅ | Rubriques par risque, allègements, net social, PAS, congés, cumuls, mentions obligatoires |
 | Points d'attention du calcul | ✅ | Affichés avant validation |
-| DSN | 🟠 | Générateur complet intégré aux périodes verrouillées, mapping P26V01 versionné, dettes rapprochées au centime, paiements SEPA et affiliations mensuelles santé/prévoyance limités aux composants 20/11/24. Archives de pré-contrôle chiffrées, immuables et versionnées. Neuf exemples synthétiques (six issus du moteur) contrôlés par Dsn-Val 2026.1.0.17 ; cela ne vaut ni recette financière ni acceptation métier. Événements, HS/HC, apprentis, régularisations et contributions annuelles non raccordés restent bloqués. Dépôt réel et retours métier à terminer |
+| DSN | 🟠 | Générateur intégré aux périodes verrouillées, mapping P26V01 versionné, dettes rapprochées au centime, archives chiffrées/versionnées. 39 h, HS/HC, primes mensuelles ordinaires, congé sans solde, RTT, événements familiaux et blocs mensuels maladie/maternité/paternité non subrogés sont raccordés. Dsn-Val 2026.1.0.17 reste exécuté en CI sur les fixtures normatives existantes. Restent notamment signalements événementiels, subrogation, AT/MP, sorties, apprentis, régularisations, contributions annuelles et retours métier. Dépôt réel désactivé |

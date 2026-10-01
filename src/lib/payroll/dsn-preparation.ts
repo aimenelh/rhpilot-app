@@ -63,9 +63,9 @@ const DSN_UNMAPPED_BULLETIN_LINES = new Set(["ENTRY_EXIT", "SEVERANCE", "PAID_LE
 export function dsnScopeIssues(snapshot: { variables?: unknown[]; validatedAbsences?: Array<{ type?: string }>; bulletin?: { lines?: Array<{ code?: string; base?: number }> } }): string[] {
   const issues: string[] = [];
   if ((snapshot.bulletin?.lines ?? []).some((line) => line.code && DSN_UNMAPPED_BULLETIN_LINES.has(line.code))) issues.push("entrée, sortie ou indemnité de fin de contrat (blocs S21.G00.62 non émis)");
-  const supportedAbsences = new Set(["UNPAID_LEAVE", "SICK_LEAVE", "MATERNITY", "PATERNITY"]);
+  const supportedAbsences = new Set(["UNPAID_LEAVE", "RTT", "FAMILY_EVENT", "SICK_LEAVE", "MATERNITY", "PATERNITY"]);
   const unsupportedAbsences = (snapshot.validatedAbsences ?? []).filter((absence) => !supportedAbsences.has(absence?.type ?? ""));
-  if (unsupportedAbsences.length > 0) issues.push("absences non encore raccordées (AT/MP, congés payés/RTT ou autre suspension)");
+  if (unsupportedAbsences.length > 0) issues.push("absences non encore raccordées (AT/MP, congés payés ou autre suspension)");
   return issues;
 }
 
