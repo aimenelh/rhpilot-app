@@ -73,15 +73,17 @@ export type LockedUnpaidAbsenceDeclaration = {
 export function readLockedUnpaidAbsenceDeclaration(value: unknown): LockedUnpaidAbsenceDeclaration {
   const { bulletin, inputs } = readLockedContributionSnapshot(value);
   const absences = inputs.absences ?? [];
-  const unsupported = absences.filter((absence) => absence.kind !== "UNPAID_LEAVE");
-  if (unsupported.length > 0) throw new Error("DSN bloquée : seules les absences sans solde sont raccordées à ce stade ; les autres absences nécessitent leurs blocs déclaratifs propres.");
+  const supportedKinds = new Set(["UNPAID_LEAVE", "RTT", "FAMILY_EVENT"]);
+  const unsupported = absences.filter((absence) => !supportedKinds.has(absence.kind));
+  if (unsupported.length > 0) throw new Error("DSN bloquée : cette absence nécessite encore ses blocs déclaratifs propres.");
+  const unpaidAbsences = absences.filter((absence) => absence.kind === "UNPAID_LEAVE");
 
   const grossLines = bulletin.lines.filter((line) => line.section === "GROSS" && line.code === "ABS_UNPAID_LEAVE");
   const matchedLines = new Set<PayslipLine>();
   let hours = 0;
   const suspensions: LockedUnpaidAbsenceDeclaration["suspensions"] = [];
 
-  for (const absence of absences) {
+  for (const absence of unpaidAbsences) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(absence.start) || !/^\d{4}-\d{2}-\d{2}$/.test(absence.end) || absence.end < absence.start) {
       throw new Error("DSN bloquée : les dates d'une absence sans solde verrouillée sont invalides.");
     }
@@ -227,7 +229,7 @@ export function mapLockedContributions(input: {
   if (inputs.employee.contract === "APPRENTISSAGE") throw new Error("DSN bloquée : les exonérations sociales spécifiques des apprentis nécessitent encore leur mapping déclaratif.");
   if (inputs.organization.territory !== "METROPOLE" || inputs.organization.alsaceMoselle) throw new Error("DSN bloquée : le mapping social actuel couvre la métropole hors régime local Alsace-Moselle.");
   if ((inputs.bonuses ?? []).some((bonus) => bonus.excludedFromPaidLeaveBase)) throw new Error("DSN bloquée : une prime annuelle ou exceptionnelle nécessite son type S21.G00.52 et sa période de rattachement explicites.");
-  if ((inputs.absences ?? []).some((absence) => absence.kind !== "UNPAID_LEAVE")) throw new Error("DSN bloquée : les absences autres que sans solde nécessitent leurs blocs déclaratifs spécifiques.");
+  if ((inputs.absences ?? []).some((absence) => !["UNPAID_LEAVE", "RTT", "FAMILY_EVENT"].includes(absence.kind))) throw new Error("DSN bloquée : cette absence nécessite ses blocs déclaratifs spécifiques.");
   if ([inputs.benefitsInKind, inputs.expenses, inputs.netAdjustments].some((items) => (items?.length ?? 0) > 0) || inputs.termination || inputs.mealVouchers || inputs.publicTransport) throw new Error("DSN bloquée : les événements et autres revenus du bulletin nécessitent leurs blocs déclaratifs spécifiques.");
   const journal = bulletin.lines.filter((line) => line.section !== "GROSS" && line.section !== "NET_ITEMS");
   if (journal.some((line) => !line || !line.code || !line.section)) throw new Error("DSN bloquée : une rubrique du journal de cotisations est invalide.");
