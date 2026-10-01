@@ -12,7 +12,7 @@ function SubmitButton() {
   );
 }
 
-export default function DsnOrganizationForm({ initial }: { initial: { contactName: string; contactEmail: string; contactPhone: string; declaredContactType: string; enterpriseApenCode: string; urssafSiret: string; retirementSiret: string; paymentBic: string; paymentAccountConfigured: boolean; sepaMandatesConfirmed: boolean } }) {
+export default function DsnOrganizationForm({ initial }: { initial: { contactName: string; contactEmail: string; contactPhone: string; declaredContactType: string; enterpriseApenCode: string; urssafSiret: string; retirementSiret: string; paymentBic: string; paymentAccountConfigured: boolean; subrogationBic: string; subrogationAccountConfigured: boolean; sepaMandatesConfirmed: boolean } }) {
   const [state, action] = useFormState<DsnFormState, FormData>(saveDsnOrganizationSettings, undefined);
   return (
     <form action={action} className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -30,6 +30,14 @@ export default function DsnOrganizationForm({ initial }: { initial: { contactNam
       <label className="text-sm text-ink-soft">SIRET de la caisse de retraite<input name="retirementSiret" defaultValue={initial.retirementSiret} inputMode="numeric" maxLength={14} className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm text-ink" /><span className="mt-1 block text-xs text-ink-faint">Identifiant de paiement Agirc-Arrco fourni par la caisse, distinct du code du groupe.</span></label>
       <label className="text-sm text-ink-soft">IBAN du compte de prélèvement<input name="paymentIban" autoComplete="off" placeholder={initial.paymentAccountConfigured ? "Compte enregistré · laisser vide pour le conserver" : "FR…"} maxLength={40} className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm text-ink" /><span className="mt-1 block text-xs text-ink-faint">Le numéro est chiffré et ne sera pas réaffiché.</span></label>
       <label className="text-sm text-ink-soft">BIC<input name="paymentBic" defaultValue={initial.paymentBic} autoComplete="off" maxLength={11} className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm text-ink" /></label>
+      <div className="md:col-span-2 lg:col-span-3 rounded-xl border border-surface-border bg-surface-subtle/40 p-4">
+        <p className="text-sm font-semibold text-ink">Compte de réception des IJSS subrogées</p>
+        <p className="mt-1 text-xs leading-5 text-ink-faint">À renseigner si l'entreprise pratique la subrogation. Ce compte peut être différent du compte de prélèvement des organismes.</p>
+        <div className="mt-3 grid gap-4 md:grid-cols-2">
+          <label className="text-sm text-ink-soft">IBAN de réception des IJSS<input name="subrogationIban" autoComplete="off" placeholder={initial.subrogationAccountConfigured ? "Compte enregistré · laisser vide pour le conserver" : "FR…"} maxLength={40} className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm text-ink" /><span className="mt-1 block text-xs text-ink-faint">Le numéro est chiffré et ne sera pas réaffiché.</span></label>
+          <label className="text-sm text-ink-soft">BIC de réception<input name="subrogationBic" defaultValue={initial.subrogationBic} autoComplete="off" maxLength={11} className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm text-ink" /></label>
+        </div>
+      </div>
       <label className="md:col-span-2 lg:col-span-3 flex items-start gap-2 text-sm text-ink-soft"><input type="checkbox" name="sepaMandatesConfirmed" value="1" defaultChecked={initial.sepaMandatesConfirmed} className="mt-1" />Les mandats SEPA pour ce compte sont enregistrés auprès de l'Urssaf, de la caisse de retraite et de la DGFiP. Le fichier de test ne déclenche aucun prélèvement.</label>
       <div className="md:col-span-2 lg:col-span-3 flex flex-wrap items-center gap-3"><SubmitButton /><p className="text-xs text-ink-faint">Le mode réel reste désactivé : l'export est réservé au pré-contrôle.</p></div>
       {state?.error ? <p className="md:col-span-2 lg:col-span-3 rounded-lg bg-accent-amber/10 px-3 py-2 text-sm text-accent-amber" role="alert">{state.error}</p> : null}
