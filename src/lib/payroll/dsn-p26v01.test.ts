@@ -65,6 +65,7 @@ function input() {
           workAccidentRegimeCode: "200",
           workAccidentRiskCode: "723ZA",
           workAccidentRate: 1.5,
+          suspensions: [] as Array<{ reasonCode: "501"; startDate: Date; endDate: Date }>,
         },
         payroll: {
           baseSalary: 2500,
@@ -73,6 +74,8 @@ function input() {
           netTaxableAmount: 2050,
           netSocialAmount: 1960,
           withholdingTax: 153.75,
+          paidHours: 151.67,
+          unpaidAbsenceHours: 0,
           overtimeRemunerations: [] as Array<{ type: "017" | "018"; hours: number; amount: number }>,
           overtimeTaxExemptNetAmount: 0,
           pas: {
