@@ -125,6 +125,20 @@ describe("DSN P26V01 builder", () => {
     expect(content.endsWith("\r\n")).toBe(true);
   });
 
+  it("déclare le congé sans solde en suspension 501 et activité 02", () => {
+    const data = input();
+    data.employees[0].contract.suspensions = [{
+      reasonCode: "501" as const,
+      startDate: new Date("2026-08-10T00:00:00.000Z"),
+      endDate: new Date("2026-08-14T00:00:00.000Z"),
+    }];
+    data.employees[0].payroll.paidHours = 116.67;
+    data.employees[0].payroll.unpaidAbsenceHours = 35;
+    const content = buildDsnP26V01Monthly(data);
+    expect(content).toContain("S21.G00.65.001,'501'\r\nS21.G00.65.002,'10082026'\r\nS21.G00.65.003,'14082026'");
+    expect(content).toContain("S21.G00.53.001,'01'\r\nS21.G00.53.002,'116.67'\r\nS21.G00.53.003,'10'\r\nS21.G00.53.001,'02'\r\nS21.G00.53.002,'35.00'\r\nS21.G00.53.003,'10'");
+  });
+
   it("déclare les HS/HC 017/018 et le net fiscal exonéré P26V01", () => {
     const data = input();
     data.employees[0].payroll.overtimeRemunerations = [
