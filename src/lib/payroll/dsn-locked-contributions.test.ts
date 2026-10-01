@@ -111,9 +111,20 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     expect(() => buildDsnP26V01Complete(data)).not.toThrow();
   });
 
-  it("continue de bloquer les absences nécessitant un signalement métier", () => {
+  it("raccorde l'activité d'un arrêt maladie, maintien ou subrogation compris", () => {
+    const snapshot = computedSnapshot({
+      absences: [{ id: "sick-1", kind: "SICK_LEAVE", start: "2026-01-12", end: "2026-01-16", ijssGrossAmount: 140 }],
+    });
+    const mapped = mapLockedContributions({ snapshot, ...ids });
+    expect(mapped.absenceActivity.hours).toBe(35);
+    const due = mapped.liabilities.reduce((sum, item) => sum + cents(item.amount), 0);
+    const deferred = mapped.deferred.reduce((sum, item) => sum + cents(item.amount), 0);
+    expect(due + deferred).toBe(cents(snapshot.bulletin.totals.employeeContributions) + cents(snapshot.bulletin.totals.employerContributions));
+  });
+
+  it("continue de bloquer les absences hors périmètre raccordé", () => {
     const snapshot = computedSnapshot({ absences: [{ id: "rtt-1", kind: "RTT", start: "2026-01-12", end: "2026-01-12" }] });
-    expect(() => mapLockedContributions({ snapshot, ...ids })).toThrow(/absences autres que sans solde|blocs déclaratifs propres/i);
+    expect(() => mapLockedContributions({ snapshot, ...ids })).toThrow(/absence.*traitement déclaratif|blocs déclaratifs spécifiques/i);
   });
 
   it("laisse passer une prime mensuelle ordinaire dans les rémunérations et assiettes sans inventer un bloc 52", () => {
