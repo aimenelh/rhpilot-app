@@ -91,9 +91,9 @@ export async function saveDsnOrganizationSettings(
     await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`
         INSERT INTO "dsn_organization_settings"
-          ("organizationId", "contactName", "contactEmail", "contactPhone", "declaredContactType", "enterpriseApenCode", "urssafSiret", "retirementSiret", "paymentIbanCiphertext", "paymentBic", "sepaMandatesConfirmed", "defaultTestMode", "updatedAt")
+          ("organizationId", "contactName", "contactEmail", "contactPhone", "declaredContactType", "enterpriseApenCode", "urssafSiret", "retirementSiret", "paymentIbanCiphertext", "paymentBic", "subrogationIbanCiphertext", "subrogationBic", "sepaMandatesConfirmed", "defaultTestMode", "updatedAt")
         VALUES
-          (${membership.organizationId}, ${contactName}, ${contactEmail}, ${contactPhone}, ${declaredContactType}, ${enterpriseApenCode}, ${urssafSiret}, ${retirementSiret}, ${paymentIbanCiphertext}, ${paymentBic}, ${sepaMandatesConfirmed}, TRUE, CURRENT_TIMESTAMP)
+          (${membership.organizationId}, ${contactName}, ${contactEmail}, ${contactPhone}, ${declaredContactType}, ${enterpriseApenCode}, ${urssafSiret}, ${retirementSiret}, ${paymentIbanCiphertext}, ${paymentBic}, ${subrogationIbanCiphertext}, ${subrogationBic}, ${sepaMandatesConfirmed}, TRUE, CURRENT_TIMESTAMP)
         ON CONFLICT ("organizationId") DO UPDATE SET
           "contactName" = EXCLUDED."contactName",
           "contactEmail" = EXCLUDED."contactEmail",
@@ -104,6 +104,8 @@ export async function saveDsnOrganizationSettings(
           "retirementSiret" = EXCLUDED."retirementSiret",
           "paymentIbanCiphertext" = COALESCE(EXCLUDED."paymentIbanCiphertext", "dsn_organization_settings"."paymentIbanCiphertext"),
           "paymentBic" = EXCLUDED."paymentBic",
+          "subrogationIbanCiphertext" = COALESCE(EXCLUDED."subrogationIbanCiphertext", "dsn_organization_settings"."subrogationIbanCiphertext"),
+          "subrogationBic" = EXCLUDED."subrogationBic",
           "sepaMandatesConfirmed" = EXCLUDED."sepaMandatesConfirmed",
           "defaultTestMode" = TRUE,
           "updatedAt" = CURRENT_TIMESTAMP
