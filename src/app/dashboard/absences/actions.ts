@@ -10,6 +10,7 @@ import { userFacingError } from "@/lib/userFacingError";
 
 const ABSENCE_TYPES = ["PAID_LEAVE", "RTT", "SICK_LEAVE", "WORK_ACCIDENT", "UNPAID_LEAVE", "FAMILY_EVENT", "MATERNITY", "PATERNITY", "OTHER"] as const;
 type AbsenceTypeValue = (typeof ABSENCE_TYPES)[number];
+const WORK_STOPPAGE_TYPES = new Set<AbsenceTypeValue>(["SICK_LEAVE", "WORK_ACCIDENT", "MATERNITY", "PATERNITY"]);
 export type AbsenceActionState = { error?: string; success?: string } | undefined;
 
 function parseDate(value: FormDataEntryValue | null): Date | null {
@@ -53,19 +54,43 @@ function parseAbsenceForm(formData: FormData) {
   const endDate = parseDate(formData.get("endDate"));
   const justificationRequired = formData.get("justificationRequired") === "on";
   const notes = String(formData.get("notes") ?? "").trim();
+  const lastWorkedDate = parseDate(formData.get("lastWorkedDate"));
+  const subrogationStartDate = parseDate(formData.get("subrogationStartDate"));
+  const subrogationEndDate = parseDate(formData.get("subrogationEndDate"));
+  const workAccidentDate = parseDate(formData.get("workAccidentDate"));
+  const returnDate = parseDate(formData.get("returnDate"));
+  const returnReasonCode = String(formData.get("returnReasonCode") ?? "").trim() || null;
 
   if (!employeeId) return { error: "Le salarié est obligatoire." } as const;
   if (!ABSENCE_TYPES.includes(type as AbsenceTypeValue)) return { error: "Le type d'absence est invalide." } as const;
+  const normalizedType = type as AbsenceTypeValue;
   if (!startDate || !endDate) return { error: "Les dates de début et de fin sont obligatoires." } as const;
   if (endDate < startDate) return { error: "La date de fin doit être après la date de début." } as const;
 
+  const isWorkStoppage = WORK_STOPPAGE_TYPES.has(normalizedType);
+  if (isWorkStoppage && !lastWorkedDate) return { error: "Le dernier jour travaillé est obligatoire pour un arrêt de travail." } as const;
+  if (lastWorkedDate && lastWorkedDate > endDate) return { error: "Le dernier jour travaillé ne peut pas être postérieur à la fin de l'arrêt." } as const;
+  if ((subrogationStartDate && !subrogationEndDate) || (!subrogationStartDate && subrogationEndDate)) return { error: "Renseignez les deux dates de subrogation, ou aucune." } as const;
+  if (subrogationStartDate && subrogationEndDate && subrogationEndDate < subrogationStartDate) return { error: "La fin de subrogation doit être postérieure ou égale à son début." } as const;
+  if (normalizedType === "WORK_ACCIDENT" && !workAccidentDate) return { error: "La date de l'accident est obligatoire pour un accident du travail." } as const;
+  if (workAccidentDate && normalizedType !== "WORK_ACCIDENT") return { error: "La date de l'accident n'est utilisable que pour un accident du travail." } as const;
+  if ((returnDate && !returnReasonCode) || (!returnDate && returnReasonCode)) return { error: "Renseignez ensemble la date et le motif de reprise." } as const;
+  if (returnReasonCode && !["01", "02", "03"].includes(returnReasonCode)) return { error: "Le motif de reprise est invalide." } as const;
+  if (returnDate && returnDate < startDate) return { error: "La date de reprise ne peut pas être antérieure au début de l'arrêt." } as const;
+
   return {
     employeeId,
-    type: type as AbsenceTypeValue,
+    type: normalizedType,
     startDate,
     endDate,
     justificationRequired,
     notes: notes || null,
+    lastWorkedDate: isWorkStoppage ? lastWorkedDate : null,
+    subrogationStartDate: isWorkStoppage ? subrogationStartDate : null,
+    subrogationEndDate: isWorkStoppage ? subrogationEndDate : null,
+    workAccidentDate: normalizedType === "WORK_ACCIDENT" ? workAccidentDate : null,
+    returnDate: isWorkStoppage ? returnDate : null,
+    returnReasonCode: isWorkStoppage ? returnReasonCode : null,
   } as const;
 }
 
@@ -105,6 +130,12 @@ export async function createAbsence(_prevState: AbsenceActionState, formData: Fo
         status: parsed.justificationRequired ? "TO_PROVIDE_JUSTIFICATION" : "TO_VALIDATE",
         justificationRequired: parsed.justificationRequired,
         payrollImpactStatus: "PENDING",
+        lastWorkedDate: parsed.lastWorkedDate,
+        subrogationStartDate: parsed.subrogationStartDate,
+        subrogationEndDate: parsed.subrogationEndDate,
+        workAccidentDate: parsed.workAccidentDate,
+        returnDate: parsed.returnDate,
+        returnReasonCode: parsed.returnReasonCode,
         notes: parsed.notes,
       },
     });
@@ -187,6 +218,12 @@ export async function updateAbsence(absenceId: string, formData: FormData): Prom
         notes: parsed.notes,
         status: nextStatus,
         payrollImpactStatus: "PENDING",
+        lastWorkedDate: parsed.lastWorkedDate,
+        subrogationStartDate: parsed.subrogationStartDate,
+        subrogationEndDate: parsed.subrogationEndDate,
+        workAccidentDate: parsed.workAccidentDate,
+        returnDate: parsed.returnDate,
+        returnReasonCode: parsed.returnReasonCode,
         validatedByUserId: null,
         validatedAt: null,
         rejectedReason: null,
