@@ -105,6 +105,39 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     expect(() => buildDsnP26V01Complete(unaffiliated)).toThrow(/affiliation complémentaire/);
     expect(content).toContain("S21.G00.70.014,'01012024'");
   });
+  it("déclare le forfait social et les trois composantes mobilité sans changer la dette verrouillée", () => {
+    const data = computedDsnFixture(2500, 151.67, true, { headcount: 15, mobilityRatePercent: 1.85,
+      mobilityDsn: { source: "URSSAF", communeCode: "75101", validFrom: "2026-01-01", validUntil: null, components: { vm: 1.2, vma: 0.5, vmr: 0.15 } } });
+    expect(data.assessedBases.some((base) => base.code === "13")).toBe(true);
+    expect(data.assessedBases.filter((base) => base.code === "57")).toHaveLength(1);
+    const contributions = data.contributionBordereau.individualContributions.filter((item) => ["081", "082", "918"].includes(item.code));
+    expect(contributions).toHaveLength(3);
+    expect(contributions.every((item) => item.inseeCommuneCode === "75101")).toBe(true);
+    expect(contributions.reduce((sum, item) => sum + cents(item.contributionAmount!), 0)).toBe(cents(2500 * 1.85 / 100));
+    expect(data.contributionBordereau.aggregatedContributions.filter((item) => ["479", "900", "901", "820"].includes(item.code))).toHaveLength(4);
+    expect(() => buildDsnP26V01Complete(data)).not.toThrow();
+  });
+  it("conserve le centime d'arrondi mobilité et refuse une provenance incomplète", () => {
+    const ordinary = computedSnapshot();
+    const organization = { ...ordinary.inputs.organization, headcount: 15, mobilityRatePercent: 1.85,
+      mobilityDsn: { source: "URSSAF" as const, communeCode: "75101", validFrom: "2026-01-01", validUntil: null, components: { vm: 1.2, vma: 0.5, vmr: 0.15 } } };
+    const snapshot = computedSnapshot({ organization, pay: { ...ordinary.inputs.pay, monthlyBaseSalary: 2500.13 } });
+    const mapped = mapLockedContributions({ snapshot, ...ids });
+    const mobility = mapped.individual.filter((item) => ["081", "082", "918"].includes(item.code));
+    const line = snapshot.bulletin.lines.find((item) => item.code === "VERSEMENT_MOBILITE")!;
+    expect(mobility.reduce((sum, item) => sum + cents(item.contributionAmount!), 0)).toBe(cents(line.employerAmount!));
+    const incomplete = computedSnapshot({ organization: { ...organization, mobilityDsn: null } });
+    expect(() => mapLockedContributions({ snapshot: incomplete, ...ids })).toThrow(/taux manuel ou historique/);
+    const changed = structuredClone(snapshot);
+    changed.inputs.organization.mobilityDsn!.components.vmr = 0.2;
+    expect(() => mapLockedContributions({ snapshot: changed, ...ids })).toThrow(/ventilation mobilité/);
+    changed.inputs.organization.mobilityDsn!.components.vmr = 0.15;
+    changed.inputs.organization.mobilityDsn!.validUntil = "2026-01-15";
+    expect(() => mapLockedContributions({ snapshot: changed, ...ids })).toThrow(/validité/);
+    changed.inputs.organization.mobilityDsn!.validUntil = null;
+    changed.inputs.organization.mobilityDsn!.communeCode = "75056";
+    expect(() => mapLockedContributions({ snapshot: changed, ...ids })).toThrow(/arrondissement de travail/);
+  });
   it("bloque une affiliation modifiée en cours de mois", () => {
     const snapshot = computedSnapshot();
     const affiliations = identifyDsnAffiliations([normalizeDsnComplementaryAffiliations([{

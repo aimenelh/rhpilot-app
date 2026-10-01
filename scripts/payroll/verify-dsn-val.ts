@@ -46,10 +46,16 @@ for (const [label, gross, hours] of [["bulletin-2500", 2500, 151.67], ["bulletin
 const complementaryReport = validate("bulletin-complementaires", buildDsnP26V01Complete(computedDsnFixture(6000, 151.67, true)));
 try { assertDsnValReportAccepted(complementaryReport); } catch (error) { console.error("Rapport synthétique complémentaire :", complementaryReport); throw error; }
 
+const mobilityReport = validate("bulletin-forfait-social-mobilite", buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, true, {
+  headcount: 15, mobilityRatePercent: 1.85,
+  mobilityDsn: { source: "URSSAF", communeCode: "75101", validFrom: "2026-01-01", validUntil: null, components: { vm: 1.2, vma: 0.5, vmr: 0.15 } },
+})));
+try { assertDsnValReportAccepted(mobilityReport); } catch (error) { console.error("Rapport synthétique forfait/mobilité :", mobilityReport); throw error; }
+
 // Témoin négatif : l'outil doit réellement détecter un bloc obligatoire supprimé.
 const rejected = validate("temoin-invalide", content.replace(/^S21\.G00\.71\.002,.*\r\n/m, ""));
 let rejectedAsExpected = false;
 try { assertDsnValReportAccepted(rejected); } catch { rejectedAsExpected = true; }
 if (!rejectedAsExpected) throw new Error("Dsn-Val n'a pas rejeté le témoin invalide.");
-console.log("Dsn-Val 2026.1.0.17 : sept fixtures P26V01 acceptées, dont quatre calculées par le moteur, sans anomalie ; témoin invalide refusé.");
+console.log("Dsn-Val 2026.1.0.17 : huit fixtures P26V01 acceptées, dont cinq calculées par le moteur, sans anomalie ; témoin invalide refusé.");
 console.log(`Rapports : ${output}`);

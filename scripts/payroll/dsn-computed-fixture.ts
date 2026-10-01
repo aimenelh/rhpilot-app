@@ -19,13 +19,14 @@ export function computedSnapshot(input?: Partial<PayslipInput>) {
 }
 
 /** Fichier synthétique dont chaque montant financier vient effectivement du moteur. */
-export function computedDsnFixture(gross = 2500, monthlyHours = 151.67, complementary = false): DsnP26CompleteInput {
+export function computedDsnFixture(gross = 2500, monthlyHours = 151.67, complementary = false, organizationOverrides?: Partial<PayslipInput["organization"]>): DsnP26CompleteInput {
   const snapshot = computedSnapshot({ pay: { monthlyBaseSalary: gross, contractMonthlyHours: monthlyHours, schedule: [monthlyHours * 12 / 52 / 5, monthlyHours * 12 / 52 / 5, monthlyHours * 12 / 52 / 5, monthlyHours * 12 / 52 / 5, monthlyHours * 12 / 52 / 5, 0, 0] as WeeklySchedule } });
+  if (organizationOverrides) Object.assign(snapshot.inputs.organization, organizationOverrides);
   if (complementary) {
     snapshot.inputs.organization.healthPlan = { monthlyAmount: 60, employerShare: 0.5 };
     snapshot.inputs.organization.prevoyance = { nonCadre: { employeeT1: 0.002, employerT1: 0.003, employeeT2: 0.002, employerT2: 0.003 } };
-    snapshot.bulletin = computePayslip(snapshot.inputs);
   }
+  if (complementary || organizationOverrides) snapshot.bulletin = computePayslip(snapshot.inputs);
   const affiliations = complementary ? identifyDsnAffiliations([normalizeDsnComplementaryAffiliations([
     { coverage: "SANTE", organismCode: "P0983", contractReference: "SANTE-TEST", delegateCode: null, populationCode: null, optionCode: null, validFrom: "2024-01-01", validUntil: null, paymentFrequency: "MONTHLY", componentCodes: ["20"], sourceReference: "FPOC synthétique santé" },
     { coverage: "PREVOYANCE", organismCode: "P0983", contractReference: "PREVO-TEST", delegateCode: null, populationCode: null, optionCode: null, validFrom: "2024-01-01", validUntil: null, paymentFrequency: "MONTHLY", componentCodes: ["11", "24"], sourceReference: "FPOC synthétique prévoyance" },
@@ -37,6 +38,8 @@ export function computedDsnFixture(gross = 2500, monthlyHours = 151.67, compleme
   const employeePas = snapshot.bulletin.withholding;
   data.period = { year: 2026, month: 1, paymentDate: new Date("2026-01-31T00:00:00.000Z") };
   employee.contract.workAccidentRate = mapped.atmpRatePercent;
+  employee.contract.conventionalStatusCode = "06";
+  employee.contract.retirementStatusCode = "04";
   employee.contract.contractWorkQuota = monthlyHours;
   employee.contract.workModalityCode = monthlyHours < 151.67 ? "20" : "10";
   employee.payroll = {

@@ -1,6 +1,7 @@
 import { identifyDsnAffiliations, normalizeDsnComplementaryAffiliations } from "./dsn-complementary-affiliations";
 import type { DsnOpsPayment } from "./dsn-p26v01-complete";
 import { Prisma } from "@prisma/client";
+import { assertDsnRetirementScope, assertDsnStableContract } from "./dsn-contract-scope";
 import { prisma } from "@/lib/prisma";
 import type { DsnP26MonthlyInput } from "./dsn-p26v01";
 import { buildDsnP26V01Complete } from "./dsn-p26v01-complete";
@@ -168,6 +169,9 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
     if (locked.bulletin.period.year !== period.year || locked.bulletin.period.month !== period.month || locked.bulletin.employee.id !== employee.id) throw new Error("DSN bloquée : le bulletin détaillé ne correspond pas à la période et au salarié.");
     if (locked.inputs.employee.contract !== employee.contractType || locked.inputs.employee.hireDate !== employee.hireDate.toISOString().slice(0, 10) ||
         (locked.inputs.employee.contractEndDate ?? null) !== (employee.contractEndDate?.toISOString().slice(0, 10) ?? null)) throw new Error("DSN bloquée : le contrat actuel diverge du contrat du bulletin verrouillé. Vérifiez les changements déclaratifs.");
+    const previousSnapshot = previousByEmployee.get(employee.id);
+    assertDsnStableContract(locked.inputs.employee, period, previousSnapshot ? readLockedContributionSnapshot(previousSnapshot).inputs.employee : undefined);
+    assertDsnRetirementScope(locked.inputs.employee.executive, dsnProfile.retirementStatusCode);
     const profileSnapshot = snapshot.profile;
     if (!profileSnapshot) throw new Error(`DSN bloquée : le profil paie verrouillé du salarié ${employee.id} est absent.`);
     const baseSalaryCents = requiredNumber(profileSnapshot.baseSalaryCents, `le salaire de base verrouillé du salarié ${employee.id}`);

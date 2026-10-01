@@ -2,8 +2,9 @@ import type { IdentifiedDsnAffiliation } from "./dsn-complementary-affiliations"
 import type { PayslipInput, PayslipLine, PayslipResult } from "./bulletin/types";
 import type { DsnAggregatedContribution, DsnAssessedBase, DsnIndividualContribution } from "./dsn-p26v01-complete";
 
-export const LOCKED_CONTRIBUTION_MAPPING_VERSION = "P26V01-RG-2026.1";
+export const LOCKED_CONTRIBUTION_MAPPING_VERSION = "P26V01-RG-2026.2";
 export const LOCKED_CONTRIBUTION_SOURCES = [
+  "https://open.urssaf.fr/explore/dataset/equivalence-dida/export/",
   "https://www.urssaf.fr/accueil/actualites/declaration-cotisation-am-af.html",
   "https://www.urssaf.fr/accueil/employeur/beneficier-exonerations/reduction-generale-cotisation.html",
   "https://net-entreprises.custhelp.com/app/answers/detail_dsn/a_id/2556/",
@@ -128,8 +129,8 @@ export function mapLockedContributions(input: {
   const complementaryPayments: LockedContributionData["complementaryPayments"] = [];
   const bases: DsnAssessedBase[] = [];
   const addBase = (code: string, value: number, components?: DsnAssessedBase["components"]): void => { bases.push({ employeeNir: input.employeeNir, code, amount: round(value), ...(components ? { components } : {}) }); };
-  const addIndividual = (code: string, baseCode: string, opsIdentifier: string | null, value: number, sources: string[], ratePercent?: number, baseAmount?: number): void => {
-    individual.push({ employeeNir: input.employeeNir, code, baseCode, opsIdentifier, contributionAmount: round(value), sourcePayrollCode: sources.join("+"), mappingVersion: LOCKED_CONTRIBUTION_MAPPING_VERSION, ...(ratePercent === undefined ? {} : { ratePercent }), ...(baseAmount === undefined ? {} : { baseAmount }) });
+  const addIndividual = (code: string, baseCode: string, opsIdentifier: string | null, value: number, sources: string[], ratePercent?: number, baseAmount?: number, inseeCommuneCode?: string): void => {
+    individual.push({ employeeNir: input.employeeNir, code, baseCode, opsIdentifier, contributionAmount: round(value), sourcePayrollCode: sources.join("+"), mappingVersion: LOCKED_CONTRIBUTION_MAPPING_VERSION, ...(ratePercent === undefined ? {} : { ratePercent }), ...(baseAmount === undefined ? {} : { baseAmount }), ...(inseeCommuneCode ? { inseeCommuneCode } : {}) });
   };
   const addAggregate = (ctp: string, qualifier: string, value: number, sources: string[], fields: Partial<DsnAggregatedContribution>): void => {
     const key = `${ctp}/${qualifier}`;
@@ -251,6 +252,40 @@ export function mapLockedContributions(input: {
     complementaryPayments.push({ opsIdentifier: affiliation.organismCode, delegateCode: affiliation.delegateCode, contractReference: affiliation.contractReference, amount: due, period: `${bulletin.period.year}M${String(bulletin.period.month).padStart(2, "0")}` });
     liabilities.set(affiliation.organismCode, round((liabilities.get(affiliation.organismCode) ?? 0) + due));
     covered.forEach((code) => mapped.add(code));
+  }
+  if (byCode.has("FORFAIT_SOCIAL") && amount("FORFAIT_SOCIAL") !== 0) {
+    const b = base("FORFAIT_SOCIAL");
+    const welfareEmployer = round(["SANTE", "PREVOYANCE", "PREVOYANCE_T2"].filter((code) => byCode.has(code)).reduce((total, code) => total + numeric(line(code).employerAmount ?? 0, code), 0));
+    const rate = numeric(line("FORFAIT_SOCIAL").employerRate, "le taux de forfait social");
+    if (headcount < 11 || Math.abs(rate - 0.08) > 1e-8 || cents(b) !== cents(welfareEmployer) || amount("FORFAIT_SOCIAL") < 0) throw new Error("DSN bloquée : le forfait social nécessite une assiette prévoyance/santé et le taux de 8 %. Les régularisations nécessitent leur rattachement.");
+    addBase("13", b);
+    addIndividual("071", "13", input.urssafSiret, amount("FORFAIT_SOCIAL"), ["FORFAIT_SOCIAL"], 8, b);
+    addAggregate("479", "920", amount("FORFAIT_SOCIAL"), ["FORFAIT_SOCIAL"], { baseAmount: b });
+    mapped.add("FORFAIT_SOCIAL");
+  }
+  if (byCode.has("VERSEMENT_MOBILITE") && amount("VERSEMENT_MOBILITE") !== 0) {
+    const details = inputs.organization.mobilityDsn;
+    if (details && ["75056", "69123", "13055"].includes(details.communeCode)) throw new Error("DSN bloquée : renseignez le code INSEE de l'arrondissement de travail pour le versement mobilité, et non celui de la ville parente.");
+    if (!details || details.source !== "URSSAF" || !/^(\d{5}|2[AB]\d{3})$/.test(details.communeCode) || !details.validFrom || details.validFrom > bulletin.period.first || (details.validUntil && details.validUntil < bulletin.period.last)) throw new Error("DSN bloquée : le versement mobilité nécessite la commune, les trois composantes et leur validité dans le bulletin verrouillé. Un taux manuel ou historique sans ventilation ne suffit pas.");
+    const parts = [["vm", "081", "900"], ["vma", "082", "901"], ["vmr", "918", "820"]] as const;
+    const rates = parts.map(([part]) => numeric(details.components?.[part], "la composante mobilité " + part));
+    const totalRate = rates.reduce((total, rate) => total + rate, 0);
+    const b = base("VERSEMENT_MOBILITE");
+    if (rates.some((rate) => rate < 0 || Math.abs(rate * 100 - Math.round(rate * 100)) > 1e-7) || Math.abs(totalRate - numeric(inputs.organization.mobilityRatePercent, "le taux mobilité")) > 1e-7 || Math.abs(totalRate / 100 - numeric(line("VERSEMENT_MOBILITE").employerRate, "le taux mobilité du bulletin")) > 1e-7 || cents(b) !== cents(g) || amount("VERSEMENT_MOBILITE") < 0) throw new Error("DSN bloquée : la ventilation mobilité ou la précision des taux ne correspond pas au bulletin verrouillé.");
+    addBase("57", b);
+    const active = parts.filter(([part]) => details.components[part] > 0);
+    let allocated = 0;
+    active.forEach(([part, code, ctp], index) => {
+      const rate = details.components[part];
+      // Le dernier composant conserve le centime d'arrondi du journal regroupé.
+      const due = index === active.length - 1 ? round(amount("VERSEMENT_MOBILITE") - allocated) : round(b * rate / 100);
+      if (due < 0) throw new Error("DSN bloquée : ventilation mobilité négative.");
+      allocated = round(allocated + due);
+      addIndividual(code, "57", input.urssafSiret, due, ["VERSEMENT_MOBILITE"], rate, b, details.communeCode);
+      addAggregate(ctp, "920", due, ["VERSEMENT_MOBILITE"], { baseAmount: b, ratePercent: rate, inseeCommuneCode: details.communeCode });
+    });
+    if (!active.length || cents(allocated) !== cents(amount("VERSEMENT_MOBILITE"))) throw new Error("DSN bloquée : la ventilation mobilité ne couvre pas la charge du bulletin.");
+    mapped.add("VERSEMENT_MOBILITE");
   }
   // Une rubrique explicitement nulle ne nécessite pas d'affiliation, mais une rubrique inconnue reste bloquante.
   for (const code of ["PREVOYANCE", "PREVOYANCE_T2", "SANTE", "VERSEMENT_MOBILITE", "FORFAIT_SOCIAL"]) if (byCode.has(code) && amount(code) === 0) mapped.add(code);
