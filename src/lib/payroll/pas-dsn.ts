@@ -119,12 +119,6 @@ export function assertPasDsnScopeSupported(input: {
   contractEndDate: Date | null;
   hasSubrogatedDailyAllowances?: boolean;
 }): void {
-  if (input.hasSubrogatedDailyAllowances) {
-    throw new Error(
-      "DSN bloquée : l'assiette PAS avec subrogation d'IJSS n'est pas encore modélisée.",
-    );
-  }
-
   if (
     input.source === "NON_PERSONNALISE" &&
     input.contractType === "CDD" &&
