@@ -29,16 +29,17 @@ export function LandingPage() {
                 preload="none"
                 poster="/illustrations/illu-cta-final.png"
                 className={s.video}
-                aria-label="Scène de travail en équipe : vidéo de Pavel Danilyuk"
+                style={{ objectFit: "contain" }}
+                aria-label="Spot RH Pilot : même lundi, pas la même semaine"
               >
                 <source
-                  src="https://www.pexels.com/download/video/8343940/?v=8343940"
+                  src="/marketing/rhpilot-spot-2.mp4"
                   type="video/mp4"
                 />
                 Votre navigateur ne permet pas la lecture de cette vidéo.
               </video>
               <p className={s.note}>
-                Scène d’illustration · Pavel Danilyuk / Pexels
+                RH Pilot · Même lundi. Pas la même semaine.
               </p>
             </div>
             <div>
