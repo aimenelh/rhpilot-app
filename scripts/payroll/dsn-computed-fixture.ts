@@ -54,7 +54,7 @@ export function computedDsnFixture(
   employee.contract.retirementStatusCode = executive ? "01" : "04";
   employee.contract.contractWorkQuota = snapshot.inputs.pay.contractMonthlyHours;
   employee.contract.workModalityCode = snapshot.inputs.pay.contractMonthlyHours < 151.67 ? "20" : "10";
-  employee.contract.suspensions = mapped.absenceActivity.suspensions.map((item) => ({
+  employee.contract.suspensions = mapped.absenceActivity.unpaidSuspensions.map((item) => ({
     reasonCode: item.reasonCode,
     startDate: new Date(item.start + "T00:00:00.000Z"),
     endDate: new Date(item.end + "T00:00:00.000Z"),
@@ -68,7 +68,7 @@ export function computedDsnFixture(
     pas: { rateType: "01", ratePercent: employeePas.rate * 100, rateIdentifier: "123456789", amountSubjectToPas: employeePas.base, withholdingAmount: employeePas.amount },
     overtimeRemunerations: mapped.overtime.remunerations,
     overtimeTaxExemptNetAmount: mapped.overtime.taxExemptNetAmount,
-    absenceActivityHours: mapped.absenceActivity.hours,
+    unpaidAbsenceHours: mapped.absenceActivity.hours,
   };
   data.assessedBases = mapped.bases;
   data.contributionBordereau = {
