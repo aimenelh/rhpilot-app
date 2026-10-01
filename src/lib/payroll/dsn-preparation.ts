@@ -81,6 +81,89 @@ export function dsnScopeIssues(snapshot: { variables?: unknown[]; validatedAbsen
   return issues;
 }
 
+type DsnWorkStoppage = NonNullable<DsnP26MonthlyInput["employees"][number]["contract"]["workStoppages"]>[number];
+
+function snapshotDate(value: string | null | undefined, label: string): Date {
+  if (!value) throw new Error(`DSN bloquée : ${label} est absent.`);
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) throw new Error(`DSN bloquée : ${label} est invalide.`);
+  return date;
+}
+
+function buildLockedWorkStoppages(input: {
+  snapshot: CalculationSnapshot;
+  locked: ReturnType<typeof readLockedContributionSnapshot>;
+  subrogationIban: string | null;
+  subrogationBic: string | null;
+}): DsnWorkStoppage[] {
+  const byId = new Map((input.locked.inputs.absences ?? []).map((absence) => [absence.id, absence]));
+  const reasonByType: Record<string, DsnWorkStoppage["reasonCode"] | undefined> = {
+    SICK_LEAVE: "01",
+    MATERNITY: "02",
+    PATERNITY: "03",
+    WORK_ACCIDENT: "06",
+  };
+  const stoppages: DsnWorkStoppage[] = [];
+
+  for (const absence of input.snapshot.validatedAbsences ?? []) {
+    const reasonCode = absence.type ? reasonByType[absence.type] : undefined;
+    if (!reasonCode) continue;
+    const absenceId = requiredString(absence.absenceId, "l'identifiant de l'arrêt de travail");
+    const lockedAbsence = byId.get(absenceId);
+    if (!lockedAbsence) throw new Error(`DSN bloquée : l'arrêt ${absenceId} n'est pas présent dans les entrées de paie verrouillées.`);
+    const snapshotStart = snapshotDate(absence.startDate, `la date de début de l'arrêt ${absenceId}`);
+    const snapshotEnd = snapshotDate(absence.endDate, `la date de fin prévisionnelle de l'arrêt ${absenceId}`);
+    if (lockedAbsence.start !== snapshotStart.toISOString().slice(0, 10) || lockedAbsence.end !== snapshotEnd.toISOString().slice(0, 10)) {
+      throw new Error(`DSN bloquée : les dates de l'arrêt ${absenceId} divergent entre les données RH et le bulletin verrouillé.`);
+    }
+    const lastWorkedDate = snapshotDate(absence.lastWorkedDate, `le dernier jour travaillé de l'arrêt ${absenceId}`);
+    if (lastWorkedDate > snapshotEnd) throw new Error(`DSN bloquée : le dernier jour travaillé de l'arrêt ${absenceId} est postérieur à sa fin prévisionnelle.`);
+
+    if (absence.type === "WORK_ACCIDENT") {
+      const accidentDate = snapshotDate(absence.workAccidentDate, `la date de l'accident ${absenceId}`);
+      if (accidentDate > snapshotEnd) throw new Error(`DSN bloquée : la date de l'accident ${absenceId} est postérieure à la fin de l'arrêt.`);
+    }
+
+    const subrogation = input.locked.inputs.organization.ijssSubrogation === true;
+    const subrogationStartDate = absence.subrogationStartDate ? snapshotDate(absence.subrogationStartDate, `le début de subrogation de l'arrêt ${absenceId}`) : null;
+    const subrogationEndDate = absence.subrogationEndDate ? snapshotDate(absence.subrogationEndDate, `la fin de subrogation de l'arrêt ${absenceId}`) : null;
+    if (subrogation && (!subrogationStartDate || !subrogationEndDate || !input.subrogationIban || !input.subrogationBic)) {
+      throw new Error(`DSN bloquée : l'arrêt ${absenceId} est subrogé mais ses dates ou le compte bancaire de réception des IJSS sont incomplets.`);
+    }
+    if (!subrogation && (subrogationStartDate || subrogationEndDate)) {
+      throw new Error(`DSN bloquée : l'arrêt ${absenceId} contient une période de subrogation alors que la paie verrouillée indique l'absence de subrogation.`);
+    }
+
+    const returnDate = absence.returnDate ? snapshotDate(absence.returnDate, `la date de reprise de l'arrêt ${absenceId}`) : null;
+    const returnReasonCode = absence.returnReasonCode?.trim() || null;
+    if ((returnDate && !returnReasonCode) || (!returnDate && returnReasonCode) || (returnReasonCode && !["01", "02", "03"].includes(returnReasonCode))) {
+      throw new Error(`DSN bloquée : la reprise de l'arrêt ${absenceId} est incomplète ou invalide.`);
+    }
+
+    stoppages.push({
+      reasonCode,
+      lastWorkedDate,
+      expectedEndDate: snapshotEnd,
+      subrogation,
+      subrogationStartDate,
+      subrogationEndDate,
+      subrogationIban: subrogation ? input.subrogationIban : null,
+      subrogationBic: subrogation ? input.subrogationBic : null,
+      returnDate,
+      returnReasonCode: returnReasonCode as "01" | "02" | "03" | null,
+    });
+  }
+  return stoppages;
+}
+
+function lockedSubrogatedIjssNet(locked: ReturnType<typeof readLockedContributionSnapshot>): number {
+  return Math.round(locked.bulletin.lines.filter((line) => line.code === "IJSS_SUBROGATION").reduce((total, line) => {
+    const amount = Number(line.amount ?? 0);
+    if (!Number.isFinite(amount) || amount < 0) throw new Error("DSN bloquée : une IJSS subrogée du bulletin verrouillé est invalide.");
+    return total + amount;
+  }, 0) * 100) / 100;
+}
+
 function assertNirBirthYear(nir: string, birthDate: Date, employeeId: string): void {
   if (!(birthDate instanceof Date) || Number.isNaN(birthDate.getTime())) throw new Error(`DSN bloquée : la date de naissance du salarié ${employeeId} est invalide.`);
   const expected = String(birthDate.getUTCFullYear()).slice(-2);
