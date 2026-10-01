@@ -84,6 +84,8 @@ export async function saveDsnOrganizationSettings(
     if (urssafSiret && urssafSiret === retirementSiret) throw new Error("Les organismes Urssaf et retraite doivent être distincts.");
     const paymentIbanCiphertext = value(formData, "paymentIban") ? encryptDsnSensitiveValue(dsnPaymentIban(value(formData, "paymentIban"))) : null;
     const paymentBic = value(formData, "paymentBic") ? dsnPaymentBic(value(formData, "paymentBic")) : null;
+    const subrogationIbanCiphertext = value(formData, "subrogationIban") ? encryptDsnSensitiveValue(dsnPaymentIban(value(formData, "subrogationIban"))) : null;
+    const subrogationBic = value(formData, "subrogationBic") ? dsnPaymentBic(value(formData, "subrogationBic")) : null;
     const sepaMandatesConfirmed = value(formData, "sepaMandatesConfirmed") === "1";
 
     await prisma.$transaction(async (tx) => {
