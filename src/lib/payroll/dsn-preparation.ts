@@ -63,7 +63,6 @@ const DSN_UNMAPPED_BULLETIN_LINES = new Set(["ENTRY_EXIT", "SEVERANCE", "PAID_LE
 export function dsnScopeIssues(snapshot: { variables?: unknown[]; validatedAbsences?: unknown[]; bulletin?: { lines?: Array<{ code?: string; base?: number }> } }): string[] {
   const issues: string[] = [];
   if ((snapshot.bulletin?.lines ?? []).some((line) => line.code && DSN_UNMAPPED_BULLETIN_LINES.has(line.code))) issues.push("entrée, sortie ou indemnité de fin de contrat (blocs S21.G00.62 non émis)");
-  if ((snapshot.variables?.length ?? 0) > 0) issues.push("primes ou variables du mois (blocs primes et autres revenus non émis)");
   if ((snapshot.validatedAbsences?.length ?? 0) > 0) issues.push("absences du mois (blocs d'arrêt et d'activité non émis)");
   return issues;
 }
@@ -234,7 +233,21 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         multipleJobsCode: requiredString(dsnProfile.multipleJobsCode, `le code emplois multiples du salarié ${employee.id}`), multipleEmployersCode: requiredString(dsnProfile.multipleEmployersCode, `le code employeurs multiples du salarié ${employee.id}`),
         workAccidentRegimeCode: requiredString(dsnProfile.workAccidentRegimeCode, `le régime AT/MP du salarié ${employee.id}`), workAccidentRiskCode: riskCode, workAccidentRate: contributions.atmpRatePercent,
       },
-      payroll: { baseSalary: baseSalaryCents / 100, grossAmount, cappedContributionBase, grossSubject: contributions.grossSubject, unemploymentBase: contributions.unemploymentBase, paidHours: contributions.hoursPaid, netBeforeTax, netTaxableAmount: fiscalNet, netSocialAmount, withholdingTax, pas },
+      payroll: {
+        baseSalary: baseSalaryCents / 100,
+        grossAmount,
+        cappedContributionBase,
+        grossSubject: contributions.grossSubject,
+        unemploymentBase: contributions.unemploymentBase,
+        paidHours: contributions.hoursPaid,
+        netBeforeTax,
+        netTaxableAmount: fiscalNet,
+        netSocialAmount,
+        withholdingTax,
+        pas,
+        overtimeRemunerations: contributions.overtime.remunerations,
+        overtimeTaxExemptNetAmount: contributions.overtime.taxExemptNetAmount,
+      },
     });
   }
 
