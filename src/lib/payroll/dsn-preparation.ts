@@ -63,7 +63,8 @@ const DSN_UNMAPPED_BULLETIN_LINES = new Set(["ENTRY_EXIT", "SEVERANCE", "PAID_LE
 export function dsnScopeIssues(snapshot: { variables?: unknown[]; validatedAbsences?: Array<{ type?: string }>; bulletin?: { lines?: Array<{ code?: string; base?: number }> } }): string[] {
   const issues: string[] = [];
   if ((snapshot.bulletin?.lines ?? []).some((line) => line.code && DSN_UNMAPPED_BULLETIN_LINES.has(line.code))) issues.push("entrée, sortie ou indemnité de fin de contrat (blocs S21.G00.62 non émis)");
-  const unsupportedAbsences = (snapshot.validatedAbsences ?? []).filter((absence) => absence?.type !== "UNPAID_LEAVE");
+  const supportedAbsenceTypes = new Set(["UNPAID_LEAVE", "RTT", "FAMILY_EVENT"]);
+  const unsupportedAbsences = (snapshot.validatedAbsences ?? []).filter((absence) => !supportedAbsenceTypes.has(absence?.type ?? ""));
   if (unsupportedAbsences.length > 0) issues.push("absences hors congé sans solde (signalements/blocs d'arrêt ou d'activité non encore émis)");
   return issues;
 }
