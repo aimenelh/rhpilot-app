@@ -204,6 +204,8 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
   if (urssafSiret === retirementSiret) throw new Error("DSN bloquée : les organismes Urssaf et retraite doivent être distincts.");
   const paymentIban = dsnPaymentIban(decryptDsnSensitiveValue(requiredString(organization.paymentIbanCiphertext, "le compte bancaire de prélèvement")));
   const paymentBic = dsnPaymentBic(requiredString(organization.paymentBic, "le BIC"));
+  const subrogationIban = organization.subrogationIbanCiphertext ? dsnPaymentIban(decryptDsnSensitiveValue(organization.subrogationIbanCiphertext)) : null;
+  const subrogationBic = organization.subrogationBic ? dsnPaymentBic(organization.subrogationBic) : null;
   if (!organization.sepaMandatesConfirmed) throw new Error("DSN bloquée : confirmez les mandats SEPA enregistrés auprès des organismes et de la DGFiP.");
   const testMode = input.testMode ?? organization.defaultTestMode ?? true;
   if (!testMode) throw new Error("DSN réelle bloquée : le raccordement des cotisations est en recette. Les affiliations complémentaires, événements et retours métier doivent être validés avant ouverture.");
@@ -294,7 +296,8 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
     assertPayrollOutputConsistency({ grossAmount, employeeContributions, employerContributions, netBeforeTax, netTaxableAmount, netSocialAmount, withholdingTax, netPaid, ...(Number.isFinite(employerCost) ? { employerCost } : {}) });
 
     const withholdingProfile = snapshotWithholdingTax(snapshot, employee.id);
-    assertPasDsnScopeSupported({ source: withholdingProfile.source, contractType: employee.contractType, hireDate: employee.hireDate, contractEndDate: employee.contractEndDate, hasSubrogatedDailyAllowances: false });
+    const subrogatedIjssNetAmount = lockedSubrogatedIjssNet(locked);
+    assertPasDsnScopeSupported({ source: withholdingProfile.source, contractType: employee.contractType, hireDate: employee.hireDate, contractEndDate: employee.contractEndDate, hasSubrogatedDailyAllowances: subrogatedIjssNetAmount > 0 });
     const { fiscalNet, pas } = dsnPasFromLockedBulletin({ withholding: (snapshot.bulletin as { withholding?: unknown } | undefined)?.withholding, profile: withholdingProfile, payrollDepartment, contractType: employee.contractType, netTaxableAmount, withholdingAmount: withholdingTax });
 
     const nir = assertNirFormat(decryptDsnSensitiveValue(dsnProfile.nirCiphertext));
