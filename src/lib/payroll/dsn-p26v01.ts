@@ -1,6 +1,7 @@
 import type { DsnPasData } from "./pas-dsn";
 import { checkSiret } from "../siret";
 import { assertDsnWorkAccidentRiskCode } from "./dsn-nomenclature";
+import { dsnPaymentBic, dsnPaymentIban } from "./dsn-payment-settings";
 
 export const DSN_NORM_VERSION = "P26V01";
 
@@ -71,6 +72,20 @@ export type DsnP26MonthlyInput = {
       workAccidentRegimeCode: string;
       workAccidentRiskCode: string;
       workAccidentRate: number | null;
+      /** Arrêts de travail récapitulés dans la DSN mensuelle. */
+      workStoppages?: Array<{
+        reasonCode: "01" | "02" | "03" | "06";
+        lastDayWorked: Date;
+        expectedEndDate: Date;
+        subrogationCode: "01" | "02";
+        subrogationStartDate?: Date;
+        subrogationEndDate?: Date;
+        subrogationIban?: string;
+        subrogationBic?: string;
+        recoveryDate?: Date;
+        recoveryReasonCode?: "01";
+        accidentDate?: Date;
+      }>;
       /** Suspensions mensuelles rattachées au contrat. */
       suspensions?: Array<{ reasonCode: "501"; startDate: Date; endDate: Date }>;
     };
@@ -90,8 +105,8 @@ export type DsnP26MonthlyInput = {
       overtimeRemunerations?: Array<{ type: "017" | "018"; hours: number; amount: number }>;
       /** Montant net fiscal des HS/HC exonérées à déclarer en S21.G00.58 type 01. */
       overtimeTaxExemptNetAmount?: number;
-      /** Volume d'absence partiellement ou pas du tout rémunérée (S21.G00.53 type 02). */
-      unpaidAbsenceHours?: number;
+      /** Volume réel d'absence partiellement ou pas du tout rémunérée (S21.G00.53 type 02). */
+      absenceActivityHours?: number;
     };
   }>;
 };
@@ -321,6 +336,36 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
       add(lines, "S21.G00.40.043", decimal(employee.contract.workAccidentRate));
     }
 
+    for (const stoppage of employee.contract.workStoppages ?? []) {
+      if (stoppage.expectedEndDate < stoppage.lastDayWorked) throw new Error("DSN bloquée : la fin prévisionnelle d'un arrêt précède son dernier jour travaillé.");
+      add(lines, "S21.G00.60.001", stoppage.reasonCode);
+      add(lines, "S21.G00.60.002", dsnDate(stoppage.lastDayWorked));
+      add(lines, "S21.G00.60.003", dsnDate(stoppage.expectedEndDate));
+      add(lines, "S21.G00.60.004", stoppage.subrogationCode);
+      if (stoppage.subrogationCode === "01") {
+        if (!stoppage.subrogationStartDate || !stoppage.subrogationEndDate || !stoppage.subrogationIban || !stoppage.subrogationBic) {
+          throw new Error("DSN bloquée : la subrogation exige ses dates, l'IBAN et le BIC de l'employeur.");
+        }
+        if (stoppage.subrogationEndDate < stoppage.subrogationStartDate) throw new Error("DSN bloquée : la fin de subrogation précède son début.");
+        add(lines, "S21.G00.60.005", dsnDate(stoppage.subrogationStartDate));
+        add(lines, "S21.G00.60.006", dsnDate(stoppage.subrogationEndDate));
+        add(lines, "S21.G00.60.007", dsnPaymentIban(stoppage.subrogationIban));
+        add(lines, "S21.G00.60.008", dsnPaymentBic(stoppage.subrogationBic));
+      } else if (stoppage.subrogationStartDate || stoppage.subrogationEndDate || stoppage.subrogationIban || stoppage.subrogationBic) {
+        throw new Error("DSN bloquée : les données bancaires/de période de subrogation sont interdites lorsque la subrogation vaut non.");
+      }
+      if (stoppage.recoveryDate) {
+        add(lines, "S21.G00.60.010", dsnDate(stoppage.recoveryDate));
+        add(lines, "S21.G00.60.011", stoppage.recoveryReasonCode ?? "01");
+      }
+      if (stoppage.reasonCode === "06") {
+        if (!stoppage.accidentDate) throw new Error("DSN bloquée : la date de l'accident est obligatoire pour un arrêt AT.");
+        add(lines, "S21.G00.60.012", dsnDate(stoppage.accidentDate));
+      } else if (stoppage.accidentDate) {
+        throw new Error("DSN bloquée : une date d'accident ne peut être déclarée que pour un arrêt AT.");
+      }
+    }
+
     for (const suspension of employee.contract.suspensions ?? []) {
       if (suspension.endDate < suspension.startDate) throw new Error("DSN bloquée : une suspension de contrat se termine avant de commencer.");
       add(lines, "S21.G00.65.001", suspension.reasonCode);
@@ -346,11 +391,11 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
 
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "001", employee.payroll.grossAmount);
     const paidHours = employee.payroll.paidHours ?? employee.contract.contractWorkQuota;
-    const unpaidAbsenceHours = employee.payroll.unpaidAbsenceHours ?? 0;
-    if (!Number.isFinite(unpaidAbsenceHours) || unpaidAbsenceHours < 0) throw new Error("DSN bloquée : le volume d'absence non rémunérée est invalide.");
+    const absenceActivityHours = employee.payroll.absenceActivityHours ?? 0;
+    if (!Number.isFinite(absenceActivityHours) || absenceActivityHours < 0) throw new Error("DSN bloquée : le volume d'absence partiellement ou pas du tout rémunérée est invalide.");
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "002", employee.payroll.unemploymentBase ?? employee.payroll.grossAmount, [
       { type: "01", measure: paidHours, unit: workUnitCode },
-      ...(unpaidAbsenceHours > 0 ? [{ type: "02" as const, measure: unpaidAbsenceHours, unit: workUnitCode }] : []),
+      ...(absenceActivityHours > 0 ? [{ type: "02" as const, measure: absenceActivityHours, unit: workUnitCode }] : []),
     ]);
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "003", employee.payroll.baseSalary);
     addRemuneration(lines, periodStart, periodEnd, contractNumber, "010", employee.payroll.baseSalary);

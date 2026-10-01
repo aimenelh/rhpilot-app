@@ -111,9 +111,44 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     expect(() => buildDsnP26V01Complete(data)).not.toThrow();
   });
 
-  it("continue de bloquer les absences nécessitant un signalement métier", () => {
-    const snapshot = computedSnapshot({ absences: [{ id: "rtt-1", kind: "RTT", start: "2026-01-12", end: "2026-01-12" }] });
-    expect(() => mapLockedContributions({ snapshot, ...ids })).toThrow(/absences autres que sans solde|blocs déclaratifs propres/i);
+  it("raccorde un arrêt maladie non subrogé au bloc 60 et à l'activité 02", () => {
+    const ordinary = computedSnapshot();
+    const absence = { id: "sick-1", kind: "SICK_LEAVE" as const, start: "2026-01-12" as const, end: "2026-01-16" as const, ijssGrossAmount: 0 };
+    const snapshot = computedSnapshot({ organization: { ...ordinary.inputs.organization, ijssSubrogation: false }, absences: [absence] });
+    const mapped = mapLockedContributions({ snapshot, ...ids });
+    expect(mapped.workStoppages.hours).toBe(35);
+    expect(mapped.activityAbsenceHours).toBe(35);
+    expect(mapped.activityPaidHours).toBe(116.67);
+    expect(mapped.workStoppages.stoppages).toEqual([{
+      reasonCode: "01",
+      lastDayWorked: "2026-01-11",
+      expectedEnd: "2026-01-16",
+      subrogationCode: "02",
+    }]);
+
+    const data = computedDsnFixture(2500, 151.67, false, { ijssSubrogation: false }, false, { absences: [absence] });
+    const content = buildDsnP26V01Complete(data);
+    expect(content).toContain("S21.G00.60.001,'01'");
+    expect(content).toContain("S21.G00.60.002,'11012026'");
+    expect(content).toContain("S21.G00.60.003,'16012026'");
+    expect(content).toContain("S21.G00.60.004,'02'");
+    expect(content).toContain("S21.G00.53.001,'02'");
+    expect(content).toContain("S21.G00.53.002,'35.00'");
+    expect(content).not.toContain("S21.G00.60.010,");
+  });
+
+  it("bloque un arrêt subrogé tant que sa période et son compte IJSS ne sont pas explicitement stockés", () => {
+    const absence = { id: "sick-subrogated", kind: "SICK_LEAVE" as const, start: "2026-01-12" as const, end: "2026-01-16" as const, ijssGrossAmount: 0 };
+    const snapshot = computedSnapshot({ absences: [absence] });
+    expect(() => mapLockedContributions({ snapshot, ...ids })).toThrow(/arrêt subrogé.*période de subrogation.*compte bancaire IJSS/i);
+  });
+
+  it("continue de bloquer l'AT et les autres absences non encore raccordées", () => {
+    const ordinary = computedSnapshot();
+    const at = computedSnapshot({ organization: { ...ordinary.inputs.organization, ijssSubrogation: false }, absences: [{ id: "at-1", kind: "WORK_ACCIDENT", start: "2026-01-12", end: "2026-01-16", ijssGrossAmount: 0 }] });
+    expect(() => mapLockedContributions({ snapshot: at, ...ids })).toThrow(/AT\/MP|bloc déclaratif spécifique/i);
+    const rtt = computedSnapshot({ absences: [{ id: "rtt-1", kind: "RTT", start: "2026-01-12", end: "2026-01-12" }] });
+    expect(() => mapLockedContributions({ snapshot: rtt, ...ids })).toThrow(/bloc déclaratif spécifique/i);
   });
 
   it("laisse passer une prime mensuelle ordinaire dans les rémunérations et assiettes sans inventer un bloc 52", () => {

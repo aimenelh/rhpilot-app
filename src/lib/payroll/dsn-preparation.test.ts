@@ -19,10 +19,14 @@ describe("périmètre de la DSN préparatoire", () => {
     expect(issues).toEqual([]);
   });
 
-  it("liste encore les événements de contrat et les autres absences non déclarables", () => {
-    const issues = dsnScopeIssues({ variables: [{}], validatedAbsences: [{ type: "SICK_LEAVE" }], bulletin: { lines: [{ code: "ENTRY_EXIT" }] } });
+  it("accepte maladie, maternité et paternité dans le périmètre mensuel", () => {
+    expect(dsnScopeIssues({ validatedAbsences: [{ type: "SICK_LEAVE" }, { type: "MATERNITY" }, { type: "PATERNITY" }] })).toEqual([]);
+  });
+
+  it("liste encore les événements de contrat et les absences non raccordées", () => {
+    const issues = dsnScopeIssues({ variables: [{}], validatedAbsences: [{ type: "WORK_ACCIDENT" }], bulletin: { lines: [{ code: "ENTRY_EXIT" }] } });
     expect(issues).toHaveLength(2);
     expect(issues.join(" ")).toMatch(/entrée|sortie/);
-    expect(issues.join(" ")).toMatch(/absences/);
+    expect(issues.join(" ")).toMatch(/absences/i);
   });
 });
