@@ -206,7 +206,6 @@ function addRemuneration(
   for (const activity of activities ?? []) {
     if (type !== "002") throw new Error("DSN bloquée : les activités en heures sont rattachées à la rémunération 002.");
     if (!Number.isFinite(activity.measure) || activity.measure < 0) throw new Error("DSN bloquée : un volume d'activité est invalide.");
-    if (activity.measure === 0) continue;
     add(lines, "S21.G00.53.001", activity.type);
     add(lines, "S21.G00.53.002", decimal(activity.measure));
     add(lines, "S21.G00.53.003", assertCode(activity.unit, "l'unité de l'activité", 2, 2));
