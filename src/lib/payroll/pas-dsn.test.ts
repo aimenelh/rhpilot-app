@@ -63,7 +63,7 @@ describe("PAS DSN P26V01", () => {
     ).toThrow(/ne correspond pas/i);
   });
 
-  it("blocks a short fixed-term contract with a neutral rate until the special base rule is modelled", () => {
+  it("blocks a short fixed-term contract without its frozen fiscal breakdown", () => {
     expect(() =>
       assertPasDsnScopeSupported({
         source: "NON_PERSONNALISE",
@@ -72,5 +72,11 @@ describe("PAS DSN P26V01", () => {
         contractEndDate: new Date("2026-07-15T00:00:00.000Z"),
       }),
     ).toThrow(/CDD court/i);
+  });
+  it("allows a short CDD with its verified allowance and refuses an incorrect or outdated amount", () => {
+    const input = { source: "NON_PERSONNALISE", contractType: "CDD", hireDate: new Date("2026-06-01"), contractEndDate: new Date("2026-07-15"), period: { year: 2026, month: 6 }, paymentDate: "2026-06-30", plannedContractDays: 45, lockedFiscalBreakdown: { shortContractAllowance: 766 } };
+    expect(() => assertPasDsnScopeSupported(input)).not.toThrow();
+    expect(() => assertPasDsnScopeSupported({ ...input, lockedFiscalBreakdown: { shortContractAllowance: 748 } })).toThrow(/abattement CDD/);
+    expect(() => assertPasDsnScopeSupported({ ...input, lockedFiscalBreakdown: { shortContractAllowance: 0 } })).toThrow(/abattement CDD/);
   });
 });

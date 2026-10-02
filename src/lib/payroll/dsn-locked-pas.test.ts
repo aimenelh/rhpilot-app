@@ -28,4 +28,16 @@ describe("reprise du PAS verrouillé en DSN", () => {
     expect(() => dsnPasFromLockedBulletin({ ...data(), withholding: null })).toThrow(/manque/);
     expect(() => dsnPasFromLockedBulletin({ ...data(), withholding: { base: 816, rate: 0.1, amount: 81.6 } })).toThrow(/historique/);
   });
+  it("conserve la RNF complète d'un CDD et son assiette après abattement", () => {
+    const result = dsnPasFromLockedBulletin({ profile: { rate: 0.013, validFrom: new Date("2026-06-01"), validUntil: null, source: "NON_PERSONNALISE", sourceReference: null }, payrollDepartment: "34", contractType: "CDD", netTaxableAmount: 2500, withholdingAmount: 22.54,
+      withholding: { rate: 0.013, amount: 22.54, base: 1734, fiscalNetBeforeExemption: 2500, nonTaxableApprenticeIncome: 0, taxableSubrogatedIjss: 0, shortContractAllowance: 766 } });
+    expect(result.fiscalNet).toBe(2500);
+    expect(result.pas.amountSubjectToPas).toBe(1734);
+    expect(result.pas.rateType).toBe("13");
+    expect(result.pas.rateIdentifier).toBeNull();
+    expect(result.fiscalBreakdown?.shortContractAllowance).toBe(766);
+  });
+  it("refuse un abattement court sur un CDI ou un taux personnalisé", () => {
+    expect(() => dsnPasFromLockedBulletin({ ...data(), contractType: "CDI", withholding: { ...data().withholding, nonTaxableApprenticeIncome: 0, shortContractAllowance: 1184 } })).toThrow(/contrat court/);
+  });
 });

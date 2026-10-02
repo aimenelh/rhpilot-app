@@ -5,6 +5,7 @@ import type { PayslipInput } from "../../src/lib/payroll/bulletin/types";
 import { mapLockedContributions } from "../../src/lib/payroll/dsn-locked-contributions";
 import type { DsnP26CompleteInput } from "../../src/lib/payroll/dsn-p26v01-complete";
 import { mappedDsnFixture } from "./dsn-fixture";
+import { dsnPasFromLockedBulletin } from "../../src/lib/payroll/dsn-locked-pas";
 
 type FixtureStoppageMetadata = {
   absenceId: string; type: string; startDate: string; endDate: string;
@@ -64,6 +65,8 @@ export function computedDsnFixture(
   const employeePas = snapshot.bulletin.withholding;
   data.period = { ...snapshot.inputs.period, paymentDate: new Date(snapshot.inputs.paymentDate ?? new Date(Date.UTC(snapshot.inputs.period.year, snapshot.inputs.period.month, 0)).toISOString().slice(0, 10)) };
   employee.contract.startDate = new Date(snapshot.inputs.employee.hireDate + "T00:00:00.000Z");
+  employee.contract.contractNatureCode = snapshot.inputs.employee.contract === "CDD" ? "02" : "01";
+  employee.contract.endDate = snapshot.inputs.employee.contractEndDate ? new Date(snapshot.inputs.employee.contractEndDate + "T00:00:00.000Z") : null;
   employee.contract.workAccidentRate = mapped.atmpRatePercent;
   employee.contract.conventionalStatusCode = executive ? "04" : "06";
   employee.contract.retirementStatusCode = executive ? "01" : "04";
@@ -92,7 +95,8 @@ export function computedDsnFixture(
     paidLeaveIndemnities: mapped.remuneration.paidLeaveIndemnities.map((item) => ({ type: item.type, amount: item.amount, startDate: new Date(item.start + "T00:00:00.000Z"), endDate: new Date(item.end + "T00:00:00.000Z") })),
     netBeforeTax: totals.netBeforeTax, netTaxableAmount: employeePas.fiscalNetBeforeExemption ?? totals.netTaxable, netSocialAmount: totals.netSocial,
     withholdingTax: totals.withholdingTax,
-    pas: { rateType: "01", ratePercent: employeePas.rate * 100, rateIdentifier: "123456789", amountSubjectToPas: employeePas.base, withholdingAmount: employeePas.amount },
+    pas: dsnPasFromLockedBulletin({ withholding: employeePas, profile: { rate: employeePas.rate, validFrom: new Date("2026-01-01"), validUntil: null, source: snapshot.inputs.withholding.mode === "PERSONALIZED" ? "DGFIP" : "NON_PERSONNALISE", sourceReference: employeePas.rateIdentifier },
+      payrollDepartment: "34", contractType: snapshot.inputs.employee.contract, netTaxableAmount: totals.netTaxable, withholdingAmount: employeePas.amount }).pas,
     overtimeRemunerations: mapped.overtime.remunerations,
     overtimeTaxExemptNetAmount: mapped.overtime.taxExemptNetAmount,
     absenceActivityHours: mapped.activityAbsenceHours,

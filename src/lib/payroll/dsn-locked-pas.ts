@@ -9,7 +9,7 @@ export function dsnPasFromLockedBulletin(input: {
   contractType: string;
   netTaxableAmount: number;
   withholdingAmount: number;
-}): { fiscalNet: number; pas: DsnPasData } {
+}): { fiscalNet: number; pas: DsnPasData; fiscalBreakdown?: { shortContractAllowance: number } } {
   if (!input.withholding || typeof input.withholding !== "object" || Array.isArray(input.withholding)) {
     throw new Error("DSN bloquée : le résultat PAS du bulletin verrouillé manque. Recalculez la période avant validation.");
   }
@@ -33,11 +33,12 @@ export function dsnPasFromLockedBulletin(input: {
   if (hasFiscalData) {
     const ijss = numeric("taxableSubrogatedIjss");
     const allowance = numeric("shortContractAllowance");
+    if (allowance > 0 && (input.contractType !== "CDD" || input.profile.source !== "NON_PERSONNALISE")) throw new Error("DSN bloquée : l'abattement contrat court n'est compatible qu'avec un CDD sans taux personnalisé.");
     const expectedBase = Math.round(Math.max(0, fiscalNet - (nonTaxable ?? 0) + ijss - allowance) * 100) / 100;
     if (Math.abs(base - expectedBase) > 0.005) throw new Error("DSN bloquée : la décomposition fiscale du bulletin ne correspond pas à son assiette PAS.");
   } else if (Math.abs(base - input.netTaxableAmount) > 0.005) {
     throw new Error("DSN bloquée : l'assiette fiscale différente du net imposable n'est pas détaillée dans ce bulletin historique.");
   }
   const pas = buildDsnPasData({ profile: input.profile, payrollDepartment: input.payrollDepartment, netTaxableAmount: fiscalNet, amountSubjectToPas: base, withholdingAmount: amount, ...(input.contractType === "APPRENTISSAGE" ? { nonTaxableApprenticeIncome: nonTaxable } : {}) });
-  return { fiscalNet, pas };
+  return { fiscalNet, pas, ...(hasFiscalData ? { fiscalBreakdown: { shortContractAllowance: numeric("shortContractAllowance") } } : {}) };
 }

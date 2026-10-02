@@ -59,7 +59,7 @@ export type EmployeePayrollContext = {
   contractEndDate?: IsoDay | null;
   /** Date d'ancienneté retenue pour le maintien de salaire (par défaut l'embauche). */
   seniorityDate?: IsoDay | null;
-  /** CDD : durée prévue en jours, pour l'abattement « contrat court » du PAS. */
+  /** CDD : durée initiale ou minimale en jours, pour l'abattement « contrat court » du PAS. */
   plannedContractDays?: number | null;
   birthDate?: IsoDay | null;
 };

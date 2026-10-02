@@ -678,6 +678,7 @@ model dsn_employee_profiles {
   countryCode              String?
   contractNumber           String
   contractNatureCode       String
+  fixedTermReasonCode      String?
   publicPolicyCode         String   @default("99")
   pcsEsecCode              String
   conventionalStatusCode   String

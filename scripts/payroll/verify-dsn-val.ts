@@ -32,6 +32,13 @@ function accept(name: string, content: string): void {
 }
 
 const single = mappedDsnFixture();
+for (const gross of [2500, 6000]) {
+  const cdd = computedDsnFixture(gross, 151.67, false, undefined, false, {
+  employee: { id: "employee-test", displayName: "CDD Test", contract: "CDD", executive: false, hireDate: "2026-01-01", contractEndDate: "2026-02-15", plannedContractDays: 46 }, withholding: { mode: "DEFAULT_GRID" },
+  });
+  cdd.employees[0].contract.fixedTermReasonCode = "01"; // Cas synthétique : remplacement déclaré explicitement.
+  accept(`bulletin-cdd-court-pas-neutre-${gross}`, buildDsnP26V01Complete(cdd));
+}
 for (const reason of ["01", "02", "03", "06"] as const) {
   for (const subrogation of [false, true]) accept(`signalement-arret-${reason}-${subrogation ? "subroge" : "direct"}`, buildDsnP26WorkEvent(workEventFixture(reason, subrogation)));
 }

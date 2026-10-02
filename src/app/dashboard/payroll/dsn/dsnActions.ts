@@ -10,6 +10,8 @@ import { getPayrollMembership } from "@/lib/payrollAccess";
 import { userFacingError } from "@/lib/userFacingError";
 import { dsnOpsSiret, dsnPaymentIban, dsnPaymentBic } from "@/lib/payroll/dsn-payment-settings";
 import { assertDsnWorkAccidentRiskCode } from "@/lib/payroll/dsn-nomenclature";
+import { dsnFixedTermReason } from "@/lib/payroll/dsn-fixed-term";
+import { parseIsoDateOnly } from "@/lib/dateOnly";
 
 export type DsnFormState = { error?: string; success?: string } | undefined;
 
@@ -155,8 +157,8 @@ export async function saveDsnEmployeeProfile(
     if (!nirCiphertext) throw new Error("Le NIR est obligatoire lors de la première configuration DSN du salarié.");
 
     const birthDateRaw = required(formData, "birthDate", "La date de naissance");
-    const birthDate = new Date(`${birthDateRaw}T00:00:00.000Z`);
-    if (Number.isNaN(birthDate.getTime())) throw new Error("La date de naissance est invalide.");
+    const birthDate = parseIsoDateOnly(birthDateRaw);
+    if (!birthDate) throw new Error("La date de naissance est invalide.");
 
     const birthPlace = required(formData, "birthPlace", "Le lieu de naissance");
     const birthDepartment = exactCode(formData, "birthDepartment", "Le département de naissance", 2);
@@ -177,6 +179,7 @@ export async function saveDsnEmployeeProfile(
 
     const contractNatureCode = exactCode(formData, "contractNatureCode", "La nature du contrat", 2);
     const publicPolicyCode = exactCode(formData, "publicPolicyCode", "Le dispositif de politique publique", 2);
+    const fixedTermReasonCode = dsnFixedTermReason(contractNatureCode, publicPolicyCode, value(formData, "fixedTermReasonCode"));
     const pcsEsecCode = code(formData, "pcsEsecCode", "Le code PCS-ESE", 6);
     const conventionalStatusCode = exactCode(formData, "conventionalStatusCode", "Le statut conventionnel", 2);
     const retirementStatusCode = exactCode(formData, "retirementStatusCode", "Le statut retraite complémentaire", 2);
@@ -207,7 +210,7 @@ export async function saveDsnEmployeeProfile(
         INSERT INTO "dsn_employee_profiles"
           ("id", "organizationId", "employeeId", "nirCiphertext", "birthDate", "birthPlace",
            "birthDepartment", "birthCountryCode", "euClassificationCode", "addressLine", "postalCode", "city", "countryCode", "contractNumber",
-           "contractNatureCode", "publicPolicyCode", "pcsEsecCode", "conventionalStatusCode",
+           "contractNatureCode", "fixedTermReasonCode", "publicPolicyCode", "pcsEsecCode", "conventionalStatusCode",
            "retirementStatusCode", "workUnitCode", "referenceWorkQuota", "contractWorkQuota",
            "workModalityCode", "baseSchemeSupplementCode", "sicknessRegimeCode", "workLocationId", "oldAgeRegimeCode",
            "foreignWorkerCode", "employmentStatusCode", "multipleJobsCode", "multipleEmployersCode",
@@ -215,7 +218,7 @@ export async function saveDsnEmployeeProfile(
         VALUES
           (${id}, ${membership.organizationId}, ${employee.id}, ${nirCiphertext}, ${birthDate}::date, ${birthPlace},
            ${birthDepartment}, ${birthCountryCode}, ${euClassificationCode}, ${addressLine}, ${postalCode}, ${city}, ${countryCode}, ${contractNumber},
-           ${contractNatureCode}, ${publicPolicyCode}, ${pcsEsecCode}, ${conventionalStatusCode},
+           ${contractNatureCode}, ${fixedTermReasonCode}, ${publicPolicyCode}, ${pcsEsecCode}, ${conventionalStatusCode},
            ${retirementStatusCode}, ${workUnitCode}, ${referenceWorkQuota}, ${contractWorkQuota},
            ${workModalityCode}, ${baseSchemeSupplementCode}, ${sicknessRegimeCode}, ${workLocationId}, ${oldAgeRegimeCode},
            ${foreignWorkerCode}, ${employmentStatusCode}, ${multipleJobsCode}, ${multipleEmployersCode},
@@ -233,6 +236,7 @@ export async function saveDsnEmployeeProfile(
           "countryCode" = EXCLUDED."countryCode",
           "contractNumber" = EXCLUDED."contractNumber",
           "contractNatureCode" = EXCLUDED."contractNatureCode",
+          "fixedTermReasonCode" = EXCLUDED."fixedTermReasonCode",
           "publicPolicyCode" = EXCLUDED."publicPolicyCode",
           "pcsEsecCode" = EXCLUDED."pcsEsecCode",
           "conventionalStatusCode" = EXCLUDED."conventionalStatusCode",
