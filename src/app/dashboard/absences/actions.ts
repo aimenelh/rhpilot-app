@@ -7,6 +7,8 @@ import { prisma } from "@/lib/prisma";
 import { storeAbsenceJustification } from "@/lib/absence-justification-storage";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
 import { userFacingError } from "@/lib/userFacingError";
+import { recordWorkStoppageRecovery } from "@/lib/payroll/work-stoppage-recovery";
+import { assertAbsenceStartsAfterClosedPayroll, invalidateOpenPayrollFrom, lockPayrollAbsenceChanges } from "@/lib/payroll/period-absence-safety";
 
 const ABSENCE_TYPES = ["PAID_LEAVE", "RTT", "SICK_LEAVE", "WORK_ACCIDENT", "UNPAID_LEAVE", "FAMILY_EVENT", "MATERNITY", "PATERNITY", "OTHER"] as const;
 type AbsenceTypeValue = (typeof ABSENCE_TYPES)[number];
@@ -25,6 +27,22 @@ function revalidateAbsenceViews() {
   revalidatePath("/dashboard/absences");
   revalidatePath("/dashboard/calendar");
   revalidatePath("/dashboard/payroll");
+  revalidatePath("/dashboard/payroll/dsn");
+}
+
+export async function recordAbsenceRecovery(absenceId: string, formData: FormData): Promise<AbsenceActionState> {
+  const membership = await getCurrentMembership();
+  const user = await getCurrentUser();
+  if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
+  if (!isAdmin(membership.accessRole)) return { error: "Seuls les administrateurs peuvent enregistrer une reprise." };
+  try {
+    const result = await recordWorkStoppageRecovery({ organizationId: membership.organizationId, actorUserId: user.id, absenceId,
+      returnDate: String(formData.get("returnDate") ?? "").trim(), returnReasonCode: String(formData.get("returnReasonCode") ?? "").trim() });
+    revalidateAbsenceViews();
+    return { success: result.invalidatedPeriods > 0 ? "Reprise enregistrée. Recalculez les périodes ouvertes concernées avant validation." : "Reprise enregistrée. Les bulletins clôturés sont conservés." };
+  } catch (error) {
+    return { error: userFacingError(error, "La reprise n'a pas pu être enregistrée. Réessayez.") };
+  }
 }
 
 async function findOverlap(input: {
@@ -452,37 +470,25 @@ export async function validateAbsence(absenceId: string): Promise<AbsenceActionS
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!isAdmin(membership.accessRole)) return { error: "Seuls les administrateurs peuvent valider une absence." };
-  const absence = await prisma.absence.findFirst({
-    where: { id: absenceId, organizationId: membership.organizationId },
-    include: { justifications: { orderBy: { createdAt: "desc" }, take: 1 } },
-  });
-  if (!absence) return { error: "Absence introuvable." };
-  if (absence.payrollImpactStatus === "INTEGRATED") return { error: "Cette absence est déjà intégrée à la paie." };
-  if (absence.justificationRequired) {
-    const justification = absence.justifications[0];
-    if (!justification || justification.status !== "VALIDATED") return { error: "Le justificatif doit être vérifié avant de valider cette absence." };
-  }
-  if (absence.status === "VALIDATED" && absence.payrollImpactStatus === "READY") return undefined;
-
-  await prisma.$transaction(async (tx) => {
-    await tx.absence.update({
-      where: { id: absence.id },
-      data: { status: "VALIDATED", payrollImpactStatus: "READY", validatedByUserId: user.id, validatedAt: new Date(), rejectedReason: null },
-    });
-    await tx.auditLog.create({
-      data: {
-        id: randomUUID(),
-        organizationId: membership.organizationId,
-        actorUserId: user.id,
-        action: "absence.validated",
-        entityType: "Absence",
-        entityId: absence.id,
-        metadata: { payrollImpactStatus: "READY" },
-      },
-    });
-  });
+  let invalidatedPeriods = 0;
+  try {
+    await prisma.$transaction(async (tx) => {
+      await lockPayrollAbsenceChanges(tx, membership.organizationId);
+      await tx.$queryRaw`SELECT "id" FROM "absences" WHERE "id" = ${absenceId} AND "organizationId" = ${membership.organizationId} FOR UPDATE`;
+      const absence = await tx.absence.findFirst({ where: { id: absenceId, organizationId: membership.organizationId }, include: { justifications: { orderBy: { createdAt: "desc" }, take: 1 } } });
+      if (!absence) throw new Error("Absence introuvable.");
+      if (absence.status === "VALIDATED" && ["READY", "INTEGRATED"].includes(absence.payrollImpactStatus)) return;
+      if (absence.payrollImpactStatus === "INTEGRATED") throw new Error("Cette absence est déjà intégrée à la paie.");
+      if (absence.justificationRequired && absence.justifications[0]?.status !== "VALIDATED") throw new Error("Le justificatif doit être vérifié avant de valider cette absence.");
+      await assertAbsenceStartsAfterClosedPayroll(tx, membership.organizationId, absence.employeeId, absence.startDate);
+      await tx.absence.update({ where: { id: absence.id }, data: { status: "VALIDATED", payrollImpactStatus: "READY", validatedByUserId: user.id, validatedAt: new Date(), rejectedReason: null } });
+      invalidatedPeriods = (await invalidateOpenPayrollFrom(tx, membership.organizationId, absence.employeeId, absence.startDate)).count;
+      await tx.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "absence.validated", entityType: "Absence", entityId: absence.id,
+        metadata: { payrollImpactStatus: "READY", invalidatedPeriods } } });
+    }, { maxWait: 10000, timeout: 20000 });
+  } catch (error) { return { error: userFacingError(error, "La validation de l'absence a échoué.") }; }
   revalidateAbsenceViews();
-  return { success: "Absence validée et prête pour le traitement paie." };
+  return { success: invalidatedPeriods > 0 ? "Absence validée. Recalculez les périodes ouvertes concernées avant validation de la paie." : "Absence validée et prête pour le traitement paie." };
 }
 
 export async function rejectAbsence(absenceId: string, reason: string): Promise<AbsenceActionState> {

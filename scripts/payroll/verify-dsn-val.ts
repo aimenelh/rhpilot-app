@@ -100,6 +100,10 @@ for (const referenceGross of [12000, 60000]) {
   })));
 }
 const ordinaryEmployee = { id: "employee-test", displayName: "Maxime Dupont", contract: "CDI" as const, executive: false, hireDate: "2026-01-12" };
+accept("bulletin-reprise-premier-fevrier", buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, false,
+  { ijssSubrogation: false }, false, { period: { year: 2026, month: 2 }, absences: [{ id: "previous-stoppage", kind: "SICK_LEAVE", start: "2026-01-20", end: "2026-01-31" }] },
+  { "previous-stoppage": { returnDate: "2026-02-01", returnReasonCode: "01" } },
+)));
 accept("bulletin-entree-12-janvier", buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, false, undefined, false, { employee: ordinaryEmployee })));
 accept("bulletin-droits-chomage-18000", buildDsnP26V01Complete(computedDsnFixture(18000)));
 

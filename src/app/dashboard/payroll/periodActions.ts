@@ -8,6 +8,7 @@ import { calculatePayrollPeriod } from "@/lib/payroll/payroll-period-calculation
 import { ENGINE_COMPUTED_VARIABLES, getBulletinVariable } from "@/lib/payroll/bulletin/variables";
 import { getPayrollMembership } from "@/lib/payrollAccess";
 import { userFacingError } from "@/lib/userFacingError";
+import { assertCurrentPayrollAbsences, assertPayrollPeriodStatus, lockPayrollAbsenceChanges } from "@/lib/payroll/period-absence-safety";
 
 const VARIABLE_UNITS = ["EUR", "DAYS", "HOURS", "PERCENT", "UNITS"] as const;
 type VariableUnit = (typeof VARIABLE_UNITS)[number];
@@ -153,10 +154,14 @@ export async function movePayrollPeriodToReviewAction(_prevState: PayrollReviewF
   ]);
   if (employeeCount === 0) return { error: "Aucun salarié actif n'est disponible pour cette période." };
   if (calculationCount !== employeeCount) return { error: `Contrôle impossible : ${calculationCount}/${employeeCount} salarié${employeeCount > 1 ? "s" : ""} calculé${employeeCount > 1 ? "s" : ""}.` };
-  await prisma.$transaction(async (tx) => {
-    await tx.payrollPeriod.update({ where: { id: period.id }, data: { status: "REVIEW" } });
-    await tx.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.period.review.started", entityType: "PayrollPeriod", entityId: period.id, metadata: { employeeCount, calculationCount } } });
-  });
+  try {
+    await prisma.$transaction(async (tx) => {
+      await lockPayrollAbsenceChanges(tx, membership.organizationId);
+      await assertPayrollPeriodStatus(tx, membership.organizationId, period.id, "CALCULATED");
+      await tx.payrollPeriod.update({ where: { id: period.id }, data: { status: "REVIEW" } });
+      await tx.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.period.review.started", entityType: "PayrollPeriod", entityId: period.id, metadata: { employeeCount, calculationCount } } });
+    });
+  } catch (error) { return { error: userFacingError(error, "Le passage en contrôle a échoué.") }; }
   revalidatePath(`/dashboard/payroll/${periodId}`);
   revalidatePath("/dashboard/payroll");
   return undefined;
@@ -179,10 +184,19 @@ export async function validatePayrollPeriodAction(_prevState: PayrollValidationF
   const invalidCalculation = calculations.find((calculation) => !calculation.ruleSetVersion || calculation.calculationSnapshot === null || Number(calculation.grossAmount) < 0 || Number(calculation.employeeContributions) < 0 || Number(calculation.employerContributions) < 0 || Number(calculation.netBeforeTax) < 0 || Number(calculation.withholdingTax) < 0 || Number(calculation.netPaid) < 0);
   if (invalidCalculation) return { error: "Validation impossible : un calcul enregistré est incohérent ou incomplet." };
   const validatedAt = new Date();
-  await prisma.$transaction(async (tx) => {
-    await tx.payrollPeriod.update({ where: { id: period.id }, data: { status: "VALIDATED", validatedAt } });
-    await tx.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.period.validated", entityType: "PayrollPeriod", entityId: period.id, metadata: { employeeCount, calculationCount: calculations.length, validatedAt: validatedAt.toISOString() } } });
-  });
+  try {
+    await prisma.$transaction(async (tx) => {
+      await lockPayrollAbsenceChanges(tx, membership.organizationId);
+      await assertPayrollPeriodStatus(tx, membership.organizationId, period.id, "REVIEW");
+      const currentCalculations = await tx.payrollCalculation.findMany({ where: { organizationId: membership.organizationId, payrollPeriodId: period.id }, select: { employeeId: true, calculationSnapshot: true } });
+      if (currentCalculations.length !== calculations.length) throw new Error("Les calculs de la période ont changé. Recalculez la paie avant validation.");
+      const absenceIds = await assertCurrentPayrollAbsences(tx, { organizationId: membership.organizationId, year: period.year, month: period.month,
+        calculations: currentCalculations.map((calculation) => ({ employeeId: calculation.employeeId, absences: (calculation.calculationSnapshot as { validatedAbsences?: unknown })?.validatedAbsences })) });
+      await tx.payrollPeriod.update({ where: { id: period.id }, data: { status: "VALIDATED", validatedAt } });
+      await tx.absence.updateMany({ where: { id: { in: absenceIds }, organizationId: membership.organizationId, status: "VALIDATED", payrollImpactStatus: "READY" }, data: { payrollImpactStatus: "INTEGRATED" } });
+      await tx.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.period.validated", entityType: "PayrollPeriod", entityId: period.id, metadata: { employeeCount, calculationCount: currentCalculations.length, validatedAt: validatedAt.toISOString() } } });
+    }, { maxWait: 10000, timeout: 20000 });
+  } catch (error) { return { error: userFacingError(error, "La validation de la période a échoué.") }; }
   revalidatePath(`/dashboard/payroll/${periodId}`);
   revalidatePath("/dashboard/payroll");
   return undefined;

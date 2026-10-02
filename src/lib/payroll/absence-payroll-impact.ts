@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { effectiveAbsenceEnd } from "./work-stoppage";
+import { effectiveAbsenceEnd, WORK_STOPPAGE_KINDS } from "./work-stoppage";
 import {
   resolveAbsencePayrollTreatment,
   type AbsencePayrollImpactResolution,
@@ -29,6 +29,12 @@ export type ValidatedAbsencePayrollReadiness = {
   payrollImpactStatus: string;
 };
 
+/** Une reprise en début de mois reste à déclarer même si l'arrêt finit le mois précédent. */
+export function isAbsenceNeededForPayrollMonth(absence: Parameters<typeof effectiveAbsenceEnd>[0], periodStart: Date, periodEnd: Date): boolean {
+  return absence.type === "PAID_LEAVE" || effectiveAbsenceEnd(absence) >= periodStart ||
+    (WORK_STOPPAGE_KINDS.has(absence.type) && !!absence.returnDate && absence.returnDate >= periodStart && absence.returnDate <= periodEnd);
+}
+
 function periodBounds(year: number, month: number) {
   const start = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
   const end = new Date(Date.UTC(year, month, 0, 0, 0, 0, 0));
@@ -57,7 +63,7 @@ export function getCalendarOverlapDays(startDate: Date, endDate: Date, periodSta
 }
 
 export function assertValidatedAbsencesReadyForPayroll(absences: ValidatedAbsencePayrollReadiness[]): void {
-  const blockingAbsences = absences.filter((absence) => absence.payrollImpactStatus !== "READY");
+  const blockingAbsences = absences.filter((absence) => !["READY", "INTEGRATED"].includes(absence.payrollImpactStatus));
   if (blockingAbsences.length === 0) return;
 
   const details = blockingAbsences
@@ -87,6 +93,7 @@ export async function resolveValidatedAbsencesForPayrollPeriod(input: {
       startDate: { lte: periodEnd },
       OR: [
         { endDate: { gte: periodStart } },
+        { type: { in: ["SICK_LEAVE", "WORK_ACCIDENT", "MATERNITY", "PATERNITY"] }, returnDate: { gte: periodStart, lte: periodEnd } },
         ...(input.includePaidLeaveTail ? [{ type: "PAID_LEAVE" as const, endDate: { gte: new Date(periodStart.getTime() - 31 * 86400000) }, employee: { deletedAt: null, hireDate: { lte: periodEnd }, OR: [{ contractEndDate: null }, { contractEndDate: { gte: periodStart } }] } }] : []),
       ],
     },
@@ -107,7 +114,7 @@ export async function resolveValidatedAbsencesForPayrollPeriod(input: {
     orderBy: [{ employeeId: "asc" }, { startDate: "asc" }],
   });
 
-  const active = absences.filter((absence) => effectiveAbsenceEnd(absence) >= periodStart || absence.type === "PAID_LEAVE");
+  const active = absences.filter((absence) => isAbsenceNeededForPayrollMonth(absence, periodStart, periodEnd));
   assertValidatedAbsencesReadyForPayroll(active);
 
   return active.map((absence) => ({
