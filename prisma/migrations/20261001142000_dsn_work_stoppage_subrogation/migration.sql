@@ -30,4 +30,4 @@ ALTER TABLE "absences"
   CHECK (("lastWorkedDate" IS NULL OR "lastWorkedDate" <= "startDate")
     AND ("workAccidentDate" IS NULL OR "workAccidentDate" <= "startDate")
     AND (("returnDate" IS NULL AND "returnReasonCode" IS NULL)
-      OR ("returnDate" > "startDate" AND "returnReasonCode" IS NOT NULL)));
+      OR ("returnDate" IS NOT NULL AND "returnDate" > "startDate" AND "returnReasonCode" IS NOT NULL)));
