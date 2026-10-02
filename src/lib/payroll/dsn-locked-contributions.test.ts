@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { computedSnapshot, computedDsnFixture } from "../../../scripts/payroll/dsn-computed-fixture";
 import { identifyDsnAffiliations, normalizeDsnComplementaryAffiliations } from "./dsn-complementary-affiliations";
 import { FULL_TIME_SCHEDULE } from "./bulletin/calendar";
-import { mapLockedContributions, mergeLockedAggregates, splitLockedRgdu } from "./dsn-locked-contributions";
+import { mapLockedContributions, mergeLockedAggregates, readLockedWorkStoppageDeclaration, splitLockedRgdu } from "./dsn-locked-contributions";
 import { buildDsnP26V01Complete } from "./dsn-p26v01-complete";
 
 const ids = { employeeNir: "1860875123456", urssafSiret: "75366412700077", retirementOps: "44832375800038" };
@@ -135,6 +135,42 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     expect(content).toContain("S21.G00.53.001,'02'");
     expect(content).toContain("S21.G00.53.002,'35.00'");
     expect(content).not.toContain("S21.G00.60.010,");
+  });
+
+  it("conserve le DJT initial quand deux arrêts s'enchaînent sans reprise", () => {
+    const ordinary = computedSnapshot();
+    const organization = { ...ordinary.inputs.organization, ijssSubrogation: false };
+    const current = computedSnapshot({
+      organization,
+      absences: [
+        { id: "sick-chain", kind: "SICK_LEAVE", start: "2026-01-12", end: "2026-01-16", ijssGrossAmount: 0 },
+        { id: "maternity-chain", kind: "MATERNITY", start: "2026-01-17", end: "2026-01-23", ijssGrossAmount: 0 },
+      ],
+    });
+    const declaration = readLockedWorkStoppageDeclaration(current);
+    expect(declaration.stoppages).toEqual([
+      expect.objectContaining({ reasonCode: "01", lastDayWorked: "2026-01-11" }),
+      expect.objectContaining({ reasonCode: "02", lastDayWorked: "2026-01-11" }),
+    ]);
+  });
+
+  it("reprend le DJT initial depuis le bulletin du mois précédent", () => {
+    const base = computedSnapshot();
+    const organization = { ...base.inputs.organization, ijssSubrogation: false };
+    const january = computedSnapshot({
+      organization,
+      absences: [{ id: "sick-january", kind: "SICK_LEAVE", start: "2026-01-25", end: "2026-01-31", ijssGrossAmount: 0 }],
+    });
+    const february = computedSnapshot({
+      period: { year: 2026, month: 2 },
+      organization,
+      yearToDate: january.bulletin.yearToDate,
+      absences: [{ id: "maternity-february", kind: "MATERNITY", start: "2026-02-01", end: "2026-02-07", ijssGrossAmount: 0 }],
+    });
+    const declaration = readLockedWorkStoppageDeclaration(february, january);
+    expect(declaration.stoppages).toEqual([
+      expect.objectContaining({ reasonCode: "02", lastDayWorked: "2026-01-24" }),
+    ]);
   });
 
   it("bloque un arrêt subrogé tant que sa période et son compte IJSS ne sont pas explicitement stockés", () => {

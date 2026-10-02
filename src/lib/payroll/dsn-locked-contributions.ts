@@ -135,7 +135,7 @@ function addIsoDays(day: string, offset: number): string {
  * La subrogation reste bloquée tant que sa période et son compte IJSS ne sont pas
  * enregistrés séparément. L'AT reste bloqué tant que la date d'accident n'est pas stockée.
  */
-export function readLockedWorkStoppageDeclaration(value: unknown): LockedWorkStoppageDeclaration {
+export function readLockedWorkStoppageDeclaration(value: unknown, previousValue?: unknown): LockedWorkStoppageDeclaration {
   const { bulletin, inputs } = readLockedContributionSnapshot(value);
   const supportedKinds = new Set(["SICK_LEAVE", "MATERNITY", "PATERNITY"]);
   const absences = (inputs.absences ?? []).filter((absence) => supportedKinds.has(absence.kind));
@@ -146,6 +146,25 @@ export function readLockedWorkStoppageDeclaration(value: unknown): LockedWorkSto
 
   const codeByKind = { SICK_LEAVE: "01", MATERNITY: "02", PATERNITY: "03" } as const;
   const lineCodeByKind = { SICK_LEAVE: "ABS_SICK_LEAVE", MATERNITY: "ABS_MATERNITY", PATERNITY: "ABS_PATERNITY" } as const;
+  const previousInputs = previousValue === undefined ? null : readLockedContributionSnapshot(previousValue).inputs;
+  if (previousInputs && previousInputs.employee.id !== inputs.employee.id) throw new Error("DSN bloquée : le bulletin antérieur des arrêts ne concerne pas le même salarié.");
+  const chainCandidates = new Map<string, NonNullable<PayslipInput["absences"]>[number]>();
+  for (const candidate of [...(previousInputs?.absences ?? []), ...(inputs.absences ?? [])]) {
+    if (supportedKinds.has(candidate.kind)) chainCandidates.set(candidate.id, candidate);
+  }
+  const initialAbsence = (absence: NonNullable<PayslipInput["absences"]>[number]) => {
+    let current = absence;
+    const visited = new Set<string>();
+    while (!visited.has(current.id)) {
+      visited.add(current.id);
+      const predecessor = [...chainCandidates.values()]
+        .filter((candidate) => candidate.id !== current.id && candidate.end === addIsoDays(current.start, -1))
+        .sort((a, b) => b.start.localeCompare(a.start))[0];
+      if (!predecessor) break;
+      current = predecessor;
+    }
+    return current;
+  };
   const grossLines = bulletin.lines.filter((line) => line.section === "GROSS" && Object.values(lineCodeByKind).includes(line.code as typeof lineCodeByKind[keyof typeof lineCodeByKind]));
   const matchedLines = new Set<PayslipLine>();
   let hours = 0;
@@ -167,8 +186,9 @@ export function readLockedWorkStoppageDeclaration(value: unknown): LockedWorkSto
       matchedLines.add(line);
     }
 
-    const partialFirstDay = Number(absence.partialDayHours?.[absence.start] ?? 0) > 0;
-    const lastDayWorked = absence.start === inputs.employee.hireDate ? absence.start : partialFirstDay ? absence.start : addIsoDays(absence.start, -1);
+    const initial = initialAbsence(absence);
+    const partialFirstDay = Number(initial.partialDayHours?.[initial.start] ?? 0) > 0;
+    const lastDayWorked = initial.start === inputs.employee.hireDate ? initial.start : partialFirstDay ? initial.start : addIsoDays(initial.start, -1);
     stoppages.push({
       reasonCode: codeByKind[absence.kind as keyof typeof codeByKind],
       lastDayWorked,
@@ -314,7 +334,7 @@ export function mapLockedContributions(input: {
   const byCode = new Map(journal.map((line) => [line.code, line]));
   const overtime = readLockedOvertimeDeclaration(input.snapshot);
   const unpaidAbsence = readLockedUnpaidAbsenceDeclaration(input.snapshot);
-  const workStoppages = readLockedWorkStoppageDeclaration(input.snapshot);
+  const workStoppages = readLockedWorkStoppageDeclaration(input.snapshot, input.previousSnapshot);
   const activityAbsenceHours = round(unpaidAbsence.hours + workStoppages.hours);
   const randomAdditionalHours = overtime.remunerations.filter((item) => item.type === "017").reduce((total, item) => total + item.hours, 0);
   const activityPaidHours = round(Math.max(0, numeric(inputs.pay.contractMonthlyHours, "la quotité mensuelle contractuelle") - activityAbsenceHours + randomAdditionalHours));
