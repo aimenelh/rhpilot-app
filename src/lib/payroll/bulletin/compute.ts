@@ -36,7 +36,7 @@ import { assertAmount, round2, round4 } from "./money";
 import { NO_SEVERANCE, addTerminationLines } from "./termination";
 import type { PaidLeaveBalances, PaidLeaveOutcome, PayslipInput, PayslipLine, PayslipResult, SickPayHistory, YearToDate } from "./types";
 
-export const BULLETIN_ENGINE_VERSION = "rhpilot-bulletin-2026.4";
+export const BULLETIN_ENGINE_VERSION = "rhpilot-bulletin-2026.5";
 
 export function emptyYearToDate(year: number): YearToDate {
   return {

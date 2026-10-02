@@ -55,6 +55,12 @@ export default async function AbsencesPage() {
       notes: absence.notes,
       rejectedReason: absence.rejectedReason,
       payrollImpactStatus: absence.payrollImpactStatus,
+      lastWorkedDate: absence.lastWorkedDate?.toISOString() ?? null,
+      subrogationStartDate: absence.subrogationStartDate?.toISOString() ?? null,
+      subrogationEndDate: absence.subrogationEndDate?.toISOString() ?? null,
+      workAccidentDate: absence.workAccidentDate?.toISOString() ?? null,
+      returnDate: absence.returnDate?.toISOString() ?? null,
+      returnReasonCode: absence.returnReasonCode,
       justification: justification
         ? {
             id: justification.id,

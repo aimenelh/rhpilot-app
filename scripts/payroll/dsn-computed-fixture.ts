@@ -6,7 +6,13 @@ import { mapLockedContributions } from "../../src/lib/payroll/dsn-locked-contrib
 import type { DsnP26CompleteInput } from "../../src/lib/payroll/dsn-p26v01-complete";
 import { mappedDsnFixture } from "./dsn-fixture";
 
-export function computedSnapshot(input?: Partial<PayslipInput>) {
+type FixtureStoppageMetadata = {
+  absenceId: string; type: string; startDate: string; endDate: string;
+  lastWorkedDate: string | null; subrogationStartDate: string | null; subrogationEndDate: string | null;
+  workAccidentDate: string | null; returnDate: string | null; returnReasonCode: string | null;
+};
+
+export function computedSnapshot(input?: Partial<PayslipInput>, metadata: Record<string, Partial<FixtureStoppageMetadata>> = {}) {
   const inputs: PayslipInput = {
     period: { year: 2026, month: 1 },
     organization: { headcount: 4, atmpRatePercent: 1.2, mobilityRatePercent: 0, territory: "METROPOLE", healthPlan: null, ijssSubrogation: true, paidLeaveMethod: "OUVRABLES" },
@@ -15,7 +21,14 @@ export function computedSnapshot(input?: Partial<PayslipInput>) {
     withholding: { mode: "PERSONALIZED", rate: 0.075, rateIdentifier: "123456789" },
     ...input,
   };
-  return { inputs, bulletin: computePayslip(inputs) };
+  const validatedAbsences: FixtureStoppageMetadata[] = (inputs.absences ?? []).map((absence) => {
+    const day = new Date(absence.start + "T00:00:00.000Z");
+    if (absence.kind !== "WORK_ACCIDENT") day.setUTCDate(day.getUTCDate() - 1);
+    return { absenceId: absence.id, type: absence.kind, startDate: absence.start, endDate: absence.end,
+      lastWorkedDate: day.toISOString().slice(0, 10), subrogationStartDate: null, subrogationEndDate: null,
+      workAccidentDate: null, returnDate: null, returnReasonCode: null, ...metadata[absence.id] };
+  });
+  return { inputs, bulletin: computePayslip(inputs), validatedAbsences };
 }
 
 /** Fichier synthétique dont chaque montant financier vient effectivement du moteur. */
@@ -26,9 +39,10 @@ export function computedDsnFixture(
   organizationOverrides?: Partial<PayslipInput["organization"]>,
   executive = false,
   inputOverrides?: Partial<PayslipInput>,
+  metadata?: Record<string, Partial<FixtureStoppageMetadata>>,
 ): DsnP26CompleteInput {
   const basePay = { monthlyBaseSalary: gross, contractMonthlyHours: monthlyHours, schedule: [monthlyHours * 12 / 52 / 5, monthlyHours * 12 / 52 / 5, monthlyHours * 12 / 52 / 5, monthlyHours * 12 / 52 / 5, monthlyHours * 12 / 52 / 5, 0, 0] as WeeklySchedule };
-  const snapshot = computedSnapshot({ ...inputOverrides, pay: { ...basePay, ...(inputOverrides?.pay ?? {}) } });
+  const snapshot = computedSnapshot({ ...inputOverrides, pay: { ...basePay, ...(inputOverrides?.pay ?? {}) } }, metadata);
   if (organizationOverrides) Object.assign(snapshot.inputs.organization, organizationOverrides);
   snapshot.inputs.employee.executive = executive;
   if (complementary) {
@@ -48,7 +62,8 @@ export function computedDsnFixture(
   const mapped = mapLockedContributions({ snapshot, employeeNir: employee.nir, urssafSiret: "75366412700077", retirementOps: "44832375800038", complementaryAffiliations: affiliations });
   const totals = snapshot.bulletin.totals;
   const employeePas = snapshot.bulletin.withholding;
-  data.period = { year: 2026, month: 1, paymentDate: new Date("2026-01-31T00:00:00.000Z") };
+  data.period = { ...snapshot.inputs.period, paymentDate: new Date(snapshot.inputs.paymentDate ?? new Date(Date.UTC(snapshot.inputs.period.year, snapshot.inputs.period.month, 0)).toISOString().slice(0, 10)) };
+  employee.contract.startDate = new Date(snapshot.inputs.employee.hireDate + "T00:00:00.000Z");
   employee.contract.workAccidentRate = mapped.atmpRatePercent;
   employee.contract.conventionalStatusCode = executive ? "04" : "06";
   employee.contract.retirementStatusCode = executive ? "01" : "04";
@@ -59,7 +74,9 @@ export function computedDsnFixture(
     lastDayWorked: new Date(item.lastDayWorked + "T00:00:00.000Z"),
     expectedEndDate: new Date(item.expectedEnd + "T00:00:00.000Z"),
     subrogationCode: item.subrogationCode,
+    ...(item.subrogationCode === "01" ? { subrogationStartDate: new Date(item.subrogationStart! + "T00:00:00.000Z"), subrogationEndDate: new Date(item.subrogationEnd! + "T00:00:00.000Z"), subrogationIban: "FR7630006000011234567890189", subrogationBic: "AGRIFRPPXXX" } : {}),
     ...(item.recoveryDate ? { recoveryDate: new Date(item.recoveryDate + "T00:00:00.000Z"), recoveryReasonCode: item.recoveryReasonCode } : {}),
+    ...(item.accidentDate ? { accidentDate: new Date(item.accidentDate + "T00:00:00.000Z") } : {}),
   }));
   employee.contract.suspensions = mapped.unpaidAbsence.suspensions.map((item) => ({
     reasonCode: item.reasonCode,
@@ -70,12 +87,13 @@ export function computedDsnFixture(
     baseSalary: snapshot.inputs.pay.monthlyBaseSalary, grossAmount: totals.grossTotal, grossSubject: totals.grossSubject,
     cappedContributionBase: mapped.bases.find((base) => base.code === "02")!.amount,
     unemploymentBase: mapped.unemploymentBase, paidHours: mapped.activityPaidHours,
-    netBeforeTax: totals.netBeforeTax, netTaxableAmount: totals.netTaxable, netSocialAmount: totals.netSocial,
+    netBeforeTax: totals.netBeforeTax, netTaxableAmount: employeePas.fiscalNetBeforeExemption ?? totals.netTaxable, netSocialAmount: totals.netSocial,
     withholdingTax: totals.withholdingTax,
     pas: { rateType: "01", ratePercent: employeePas.rate * 100, rateIdentifier: "123456789", amountSubjectToPas: employeePas.base, withholdingAmount: employeePas.amount },
     overtimeRemunerations: mapped.overtime.remunerations,
     overtimeTaxExemptNetAmount: mapped.overtime.taxExemptNetAmount,
     absenceActivityHours: mapped.activityAbsenceHours,
+    subrogatedIjssNetAmount: snapshot.bulletin.lines.filter((line) => line.code === "IJSS_SUBROGATION").reduce((sum, line) => sum + (line.amount ?? 0), 0),
   };
   data.assessedBases = mapped.bases;
   data.contributionBordereau = {
