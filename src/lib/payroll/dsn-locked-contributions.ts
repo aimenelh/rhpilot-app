@@ -1,8 +1,9 @@
 import type { IdentifiedDsnAffiliation } from "./dsn-complementary-affiliations";
+import { readLockedRemunerationDeclaration, type LockedRemunerationDeclaration } from "./dsn-locked-remuneration";
 import type { PayslipInput, PayslipLine, PayslipResult } from "./bulletin/types";
 import type { DsnAggregatedContribution, DsnAssessedBase, DsnIndividualContribution } from "./dsn-p26v01-complete";
 
-export const LOCKED_CONTRIBUTION_MAPPING_VERSION = "P26V01-RG-2026.4";
+export const LOCKED_CONTRIBUTION_MAPPING_VERSION = "P26V01-RG-2026.5";
 export const LOCKED_CONTRIBUTION_SOURCES = [
   "https://open.urssaf.fr/explore/dataset/equivalence-dida/export/",
   "https://www.urssaf.fr/accueil/actualites/declaration-cotisation-am-af.html",
@@ -22,6 +23,7 @@ export type LockedContributionData = {
   deferred: Array<{ employeeNir: string; code: string; amount: number; declaration: string }>;
   atmpRatePercent: number;
   unemploymentBase: number;
+  remuneration: LockedRemunerationDeclaration;
   hoursPaid: number;
   /** Volume DSN d'activité 01 au lissé : quotité contractuelle - absence réelle + HS/HC aléatoires. */
   activityPaidHours: number;
@@ -394,7 +396,7 @@ export function mapLockedContributions(input: {
   if (inputs.employee.contract === "APPRENTISSAGE") throw new Error("DSN bloquée : les exonérations sociales spécifiques des apprentis nécessitent encore leur mapping déclaratif.");
   if (inputs.organization.territory !== "METROPOLE" || inputs.organization.alsaceMoselle) throw new Error("DSN bloquée : le mapping social actuel couvre la métropole hors régime local Alsace-Moselle.");
   if ((inputs.bonuses ?? []).some((bonus) => bonus.excludedFromPaidLeaveBase)) throw new Error("DSN bloquée : une prime annuelle ou exceptionnelle nécessite son type S21.G00.52 et sa période de rattachement explicites.");
-  const supportedAbsenceKinds = new Set(["UNPAID_LEAVE", "RTT", "FAMILY_EVENT", "SICK_LEAVE", "WORK_ACCIDENT", "MATERNITY", "PATERNITY"]);
+  const supportedAbsenceKinds = new Set(["PAID_LEAVE", "UNPAID_LEAVE", "RTT", "FAMILY_EVENT", "SICK_LEAVE", "WORK_ACCIDENT", "MATERNITY", "PATERNITY"]);
   if ((inputs.absences ?? []).some((absence) => !supportedAbsenceKinds.has(absence.kind))) {
     throw new Error("DSN bloquée : cette absence nécessite encore son bloc déclaratif spécifique (congé payé ou autre suspension).");
   }
@@ -411,9 +413,10 @@ export function mapLockedContributions(input: {
   const overtime = readLockedOvertimeDeclaration(input.snapshot);
   const unpaidAbsence = readLockedUnpaidAbsenceDeclaration(input.snapshot);
   const workStoppages = readLockedWorkStoppageDeclaration(input.snapshot, input.previousSnapshot);
+  const remuneration = readLockedRemunerationDeclaration({ bulletin, inputs });
   const activityAbsenceHours = round(unpaidAbsence.hours + workStoppages.hours);
   const randomAdditionalHours = overtime.remunerations.filter((item) => item.type === "017").reduce((total, item) => total + item.hours, 0);
-  const activityPaidHours = round(Math.max(0, numeric(inputs.pay.contractMonthlyHours, "la quotité mensuelle contractuelle") - activityAbsenceHours + randomAdditionalHours));
+  const activityPaidHours = round(Math.max(0, numeric(inputs.pay.contractMonthlyHours, "la quotité mensuelle contractuelle") - remuneration.outsideContractHours - activityAbsenceHours + randomAdditionalHours));
   const line = (code: string): PayslipLine => {
     const found = byCode.get(code);
     if (!found) throw new Error(`DSN bloquée : la cotisation ${code} manque dans le bulletin verrouillé.`);
@@ -624,7 +627,8 @@ export function mapLockedContributions(input: {
   const deferredTotal = deferred.reduce((total, item) => total + cents(item.amount), 0);
   if (liabilityTotal + deferredTotal !== cents(bulletin.totals.employeeContributions) + cents(bulletin.totals.employerContributions)) throw new Error("DSN bloquée : la ventilation par organisme ne couvre pas exactement les cotisations du bulletin.");
   if ([...liabilities.values()].some((value) => value < 0)) throw new Error("DSN bloquée : un crédit organisme nécessite une déclaration de régularisation et un paiement distinct.");
-  return { bases, individual, aggregates: [...aggregates.values()], liabilities: [...liabilities].map(([opsIdentifier, value]) => ({ opsIdentifier, amount: value })), deferred, atmpRatePercent, unemploymentBase, hoursPaid: numeric(bulletin.totals.hoursPaid, "les heures payées"), activityPaidHours, grossSubject: g, overtime, unpaidAbsence, workStoppages, activityAbsenceHours, complementaryAdhesions, complementaryAffiliations, complementaryPayments };
+  const datedBases = bases.map((base) => ({ ...base, periodStart: new Date(remuneration.employmentStart + "T00:00:00.000Z"), periodEnd: new Date(remuneration.employmentEnd + "T00:00:00.000Z") }));
+  return { bases: datedBases, individual, aggregates: [...aggregates.values()], liabilities: [...liabilities].map(([opsIdentifier, value]) => ({ opsIdentifier, amount: value })), deferred, atmpRatePercent, unemploymentBase, remuneration, hoursPaid: numeric(bulletin.totals.hoursPaid, "les heures payées"), activityPaidHours, grossSubject: g, overtime, unpaidAbsence, workStoppages, activityAbsenceHours, complementaryAdhesions, complementaryAffiliations, complementaryPayments };
 }
 
 /** Additionne les assiettes une seule fois par salarié/CTP, pas une fois par cotisation composante. */

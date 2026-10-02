@@ -53,7 +53,7 @@ function snapshotWithholdingTax(snapshot: CalculationSnapshot, employeeId: strin
   return { rate, validFrom, validUntil, source: requiredString(withholding.source, `la provenance du PAS du salarié ${employeeId}`), sourceReference: withholding.sourceReference?.trim() || null };
 }
 
-const DSN_UNMAPPED_BULLETIN_LINES = new Set(["ENTRY_EXIT", "SEVERANCE", "PAID_LEAVE_COMPENSATION", "NOTICE_COMPENSATION", "CDD_END_ALLOWANCE"]);
+const DSN_UNMAPPED_BULLETIN_LINES = new Set(["SEVERANCE", "PAID_LEAVE_COMPENSATION", "NOTICE_COMPENSATION", "CDD_END_ALLOWANCE"]);
 
 /**
  * Éléments d'un bulletin que la DSN préparatoire ne sait pas encore déclarer. Tous sont listés
@@ -63,7 +63,7 @@ const DSN_UNMAPPED_BULLETIN_LINES = new Set(["ENTRY_EXIT", "SEVERANCE", "PAID_LE
 export function dsnScopeIssues(snapshot: { variables?: unknown[]; validatedAbsences?: Array<{ type?: string }>; bulletin?: { lines?: Array<{ code?: string; base?: number }> } }): string[] {
   const issues: string[] = [];
   if ((snapshot.bulletin?.lines ?? []).some((line) => line.code && DSN_UNMAPPED_BULLETIN_LINES.has(line.code))) issues.push("entrée, sortie ou indemnité de fin de contrat (blocs S21.G00.62 non émis)");
-  const supportedAbsences = new Set(["UNPAID_LEAVE", "RTT", "FAMILY_EVENT", "SICK_LEAVE", "MATERNITY", "PATERNITY", "WORK_ACCIDENT"]);
+  const supportedAbsences = new Set(["PAID_LEAVE", "UNPAID_LEAVE", "RTT", "FAMILY_EVENT", "SICK_LEAVE", "MATERNITY", "PATERNITY", "WORK_ACCIDENT"]);
   const unsupportedAbsences = (snapshot.validatedAbsences ?? []).filter((absence) => !supportedAbsences.has(absence?.type ?? ""));
   if (unsupportedAbsences.length > 0) issues.push("absences non encore raccordées (congés payés ou autre suspension)");
   return issues;
@@ -272,6 +272,9 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         cappedContributionBase,
         grossSubject: contributions.grossSubject,
         unemploymentBase: contributions.unemploymentBase,
+        unemploymentRemuneration: contributions.remuneration.unemploymentRemuneration,
+        restoredSalary: contributions.remuneration.restoredSalary,
+        paidLeaveIndemnities: contributions.remuneration.paidLeaveIndemnities.map((item) => ({ type: item.type, amount: item.amount, startDate: new Date(item.start + "T00:00:00.000Z"), endDate: new Date(item.end + "T00:00:00.000Z") })),
         paidHours: contributions.activityPaidHours,
         netBeforeTax,
         netTaxableAmount: fiscalNet,

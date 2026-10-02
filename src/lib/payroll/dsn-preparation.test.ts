@@ -28,12 +28,15 @@ describe("périmètre de la DSN préparatoire", () => {
   });
 
   it("liste encore les événements de contrat et les absences non raccordées", () => {
-    const issues = dsnScopeIssues({ variables: [{}], validatedAbsences: [{ type: "OTHER" }], bulletin: { lines: [{ code: "ENTRY_EXIT" }] } });
+    const issues = dsnScopeIssues({ variables: [{}], validatedAbsences: [{ type: "OTHER" }], bulletin: { lines: [{ code: "SEVERANCE" }] } });
     expect(issues).toHaveLength(2);
     expect(issues.join(" ")).toMatch(/entrée|sortie/);
     expect(issues.join(" ")).toMatch(/absences/i);
   });
   it("accepte un accident du travail dans le périmètre mensuel", () => {
     expect(dsnScopeIssues({ validatedAbsences: [{ type: "WORK_ACCIDENT" }] })).toEqual([]);
+  });
+  it("accepte les entrées en cours de mois et les congés payés", () => {
+    expect(dsnScopeIssues({ validatedAbsences: [{ type: "PAID_LEAVE" }], bulletin: { lines: [{ code: "ENTRY_EXIT" }, { code: "CP_INDEMNITY" }] } })).toEqual([]);
   });
 });

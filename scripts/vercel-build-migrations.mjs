@@ -1,4 +1,6 @@
 import { spawnSync } from "node:child_process";
+import { setTimeout } from "node:timers/promises";
+import { runWithConnectionRetry } from "./vercel-migration-policy.mjs";
 
 const RECOVERABLE_FAILED_MIGRATIONS = [
   "20260811190209_add_diagnostic_response",
@@ -34,7 +36,7 @@ if (vercelEnv && vercelEnv !== "production" && process.env.ALLOW_PREVIEW_MIGRATI
   process.exit(0);
 }
 
-let result = runCapture(["migrate", "deploy"]);
+let result = await runWithConnectionRetry(() => runCapture(["migrate", "deploy"]), setTimeout);
 
 if (result.status !== 0) {
   const failedMigration = RECOVERABLE_FAILED_MIGRATIONS.find((migration) =>
@@ -63,7 +65,7 @@ if (result.status !== 0) {
     process.exit(resolve.status);
   }
 
-  result = runCapture(["migrate", "deploy"]);
+  result = await runWithConnectionRetry(() => runCapture(["migrate", "deploy"]), setTimeout);
 }
 
 process.exit(result.status);

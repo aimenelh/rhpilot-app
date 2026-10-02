@@ -20,7 +20,8 @@ describe("événements de contrat non encore déclarables", () => {
   it("bloque une sortie le dernier jour même avec un salaire entier, et les rappels après sortie", () => {
     expect(() => assertDsnStableContract({ ...ordinary, contractEndDate: "2026-01-31" }, period)).toThrow(/fins de contrat/);
     expect(() => assertDsnStableContract({ ...ordinary, contractEndDate: "2025-12-31" }, period)).toThrow(/rappels après sortie/);
-    expect(() => assertDsnStableContract({ ...ordinary, hireDate: "2026-01-02" }, period)).toThrow(/entrées en cours/);
+    expect(() => assertDsnStableContract({ ...ordinary, hireDate: "2026-01-02" }, period)).not.toThrow();
+    expect(() => assertDsnStableContract({ ...ordinary, hireDate: "2026-02-01" }, period)).toThrow(/fins de contrat/);
   });
   it("bloque une transformation de contrat et un passage cadre non déclarés", () => {
     expect(() => assertDsnStableContract(ordinary, period, { ...ordinary, contract: "CDD" })).toThrow(/changement/);
