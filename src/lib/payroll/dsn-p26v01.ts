@@ -117,7 +117,7 @@ export type DsnP26MonthlyInput = {
   }>;
 };
 
-type DsnLine = { code: string; value: string };
+export type DsnLine = { code: string; value: string };
 
 function pad2(value: number): string { return String(value).padStart(2, "0"); }
 
@@ -205,6 +205,9 @@ function siretParts(siretValue: string): { siren: string; nic: string; siret: st
   return { siren: siret.slice(0, 9), nic: siret.slice(9), siret };
 }
 
+/** Encodage commun aux déclarations mensuelles et aux signalements P26V01. */
+export const dsnP26Format = { add, text, assertDigits, assertCode, dsnDate, siretParts, serialize };
+
 function addRemuneration(
   lines: DsnLine[],
   periodStart: Date,
@@ -236,8 +239,8 @@ function addRemuneration(
 /**
  * Produit une DSN mensuelle P26V01 destinée au pré-contrôle technique.
  * Les nomenclatures métier sont des entrées déclaratives : aucune n'est inventée.
- * Les blocs organismes/cotisations S21.G00.20/22/23/81/82 restent volontairement
- * exclus tant que leurs mappings n'ont pas été validés : le dépôt réel est bloqué.
+ * Les blocs organismes/cotisations sont ajoutés par buildDsnP26V01Complete,
+ * à partir des mappings du bulletin verrouillé. Le dépôt réel reste bloqué.
  */
 export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
   const lines: DsnLine[] = [];

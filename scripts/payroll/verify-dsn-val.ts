@@ -7,6 +7,8 @@ import { buildDsnP26V01Monthly } from "../../src/lib/payroll/dsn-p26v01";
 import { assertDsnValReportAccepted } from "../../src/lib/payroll/dsn-val-report";
 import { mappedDsnFixture } from "./dsn-fixture";
 import { computedDsnFixture } from "./dsn-computed-fixture";
+import { buildDsnP26WorkEvent } from "../../src/lib/payroll/dsn-work-event";
+import { workEventFixture } from "./dsn-work-event-fixture";
 
 const validatorDirectory = process.env.DSN_VAL_DIR;
 if (!validatorDirectory) throw new Error("Définissez DSN_VAL_DIR vers Dsn-Val Linux 64 bits 2026.1.0.17.");
@@ -16,7 +18,8 @@ let acceptedCount = 0;
 function validate(name: string, content: string): string {
   const path = join(output, `${name}.dsn`);
   writeFileSync(path, content, { encoding: "latin1", mode: 0o600 });
-  execFileSync("bash", [validator, "-nc", "-l", "200", "-o", output, path], { stdio: "pipe", timeout: 120_000 });
+  // Un espace Eclipse distinct évite les conflits de projet autoctrlprj entre validations.
+  execFileSync("bash", [validator, "-data", join(output, `workspace-${name}`), "-nc", "-l", "200", "-o", output, path], { stdio: "pipe", timeout: 120_000 });
   const xml = readFileSync(`${path}.xml`, "utf8");
   if (!xml.includes("Version : 2026.1.0.17")) throw new Error("La version de Dsn-Val diffère de celle validée dans le projet.");
   return xml;
@@ -29,6 +32,11 @@ function accept(name: string, content: string): void {
 }
 
 const single = mappedDsnFixture();
+for (const reason of ["01", "02", "03", "06"] as const) {
+  for (const subrogation of [false, true]) accept(`signalement-arret-${reason}-${subrogation ? "subroge" : "direct"}`, buildDsnP26WorkEvent(workEventFixture(reason, subrogation)));
+}
+accept("signalement-reprise-maladie", buildDsnP26WorkEvent(workEventFixture("01", false, "05")));
+accept("signalement-reprise-at-subroge", buildDsnP26WorkEvent(workEventFixture("06", true, "05")));
 const content = buildDsnP26V01Complete(single);
 accept("precontrole-identite-pas", buildDsnP26V01Monthly(single));
 accept("salarie-unique", content);
