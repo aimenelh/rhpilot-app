@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   assertValidatedAbsencesReadyForPayroll,
   getCalendarOverlapDays,
+  isAbsenceNeededForPayrollMonth,
 } from "./absence-payroll-impact";
 
 function utcDate(value: string): Date {
@@ -9,6 +10,12 @@ function utcDate(value: string): Date {
 }
 
 describe("absence payroll impact", () => {
+  it("conserve la reprise du premier jour du mois sans prolonger la retenue de l'arrêt précédent", () => {
+    const absence = { type: "SICK_LEAVE", startDate: utcDate("2026-01-20"), endDate: utcDate("2026-01-31"), returnDate: utcDate("2026-02-01"), returnReasonCode: "01" };
+    expect(isAbsenceNeededForPayrollMonth(absence, utcDate("2026-02-01"), utcDate("2026-02-28"))).toBe(true);
+    expect(getCalendarOverlapDays(absence.startDate, absence.endDate, utcDate("2026-02-01"), utcDate("2026-02-28"))).toBe(0);
+    expect(isAbsenceNeededForPayrollMonth(absence, utcDate("2026-03-01"), utcDate("2026-03-31"))).toBe(false);
+  });
   it("counts the full absence when it fits inside the payroll period", () => {
     expect(
       getCalendarOverlapDays(
@@ -55,7 +62,7 @@ describe("absence payroll impact", () => {
     expect(() =>
       assertValidatedAbsencesReadyForPayroll([
         { id: "absence-1", payrollImpactStatus: "READY" },
-        { id: "absence-2", payrollImpactStatus: "READY" },
+        { id: "absence-2", payrollImpactStatus: "INTEGRATED" },
       ]),
     ).not.toThrow();
   });

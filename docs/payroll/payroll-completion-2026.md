@@ -28,7 +28,7 @@ Dsn-Val Linux 64 bits **2026.1.0.17**, téléchargement officiel et empreinte SH
 DSN_VAL_DIR=/chemin/vers/dsn-val npm run test:dsn-val
 ```
 
-Le script contrôle 37 fichiers synthétiques : 27 déclarations mensuelles et 10 signalements d'arrêt/reprise. Les cas calculés couvrent salaire ordinaire, hauts salaires, temps partiel, 39 h, HS/HC, absences, AT, subrogation, congés payés, entrée et CDD court au PAS non personnalisé, en plus des affiliations complémentaires et cotisations employeur. Il exige un bilan XML **P26V01 / test / OK / zéro anomalie**, puis vérifie qu'un fichier privé d'un bloc obligatoire est refusé. Tous les fichiers sont traités localement, sans dépôt sur net-entreprises.
+Le script contrôle 38 fichiers synthétiques : 28 déclarations mensuelles et 10 signalements d'arrêt/reprise. Les cas calculés couvrent salaire ordinaire, hauts salaires, temps partiel, 39 h, HS/HC, absences, AT, subrogation, congés payés, entrée, reprise au premier jour du mois suivant et CDD court au PAS non personnalisé, en plus des affiliations complémentaires et cotisations employeur. Il exige un bilan XML **P26V01 / test / OK / zéro anomalie**, puis vérifie qu'un fichier privé d'un bloc obligatoire est refusé. Tous les fichiers sont traités localement, sans dépôt sur net-entreprises.
 
 Les exemples testent la structure et le raccordement des montants verrouillés ; ils ne constituent pas une recette financière indépendante ni une acceptation par les organismes.
 

@@ -26,6 +26,7 @@ import {
   deleteAbsence,
   rejectAbsence,
   rejectAbsenceJustification,
+  recordAbsenceRecovery,
   updateAbsence,
   uploadAbsenceJustification,
   validateAbsence,
@@ -667,7 +668,7 @@ function AbsenceDrawer({ mode, absence, employees, isAdmin, isPending, onClose, 
 
         <div className="flex-1 overflow-y-auto">
           <form id="absence-editor-form" onSubmit={submit} className="px-5 py-5">
-            {integrated && <div className="mb-4 rounded-xl border border-surface-border bg-surface-subtle px-4 py-3 text-xs leading-relaxed text-ink-soft">Cette absence a déjà été intégrée à la paie. Elle reste consultable mais sa modification et sa suppression sont bloquées afin de préserver la traçabilité.</div>}
+            {integrated && <div className="mb-4 rounded-xl border border-surface-border bg-surface-subtle px-4 py-3 text-xs leading-relaxed text-ink-soft">Les données utilisées dans la paie sont figées et le dossier est conservé. Pour un arrêt de travail, une nouvelle reprise réelle peut être enregistrée dans la section dédiée ci-dessous.</div>}
             <div className="space-y-4">
               <label className="block"><span className="mb-1.5 block text-xs font-medium text-ink">Salarié</span><select name="employeeId" defaultValue={absence?.employeeId ?? ""} required disabled={!isAdmin || integrated} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle"><option value="">Sélectionner...</option>{employees.map((employee) => <option key={employee.id} value={employee.id}>{employee.firstName} {employee.lastName}</option>)}</select></label>
               <label className="block"><span className="mb-1.5 block text-xs font-medium text-ink">Type d'absence</span><select name="type" value={selectedType} onChange={(event) => setSelectedType(event.target.value)} required disabled={!isAdmin || integrated} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle"><option value="">Sélectionner...</option>{Object.entries(TYPE_META).map(([value, meta]) => <option key={value} value={value}>{meta.label}</option>)}</select></label>
@@ -690,6 +691,22 @@ function AbsenceDrawer({ mode, absence, employees, isAdmin, isPending, onClose, 
               <label className="block"><span className="mb-1.5 block text-xs font-medium text-ink">Note interne</span><textarea name="notes" defaultValue={absence?.notes ?? ""} rows={4} maxLength={1000} disabled={!isAdmin || integrated} placeholder="Informations utiles pour le suivi RH..." className="w-full resize-y rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle" /></label>
             </div>
           </form>
+
+          {absence && isAdmin && isWorkStoppage && absence.status === "VALIDATED" && ["READY", "INTEGRATED"].includes(absence.payrollImpactStatus) && !absence.returnDate && (
+            <form className="border-t border-surface-border px-5 py-5" onSubmit={(event) => {
+              event.preventDefault();
+              const formData = new FormData(event.currentTarget);
+              runAction(() => recordAbsenceRecovery(absence.id, formData), "Reprise enregistrée.", onClose);
+            }}>
+              <h3 className="text-sm font-semibold text-ink">Enregistrer la reprise réelle</h3>
+              <p className="mt-2 text-xs leading-relaxed text-ink-faint">À renseigner après le retour du salarié. Les mois clôturés sont conservés ; les périodes ouvertes concernées devront être recalculées. Vous pourrez ensuite préparer le signalement de reprise anticipée dans Paie → DSN.</p>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <label className="block"><span className="mb-1.5 block text-xs font-medium text-ink">Date de reprise réelle</span><input name="returnDate" type="date" required disabled={isPending} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary" /></label>
+                <label className="block"><span className="mb-1.5 block text-xs font-medium text-ink">Motif de reprise</span><select name="returnReasonCode" required defaultValue="" disabled={isPending} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary"><option value="" disabled>Choisir le motif</option><option value="01">01 · Reprise normale</option><option value="03">03 · Temps partiel raison personnelle</option></select></label>
+              </div>
+              <div className="mt-3 flex justify-end"><Button type="submit" disabled={isPending}>{isPending && <Loader2 size={15} className="animate-spin" />}Enregistrer la reprise</Button></div>
+            </form>
+          )}
 
           {absence && (
             <div className="border-t border-surface-border px-5 py-5">

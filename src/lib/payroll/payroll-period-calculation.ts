@@ -21,6 +21,7 @@ import { BULLETIN_ENGINE_VERSION, computePayslip } from "./bulletin/compute";
 import { daysBetweenInclusive, monthBounds, toIsoDay } from "./bulletin/calendar";
 import { mapAbsences, mapPayrollVariables, parsePrevoyanceRates, resolveWeeklySchedule } from "./bulletin/inputs";
 import { effectiveAbsenceEnd, freezeWorkStoppages } from "./work-stoppage";
+import { assertCurrentPayrollAbsences, assertPayrollPeriodStatus, lockPayrollAbsenceChanges } from "./period-absence-safety";
 import { buildBulletinLedger, contributionDetailsFromBulletin } from "./bulletin/ledger";
 import { BULLETIN_SNAPSHOT_ENGINE, assertPriorPayrollCoverage, resolvePriorState } from "./bulletin/prior-state";
 import {
@@ -391,6 +392,10 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
   }
 
   await prisma.$transaction(async (tx) => {
+    await lockPayrollAbsenceChanges(tx, input.organizationId);
+    await assertPayrollPeriodStatus(tx, input.organizationId, period.id, "DRAFT");
+    await assertCurrentPayrollAbsences(tx, { organizationId: input.organizationId, year: period.year, month: period.month,
+      calculations: calculated.map((entry) => ({ employeeId: entry.employeeId, absences: entry.validatedAbsences })) });
     const activeIds = calculated.map((entry) => entry.employeeId);
     await tx.payrollCalculation.deleteMany({ where: { organizationId: input.organizationId, payrollPeriodId: period.id, ...(activeIds.length > 0 ? { employeeId: { notIn: activeIds } } : {}) } });
     for (const entry of calculated) {
