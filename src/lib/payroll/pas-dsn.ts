@@ -1,4 +1,7 @@
 import type { WithholdingTaxProfile } from "./withholding-tax-profile";
+import { shortContractPasApplies } from "./bulletin/short-contract";
+import { fromIsoDay } from "./bulletin/calendar";
+import { PAS_SHORT_CONTRACT_ALLOWANCE, valueAt } from "./bulletin/params";
 
 export type DsnPasRateType = "01" | "13" | "23" | "33";
 
@@ -118,18 +121,19 @@ export function assertPasDsnScopeSupported(input: {
   hireDate: Date;
   contractEndDate: Date | null;
   hasSubrogatedDailyAllowances?: boolean;
+  lockedFiscalBreakdown?: { shortContractAllowance: number };
+  period?: { year: number; month: number };
+  paymentDate?: string;
+  plannedContractDays?: number | null;
 }): void {
   if (
     input.source === "NON_PERSONNALISE" &&
     input.contractType === "CDD" &&
     input.contractEndDate instanceof Date
   ) {
-    const durationMs = input.contractEndDate.getTime() - input.hireDate.getTime();
-    const sixtyTwoDaysMs = 62 * 24 * 60 * 60 * 1000;
-    if (durationMs >= 0 && durationMs <= sixtyTwoDaysMs) {
-      throw new Error(
-        "DSN bloquée : le PAS d'un CDD court sans taux personnalisé nécessite le traitement spécifique de l'abattement d'assiette, non encore modélisé.",
-      );
-    }
+    if (!input.period || !input.paymentDate || !input.lockedFiscalBreakdown) throw new Error("DSN bloquée : le PAS d'un CDD court sans taux personnalisé exige la décomposition fiscale du bulletin verrouillé. Recalculez la période avant validation.");
+    const applies = shortContractPasApplies({ contract: "CDD", hireDate: input.hireDate.toISOString().slice(0, 10), contractEndDate: input.contractEndDate.toISOString().slice(0, 10), plannedContractDays: input.plannedContractDays }, input.period);
+    const expected = applies ? valueAt(PAS_SHORT_CONTRACT_ALLOWANCE, fromIsoDay(input.paymentDate), "abattement contrat court DSN").value : 0;
+    if (Math.abs(expected - input.lockedFiscalBreakdown.shortContractAllowance) > 0.005) throw new Error("DSN bloquée : l'abattement CDD du bulletin ne correspond pas à sa durée initiale, sa période et sa date de paiement. Recalculez la paie.");
   }
 }

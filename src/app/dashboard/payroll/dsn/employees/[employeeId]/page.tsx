@@ -11,7 +11,7 @@ type DsnProfileRow = {
   complementaryAffiliations: unknown;
   nirCiphertext: string; birthDate: Date; birthPlace: string; birthDepartment: string; birthCountryCode: string | null; euClassificationCode: string | null;
   addressLine: string; postalCode: string; city: string; countryCode: string | null; contractNumber: string; contractNatureCode: string;
-  publicPolicyCode: string; pcsEsecCode: string; conventionalStatusCode: string; retirementStatusCode: string; workUnitCode: string;
+  publicPolicyCode: string; fixedTermReasonCode: string | null; pcsEsecCode: string; conventionalStatusCode: string; retirementStatusCode: string; workUnitCode: string;
   referenceWorkQuota: unknown; contractWorkQuota: unknown; workModalityCode: string; baseSchemeSupplementCode: string | null;
   sicknessRegimeCode: string; workLocationId: string | null; oldAgeRegimeCode: string; foreignWorkerCode: string | null; employmentStatusCode: string | null;
   multipleJobsCode: string | null; multipleEmployersCode: string | null; workAccidentRegimeCode: string | null; workAccidentRiskCode: string | null;
@@ -30,7 +30,7 @@ export default async function DsnEmployeeSetupPage({ params }: { params: { emplo
   const [rows, payrollProfile, organization] = await Promise.all([
     prisma.$queryRaw<DsnProfileRow[]>`
       SELECT "nirCiphertext", "birthDate", "birthPlace", "birthDepartment", "birthCountryCode", "euClassificationCode",
-             "addressLine", "postalCode", "city", "countryCode", "contractNumber", "contractNatureCode", "publicPolicyCode", "pcsEsecCode",
+             "addressLine", "postalCode", "city", "countryCode", "contractNumber", "contractNatureCode", "fixedTermReasonCode", "publicPolicyCode", "pcsEsecCode",
              "conventionalStatusCode", "retirementStatusCode", "workUnitCode", "referenceWorkQuota", "contractWorkQuota", "workModalityCode",
              "baseSchemeSupplementCode", "sicknessRegimeCode", "workLocationId", "oldAgeRegimeCode", "foreignWorkerCode", "employmentStatusCode",
              "multipleJobsCode", "multipleEmployersCode", "workAccidentRegimeCode", "workAccidentRiskCode", "complementaryAffiliations"
@@ -51,6 +51,7 @@ export default async function DsnEmployeeSetupPage({ params }: { params: { emplo
     birthCountryCode: row?.birthCountryCode ?? "FR", euClassificationCode: row?.euClassificationCode ?? "01", addressLine: row?.addressLine ?? payrollProfile?.employeeAddress ?? "",
     postalCode: row?.postalCode ?? "", city: row?.city ?? "", countryCode: row?.countryCode ?? "", contractNumber: row?.contractNumber ?? "",
     contractNatureCode: row?.contractNatureCode ?? safeContractNature, publicPolicyCode: row?.publicPolicyCode ?? safePublicPolicy, pcsEsecCode: row?.pcsEsecCode ?? "",
+    fixedTermReasonCode: row?.fixedTermReasonCode ?? "",
     conventionalStatusCode: row?.conventionalStatusCode ?? "", retirementStatusCode: row?.retirementStatusCode ?? "", workUnitCode: row?.workUnitCode ?? (monthlyHours ? "10" : ""),
     referenceWorkQuota: row?.referenceWorkQuota != null ? String(row.referenceWorkQuota) : monthlyHours, contractWorkQuota: row?.contractWorkQuota != null ? String(row.contractWorkQuota) : monthlyHours,
     workModalityCode: row?.workModalityCode ?? "", baseSchemeSupplementCode: row?.baseSchemeSupplementCode ?? "99", sicknessRegimeCode: row?.sicknessRegimeCode ?? "200",

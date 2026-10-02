@@ -34,9 +34,10 @@ import {
 } from "./params";
 import { assertAmount, round2, round4 } from "./money";
 import { NO_SEVERANCE, addTerminationLines } from "./termination";
+import { shortContractPasApplies } from "./short-contract";
 import type { PaidLeaveBalances, PaidLeaveOutcome, PayslipInput, PayslipLine, PayslipResult, SickPayHistory, YearToDate } from "./types";
 
-export const BULLETIN_ENGINE_VERSION = "rhpilot-bulletin-2026.5";
+export const BULLETIN_ENGINE_VERSION = "rhpilot-bulletin-2026.6";
 
 export function emptyYearToDate(year: number): YearToDate {
   return {
@@ -691,8 +692,11 @@ export function computePayslip(input: PayslipInput): PayslipResult {
     rateIdentifier = input.withholding.rateIdentifier ?? null;
   } else {
     const grid = valueAt(PAS_DEFAULT_GRIDS, fromIsoDay(paymentDate), "grille de taux par défaut du prélèvement à la source");
-    const isShortContract = employee.contract === "CDD" && employee.plannedContractDays !== null && employee.plannedContractDays !== undefined && employee.plannedContractDays <= 62;
-    if (isShortContract) shortContractAllowance = valueAt(PAS_SHORT_CONTRACT_ALLOWANCE, fromIsoDay(paymentDate), "abattement contrats courts").value;
+    if (shortContractPasApplies(employee, input.period)) {
+      const allowance = valueAt(PAS_SHORT_CONTRACT_ALLOWANCE, fromIsoDay(paymentDate), "abattement contrats courts");
+      shortContractAllowance = allowance.value;
+      sources.add(allowance.source);
+    }
     withholdingRate = pasBracketRate(grid.value[org.territory], Math.max(0, netTaxable - shortContractAllowance));
     withholdingSource = grid.source;
     warnings.push(`Aucun taux personnalisé n'est connu pour ${employee.displayName} : la grille de taux par défaut s'applique jusqu'au retour du taux par la DGFiP.`);

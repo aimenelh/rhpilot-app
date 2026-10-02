@@ -2,7 +2,7 @@
 
 Le préparateur lit les lignes et entrées du bulletin verrouillé, vérifie les totaux au centime, puis ventile les dettes Urssaf, retraite, organismes complémentaires et DGFiP. Il ne recalcule pas une paie depuis les paramètres vivants.
 
-Mapping versionné P26V01-RG-2026.3 :
+Mapping versionné P26V01-RG-2026.5 :
 - Maladie et allocations familiales : compléments 635/907 et 430/102 en 2026.
 - Retraite, CEG et CET : 131/132, contrôles patronaux 142/146, sans double paiement.
 - RGDU : ventilation des cumuls Urssaf/retraite avant différence mensuelle, bulletin antérieur obligatoire pour les cumuls repris.
@@ -13,14 +13,17 @@ Mapping versionné P26V01-RG-2026.3 :
 - Versement mobilité : base 57, VM 081/900, VMA 082/901 et VMR 918/820, selon le sous-ensemble DIDA officiel. Le bulletin conserve la commune de travail, la ventilation Urssaf et sa validité ; un taux manuel ou historique sans ventilation bloque l'export. Le dernier composant absorbe le centime résiduel pour conserver exactement la dette du bulletin. Pour Paris, Lyon et Marseille, le code de l'arrondissement de travail est conservé même si le barème a été trouvé sous celui de la ville parente.
 - Heures : 018 pour les heures supplémentaires structurelles, 017 pour les HS/HC aléatoires, net fiscal exonéré en 58/01, cotisation individuelle 114 / CTP 003 et 021 / CTP 004. Les valeurs proviennent du bulletin verrouillé.
 - Variables : les primes mensuelles ordinaires restent dans les rémunérations et assiettes courantes ; les primes annuelles/exceptionnelles restent bloquées sans type S21.G00.52 et période de rattachement explicites.
-- Absences mensuelles : congé sans solde en activité 02 + suspension 501 ; RTT et événements familiaux rémunérés restent en activité 01 ; maladie, maternité et paternité non subrogées sont raccordées aux blocs S21.G00.60 et à l'activité 02. Les arrêts subrogés, l'AT/MP et le signalement événementiel restent à terminer.
+- Absences mensuelles : congé sans solde en activité 02 + suspension 501 ; RTT et événements familiaux rémunérés restent en activité 01 ; maladie, AT, maternité et paternité alimentent S21.G00.60 et l'activité 02, avec ou sans subrogation. Le DJT, les dates de subrogation et la reprise viennent du snapshot. Les IJSS nettes subrogées alimentent 58 type 10. Les estimations et périodes partielles sans ventilation restent bloquées.
+- Congés payés : indemnité complète en 52 type 046 ; contrôle de la comparaison maintien/dixième. Entrée : période d'emploi réelle pour les rémunérations et assiettes, heures hors contrat exclues de l'activité rémunérée sans être déclarées comme absence. La rémunération des droits chômage (51/002) est distincte de l'assiette chômage plafonnée (78/07).
+- CDD : motif de recours explicite en 40.021 ; contrôle de l'abattement PAS daté et des deux mois de date à date. RNF et assiette PAS sont lues séparément depuis la décomposition fiscale figée.
+- Signalements 04/05 : préparés séparément depuis les arrêts validés, avec compte IJSS dans le 04, date d'accident pour l'AT et regroupement des prolongations. Archives chiffrées immuables, ordre continu par entreprise. Aucun dépôt réel n'est effectué.
 
 La présence d'une affiliation et la saisie de sa référence ne remplacent pas la vérification de la fiche de paramétrage. Les autres composants, périodicités et changements d'affiliation en cours de mois restent bloqués.
 
-Le dépôt réel reste désactivé. Les événements, régularisations historiques, contributions annuelles et retours métier ne sont pas encore entièrement raccordés. Les cas non traduits — notamment arrêts subrogés, AT/MP, signalements événementiels, congés payés nécessitant un traitement déclaratif spécifique, primes à période spécifique, apprentis et régimes spécifiques — restent bloqués explicitement avant export. Les fins de contrat au dernier jour, les rappels après sortie et les changements de contrat/statut sont également bloqués, même avec un salaire mensuel entier. Le statut retraite .40.003 doit correspondre au statut cadre/non-cadre verrouillé ; les extensions cadre nécessitent un modèle distinct.
+Le dépôt réel reste désactivé. Les sorties/FCTU, régularisations historiques, contributions annuelles et retours métier ne sont pas entièrement raccordés. Les cas non traduits — notamment primes à période spécifique, apprentis, avantages et frais nécessitant des rubriques supplémentaires, thérapeutique et régimes spécifiques — restent bloqués explicitement avant export. Les fins de contrat au dernier jour, les rappels après sortie et les changements de contrat/statut sont également bloqués, même avec un salaire mensuel entier. Le statut retraite .40.003 doit correspondre au statut cadre/non-cadre verrouillé ; les extensions cadre nécessitent un modèle distinct.
 
 ## Vérification
-La CI exécute migrations PostgreSQL, validation du schéma, TypeScript, lint, tests et build. Le job Dsn-Val vérifie des fichiers synthétiques, dont des bulletins réellement calculés et une double affiliation santé/prévoyance ; un témoin invalide doit être refusé. Un résultat Dsn-Val accepté établit la conformité structurelle de ces exemples, pas l'acceptation métier de toutes les paies d'une entreprise.
+La CI exécute migrations PostgreSQL, validation du schéma, TypeScript, lint, tests et build. Le job Dsn-Val vérifie 37 fichiers synthétiques, dont des bulletins réellement calculés et une double affiliation santé/prévoyance ; un témoin invalide doit être refusé. Un résultat Dsn-Val accepté établit la conformité structurelle de ces exemples, pas l'acceptation métier de toutes les paies d'une entreprise.
 
 Références : cahier technique DSN 2026.1.2, consignes 2556 et 2537, documentation Urssaf maladie/allocations familiales 2026 et RGDU, fiches de paramétrage des organismes.
 

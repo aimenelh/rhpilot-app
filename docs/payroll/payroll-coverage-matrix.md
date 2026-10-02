@@ -42,9 +42,9 @@
 | Congés payés | ✅ | Jours ouvrables ou ouvrés, maintien comparé au dixième, acquisition 2,5 j (2 j pendant la maladie), bascule au 1er juin avec report signalé |
 | RTT, événements familiaux | ✅ | Absences normalement rémunérées ; restent dans l'activité DSN 01 |
 | Absence sans solde | ✅ | Retenue à l'horaire réel, plafond réduit des jours civils entiers ; DSN activité 02 et suspension 501 raccordées |
-| Maladie | ✅ | Calcul paie complet ; bloc mensuel S21.G00.60 + activité 02 raccordés hors subrogation. Signalement événementiel et subrogation restent à terminer |
+| Maladie | ✅ | Bloc mensuel 60 et activité 02 raccordés avec/sans subrogation, métadonnées explicites figées ; signalement 04 en pré-contrôle. IJSS estimées ou subrogation partielle sans ventilation bloquent l'export |
 | Accident du travail | ✅ | Jour de l'accident payé, sans carence, IJSS imposables à 50 % |
-| Maternité, paternité | 🟠 | Retenue et IJSS ; bloc mensuel S21.G00.60 + activité 02 raccordés hors subrogation. Maintien conventionnel, signalement événementiel et subrogation restent à terminer |
+| Maternité, paternité | 🟠 | Retenue et IJSS ; bloc mensuel 60 et activité 02 avec/sans subrogation, signalement 04 en pré-contrôle. Maintien conventionnel à compléter |
 | IJSS | ✅ | Montant de l'attestation, ou estimation signalée sur les trois mois précédant l'arrêt ; imposables sur les 60 premiers jours d'arrêt maladie |
 | Subrogation | ✅ | Paramètre de l'entreprise ; IJSS nettes reversées, intégrées au net social |
 | Maintien conventionnel plus favorable | 🟠 | Règle saisissable dans Configuration > Organisation et appliquée au bulletin (maladie et AT/MP, deux taux, paliers d’ancienneté). Référence obligatoire et règle moins favorable refusée. Garanties en net et règles distinctes par population à compléter |
@@ -83,7 +83,7 @@
 |---|---|---|
 | Net social | ✅ | Définition codifiée, IJSS subrogées nettes incluses |
 | Net imposable | ✅ | Santé patronale, CSG non déductible, HS défiscalisées, IJSS, indemnités de rupture |
-| Prélèvement à la source | ✅ | Taux personnalisé, ou grille par défaut à la date de paiement avec abattement contrats courts |
+| Prélèvement à la source | 🟠 | Taux personnalisé ou grille datée ; CDD court : deux mois de date à date, RNF et assiette distinctes en DSN. Terme imprécis sans durée minimale et renouvellement sans terme initial conservé ne sont pas couverts |
 | Cumuls annuels | ✅ | Chaînés depuis le dernier bulletin validé, ou reprise saisie |
 | Reprise d'un autre logiciel | ✅ | Soldes de congés et cumuls de l'année saisissables par salarié |
 
@@ -94,4 +94,4 @@
 | Cycle préparer, calculer, contrôler, valider, clôturer | ✅ | Calcul séquentiel : un mois précédent non validé bloque le suivant |
 | Bulletin clarifié | ✅ | Rubriques par risque, allègements, net social, PAS, congés, cumuls, mentions obligatoires |
 | Points d'attention du calcul | ✅ | Affichés avant validation |
-| DSN | 🟠 | Générateur intégré aux périodes verrouillées, mapping P26V01 versionné, dettes rapprochées au centime, archives chiffrées/versionnées. 39 h, HS/HC, primes mensuelles ordinaires, congé sans solde, RTT, événements familiaux et blocs mensuels maladie/maternité/paternité non subrogés sont raccordés. Dsn-Val 2026.1.0.17 reste exécuté en CI sur les fixtures normatives existantes. Restent notamment signalements événementiels, subrogation, AT/MP, sorties, apprentis, régularisations, contributions annuelles et retours métier. Dépôt réel désactivé |
+| DSN | 🟠 | Mapping P26V01 versionné depuis les paies verrouillées, dettes rapprochées au centime, archives chiffrées immuables. Variables courantes, absences, AT, subrogation, CP, entrées et CDD court raccordés. Signalements 04/05 en test. Dsn-Val 2026.1.0.17 : 37 fichiers sans anomalie. Restent notamment sorties/FCTU, apprentis, avantages/frais spécifiques, régularisations, contributions annuelles et dépôt/retours métier. Dépôt réel désactivé |

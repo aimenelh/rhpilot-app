@@ -28,7 +28,7 @@ type OrganizationDsnRow = {
 type DsnEmployeeProfileRow = {
   complementaryAffiliations: unknown;
   employeeId: string; nirCiphertext: string; birthDate: Date; birthPlace: string; birthDepartment: string; birthCountryCode: string | null; euClassificationCode: string | null;
-  addressLine: string; postalCode: string; city: string; countryCode: string | null; contractNumber: string; contractNatureCode: string; publicPolicyCode: string;
+  addressLine: string; postalCode: string; city: string; countryCode: string | null; contractNumber: string; contractNatureCode: string; fixedTermReasonCode: string | null; publicPolicyCode: string;
   pcsEsecCode: string; conventionalStatusCode: string; retirementStatusCode: string; workUnitCode: string; referenceWorkQuota: unknown; contractWorkQuota: unknown;
   workModalityCode: string; baseSchemeSupplementCode: string | null; sicknessRegimeCode: string; workLocationId: string | null; oldAgeRegimeCode: string;
   foreignWorkerCode: string | null; employmentStatusCode: string | null; multipleJobsCode: string | null; multipleEmployersCode: string | null;
@@ -129,7 +129,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
     prisma.employee.findMany({ where: { organizationId: input.organizationId, id: { in: employeeIds } }, select: { id: true, firstName: true, lastName: true, position: true, hireDate: true, contractEndDate: true, contractType: true } }),
     prisma.$queryRaw<DsnEmployeeProfileRow[]>`
       SELECT "employeeId", "nirCiphertext", "birthDate", "birthPlace", "birthDepartment", "birthCountryCode", "euClassificationCode",
-             "addressLine", "postalCode", "city", "countryCode", "contractNumber", "contractNatureCode", "publicPolicyCode", "pcsEsecCode", "conventionalStatusCode",
+             "addressLine", "postalCode", "city", "countryCode", "contractNumber", "contractNatureCode", "fixedTermReasonCode", "publicPolicyCode", "pcsEsecCode", "conventionalStatusCode",
              "retirementStatusCode", "workUnitCode", "referenceWorkQuota", "contractWorkQuota", "workModalityCode", "baseSchemeSupplementCode", "sicknessRegimeCode",
              "workLocationId", "oldAgeRegimeCode", "foreignWorkerCode", "employmentStatusCode", "multipleJobsCode", "multipleEmployersCode",
              "workAccidentRegimeCode", "workAccidentRiskCode", "complementaryAffiliations"
@@ -206,8 +206,9 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
       if (!Number.isFinite(amount) || amount < 0) throw new Error("DSN bloquée : une IJSS subrogée du bulletin verrouillé est invalide.");
       return total + amount;
     }, 0) * 100) / 100;
-    assertPasDsnScopeSupported({ source: withholdingProfile.source, contractType: employee.contractType, hireDate: employee.hireDate, contractEndDate: employee.contractEndDate, hasSubrogatedDailyAllowances: subrogatedIjssNetAmount > 0 });
-    const { fiscalNet, pas } = dsnPasFromLockedBulletin({ withholding: (snapshot.bulletin as { withholding?: unknown } | undefined)?.withholding, profile: withholdingProfile, payrollDepartment, contractType: employee.contractType, netTaxableAmount, withholdingAmount: withholdingTax });
+    const { fiscalNet, pas, fiscalBreakdown } = dsnPasFromLockedBulletin({ withholding: (snapshot.bulletin as { withholding?: unknown } | undefined)?.withholding, profile: withholdingProfile, payrollDepartment, contractType: employee.contractType, netTaxableAmount, withholdingAmount: withholdingTax });
+    assertPasDsnScopeSupported({ source: withholdingProfile.source, contractType: employee.contractType, hireDate: employee.hireDate, contractEndDate: employee.contractEndDate, hasSubrogatedDailyAllowances: subrogatedIjssNetAmount > 0,
+      lockedFiscalBreakdown: fiscalBreakdown, period: locked.bulletin.period, paymentDate: locked.bulletin.period.paymentDate, plannedContractDays: locked.inputs.employee.plannedContractDays });
 
     const nir = assertNirFormat(decryptDsnSensitiveValue(dsnProfile.nirCiphertext));
     assertNirBirthYear(nir, dsnProfile.birthDate, employee.id);
@@ -234,6 +235,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
       postalCode: dsnProfile.postalCode, city: dsnProfile.city, countryCode: null, position: requiredString(employee.position, `l'emploi du salarié ${employee.id}`),
       contract: {
         startDate: employee.hireDate, endDate: employee.contractEndDate, contractNumber: dsnProfile.contractNumber, contractNatureCode: dsnProfile.contractNatureCode,
+        fixedTermReasonCode: dsnProfile.fixedTermReasonCode,
         publicPolicyCode: dsnProfile.publicPolicyCode, pcsEsecCode: dsnProfile.pcsEsecCode, conventionalStatusCode: dsnProfile.conventionalStatusCode,
         retirementStatusCode: dsnProfile.retirementStatusCode, workUnitCode: dsnProfile.workUnitCode, referenceWorkQuota, contractWorkQuota,
         workModalityCode: dsnProfile.workModalityCode, baseSchemeSupplementCode: requiredString(dsnProfile.baseSchemeSupplementCode, `le complément de régime du salarié ${employee.id}`),

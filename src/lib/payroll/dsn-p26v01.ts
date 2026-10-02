@@ -2,6 +2,7 @@ import type { DsnPasData } from "./pas-dsn";
 import { checkSiret } from "../siret";
 import { assertDsnWorkAccidentRiskCode } from "./dsn-nomenclature";
 import { dsnPaymentBic, dsnPaymentIban } from "./dsn-payment-settings";
+import { dsnFixedTermReason } from "./dsn-fixed-term";
 
 export const DSN_NORM_VERSION = "P26V01";
 
@@ -50,6 +51,7 @@ export type DsnP26MonthlyInput = {
       endDate?: Date | null;
       contractNumber: string;
       contractNatureCode: string;
+      fixedTermReasonCode?: string | null;
       publicPolicyCode: string;
       pcsEsecCode: string;
       conventionalStatusCode: string;
@@ -332,6 +334,7 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
     add(lines, "S21.G00.40.018", assertCode(employee.contract.sicknessRegimeCode, "le régime maladie", 3, 3));
     add(lines, "S21.G00.40.019", assertCode(employee.contract.workLocationId, "l'identifiant du lieu de travail", 2, 14));
     add(lines, "S21.G00.40.020", assertCode(employee.contract.oldAgeRegimeCode, "le régime vieillesse", 3, 3));
+    add(lines, "S21.G00.40.021", dsnFixedTermReason(employee.contract.contractNatureCode, employee.contract.publicPolicyCode, employee.contract.fixedTermReasonCode));
     add(lines, "S21.G00.40.024", assertCode(employee.contract.foreignWorkerCode, "le statut de travailleur à l'étranger", 2, 2));
     add(lines, "S21.G00.40.026", assertCode(employee.contract.employmentStatusCode, "le statut d'emploi", 2, 2));
     add(lines, "S21.G00.40.036", assertCode(employee.contract.multipleJobsCode, "le code emplois multiples", 2, 2));
