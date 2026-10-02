@@ -16,13 +16,13 @@ import type { WithholdingTaxProfile } from "./withholding-tax-profile";
 export type DsnPreparationResult = { content: string; fileName: string; normVersion: "P26V01"; employeeCount: number; warnings: string[] };
 
 type SnapshotWithholdingTax = { rate: number; amount: number; validFrom: string; validUntil: string | null; source: string; sourceReference: string | null };
-type CalculationSnapshot = { profile?: { id?: string; baseSalaryCents?: number; monthlyHours?: string | null; collectiveAgreementId?: string | null }; variables?: unknown[]; validatedAbsences?: Array<{ type?: string }>; withholdingTax?: Partial<SnapshotWithholdingTax>; socialEngine?: { employerCost?: number }; bulletin?: { lines?: Array<{ code?: string; base?: number }> } };
+type CalculationSnapshot = { profile?: { id?: string; baseSalaryCents?: number; monthlyHours?: string | null; collectiveAgreementId?: string | null }; variables?: unknown[]; validatedAbsences?: Array<{ absenceId?: string; type?: string; startDate?: string; endDate?: string; lastWorkedDate?: string | null; subrogationStartDate?: string | null; subrogationEndDate?: string | null; workAccidentDate?: string | null; returnDate?: string | null; returnReasonCode?: string | null }>; withholdingTax?: Partial<SnapshotWithholdingTax>; socialEngine?: { employerCost?: number }; bulletin?: { lines?: Array<{ code?: string; base?: number; amount?: number }> } };
 
 type OrganizationDsnRow = {
   id: string; name: string; siret: string | null; payrollAddress: string | null; payrollPostalCode: string | null; payrollCity: string | null;
   payrollNafCode: string | null; payrollDepartment: string | null; atmpRate: unknown; mainCollectiveAgreementCode: string | null;
   contactName: string | null; contactEmail: string | null; contactPhone: string | null; declaredContactType: string | null; enterpriseApenCode: string | null; defaultTestMode: boolean | null;
-  urssafSiret: string | null; retirementSiret: string | null; paymentIbanCiphertext: string | null; paymentBic: string | null; sepaMandatesConfirmed: boolean;
+  urssafSiret: string | null; retirementSiret: string | null; paymentIbanCiphertext: string | null; paymentBic: string | null; subrogationIbanCiphertext: string | null; subrogationBic: string | null; ijssSubrogation: boolean; sepaMandatesConfirmed: boolean;
 };
 
 type DsnEmployeeProfileRow = {
@@ -63,9 +63,9 @@ const DSN_UNMAPPED_BULLETIN_LINES = new Set(["ENTRY_EXIT", "SEVERANCE", "PAID_LE
 export function dsnScopeIssues(snapshot: { variables?: unknown[]; validatedAbsences?: Array<{ type?: string }>; bulletin?: { lines?: Array<{ code?: string; base?: number }> } }): string[] {
   const issues: string[] = [];
   if ((snapshot.bulletin?.lines ?? []).some((line) => line.code && DSN_UNMAPPED_BULLETIN_LINES.has(line.code))) issues.push("entrée, sortie ou indemnité de fin de contrat (blocs S21.G00.62 non émis)");
-  const supportedAbsences = new Set(["UNPAID_LEAVE", "RTT", "FAMILY_EVENT", "SICK_LEAVE", "MATERNITY", "PATERNITY"]);
+  const supportedAbsences = new Set(["UNPAID_LEAVE", "RTT", "FAMILY_EVENT", "SICK_LEAVE", "MATERNITY", "PATERNITY", "WORK_ACCIDENT"]);
   const unsupportedAbsences = (snapshot.validatedAbsences ?? []).filter((absence) => !supportedAbsences.has(absence?.type ?? ""));
-  if (unsupportedAbsences.length > 0) issues.push("absences non encore raccordées (AT/MP, congés payés ou autre suspension)");
+  if (unsupportedAbsences.length > 0) issues.push("absences non encore raccordées (congés payés ou autre suspension)");
   return issues;
 }
 
@@ -85,7 +85,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
 
   const organizationRows = await prisma.$queryRaw<OrganizationDsnRow[]>`
     SELECT o."id", o."name", o."siret", o."payrollAddress", o."payrollPostalCode", o."payrollCity", o."payrollNafCode", o."payrollDepartment", o."atmpRate",
-           ca."idcc" AS "mainCollectiveAgreementCode", s."contactName", s."contactEmail", s."contactPhone", s."declaredContactType", s."enterpriseApenCode", s."defaultTestMode", s."urssafSiret", s."retirementSiret", s."paymentIbanCiphertext", s."paymentBic", s."sepaMandatesConfirmed"
+           ca."idcc" AS "mainCollectiveAgreementCode", o."ijssSubrogation", s."contactName", s."contactEmail", s."contactPhone", s."declaredContactType", s."enterpriseApenCode", s."defaultTestMode", s."urssafSiret", s."retirementSiret", s."paymentIbanCiphertext", s."paymentBic", s."subrogationIbanCiphertext", s."subrogationBic", s."sepaMandatesConfirmed"
     FROM "organizations" o
     LEFT JOIN "collective_agreements" ca ON ca."id" = o."collectiveAgreementId"
     LEFT JOIN "dsn_organization_settings" s ON s."organizationId" = o."id"
@@ -109,6 +109,8 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
   if (urssafSiret === retirementSiret) throw new Error("DSN bloquée : les organismes Urssaf et retraite doivent être distincts.");
   const paymentIban = dsnPaymentIban(decryptDsnSensitiveValue(requiredString(organization.paymentIbanCiphertext, "le compte bancaire de prélèvement")));
   const paymentBic = dsnPaymentBic(requiredString(organization.paymentBic, "le BIC"));
+  const subrogationIban = organization.subrogationIbanCiphertext ? dsnPaymentIban(decryptDsnSensitiveValue(organization.subrogationIbanCiphertext)) : null;
+  const subrogationBic = organization.subrogationBic ? dsnPaymentBic(organization.subrogationBic) : null;
   if (!organization.sepaMandatesConfirmed) throw new Error("DSN bloquée : confirmez les mandats SEPA enregistrés auprès des organismes et de la DGFiP.");
   const testMode = input.testMode ?? organization.defaultTestMode ?? true;
   if (!testMode) throw new Error("DSN réelle bloquée : le raccordement des cotisations est en recette. Les affiliations complémentaires, événements et retours métier doivent être validés avant ouverture.");
@@ -199,7 +201,12 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
     assertPayrollOutputConsistency({ grossAmount, employeeContributions, employerContributions, netBeforeTax, netTaxableAmount, netSocialAmount, withholdingTax, netPaid, ...(Number.isFinite(employerCost) ? { employerCost } : {}) });
 
     const withholdingProfile = snapshotWithholdingTax(snapshot, employee.id);
-    assertPasDsnScopeSupported({ source: withholdingProfile.source, contractType: employee.contractType, hireDate: employee.hireDate, contractEndDate: employee.contractEndDate, hasSubrogatedDailyAllowances: false });
+    const subrogatedIjssNetAmount = Math.round(locked.bulletin.lines.filter((line) => line.code === "IJSS_SUBROGATION").reduce((total, line) => {
+      const amount = Number(line.amount ?? 0);
+      if (!Number.isFinite(amount) || amount < 0) throw new Error("DSN bloquée : une IJSS subrogée du bulletin verrouillé est invalide.");
+      return total + amount;
+    }, 0) * 100) / 100;
+    assertPasDsnScopeSupported({ source: withholdingProfile.source, contractType: employee.contractType, hireDate: employee.hireDate, contractEndDate: employee.contractEndDate, hasSubrogatedDailyAllowances: subrogatedIjssNetAmount > 0 });
     const { fiscalNet, pas } = dsnPasFromLockedBulletin({ withholding: (snapshot.bulletin as { withholding?: unknown } | undefined)?.withholding, profile: withholdingProfile, payrollDepartment, contractType: employee.contractType, netTaxableAmount, withholdingAmount: withholdingTax });
 
     const nir = assertNirFormat(decryptDsnSensitiveValue(dsnProfile.nirCiphertext));
@@ -234,13 +241,25 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         foreignWorkerCode: requiredString(dsnProfile.foreignWorkerCode, `le statut travailleur étranger du salarié ${employee.id}`), employmentStatusCode: requiredString(dsnProfile.employmentStatusCode, `le statut d'emploi du salarié ${employee.id}`),
         multipleJobsCode: requiredString(dsnProfile.multipleJobsCode, `le code emplois multiples du salarié ${employee.id}`), multipleEmployersCode: requiredString(dsnProfile.multipleEmployersCode, `le code employeurs multiples du salarié ${employee.id}`),
         workAccidentRegimeCode: requiredString(dsnProfile.workAccidentRegimeCode, `le régime AT/MP du salarié ${employee.id}`), workAccidentRiskCode: riskCode, workAccidentRate: contributions.atmpRatePercent,
-        workStoppages: contributions.workStoppages.stoppages.map((item) => ({
-          reasonCode: item.reasonCode,
-          lastDayWorked: new Date(item.lastDayWorked + "T00:00:00.000Z"),
-          expectedEndDate: new Date(item.expectedEnd + "T00:00:00.000Z"),
-          subrogationCode: item.subrogationCode,
-          ...(item.recoveryDate ? { recoveryDate: new Date(item.recoveryDate + "T00:00:00.000Z"), recoveryReasonCode: item.recoveryReasonCode } : {}),
-        })),
+        workStoppages: contributions.workStoppages.stoppages.map((item) => {
+          if (item.subrogationCode === "01" && (!subrogationIban || !subrogationBic)) {
+            throw new Error(`DSN bloquée pour ${employee.firstName} ${employee.lastName} : renseignez le compte de réception des IJSS subrogées.`);
+          }
+          return {
+            reasonCode: item.reasonCode,
+            lastDayWorked: new Date(item.lastDayWorked + "T00:00:00.000Z"),
+            expectedEndDate: new Date(item.expectedEnd + "T00:00:00.000Z"),
+            subrogationCode: item.subrogationCode,
+            ...(item.subrogationCode === "01" ? {
+              subrogationStartDate: new Date(item.subrogationStart! + "T00:00:00.000Z"),
+              subrogationEndDate: new Date(item.subrogationEnd! + "T00:00:00.000Z"),
+              subrogationIban: subrogationIban!,
+              subrogationBic: subrogationBic!,
+            } : {}),
+            ...(item.recoveryDate ? { recoveryDate: new Date(item.recoveryDate + "T00:00:00.000Z"), recoveryReasonCode: item.recoveryReasonCode } : {}),
+            ...(item.accidentDate ? { accidentDate: new Date(item.accidentDate + "T00:00:00.000Z") } : {}),
+          };
+        }),
         suspensions: contributions.unpaidAbsence.suspensions.map((item) => ({
           reasonCode: item.reasonCode,
           startDate: new Date(`${item.start}T00:00:00.000Z`),
@@ -262,6 +281,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         overtimeRemunerations: contributions.overtime.remunerations,
         overtimeTaxExemptNetAmount: contributions.overtime.taxExemptNetAmount,
         absenceActivityHours: contributions.activityAbsenceHours,
+        subrogatedIjssNetAmount,
       },
     });
   }

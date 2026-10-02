@@ -2,7 +2,7 @@ import type { IdentifiedDsnAffiliation } from "./dsn-complementary-affiliations"
 import type { PayslipInput, PayslipLine, PayslipResult } from "./bulletin/types";
 import type { DsnAggregatedContribution, DsnAssessedBase, DsnIndividualContribution } from "./dsn-p26v01-complete";
 
-export const LOCKED_CONTRIBUTION_MAPPING_VERSION = "P26V01-RG-2026.3";
+export const LOCKED_CONTRIBUTION_MAPPING_VERSION = "P26V01-RG-2026.4";
 export const LOCKED_CONTRIBUTION_SOURCES = [
   "https://open.urssaf.fr/explore/dataset/equivalence-dida/export/",
   "https://www.urssaf.fr/accueil/actualites/declaration-cotisation-am-af.html",
@@ -114,66 +114,110 @@ export function readLockedUnpaidAbsenceDeclaration(value: unknown): LockedUnpaid
 export type LockedWorkStoppageDeclaration = {
   hours: number;
   stoppages: Array<{
-    reasonCode: "01" | "02" | "03";
+    reasonCode: "01" | "02" | "03" | "06";
     lastDayWorked: string;
     expectedEnd: string;
-    subrogationCode: "02";
+    subrogationCode: "01" | "02";
+    subrogationStart?: string;
+    subrogationEnd?: string;
     recoveryDate?: string;
-    recoveryReasonCode?: "01";
+    recoveryReasonCode?: "01" | "02" | "03";
+    accidentDate?: string;
   }>;
 };
 
-function addIsoDays(day: string, offset: number): string {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new Error("DSN bloquée : une date d'arrêt verrouillée est invalide.");
-  const date = new Date(day + "T00:00:00.000Z");
-  date.setUTCDate(date.getUTCDate() + offset);
-  return date.toISOString().slice(0, 10);
+type LockedAbsenceDsnMetadata = {
+  absenceId: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  expectedEndDate: string;
+  lastWorkedDate: string | null;
+  subrogationStartDate: string | null;
+  subrogationEndDate: string | null;
+  workAccidentDate: string | null;
+  returnDate: string | null;
+  returnReasonCode: string | null;
+};
+
+function isoDateOnly(value: unknown, label: string, required = true): string | null {
+  if (value === null || value === undefined || value === "") {
+    if (required) throw new Error(`DSN bloquée : ${label} est absent.`);
+    return null;
+  }
+  if (typeof value !== "string") throw new Error(`DSN bloquée : ${label} est invalide.`);
+  const normalized = value.slice(0, 10);
+  const date = new Date(normalized + "T00:00:00.000Z");
+  if (!/^\d{4}-\d{2}-\d{2}(?:T00:00:00\.000Z)?$/.test(value) || Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== normalized) {
+    throw new Error(`DSN bloquée : ${label} est invalide.`);
+  }
+  return normalized;
+}
+
+function readLockedAbsenceDsnMetadata(value: unknown): LockedAbsenceDsnMetadata[] {
+  if (!object(value)) throw new Error("DSN bloquée : le snapshot verrouillé est invalide.");
+  const rows = value.dsnWorkStoppages ?? value.validatedAbsences;
+  if (!Array.isArray(rows)) return [];
+  const seen = new Set<string>();
+  return rows.map((row, index) => {
+    if (!object(row)) throw new Error(`DSN bloquée : les métadonnées DSN de l'absence ${index + 1} sont invalides.`);
+    const absenceId = typeof row.absenceId === "string" ? row.absenceId : "";
+    const type = typeof row.type === "string" ? row.type : "";
+    if (!absenceId || !type) throw new Error("DSN bloquée : une absence verrouillée n'a pas d'identifiant ou de type.");
+    if (seen.has(absenceId)) throw new Error("DSN bloquée : les métadonnées d'une absence sont dupliquées.");
+    seen.add(absenceId);
+    return {
+      absenceId,
+      type,
+      startDate: isoDateOnly(row.startDate, `la date de début de l'absence ${absenceId}`)!,
+      endDate: isoDateOnly(row.endDate, `la date de fin de l'absence ${absenceId}`)!,
+      expectedEndDate: isoDateOnly(row.expectedEndDate ?? row.endDate, `la fin prescrite de l'arrêt ${absenceId}`)!,
+      lastWorkedDate: isoDateOnly(row.lastWorkedDate, `le dernier jour travaillé de l'arrêt ${absenceId}`, false),
+      subrogationStartDate: isoDateOnly(row.subrogationStartDate, `le début de subrogation de l'arrêt ${absenceId}`, false),
+      subrogationEndDate: isoDateOnly(row.subrogationEndDate, `la fin de subrogation de l'arrêt ${absenceId}`, false),
+      workAccidentDate: isoDateOnly(row.workAccidentDate, `la date d'accident de l'arrêt ${absenceId}`, false),
+      returnDate: isoDateOnly(row.returnDate, `la date de reprise de l'arrêt ${absenceId}`, false),
+      returnReasonCode: typeof row.returnReasonCode === "string" && row.returnReasonCode.trim() ? row.returnReasonCode.trim() : null,
+    };
+  });
 }
 
 /**
- * Raccorde les arrêts dont toutes les données déclaratives sont déjà déterministes.
- * La subrogation reste bloquée tant que sa période et son compte IJSS ne sont pas
- * enregistrés séparément. L'AT reste bloqué tant que la date d'accident n'est pas stockée.
+ * Raccorde les arrêts uniquement à partir des données déclaratives explicitement
+ * figées avec la paie. Le dernier jour travaillé n'est jamais déduit de la date
+ * de début : les prolongations sans reprise conserveraient sinon une valeur fausse.
  */
 export function readLockedWorkStoppageDeclaration(value: unknown, previousValue?: unknown): LockedWorkStoppageDeclaration {
   const { bulletin, inputs } = readLockedContributionSnapshot(value);
-  const supportedKinds = new Set(["SICK_LEAVE", "MATERNITY", "PATERNITY"]);
+  const supportedKinds = new Set(["SICK_LEAVE", "MATERNITY", "PATERNITY", "WORK_ACCIDENT"]);
   const absences = (inputs.absences ?? []).filter((absence) => supportedKinds.has(absence.kind));
   if (absences.length === 0) return { hours: 0, stoppages: [] };
-  if (inputs.organization.ijssSubrogation) {
-    throw new Error("DSN bloquée : un arrêt subrogé nécessite une période de subrogation et un compte bancaire IJSS explicitement enregistrés.");
-  }
 
-  const codeByKind = { SICK_LEAVE: "01", MATERNITY: "02", PATERNITY: "03" } as const;
-  const lineCodeByKind = { SICK_LEAVE: "ABS_SICK_LEAVE", MATERNITY: "ABS_MATERNITY", PATERNITY: "ABS_PATERNITY" } as const;
-  const previousInputs = previousValue === undefined ? null : readLockedContributionSnapshot(previousValue).inputs;
-  if (previousInputs && previousInputs.employee.id !== inputs.employee.id) throw new Error("DSN bloquée : le bulletin antérieur des arrêts ne concerne pas le même salarié.");
-  const chainCandidates = new Map<string, NonNullable<PayslipInput["absences"]>[number]>();
-  for (const candidate of [...(previousInputs?.absences ?? []), ...(inputs.absences ?? [])]) {
-    if (supportedKinds.has(candidate.kind)) chainCandidates.set(candidate.id, candidate);
-  }
-  const initialAbsence = (absence: NonNullable<PayslipInput["absences"]>[number]) => {
-    let current = absence;
-    const visited = new Set<string>();
-    while (!visited.has(current.id)) {
-      visited.add(current.id);
-      const predecessor = [...chainCandidates.values()]
-        .filter((candidate) => candidate.id !== current.id && candidate.end === addIsoDays(current.start, -1))
-        .sort((a, b) => b.start.localeCompare(a.start))[0];
-      if (!predecessor) break;
-      current = predecessor;
-    }
-    return current;
-  };
+  const metadataById = new Map(readLockedAbsenceDsnMetadata(value).map((item) => [item.absenceId, item]));
+  const previous = previousValue === undefined ? null : readLockedContributionSnapshot(previousValue);
+  if (previous && previous.inputs.employee.id !== inputs.employee.id) throw new Error("DSN bloquée : le bulletin antérieur des arrêts ne concerne pas le même salarié.");
+  const previousMetadata = previous ? readLockedAbsenceDsnMetadata(previousValue) : [];
+  const chainMetadata = [...previousMetadata, ...metadataById.values()];
+  const codeByKind = { SICK_LEAVE: "01", MATERNITY: "02", PATERNITY: "03", WORK_ACCIDENT: "06" } as const;
+  const lineCodeByKind = { SICK_LEAVE: "ABS_SICK_LEAVE", MATERNITY: "ABS_MATERNITY", PATERNITY: "ABS_PATERNITY", WORK_ACCIDENT: "ABS_WORK_ACCIDENT" } as const;
   const grossLines = bulletin.lines.filter((line) => line.section === "GROSS" && Object.values(lineCodeByKind).includes(line.code as typeof lineCodeByKind[keyof typeof lineCodeByKind]));
   const matchedLines = new Set<PayslipLine>();
   let hours = 0;
   const stoppages: LockedWorkStoppageDeclaration["stoppages"] = [];
 
   for (const absence of absences) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(absence.start) || !/^\d{4}-\d{2}-\d{2}$/.test(absence.end) || absence.end < absence.start) {
-      throw new Error("DSN bloquée : les dates d'un arrêt de travail verrouillé sont invalides.");
+    const meta = metadataById.get(absence.id);
+    if (!meta) throw new Error(`DSN bloquée : les données déclaratives de l'arrêt ${absence.id} ne sont pas figées dans le snapshot.`);
+    if (meta.type !== absence.kind || meta.startDate !== absence.start || meta.endDate !== absence.end) {
+      throw new Error(`DSN bloquée : l'arrêt ${absence.id} diverge entre les entrées du bulletin et ses métadonnées déclaratives.`);
     }
+    if (!meta.lastWorkedDate) throw new Error(`DSN bloquée : le dernier jour travaillé de l'arrêt ${absence.id} doit être renseigné explicitement.`);
+    if (meta.endDate < meta.startDate || meta.expectedEndDate < meta.endDate || meta.lastWorkedDate > absence.start || meta.lastWorkedDate < inputs.employee.hireDate) throw new Error(`DSN bloquée : les dates ou le dernier jour travaillé de l'arrêt ${absence.id} sont incohérents avec le contrat.`);
+    const previousDay = new Date(absence.start + "T00:00:00.000Z");
+    previousDay.setUTCDate(previousDay.getUTCDate() - 1);
+    const predecessor = chainMetadata.find((item) => item.absenceId !== meta.absenceId && supportedKinds.has(item.type) && item.endDate === previousDay.toISOString().slice(0, 10) && !item.returnDate);
+    if (predecessor?.lastWorkedDate && predecessor.lastWorkedDate !== meta.lastWorkedDate) throw new Error("DSN bloquée : les arrêts enchaînés sans reprise doivent conserver le dernier jour travaillé initial.");
+
     const lineCode = lineCodeByKind[absence.kind as keyof typeof lineCodeByKind];
     const matches = grossLines.filter((line) => line.code === lineCode && line.detail?.absenceId === absence.id);
     if (matches.length > 1) throw new Error("DSN bloquée : un arrêt de travail possède plusieurs lignes de retenue dans le bulletin verrouillé.");
@@ -186,14 +230,46 @@ export function readLockedWorkStoppageDeclaration(value: unknown, previousValue?
       matchedLines.add(line);
     }
 
-    const initial = initialAbsence(absence);
-    const partialFirstDay = Number(initial.partialDayHours?.[initial.start] ?? 0) > 0;
-    const lastDayWorked = initial.start === inputs.employee.hireDate ? initial.start : partialFirstDay ? initial.start : addIsoDays(initial.start, -1);
+    const subrogated = inputs.organization.ijssSubrogation === true;
+    if (subrogated && (!meta.subrogationStartDate || !meta.subrogationEndDate)) {
+      throw new Error(`DSN bloquée : l'arrêt ${absence.id} est subrogé mais sa période de subrogation n'est pas complète.`);
+    }
+    if (!subrogated && (meta.subrogationStartDate || meta.subrogationEndDate)) {
+      throw new Error(`DSN bloquée : l'arrêt ${absence.id} contient une période de subrogation alors que la paie indique l'absence de subrogation.`);
+    }
+    if (meta.subrogationStartDate && meta.subrogationEndDate && meta.subrogationEndDate < meta.subrogationStartDate) {
+      throw new Error(`DSN bloquée : la période de subrogation de l'arrêt ${absence.id} est inversée.`);
+    }
+    const ijssLine = bulletin.lines.find((line) => line.code === "IJSS_SUBROGATION" && line.detail?.absenceId === absence.id);
+    if (ijssLine && subrogated) {
+      if (ijssLine.detail?.estimated !== false) throw new Error("DSN bloquée : remplacez les IJSS estimées par les montants du décompte CPAM avant l'export.");
+      const windowStart = absence.start > bulletin.period.first ? absence.start : bulletin.period.first;
+      const windowEnd = absence.end < bulletin.period.last ? absence.end : bulletin.period.last;
+      if (meta.subrogationStartDate! > windowStart || meta.subrogationEndDate! < windowEnd) throw new Error("DSN bloquée : une subrogation partielle dans le mois nécessite une ventilation des IJSS, encore non prise en charge.");
+    }
+    if (absence.kind === "WORK_ACCIDENT" && !meta.workAccidentDate) {
+      throw new Error(`DSN bloquée : la date de l'accident est obligatoire pour l'arrêt AT ${absence.id}.`);
+    }
+    if (meta.workAccidentDate && (meta.workAccidentDate > absence.start || meta.workAccidentDate < inputs.employee.hireDate)) throw new Error("DSN bloquée : la date de l'accident est incohérente avec l'arrêt ou le contrat.");
+    if (absence.kind !== "WORK_ACCIDENT" && meta.workAccidentDate) {
+      throw new Error(`DSN bloquée : une date d'accident est présente sur un arrêt qui n'est pas un AT (${absence.id}).`);
+    }
+    if ((meta.returnDate && !meta.returnReasonCode) || (!meta.returnDate && meta.returnReasonCode) ||
+        (meta.returnReasonCode && !["01", "02", "03"].includes(meta.returnReasonCode))) {
+      throw new Error(`DSN bloquée : les données de reprise de l'arrêt ${absence.id} sont incomplètes ou invalides.`);
+    }
+    if (meta.returnDate && meta.returnDate <= absence.start) throw new Error("DSN bloquée : la reprise doit être postérieure au début de l'arrêt.");
+    if (meta.returnReasonCode === "02") throw new Error("DSN bloquée : la reprise à temps partiel thérapeutique nécessite ses données spécifiques.");
+    if (meta.returnDate && meta.returnDate <= meta.endDate) throw new Error("DSN bloquée : le bulletin retient une absence après la date de reprise réelle.");
+
     stoppages.push({
       reasonCode: codeByKind[absence.kind as keyof typeof codeByKind],
-      lastDayWorked,
-      expectedEnd: absence.end,
-      subrogationCode: "02",
+      lastDayWorked: meta.lastWorkedDate,
+      expectedEnd: meta.expectedEndDate,
+      subrogationCode: subrogated ? "01" : "02",
+      ...(subrogated ? { subrogationStart: meta.subrogationStartDate!, subrogationEnd: meta.subrogationEndDate! } : {}),
+      ...(meta.returnDate ? { recoveryDate: meta.returnDate, recoveryReasonCode: meta.returnReasonCode as "01" | "02" | "03" } : {}),
+      ...(meta.workAccidentDate ? { accidentDate: meta.workAccidentDate } : {}),
     });
   }
 
@@ -318,9 +394,9 @@ export function mapLockedContributions(input: {
   if (inputs.employee.contract === "APPRENTISSAGE") throw new Error("DSN bloquée : les exonérations sociales spécifiques des apprentis nécessitent encore leur mapping déclaratif.");
   if (inputs.organization.territory !== "METROPOLE" || inputs.organization.alsaceMoselle) throw new Error("DSN bloquée : le mapping social actuel couvre la métropole hors régime local Alsace-Moselle.");
   if ((inputs.bonuses ?? []).some((bonus) => bonus.excludedFromPaidLeaveBase)) throw new Error("DSN bloquée : une prime annuelle ou exceptionnelle nécessite son type S21.G00.52 et sa période de rattachement explicites.");
-  const supportedAbsenceKinds = new Set(["UNPAID_LEAVE", "RTT", "FAMILY_EVENT", "SICK_LEAVE", "MATERNITY", "PATERNITY"]);
+  const supportedAbsenceKinds = new Set(["UNPAID_LEAVE", "RTT", "FAMILY_EVENT", "SICK_LEAVE", "WORK_ACCIDENT", "MATERNITY", "PATERNITY"]);
   if ((inputs.absences ?? []).some((absence) => !supportedAbsenceKinds.has(absence.kind))) {
-    throw new Error("DSN bloquée : cette absence nécessite encore son bloc déclaratif spécifique (AT/MP, congé payé/RTT ou autre suspension).");
+    throw new Error("DSN bloquée : cette absence nécessite encore son bloc déclaratif spécifique (congé payé ou autre suspension).");
   }
   if ([inputs.benefitsInKind, inputs.expenses, inputs.netAdjustments].some((items) => (items?.length ?? 0) > 0) || inputs.termination || inputs.mealVouchers || inputs.publicTransport) throw new Error("DSN bloquée : les événements et autres revenus du bulletin nécessitent leurs blocs déclaratifs spécifiques.");
   const journal = bulletin.lines.filter((line) => line.section !== "GROSS" && line.section !== "NET_ITEMS");

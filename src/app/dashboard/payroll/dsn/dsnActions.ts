@@ -84,14 +84,16 @@ export async function saveDsnOrganizationSettings(
     if (urssafSiret && urssafSiret === retirementSiret) throw new Error("Les organismes Urssaf et retraite doivent être distincts.");
     const paymentIbanCiphertext = value(formData, "paymentIban") ? encryptDsnSensitiveValue(dsnPaymentIban(value(formData, "paymentIban"))) : null;
     const paymentBic = value(formData, "paymentBic") ? dsnPaymentBic(value(formData, "paymentBic")) : null;
+    const subrogationIbanCiphertext = value(formData, "subrogationIban") ? encryptDsnSensitiveValue(dsnPaymentIban(value(formData, "subrogationIban"))) : null;
+    const subrogationBic = value(formData, "subrogationBic") ? dsnPaymentBic(value(formData, "subrogationBic")) : null;
     const sepaMandatesConfirmed = value(formData, "sepaMandatesConfirmed") === "1";
 
     await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`
         INSERT INTO "dsn_organization_settings"
-          ("organizationId", "contactName", "contactEmail", "contactPhone", "declaredContactType", "enterpriseApenCode", "urssafSiret", "retirementSiret", "paymentIbanCiphertext", "paymentBic", "sepaMandatesConfirmed", "defaultTestMode", "updatedAt")
+          ("organizationId", "contactName", "contactEmail", "contactPhone", "declaredContactType", "enterpriseApenCode", "urssafSiret", "retirementSiret", "paymentIbanCiphertext", "paymentBic", "subrogationIbanCiphertext", "subrogationBic", "sepaMandatesConfirmed", "defaultTestMode", "updatedAt")
         VALUES
-          (${membership.organizationId}, ${contactName}, ${contactEmail}, ${contactPhone}, ${declaredContactType}, ${enterpriseApenCode}, ${urssafSiret}, ${retirementSiret}, ${paymentIbanCiphertext}, ${paymentBic}, ${sepaMandatesConfirmed}, TRUE, CURRENT_TIMESTAMP)
+          (${membership.organizationId}, ${contactName}, ${contactEmail}, ${contactPhone}, ${declaredContactType}, ${enterpriseApenCode}, ${urssafSiret}, ${retirementSiret}, ${paymentIbanCiphertext}, ${paymentBic}, ${subrogationIbanCiphertext}, ${subrogationBic}, ${sepaMandatesConfirmed}, TRUE, CURRENT_TIMESTAMP)
         ON CONFLICT ("organizationId") DO UPDATE SET
           "contactName" = EXCLUDED."contactName",
           "contactEmail" = EXCLUDED."contactEmail",
@@ -102,6 +104,8 @@ export async function saveDsnOrganizationSettings(
           "retirementSiret" = EXCLUDED."retirementSiret",
           "paymentIbanCiphertext" = COALESCE(EXCLUDED."paymentIbanCiphertext", "dsn_organization_settings"."paymentIbanCiphertext"),
           "paymentBic" = EXCLUDED."paymentBic",
+          "subrogationIbanCiphertext" = COALESCE(EXCLUDED."subrogationIbanCiphertext", "dsn_organization_settings"."subrogationIbanCiphertext"),
+          "subrogationBic" = EXCLUDED."subrogationBic",
           "sepaMandatesConfirmed" = EXCLUDED."sepaMandatesConfirmed",
           "defaultTestMode" = TRUE,
           "updatedAt" = CURRENT_TIMESTAMP

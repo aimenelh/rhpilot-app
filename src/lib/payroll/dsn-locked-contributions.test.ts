@@ -147,6 +147,7 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
         { id: "maternity-chain", kind: "MATERNITY", start: "2026-01-17", end: "2026-01-23", ijssGrossAmount: 0 },
       ],
     });
+    current.validatedAbsences[1].lastWorkedDate = "2026-01-11";
     const declaration = readLockedWorkStoppageDeclaration(current);
     expect(declaration.stoppages).toEqual([
       expect.objectContaining({ reasonCode: "01", lastDayWorked: "2026-01-11" }),
@@ -167,6 +168,7 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
       yearToDate: january.bulletin.yearToDate,
       absences: [{ id: "maternity-february", kind: "MATERNITY", start: "2026-02-01", end: "2026-02-07", ijssGrossAmount: 0 }],
     });
+    february.validatedAbsences[0].lastWorkedDate = "2026-01-24";
     const declaration = readLockedWorkStoppageDeclaration(february, january);
     expect(declaration.stoppages).toEqual([
       expect.objectContaining({ reasonCode: "02", lastDayWorked: "2026-01-24" }),
@@ -176,13 +178,13 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
   it("bloque un arrêt subrogé tant que sa période et son compte IJSS ne sont pas explicitement stockés", () => {
     const absence = { id: "sick-subrogated", kind: "SICK_LEAVE" as const, start: "2026-01-12" as const, end: "2026-01-16" as const, ijssGrossAmount: 0 };
     const snapshot = computedSnapshot({ absences: [absence] });
-    expect(() => mapLockedContributions({ snapshot, ...ids })).toThrow(/arrêt subrogé.*période de subrogation.*compte bancaire IJSS/i);
+    expect(() => mapLockedContributions({ snapshot, ...ids })).toThrow(/subrogé.*période de subrogation/i);
   });
 
   it("continue de bloquer l'AT et les autres absences non encore raccordées", () => {
     const ordinary = computedSnapshot();
     const at = computedSnapshot({ organization: { ...ordinary.inputs.organization, ijssSubrogation: false }, absences: [{ id: "at-1", kind: "WORK_ACCIDENT", start: "2026-01-12", end: "2026-01-16", ijssGrossAmount: 0 }] });
-    expect(() => mapLockedContributions({ snapshot: at, ...ids })).toThrow(/AT\/MP|bloc déclaratif spécifique/i);
+    expect(() => mapLockedContributions({ snapshot: at, ...ids })).toThrow(/date de l'accident/i);
     const other = computedSnapshot({ absences: [{ id: "other-paid-1", kind: "OTHER_PAID", start: "2026-01-12", end: "2026-01-12" }] });
     expect(() => mapLockedContributions({ snapshot: other, ...ids })).toThrow(/bloc déclaratif spécifique/i);
   });

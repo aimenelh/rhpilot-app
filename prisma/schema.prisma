@@ -452,6 +452,12 @@ model Absence {
   status                AbsenceStatus          @default(TO_VALIDATE)
   justificationRequired Boolean                @default(false)
   payrollImpactStatus   PayrollImpactStatus    @default(PENDING)
+  lastWorkedDate        DateTime?              @db.Date
+  subrogationStartDate  DateTime?              @db.Date
+  subrogationEndDate    DateTime?              @db.Date
+  workAccidentDate      DateTime?              @db.Date
+  returnDate            DateTime?              @db.Date
+  returnReasonCode      String?
   notes                 String?
   validatedByUserId     String?
   validatedAt           DateTime?
@@ -713,6 +719,8 @@ model dsn_organization_settings {
   retirementSiret     String?
   paymentIbanCiphertext String?
   paymentBic          String?
+  subrogationIbanCiphertext String?
+  subrogationBic      String?
   sepaMandatesConfirmed Boolean @default(false)
   organizations       Organization @relation(fields: [organizationId], references: [id], map: "dsn_organization_settings_organization_fk")
 }

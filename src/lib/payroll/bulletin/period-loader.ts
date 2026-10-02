@@ -182,6 +182,6 @@ export async function loadEarlierSickAbsences(organizationId: string, employeeId
   const since = new Date(periodStart.getTime() - 400 * 86_400_000);
   return prisma.absence.findMany({
     where: { organizationId, employeeId: { in: employeeIds }, status: "VALIDATED", type: { in: ["SICK_LEAVE", "WORK_ACCIDENT"] }, endDate: { gte: since, lt: periodStart } },
-    select: { id: true, employeeId: true, type: true, startDate: true, endDate: true },
+    select: { id: true, employeeId: true, type: true, startDate: true, endDate: true, returnDate: true, returnReasonCode: true },
   });
 }

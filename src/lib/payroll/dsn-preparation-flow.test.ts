@@ -15,6 +15,7 @@ let fixture: ReturnType<typeof mappedDsnFixture>;
 let snapshot: ReturnType<typeof computedSnapshot>;
 let calculation: Record<string, unknown>;
 let profile: Record<string, unknown>;
+let organization: Record<string, unknown>;
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -41,12 +42,13 @@ beforeEach(() => {
   mocks.employees.mockResolvedValue([{ id: snapshot.inputs.employee.id, firstName: employee.firstName, lastName: employee.lastName,
     position: employee.position, hireDate: employee.contract.startDate, contractEndDate: null, contractType: "CDI" }]);
   mocks.agreement.mockResolvedValue({ idcc: "1486" });
-  mocks.query.mockResolvedValueOnce([{ ...emitter, id: "company-a", payrollAddress: emitter.address,
+  organization = { ...emitter, id: "company-a", payrollAddress: emitter.address,
     payrollPostalCode: emitter.postalCode, payrollCity: emitter.city, payrollNafCode: "6201Z", payrollDepartment: "34",
     mainCollectiveAgreementCode: "1486", defaultTestMode: true,
     atmpRate: 9.9, urssafSiret: "75366412700077", retirementSiret: "44832375800038",
     paymentIbanCiphertext: encryptDsnSensitiveValue("FR7630006000011234567890189"), paymentBic: "AGRIFRPPXXX", sepaMandatesConfirmed: true,
-  }]).mockResolvedValueOnce([profile]);
+  };
+  mocks.query.mockResolvedValueOnce([organization]).mockResolvedValueOnce([profile]);
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -75,5 +77,25 @@ describe("préparateur applicatif et montants verrouillés", () => {
   it("refuse un statut retraite différent du statut calculé", async () => {
     profile.retirementStatusCode = "01";
     await expect(prepareDsnP26V01(request)).rejects.toThrow(/statut retraite complémentaire/);
+  });
+  it("reprend les IJSS nettes et le PAS du bulletin subrogé, avec un compte réception distinct", async () => {
+    const stoppage = computedSnapshot({ absences: [{ id: "sick", kind: "SICK_LEAVE", start: "2026-01-12", end: "2026-01-16", ijssGrossAmount: 100 }] },
+      { sick: { subrogationStartDate: "2026-01-12", subrogationEndDate: "2026-01-16" } });
+    Object.assign(calculation, { grossAmount: stoppage.bulletin.totals.grossTotal, employeeContributions: stoppage.bulletin.totals.employeeContributions,
+      employerContributions: stoppage.bulletin.totals.employerContributions, netBeforeTax: stoppage.bulletin.totals.netBeforeTax,
+      withholdingTax: stoppage.bulletin.totals.withholdingTax, netPaid: stoppage.bulletin.totals.netPaid,
+      netTaxableAmount: stoppage.bulletin.totals.netTaxable, netSocialAmount: stoppage.bulletin.totals.netSocial });
+    Object.assign(calculation.calculationSnapshot as object, stoppage);
+    organization.subrogationIbanCiphertext = encryptDsnSensitiveValue("FR1420041010050500013M02606");
+    organization.subrogationBic = "PSSTFRPPXXX";
+    const result = await prepareDsnP26V01(request);
+    expect(result.content).toContain("S21.G00.60.007,'FR1420041010050500013M02606'");
+    expect(result.content).toContain("S21.G00.60.008,'PSSTFRPPXXX'");
+    expect(result.content).toContain("S21.G00.58.003,'10'\r\nS21.G00.58.004,'93.30'");
+    expect(result.content).toContain("S21.G00.50.002,'" + stoppage.bulletin.withholding.fiscalNetBeforeExemption!.toFixed(2) + "'");
+    expect(result.content).toContain("S21.G00.50.013,'" + stoppage.bulletin.withholding.base.toFixed(2) + "'");
+    organization.subrogationIbanCiphertext = null;
+    mocks.query.mockResolvedValueOnce([organization]).mockResolvedValueOnce([profile]);
+    await expect(prepareDsnP26V01(request)).rejects.toThrow(/compte.*IJSS|IBAN.*subrogation/i);
   });
 });

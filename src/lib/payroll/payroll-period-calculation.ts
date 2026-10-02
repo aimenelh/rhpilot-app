@@ -20,6 +20,7 @@ import { assertPayrollOutputConsistency } from "./payroll-output-consistency";
 import { BULLETIN_ENGINE_VERSION, computePayslip } from "./bulletin/compute";
 import { daysBetweenInclusive, monthBounds, toIsoDay } from "./bulletin/calendar";
 import { mapAbsences, mapPayrollVariables, parsePrevoyanceRates, resolveWeeklySchedule } from "./bulletin/inputs";
+import { effectiveAbsenceEnd, freezeWorkStoppages } from "./work-stoppage";
 import { buildBulletinLedger, contributionDetailsFromBulletin } from "./bulletin/ledger";
 import { BULLETIN_SNAPSHOT_ENGINE, assertPriorPayrollCoverage, resolvePriorState } from "./bulletin/prior-state";
 import {
@@ -214,6 +215,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     profile: (typeof profiles)[number];
     variables: typeof variables;
     validatedAbsences: typeof validatedAbsences;
+    dsnWorkStoppages: ReturnType<typeof freezeWorkStoppages>;
     collectiveMinimum: ReturnType<typeof evaluateCollectiveMinimumSalary>;
     minimumSalaryControl: ReturnType<typeof buildMinimumSalaryControlSnapshot>;
     alternanceMinimum: AlternanceMinimumSnapshot | null;
@@ -284,8 +286,8 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     // --- Absences et variables ---
     const employeeAbsences = validatedAbsences.filter((absence) => absence.employeeId === employee.id);
     const mapped = mapAbsences(
-      employeeAbsences.map((absence) => ({ id: absence.absenceId, type: absence.type, startDate: toIsoDay(absence.startDate), endDate: toIsoDay(absence.endDate) })),
-      earlierAbsences.filter((absence) => absence.employeeId === employee.id).map((absence) => ({ id: absence.id, type: absence.type, startDate: toIsoDay(absence.startDate), endDate: toIsoDay(absence.endDate) })),
+      employeeAbsences.map((absence) => ({ id: absence.absenceId, type: absence.type, startDate: toIsoDay(absence.startDate), endDate: toIsoDay(effectiveAbsenceEnd(absence)) })),
+      earlierAbsences.filter((absence) => absence.employeeId === employee.id).map((absence) => ({ id: absence.id, type: absence.type, startDate: toIsoDay(absence.startDate), endDate: toIsoDay(effectiveAbsenceEnd(absence)) })),
     );
     const alias = new Map<string, string>();
     for (const [mergedId, ids] of mapped.chainIds) for (const id of ids) alias.set(id, mergedId);
@@ -385,7 +387,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     result.warnings.unshift(...warnings);
     assertPayrollOutputConsistency({ grossAmount: result.totals.grossTotal, employeeContributions: Math.max(0, result.totals.employeeContributions), employerContributions: Math.max(0, result.totals.employerContributions), netBeforeTax: result.totals.netBeforeTax, netTaxableAmount: result.totals.netTaxable, netSocialAmount: result.totals.netSocial, withholdingTax: result.totals.withholdingTax, netPaid: result.totals.netPaid, ...(result.totals.employerContributions >= 0 ? { employerCost: result.totals.employerCost } : {}) });
 
-    calculated.push({ employeeId: employee.id, result, payslipInput, profile, variables: employeeVariables, validatedAbsences: employeeAbsences, collectiveMinimum, minimumSalaryControl, alternanceMinimum, withholdingProfile });
+    calculated.push({ employeeId: employee.id, result, payslipInput, profile, variables: employeeVariables, validatedAbsences: employeeAbsences, dsnWorkStoppages: freezeWorkStoppages(mapped, employeeAbsences), collectiveMinimum, minimumSalaryControl, alternanceMinimum, withholdingProfile });
   }
 
   await prisma.$transaction(async (tx) => {
@@ -400,7 +402,20 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
         period: { id: period.id, year: period.year, month: period.month },
         profile: { id: profile.id, baseSalaryCents: profile.baseSalaryCents, monthlyHours: profile.monthlyHours === null ? null : String(profile.monthlyHours), effectiveFrom: profile.effectiveFrom.toISOString(), effectiveUntil: profile.effectiveUntil?.toISOString() ?? null, collectiveAgreementId: profile.collectiveAgreementId, classificationCode: profile.classificationCode, classificationLabel: profile.classificationLabel, level: profile.level, coefficient: profile.coefficient, seniorityDate: profile.seniorityDate?.toISOString() ?? null },
         variables: entry.variables.map((variable) => ({ code: variable.code, label: variable.label, amount: Number(variable.amount), unit: variable.unit, source: variable.source, reference: variable.reference ?? null })),
-        validatedAbsences: entry.validatedAbsences.map((absence) => ({ absenceId: absence.absenceId, type: absence.type, startDate: absence.startDate.toISOString(), endDate: absence.endDate.toISOString(), payrollImpactStatus: absence.status })),
+        dsnWorkStoppages: entry.dsnWorkStoppages,
+        validatedAbsences: entry.validatedAbsences.map((absence) => ({
+          absenceId: absence.absenceId,
+          type: absence.type,
+          startDate: absence.startDate.toISOString(),
+          endDate: absence.endDate.toISOString(),
+          lastWorkedDate: absence.lastWorkedDate?.toISOString() ?? null,
+          subrogationStartDate: absence.subrogationStartDate?.toISOString() ?? null,
+          subrogationEndDate: absence.subrogationEndDate?.toISOString() ?? null,
+          workAccidentDate: absence.workAccidentDate?.toISOString() ?? null,
+          returnDate: absence.returnDate?.toISOString() ?? null,
+          returnReasonCode: absence.returnReasonCode,
+          payrollImpactStatus: absence.status,
+        })),
         collectiveMinimum: entry.collectiveMinimum,
         minimumSalaryControl: entry.minimumSalaryControl,
         alternanceMinimum: entry.alternanceMinimum,

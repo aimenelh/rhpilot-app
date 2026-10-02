@@ -83,7 +83,8 @@ export type DsnP26MonthlyInput = {
         subrogationIban?: string;
         subrogationBic?: string;
         recoveryDate?: Date;
-        recoveryReasonCode?: "01";
+        recoveryReasonCode?: "01" | "02" | "03";
+        /** Conservée pour le signalement événementiel AT ; non émise dans la DSN mensuelle. */
         accidentDate?: Date;
       }>;
       /** Suspensions mensuelles rattachées au contrat. */
@@ -107,6 +108,8 @@ export type DsnP26MonthlyInput = {
       overtimeTaxExemptNetAmount?: number;
       /** Volume réel d'absence partiellement ou pas du tout rémunérée (S21.G00.53 type 02). */
       absenceActivityHours?: number;
+      /** IJSS subrogées nettes prises en compte dans le MNS (S21.G00.58 type 10). */
+      subrogatedIjssNetAmount?: number;
     };
   }>;
 };
@@ -358,12 +361,13 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
         add(lines, "S21.G00.60.010", dsnDate(stoppage.recoveryDate));
         add(lines, "S21.G00.60.011", stoppage.recoveryReasonCode ?? "01");
       }
-      if (stoppage.reasonCode === "06") {
-        if (!stoppage.accidentDate) throw new Error("DSN bloquée : la date de l'accident est obligatoire pour un arrêt AT.");
-        add(lines, "S21.G00.60.012", dsnDate(stoppage.accidentDate));
-      } else if (stoppage.accidentDate) {
-        throw new Error("DSN bloquée : une date d'accident ne peut être déclarée que pour un arrêt AT.");
+      if (stoppage.reasonCode === "06" && !stoppage.accidentDate) {
+        throw new Error("DSN bloquée : la date de l'accident est obligatoire pour un arrêt AT.");
       }
+      if (stoppage.reasonCode !== "06" && stoppage.accidentDate) {
+        throw new Error("DSN bloquée : une date d'accident ne peut être associée qu'à un arrêt AT.");
+      }
+      // S21.G00.60.012 est réservé au signalement événementiel AT : il n'est pas reporté dans la DSN mensuelle.
     }
 
     for (const suspension of employee.contract.suspensions ?? []) {
@@ -408,6 +412,13 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
     if (overtimeTaxExemptNetAmount > 0) {
       add(lines, "S21.G00.58.003", "01");
       add(lines, "S21.G00.58.004", money(overtimeTaxExemptNetAmount));
+    }
+
+    const subrogatedIjssNetAmount = employee.payroll.subrogatedIjssNetAmount ?? 0;
+    if (!Number.isFinite(subrogatedIjssNetAmount) || subrogatedIjssNetAmount < 0) throw new Error("DSN bloquée : le montant net des IJSS subrogées est invalide.");
+    if (subrogatedIjssNetAmount > 0) {
+      add(lines, "S21.G00.58.003", "10");
+      add(lines, "S21.G00.58.004", money(subrogatedIjssNetAmount));
     }
 
     add(lines, "S21.G00.58.001", dsnDate(periodStart));
