@@ -12,10 +12,9 @@ export function assertDsnRetirementScope(executive: boolean, retirementStatusCod
 
 /** Les événements de contrat nécessitent une déclaration distincte de la paie courante. */
 export function assertDsnStableContract(current: Contract, period: { year: number; month: number }, previous?: Contract): void {
-  const start = `${period.year}-${String(period.month).padStart(2, "0")}-01`;
   const end = new Date(Date.UTC(period.year, period.month, 0)).toISOString().slice(0, 10);
-  if (current.hireDate > start || (current.contractEndDate && current.contractEndDate <= end)) {
-    throw new Error("DSN bloquée : les entrées en cours de mois, fins de contrat et rappels après sortie nécessitent leurs blocs événementiels, même sans prorata sur le bulletin.");
+  if (current.hireDate > end || (current.contractEndDate && current.contractEndDate <= end)) {
+    throw new Error("DSN bloquée : les fins de contrat et rappels après sortie nécessitent leurs blocs événementiels, même sans prorata sur le bulletin.");
   }
   if (previous && (previous.contract !== current.contract || previous.hireDate !== current.hireDate ||
     (previous.contractEndDate ?? null) !== (current.contractEndDate ?? null) || previous.executive !== current.executive)) {

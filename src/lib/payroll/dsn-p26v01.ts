@@ -96,6 +96,9 @@ export type DsnP26MonthlyInput = {
       cappedContributionBase: number;
       grossSubject?: number;
       unemploymentBase?: number;
+      unemploymentRemuneration?: number;
+      restoredSalary?: number;
+      paidLeaveIndemnities?: Array<{ type: "046"; amount: number; startDate: Date; endDate: Date }>;
       paidHours?: number;
       netBeforeTax: number;
       netTaxableAmount: number;
@@ -393,20 +396,31 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
     add(lines, "S21.G00.50.011", employee.payroll.pas.nonTaxableApprenticeIncome === undefined ? null : money(employee.payroll.pas.nonTaxableApprenticeIncome));
     add(lines, "S21.G00.50.013", money(employee.payroll.pas.amountSubjectToPas));
 
-    addRemuneration(lines, periodStart, periodEnd, contractNumber, "001", employee.payroll.grossAmount);
+    const employmentStart = employee.contract.startDate > periodStart ? employee.contract.startDate : periodStart;
+    const employmentEnd = employee.contract.endDate && employee.contract.endDate < periodEnd ? employee.contract.endDate : periodEnd;
+    if (employmentStart > employmentEnd) throw new Error("DSN bloquée : la période d'emploi ne recouvre pas la période de paie.");
+    addRemuneration(lines, employmentStart, employmentEnd, contractNumber, "001", employee.payroll.grossSubject ?? employee.payroll.grossAmount);
     const paidHours = employee.payroll.paidHours ?? employee.contract.contractWorkQuota;
     const absenceActivityHours = employee.payroll.absenceActivityHours ?? 0;
     if (!Number.isFinite(absenceActivityHours) || absenceActivityHours < 0) throw new Error("DSN bloquée : le volume d'absence partiellement ou pas du tout rémunérée est invalide.");
-    addRemuneration(lines, periodStart, periodEnd, contractNumber, "002", employee.payroll.unemploymentBase ?? employee.payroll.grossAmount, [
+    addRemuneration(lines, employmentStart, employmentEnd, contractNumber, "002", employee.payroll.unemploymentRemuneration ?? employee.payroll.grossAmount, [
       { type: "01", measure: paidHours, unit: workUnitCode },
       ...(absenceActivityHours > 0 ? [{ type: "02" as const, measure: absenceActivityHours, unit: workUnitCode }] : []),
     ]);
-    addRemuneration(lines, periodStart, periodEnd, contractNumber, "003", employee.payroll.baseSalary);
-    addRemuneration(lines, periodStart, periodEnd, contractNumber, "010", employee.payroll.baseSalary);
+    addRemuneration(lines, employmentStart, employmentEnd, contractNumber, "003", employee.payroll.restoredSalary ?? employee.payroll.baseSalary);
+    addRemuneration(lines, employmentStart, employmentEnd, contractNumber, "010", employee.payroll.baseSalary);
 
     const overtimeRemunerations = employee.payroll.overtimeRemunerations ?? [];
     if (new Set(overtimeRemunerations.map((item) => item.type)).size !== overtimeRemunerations.length) throw new Error("DSN bloquée : les rémunérations 017/018 doivent être agrégées par type.");
-    for (const remuneration of overtimeRemunerations) addRemuneration(lines, periodStart, periodEnd, contractNumber, remuneration.type, remuneration.amount, undefined, remuneration.hours);
+    for (const remuneration of overtimeRemunerations) addRemuneration(lines, employmentStart, employmentEnd, contractNumber, remuneration.type, remuneration.amount, undefined, remuneration.hours);
+    for (const indemnity of employee.payroll.paidLeaveIndemnities ?? []) {
+      if (!Number.isFinite(indemnity.amount) || indemnity.amount <= 0 || indemnity.endDate < indemnity.startDate) throw new Error("DSN bloquée : une indemnité de congés payés déclarative est invalide.");
+      add(lines, "S21.G00.52.001", indemnity.type);
+      add(lines, "S21.G00.52.002", money(indemnity.amount));
+      add(lines, "S21.G00.52.003", dsnDate(indemnity.startDate));
+      add(lines, "S21.G00.52.004", dsnDate(indemnity.endDate));
+      add(lines, "S21.G00.52.006", contractNumber);
+    }
     const overtimeTaxExemptNetAmount = employee.payroll.overtimeTaxExemptNetAmount ?? 0;
     if (!Number.isFinite(overtimeTaxExemptNetAmount) || overtimeTaxExemptNetAmount < 0) throw new Error("DSN bloquée : le montant net fiscal des heures exonérées est invalide.");
     if (overtimeTaxExemptNetAmount > 0) {
@@ -427,13 +441,13 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
     add(lines, "S21.G00.58.004", money(employee.payroll.netSocialAmount));
 
     add(lines, "S21.G00.78.001", "02");
-    add(lines, "S21.G00.78.002", dsnDate(periodStart));
-    add(lines, "S21.G00.78.003", dsnDate(periodEnd));
+    add(lines, "S21.G00.78.002", dsnDate(employmentStart));
+    add(lines, "S21.G00.78.003", dsnDate(employmentEnd));
     add(lines, "S21.G00.78.004", money(employee.payroll.cappedContributionBase));
 
     add(lines, "S21.G00.78.001", "03");
-    add(lines, "S21.G00.78.002", dsnDate(periodStart));
-    add(lines, "S21.G00.78.003", dsnDate(periodEnd));
+    add(lines, "S21.G00.78.002", dsnDate(employmentStart));
+    add(lines, "S21.G00.78.003", dsnDate(employmentEnd));
     add(lines, "S21.G00.78.004", money(employee.payroll.grossSubject ?? employee.payroll.grossAmount));
 
     const seniorityStart = employee.contract.seniorityDate ?? employee.contract.startDate;

@@ -30,7 +30,10 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     expect(data.employees[0].payroll.unemploymentBase).toBe(16020);
     const content = buildDsnP26V01Complete(data);
     expect(content).toContain("S21.G00.78.001,'07'");
-    expect(content).toContain("S21.G00.51.013,'16020.00'");
+    expect(data.employees[0].payroll.unemploymentRemuneration).toBe(18000);
+    expect(content).toContain("S21.G00.51.011,'002'\r\nS21.G00.51.013,'18000.00'");
+    expect(content).toContain("S21.G00.78.001,'07'");
+    expect(content).toContain("S21.G00.78.004,'16020.00'");
   });
   it("reprend l'horaire payé du temps partiel et son plafond proratisé", () => {
     const data = computedDsnFixture(1800, 121.33);

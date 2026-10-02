@@ -78,6 +78,16 @@ for (const kind of ["SICK_LEAVE", "WORK_ACCIDENT", "MATERNITY", "PATERNITY"] as 
   }
 }
 
+for (const referenceGross of [12000, 60000]) {
+  accept(`bulletin-cp-${referenceGross === 12000 ? "maintien" : "dixieme"}`, buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, false, undefined, false, {
+    absences: [{ id: "cp", kind: "PAID_LEAVE", start: "2026-01-12", end: "2026-01-16" }],
+    paidLeave: { previousAcquired: 30, previousTaken: 0, currentAcquired: 0, currentTaken: 0, referenceGross, referenceAcquiredDays: 30 },
+  })));
+}
+const ordinaryEmployee = { id: "employee-test", displayName: "Maxime Dupont", contract: "CDI" as const, executive: false, hireDate: "2026-01-12" };
+accept("bulletin-entree-12-janvier", buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, false, undefined, false, { employee: ordinaryEmployee })));
+accept("bulletin-droits-chomage-18000", buildDsnP26V01Complete(computedDsnFixture(18000)));
+
 // Témoin négatif : l'outil doit réellement détecter un bloc obligatoire supprimé.
 const rejected = validate("temoin-invalide", content.replace(/^S21\.G00\.71\.002,.*\r\n/m, ""));
 let rejectedAsExpected = false;
