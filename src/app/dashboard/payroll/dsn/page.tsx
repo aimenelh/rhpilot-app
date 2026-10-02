@@ -3,6 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import DsnOrganizationForm from "./DsnOrganizationForm";
 import DsnExportButton from "./DsnExportButton";
+import DsnWorkEventButton from "./DsnWorkEventButton";
 import { getPayrollMembership } from "@/lib/payrollAccess";
 
 type OrganizationSettingsRow = {
@@ -31,7 +32,7 @@ export default async function DsnPreparationPage() {
     return <div className="mx-auto max-w-4xl rounded-xl border border-surface-border bg-white p-6"><h1 className="text-xl font-semibold text-ink">DSN</h1><p className="mt-2 text-sm text-ink-soft">La préparation et l'export DSN sont réservés aux administrateurs.</p></div>;
   }
 
-  const [settingsRows, employees, dsnStatusRows, lockedPeriods, archives] = await Promise.all([
+  const [settingsRows, employees, dsnStatusRows, lockedPeriods, archives, stoppages, workEvents] = await Promise.all([
     prisma.$queryRaw<OrganizationSettingsRow[]>`
       SELECT "contactName", "contactEmail", "contactPhone", "declaredContactType", "enterpriseApenCode", "urssafSiret", "retirementSiret", "paymentBic", ("paymentIbanCiphertext" IS NOT NULL) AS "paymentAccountConfigured", "subrogationBic", ("subrogationIbanCiphertext" IS NOT NULL) AS "subrogationAccountConfigured", "sepaMandatesConfirmed"
       FROM "dsn_organization_settings"
@@ -43,6 +44,10 @@ export default async function DsnPreparationPage() {
     prisma.payrollPeriod.findMany({ where: { organizationId: membership.organizationId, status: "LOCKED", year: 2026 }, select: { id: true, year: true, month: true, paymentDate: true }, orderBy: [{ year: "desc" }, { month: "desc" }], take: 12 }),
     prisma.dsn_declarations.findMany({ where: { organizationId: membership.organizationId }, orderBy: { createdAt: "desc" }, take: 100,
       select: { id: true, payrollPeriodId: true, version: true, fileName: true, sha256: true, employeeCount: true, createdAt: true } }),
+    prisma.absence.findMany({ where: { organizationId: membership.organizationId, status: "VALIDATED", type: { in: ["SICK_LEAVE", "WORK_ACCIDENT", "MATERNITY", "PATERNITY"] }, startDate: { lte: new Date() }, endDate: { gte: new Date("2026-01-01T00:00:00Z") }, employee: { deletedAt: null } },
+      orderBy: [{ startDate: "desc" }, { id: "asc" }], take: 50, select: { id: true, type: true, startDate: true, endDate: true, lastWorkedDate: true, returnDate: true, returnReasonCode: true, employee: { select: { id: true, firstName: true, lastName: true } } } }),
+    prisma.dsn_work_events.findMany({ where: { organizationId: membership.organizationId }, orderBy: { createdAt: "desc" }, take: 100,
+      select: { id: true, absenceId: true, nature: true, version: true, declarationOrder: true, fileName: true, sha256: true, warnings: true, createdAt: true } }),
   ]);
 
   const settings = settingsRows[0];
@@ -76,10 +81,31 @@ export default async function DsnPreparationPage() {
       </section>
 
       <section className="mt-7 rounded-xl border border-surface-border bg-white">
+        <div className="border-b border-surface-border px-5 py-4"><h2 className="font-semibold text-ink">Signalements d'arrêt et de reprise anticipée</h2><p className="mt-1 text-xs leading-5 text-ink-faint">Préparation depuis les arrêts validés, sans attendre la clôture mensuelle. Les prolongations continues conservent le DJT initial. La reprise à la date prévue est récapitulée dans la DSN mensuelle. Aucun fichier n'est transmis par RH Pilot.</p></div>
+        <div className="divide-y divide-surface-border">
+          {stoppages.length === 0 && <p className="px-5 py-8 text-sm text-ink-soft">Aucun arrêt validé disponible.</p>}
+          {stoppages.map((absence) => <div key={absence.id} className="flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:justify-between">
+            <div><p className="font-medium text-ink">{absence.employee.firstName} {absence.employee.lastName}</p><p className="mt-1 text-xs text-ink-faint">{{ SICK_LEAVE: "Maladie", WORK_ACCIDENT: "Accident du travail", MATERNITY: "Maternité", PATERNITY: "Paternité" }[absence.type as "SICK_LEAVE" | "WORK_ACCIDENT" | "MATERNITY" | "PATERNITY"]} · Du {absence.startDate.toLocaleDateString("fr-FR", { timeZone: "UTC" })} au {absence.endDate.toLocaleDateString("fr-FR", { timeZone: "UTC" })}</p>{!absence.lastWorkedDate && <p className="mt-1 text-xs text-accent-amber">Dernier jour travaillé à renseigner dans l'absence.</p>}</div>
+            <DsnWorkEventButton absenceId={absence.id} anticipatedRecovery={Boolean(absence.returnDate && absence.returnDate <= absence.endDate && absence.returnDate <= new Date())} />
+          </div>)}
+        </div>
+      </section>
+
+      <section className="mt-7 rounded-xl border border-surface-border bg-white">
         <div className="border-b border-surface-border px-5 py-4"><h2 className="font-semibold text-ink">Exports depuis les paies verrouillées</h2><p className="mt-1 text-xs leading-5 text-ink-faint">Le taux PAS et les montants proviennent du snapshot de la période clôturée, pas des données vivantes du salarié.</p></div>
         <div className="divide-y divide-surface-border">
           {lockedPeriods.length === 0 ? <p className="px-5 py-8 text-sm text-ink-soft">Aucune période 2026 clôturée n'est disponible.</p> : null}
           {lockedPeriods.map((period) => <div key={period.id} className="flex flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between"><div><p className="font-medium text-ink">{MONTHS[period.month - 1]} {period.year}</p><p className="mt-0.5 text-xs text-ink-faint">Date de paiement : {period.paymentDate ? period.paymentDate.toLocaleDateString("fr-FR") : "non renseignée"}</p></div><DsnExportButton periodId={period.id} /></div>)}
+        </div>
+      </section>
+      <section className="mt-7 rounded-xl border border-surface-border bg-white p-5">
+        <h2 className="font-semibold text-ink">Historique des signalements de pré-contrôle</h2><p className="mt-1 text-xs leading-5 text-ink-faint">Les versions sont chiffrées et immuables. Le numéro d'ordre continue d'un mois à l'autre. Une nouvelle version de test ne remplace pas un dépôt réel accepté par un organisme.</p>
+        <div className="mt-4 divide-y divide-surface-border">
+          {workEvents.length === 0 && <p className="py-4 text-sm text-ink-soft">Aucun signalement archivé.</p>}
+          {workEvents.map((event) => <div key={event.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div><p className="text-sm font-medium text-ink">{event.nature === "04" ? "Arrêt de travail" : "Reprise anticipée"} · Version {event.version} · Ordre {event.declarationOrder.toString()}</p><p className="mt-1 text-xs text-ink-faint">{event.createdAt.toLocaleString("fr-FR", { timeZone: "Europe/Paris" })} · Pré-contrôle</p><p className="mt-1 break-all font-mono text-xs text-ink-faint">SHA-256 : {event.sha256}</p>{Array.isArray(event.warnings) && event.warnings.filter((warning): warning is string => typeof warning === "string").map((warning) => <p key={warning} className="mt-1 max-w-3xl text-xs leading-5 text-ink-soft">{warning}</p>)}</div>
+            <a href={`/api/payroll/absences/${event.absenceId}/dsn?mode=test&archiveId=${event.id}`} className="shrink-0 rounded-lg border border-surface-border px-3 py-2 text-sm font-medium text-ink">Télécharger cette version</a>
+          </div>)}
         </div>
       </section>
       <section className="mt-7 rounded-xl border border-surface-border bg-white p-5">

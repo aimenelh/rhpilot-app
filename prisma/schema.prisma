@@ -66,6 +66,7 @@ model Organization {
   anomalyDismissals            AnomalyDismissal[]
   auditLogs                    AuditLog[]
   dsn_organization_settings    dsn_organization_settings?
+  dsn_work_events              dsn_work_events[]
   employee_accounts            employee_accounts[]
   employee_documents           employee_documents[]
   employeeEvents               EmployeeEvent[]
@@ -468,7 +469,9 @@ model Absence {
   employee              Employee               @relation(fields: [organizationId, employeeId], references: [organizationId, id], map: "absences_employee_fkey")
   organization          Organization           @relation(fields: [organizationId], references: [id])
   validatedBy           User?                  @relation("AbsenceValidatedBy", fields: [validatedByUserId], references: [id])
+  dsn_work_events       dsn_work_events[]
 
+  @@unique([organizationId, employeeId, id], map: "absences_organization_employee_id_key")
   @@index([organizationId, startDate, endDate])
   @@index([organizationId, employeeId, startDate])
   @@index([organizationId, status])
@@ -1052,4 +1055,34 @@ model dsn_declarations {
   @@unique([organizationId, payrollPeriodId, version], map: "dsn_declarations_period_version_key")
   @@unique([organizationId, requestKey], map: "dsn_declarations_request_key")
   @@index([organizationId, payrollPeriodId, createdAt], map: "dsn_declarations_period_created_idx")
+}
+
+model dsn_work_events {
+  id String @id
+  organizationId String
+  employeeId String
+  absenceId String
+  nature String
+  declarationOrder BigInt
+  businessId String
+  version Int
+  requestKey String
+  sourceDigest String
+  normVersion String @default("P26V01")
+  mode String @default("PRECONTROL")
+  fileName String
+  contentCiphertext String
+  sha256 String
+  sizeBytes Int
+  warnings Json
+  createdByUserId String
+  createdAt DateTime @default(now())
+  absence Absence @relation(fields: [organizationId, employeeId, absenceId], references: [organizationId, employeeId, id], onDelete: Restrict, map: "dsn_work_events_absence_fk")
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict, map: "dsn_work_events_organization_fk")
+
+  @@unique([organizationId, absenceId, nature, version], map: "dsn_work_events_version_key")
+  @@unique([organizationId, declarationOrder], map: "dsn_work_events_order_key")
+  @@unique([organizationId, businessId], map: "dsn_work_events_business_key")
+  @@unique([organizationId, requestKey], map: "dsn_work_events_request_key")
+  @@index([organizationId, createdAt], map: "dsn_work_events_created_idx")
 }
