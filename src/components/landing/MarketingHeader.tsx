@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { Logomark, Wordmark } from "@/components/Brand";
 import { AnnouncementBar } from "./AnnouncementBar";
+import { OctoberRoseAnnouncement, OctoberRoseProvider, OctoberRoseRibbonButton } from "./OctoberRoseCampaign";
 import { PublicCopilotePreview } from "./PublicCopilotePreview";
 import { PAYROLL_TOPIC_GROUPS } from "./payroll/payrollTopics";
 
@@ -69,7 +70,7 @@ export function MarketingHeader() {
   const navLink = (href: string) =>
     `text-sm font-medium transition-colors hover:text-brand-primary ${pathname === href ? "text-brand-primary" : "text-ink-soft"}`;
   return (
-    <>
+    <OctoberRoseProvider>
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded focus:bg-white focus:p-4"
@@ -77,7 +78,7 @@ export function MarketingHeader() {
         Aller au contenu
       </a>
       <div className="sticky top-0 z-40">
-        <AnnouncementBar />
+        <OctoberRoseAnnouncement fallback={<AnnouncementBar />} />
         <header
           ref={root}
           className="border-b border-surface-border bg-white"
@@ -103,6 +104,7 @@ export function MarketingHeader() {
         }}
       >
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-5 px-5 py-4 sm:px-8">
+          <div className="flex shrink-0 items-center gap-1">
           <Link
             href="/"
             aria-label="RH Pilot, accueil"
@@ -113,6 +115,8 @@ export function MarketingHeader() {
             <Logomark size={32} />
             <Wordmark />
           </Link>
+          <OctoberRoseRibbonButton />
+          </div>
           <nav
             aria-label="Navigation principale"
             className="hidden items-center gap-7 lg:flex"
@@ -395,6 +399,6 @@ export function MarketingHeader() {
       </header>
       </div>
       <PublicCopilotePreview />
-    </>
+    </OctoberRoseProvider>
   );
 }
