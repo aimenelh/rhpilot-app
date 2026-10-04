@@ -119,7 +119,7 @@ export function MarketingHeader() {
           </div>
           <nav
             aria-label="Navigation principale"
-            className="hidden items-center gap-7 lg:flex"
+            className="hidden items-center gap-5 lg:flex xl:gap-7"
           >
             {GROUPS.slice(0, 2).map((item) => (
               <div key={item.label} className="relative">
