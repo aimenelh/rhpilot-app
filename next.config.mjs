@@ -28,7 +28,7 @@ const nextConfig = {
   // ESLint tourne dans la CI (npm run lint) ; une alerte ne doit pas bloquer un déploiement.
   eslint: { ignoreDuringBuilds: true },
   images: {
-    formats: ["image/avif", "image/webp"],
+    // AVIF désactivé tant que la migration vers une version de Next.js corrigée\n    // n’est pas terminée. Le format WebP reste optimisé côté Next/Vercel.\n    formats: ["image/webp"],
   },
   experimental: {
     // Les dépôts documentaires sont plafonnés à 4 Mo côté métier.
