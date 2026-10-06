@@ -286,6 +286,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         unemploymentRemuneration: contributions.remuneration.unemploymentRemuneration,
         restoredSalary: contributions.remuneration.restoredSalary,
         paidLeaveIndemnities: contributions.remuneration.paidLeaveIndemnities.map((item) => ({ type: item.type, amount: item.amount, startDate: new Date(item.start + "T00:00:00.000Z"), endDate: new Date(item.end + "T00:00:00.000Z") })),
+        otherRevenues: contributions.remuneration.otherRevenues,
         bonuses: contributions.remuneration.bonuses.map((item) => ({ type: item.type, amount: item.amount, startDate: item.start ? new Date(item.start + "T00:00:00.000Z") : null, endDate: item.end ? new Date(item.end + "T00:00:00.000Z") : null })),
         paidHours: contributions.activityPaidHours,
         netBeforeTax,

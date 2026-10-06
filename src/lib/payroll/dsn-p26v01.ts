@@ -101,6 +101,8 @@ export type DsnP26MonthlyInput = {
       unemploymentRemuneration?: number;
       restoredSalary?: number;
       paidLeaveIndemnities?: Array<{ type: "046"; amount: number; startDate: Date; endDate: Date }>;
+      /** Autres éléments de revenu brut (S21.G00.54) rattachés au contrat. */
+      otherRevenues?: Array<{ type: string; amount: number }>;
       /** Primes non mensuelles : 026/027 avec période de rattachement, 028 avec ou sans. */
       bonuses?: Array<{ type: "026" | "027" | "028"; amount: number; startDate?: Date | null; endDate?: Date | null }>;
       paidHours?: number;
@@ -444,6 +446,14 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
         add(lines, "S21.G00.52.004", dsnDate(bonus.endDate));
       }
       add(lines, "S21.G00.52.006", contractNumber);
+    }
+    const revenueTypes = (employee.payroll.otherRevenues ?? []).map((item) => item.type);
+    if (new Set(revenueTypes).size !== revenueTypes.length) throw new Error("DSN bloquée : les autres éléments de revenu brut doivent être agrégés par type.");
+    for (const revenue of employee.payroll.otherRevenues ?? []) {
+      if (!["02", "03", "04", "05", "06", "07", "09", "17", "18", "19"].includes(revenue.type) || !Number.isFinite(revenue.amount) || revenue.amount <= 0) throw new Error("DSN bloquée : un autre élément de revenu brut est invalide.");
+      add(lines, "S21.G00.54.001", revenue.type);
+      add(lines, "S21.G00.54.002", money(revenue.amount));
+      add(lines, "S21.G00.54.005", contractNumber);
     }
     const overtimeTaxExemptNetAmount = employee.payroll.overtimeTaxExemptNetAmount ?? 0;
     if (!Number.isFinite(overtimeTaxExemptNetAmount) || overtimeTaxExemptNetAmount < 0) throw new Error("DSN bloquée : le montant net fiscal des heures exonérées est invalide.");

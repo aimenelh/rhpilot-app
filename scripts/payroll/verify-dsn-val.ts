@@ -121,6 +121,14 @@ accept("bulletin-apprenti-50-smic", buildDsnP26V01Complete(computedDsnFixture(11
 accept("bulletin-apprenti-79-smic-sous-seuil", buildDsnP26V01Complete(computedDsnFixture(1300, 151.67, false, undefined, false, { employee: apprenticeEmployee("2024-09-01") })));
 accept("bulletin-apprenti-loi-1987", buildDsnP26V01Complete(computedDsnFixture(1500, 151.67, false, { headcount: 15 }, false, { employee: apprenticeEmployee("2025-09-01") })));
 
+// Autres éléments de revenu brut : titres-restaurant, transport public, avantage véhicule, frais au réel et au forfait, FMD.
+accept("bulletin-titres-transport-avantages-frais", buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, false, undefined, false, {
+  mealVouchers: { count: 20, faceValue: 13, employerShare: 0.6 },
+  publicTransport: { monthlySubscription: 90.8, employerShare: 0.5 },
+  benefitsInKind: [{ code: "BENEFIT_VEHICLE", label: "Avantage en nature véhicule", amount: 180 }, { code: "BENEFIT_MEAL", label: "Avantage en nature nourriture", amount: 105 }],
+  expenses: [{ code: "EXPENSE_REAL", label: "Frais sur justificatifs", amount: 42.5 }, { code: "EXPENSE_KILOMETRIC", label: "Indemnités kilométriques", amount: 60 }, { code: "SUSTAINABLE_MOBILITY", label: "Forfait mobilités durables", amount: 25 }],
+})));
+
 // Primes non mensuelles : 13e mois rattaché à l'année écoulée, prime exceptionnelle, prime non liée à l'activité.
 accept("bulletin-13e-mois", buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, false, undefined, false, {
   bonuses: [{ code: "YEAR_END_BONUS", label: "13e mois", amount: 2500, excludedFromPaidLeaveBase: true, dsn: { type: "027", attachmentStart: "2025-01-01", attachmentEnd: "2025-12-31" } }],

@@ -10,6 +10,20 @@ export type LockedRemunerationDeclaration = {
   paidLeaveIndemnities: Array<{ type: "046"; amount: number; start: string; end: string }>;
   /** Primes non mensuelles (S21.G00.52), montants repris des lignes figées du bulletin. */
   bonuses: Array<{ type: DsnBonusType; amount: number; start: string | null; end: string | null }>;
+  /** Autres éléments de revenu brut (S21.G00.54) : avantages en nature, frais, titres-restaurant, transport. */
+  otherRevenues: Array<{ type: DsnOtherRevenueType; amount: number }>;
+};
+
+/** Nomenclature P26V01 S21.G00.54.001 (types utilisés par le moteur). */
+export type DsnOtherRevenueType = "02" | "03" | "04" | "05" | "06" | "07" | "09" | "17" | "18" | "19";
+
+const BENEFIT_TYPES: Readonly<Record<string, DsnOtherRevenueType>> = {
+  BENEFIT_MEAL: "02", BENEFIT_HOUSING: "03", BENEFIT_VEHICLE: "04", BENEFIT_TECHNOLOGY: "05", BENEFIT_OTHER: "06",
+};
+// 07 : frais remboursés au forfait (barèmes) ; 09 : au réel sur justificatifs ; 19 : transports personnels.
+const EXPENSE_TYPES: Readonly<Record<string, DsnOtherRevenueType>> = {
+  EXPENSE_REAL: "09", EXPENSE_HOTEL: "09", EXPENSE_MEAL: "07", EXPENSE_KILOMETRIC: "07", EXPENSE_TRAVEL: "07",
+  SUSTAINABLE_MOBILITY: "19", TRANSPORT_ALLOWANCE: "19",
 };
 
 const round = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
@@ -85,5 +99,35 @@ export function readLockedRemunerationDeclaration({ bulletin, inputs }: { bullet
     }
     bonuses.push({ type: declaration.type, amount: round(amount), start, end });
   }
-  return { employmentStart, employmentEnd, unemploymentRemuneration, restoredSalary, outsideContractHours: round(outsideContractHours), paidLeaveIndemnities, bonuses };
+
+  // Autres éléments de revenu brut : montant total versé ou attribué, la part soumise étant déjà dans le brut.
+  const totals = new Map<DsnOtherRevenueType, number>();
+  const addRevenue = (type: DsnOtherRevenueType, amount: number) => { if (amount > 0) totals.set(type, round((totals.get(type) ?? 0) + amount)); };
+  const lineAmount = (section: "GROSS" | "NET_ITEMS", code: string) => round(bulletin.lines.filter((line) => line.section === section && line.code === code).reduce((total, line) => total + money(line.amount, code), 0));
+  for (const benefit of inputs.benefitsInKind ?? []) {
+    const type = BENEFIT_TYPES[benefit.code];
+    if (!type) throw new Error(`DSN bloquée : l'avantage en nature « ${benefit.label} » n'a pas de type déclaratif.`);
+    if (benefit.amount <= 0) continue;
+    if (cents(lineAmount("GROSS", benefit.code)) !== cents(benefit.amount)) throw new Error(`DSN bloquée : l'avantage en nature « ${benefit.label} » diverge entre la saisie et le bulletin.`);
+    addRevenue(type, benefit.amount);
+  }
+  for (const expense of inputs.expenses ?? []) {
+    const type = EXPENSE_TYPES[expense.code];
+    if (!type) throw new Error(`DSN bloquée : le remboursement « ${expense.label} » n'a pas de type déclaratif.`);
+    addRevenue(type, money(expense.amount, `le remboursement « ${expense.label} »`));
+  }
+  if (inputs.mealVouchers && inputs.mealVouchers.count > 0) {
+    const { count, faceValue, employerShare } = inputs.mealVouchers;
+    const employerTotal = round(round(faceValue * employerShare) * count);
+    if (lineAmount("GROSS", "MEAL_VOUCHER_EXCESS") > employerTotal + 0.005) throw new Error("DSN bloquée : la part patronale des titres-restaurant est incohérente avec le bulletin.");
+    addRevenue("17", employerTotal);
+  }
+  if (inputs.publicTransport && inputs.publicTransport.monthlySubscription > 0) {
+    const expected = round(inputs.publicTransport.monthlySubscription * inputs.publicTransport.employerShare);
+    const paid = round(lineAmount("NET_ITEMS", "PUBLIC_TRANSPORT") + lineAmount("GROSS", "TRANSPORT_EXCESS"));
+    if (cents(paid) !== cents(expected)) throw new Error("DSN bloquée : la prise en charge du transport public diverge entre la saisie et le bulletin.");
+    addRevenue("18", paid);
+  }
+  const otherRevenues = [...totals].sort(([left], [right]) => left.localeCompare(right)).map(([type, amount]) => ({ type, amount }));
+  return { employmentStart, employmentEnd, unemploymentRemuneration, restoredSalary, outsideContractHours: round(outsideContractHours), paidLeaveIndemnities, bonuses, otherRevenues };
 }
