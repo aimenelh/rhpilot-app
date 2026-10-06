@@ -13,7 +13,7 @@ const PUBLIC_FAQ: { question: string; answer: string }[] = [
   {
     question: "RH Pilot remplace-t-il mon logiciel de paie ?",
     answer:
-      "Non, et il ne le sera jamais. RH Pilot vous aide à préparer les éléments variables, jamais à les calculer ou les déclarer à votre place.",
+      "Pas encore. La paie de RH Pilot (saisie, calcul, bulletins) est en accès anticipé pour quelques entreprises pilotes. En attendant, RH Pilot suit tout le reste : salariés, parcours, absences et échéances.",
   },
   {
     question: "Combien ça coûte ?",
@@ -28,7 +28,7 @@ const PUBLIC_FAQ: { question: string; answer: string }[] = [
   {
     question: "Mes données sont-elles en sécurité ?",
     answer:
-      "Isolation stricte entre organisations, hébergement en Europe, authentification déléguée à un spécialiste.",
+      "Isolation stricte entre organisations, base de données à Francfort, documents et numéros de sécurité sociale chiffrés. Certains prestataires (connexion, e-mails, Copilote) sont américains : ils sont listés sur la page Confidentialité.",
   },
 ];
 

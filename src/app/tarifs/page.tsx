@@ -48,8 +48,8 @@ export default function TarifsPage() {
               <ul>
                 <li>Sans limite de salariés</li>
                 <li>Parcours et rappels illimités</li>
-                <li>Module paie : saisie, calcul et bulletins</li>
-                <li>Espace salarié complet, bulletins compris</li>
+                <li>Espace salarié complet : absences, documents, bulletins déposés</li>
+                <li>Paie : en accès anticipé, sur invitation</li>
                 <li>Copilote inclus dans votre abonnement</li>
               </ul>
               <Link className={s.primary} href="/sign-up">

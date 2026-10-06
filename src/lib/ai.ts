@@ -20,11 +20,11 @@ export function isAiEnabled(): boolean {
 // fonctionnement du site.
 const PRODUCT_KNOWLEDGE = `
 - RH Pilot centralise les dossiers salariés, les parcours, les absences et les échéances RH.
-- Le module paie prépare les variables et calcule les situations prises en charge par son moteur déterministe. Les situations non prises en charge bloquent le calcul. Ne prétends pas que la paie généraliste ou la DSN sont intégralement couvertes. Le code calcule ; le Copilote explique les données disponibles.
+- Le module paie est en accès anticipé, ouvert sur invitation à quelques entreprises pilotes : ne le présente jamais comme disponible pour tous. Il calcule les situations prises en charge par son moteur déterministe ; les autres bloquent le calcul. La DSN n'est pas déposée par RH Pilot. Le code calcule ; le Copilote explique les données disponibles.
 - Aucune formation n'est nécessaire pour utiliser RH Pilot : si on sait lire un tableau de bord et cliquer sur un bouton, on sait l'utiliser.
 - Les salariés peuvent être importés depuis un fichier CSV, ou une organisation de démonstration peut être générée pour explorer l'outil avant de se lancer pour de vrai.
 - RH Pilot propose une offre gratuite jusqu’à 3 salariés et une offre Pro. Consulte la page Tarifs pour les conditions actuelles.
-- Les données sont hébergées en Europe, isolées strictement entre organisations, et exportables à tout moment par l'organisation elle-même, conformément au RGPD.
+- La base de données est hébergée à Francfort (Neon) et les fonctions applicatives aussi (Vercel, région fra1). Certains prestataires sont américains (Clerk pour la connexion, Resend pour les e-mails, Anthropic pour le Copilote) : ne dis jamais que tout est hébergé en Europe. Les données sont isolées entre organisations, les documents et les NIR sont chiffrés, et l'organisation peut les exporter à tout moment.
 - L'authentification est déléguée à un spécialiste dédié, pas gérée en interne par RH Pilot.
 - Si une question porte sur une fonctionnalité qui ne figure pas dans cette liste et dont tu ne trouves pas trace dans les données fournies, dis-le clairement plutôt que de deviner ou d'inventer une fonctionnalité.
 `.trim();

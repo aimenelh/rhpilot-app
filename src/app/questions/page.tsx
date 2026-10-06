@@ -43,9 +43,10 @@ const GROUPS = [
       [
         "Le module paie est-il disponible ?",
         <>
-          Oui, sur le palier Pro, pour un périmètre défini : quand une situation n’est pas encore prise en charge, le
-          calcul est bloqué plutôt que faux. Vous pouvez essayer le calcul d’un bulletin sur la page{" "}
-          <Link href="/gestion-paie">Gestion de la paie</Link>.
+          Pas encore pour tous : la paie est en accès anticipé, ouverte sur invitation à quelques entreprises pilotes.
+          Quand une situation n’est pas encore prise en charge, le calcul est bloqué plutôt que faux. Vous pouvez
+          essayer le calcul d’un bulletin sur la page <Link href="/gestion-paie">Gestion de la paie</Link> et nous
+          écrire pour rejoindre l’accès anticipé.
         </>,
       ],
     ],
