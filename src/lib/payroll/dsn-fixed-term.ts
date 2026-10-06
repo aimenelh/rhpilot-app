@@ -14,6 +14,11 @@ export function dsnFixedTermReason(nature: string, publicPolicy: string, value: 
     if (!DSN_FIXED_TERM_REASONS.some(([code]) => code === reason)) throw new Error("DSN bloquée : le motif de recours n'est pas valide pour un CDD privé ordinaire.");
     return reason;
   }
+  // Apprentissage (dispositifs 64/65) : motif facultatif, seul le 11 est admis (Dsn-Val S21.G00.40.021/CCH-12).
+  if (["64", "65"].includes(publicPolicy) && ["01", "02"].includes(nature)) {
+    if (reason && reason !== "11") throw new Error("DSN bloquée : seul le motif 11 (apprentissage) est admis pour un contrat d'apprentissage.");
+    return reason;
+  }
   if (reason) throw new Error("DSN bloquée : ce motif de recours est réservé à un CDD privé ordinaire dans le périmètre actuel.");
   return null;
 }

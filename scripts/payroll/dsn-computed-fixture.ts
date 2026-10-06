@@ -60,12 +60,15 @@ export function computedDsnFixture(
   ])])[0] : [];
   const data = mappedDsnFixture();
   const employee = data.employees[0];
-  const mapped = mapLockedContributions({ snapshot, employeeNir: employee.nir, urssafSiret: "75366412700077", retirementOps: "44832375800038", complementaryAffiliations: affiliations });
+  // Apprentis : dispositif 64 sous 11 salariés, 65 au-delà (cas synthétiques hors entreprises artisanales).
+  const apprenticePolicy = snapshot.inputs.employee.contract === "APPRENTISSAGE" ? (snapshot.inputs.organization.headcount >= 11 ? "65" : "64") : null;
+  const mapped = mapLockedContributions({ snapshot, employeeNir: employee.nir, urssafSiret: "75366412700077", retirementOps: "44832375800038", complementaryAffiliations: affiliations, apprenticePublicPolicyCode: apprenticePolicy });
   const totals = snapshot.bulletin.totals;
   const employeePas = snapshot.bulletin.withholding;
   data.period = { ...snapshot.inputs.period, paymentDate: new Date(snapshot.inputs.paymentDate ?? new Date(Date.UTC(snapshot.inputs.period.year, snapshot.inputs.period.month, 0)).toISOString().slice(0, 10)) };
   employee.contract.startDate = new Date(snapshot.inputs.employee.hireDate + "T00:00:00.000Z");
-  employee.contract.contractNatureCode = snapshot.inputs.employee.contract === "CDD" ? "02" : "01";
+  employee.contract.contractNatureCode = snapshot.inputs.employee.contract === "CDD" || (apprenticePolicy && snapshot.inputs.employee.contractEndDate) ? "02" : "01";
+  if (apprenticePolicy) employee.contract.publicPolicyCode = apprenticePolicy;
   employee.contract.endDate = snapshot.inputs.employee.contractEndDate ? new Date(snapshot.inputs.employee.contractEndDate + "T00:00:00.000Z") : null;
   employee.contract.workAccidentRate = mapped.atmpRatePercent;
   employee.contract.conventionalStatusCode = executive ? "04" : "06";

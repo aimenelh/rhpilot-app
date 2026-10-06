@@ -115,6 +115,12 @@ accept("bulletin-reprise-premier-fevrier", buildDsnP26V01Complete(computedDsnFix
 accept("bulletin-entree-12-janvier", buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, false, undefined, false, { employee: ordinaryEmployee })));
 accept("bulletin-droits-chomage-18000", buildDsnP26V01Complete(computedDsnFixture(18000)));
 
+// Apprentis : part exonérée en CTP 726, surplus au régime général, chômage en CTP 423, exonération Agirc-Arrco 109.
+const apprenticeEmployee = (hireDate: string) => ({ id: "employee-test", displayName: "Lina Apprentie", contract: "APPRENTISSAGE" as const, executive: false, hireDate, contractEndDate: "2027-08-31" });
+accept("bulletin-apprenti-50-smic", buildDsnP26V01Complete(computedDsnFixture(1100, 151.67, false, undefined, false, { employee: apprenticeEmployee("2025-09-01") })));
+accept("bulletin-apprenti-79-smic-sous-seuil", buildDsnP26V01Complete(computedDsnFixture(1300, 151.67, false, undefined, false, { employee: apprenticeEmployee("2024-09-01") })));
+accept("bulletin-apprenti-loi-1987", buildDsnP26V01Complete(computedDsnFixture(1500, 151.67, false, { headcount: 15 }, false, { employee: apprenticeEmployee("2025-09-01") })));
+
 // Primes non mensuelles : 13e mois rattaché à l'année écoulée, prime exceptionnelle, prime non liée à l'activité.
 accept("bulletin-13e-mois", buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, false, undefined, false, {
   bonuses: [{ code: "YEAR_END_BONUS", label: "13e mois", amount: 2500, excludedFromPaidLeaveBase: true, dsn: { type: "027", attachmentStart: "2025-01-01", attachmentEnd: "2025-12-31" } }],

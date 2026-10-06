@@ -765,6 +765,7 @@ export function computePayslip(input: PayslipInput): PayslipResult {
     paidLeave: paidLeaveOutcome,
     sickPayUsed,
     sickPayByAbsence,
+    ...(isApprentice ? { apprenticeExemption: { share: apprenticeExemptShare, threshold: round2(apprenticeExemptShare * smicMonthlyFull), exemptBase: round2(G - apprenticeEmployeeBase) } } : {}),
     warnings,
     sources: [...sources],
   };

@@ -332,6 +332,11 @@ export type PayslipResult = {
   sickPayUsed: SickPayHistory;
   /** Jours de maintien consommés dans la période, par absence (historique des 12 mois glissants). */
   sickPayByAbsence: Record<string, SickPayHistory>;
+  /**
+   * Apprentis : part de la rémunération sous le seuil d'exonération salariale (50 % ou 79 % du Smic),
+   * déclarée en DSN sous le CTP 726 ; le reste relève du régime général.
+   */
+  apprenticeExemption?: { share: number; threshold: number; exemptBase: number };
   warnings: string[];
   sources: string[];
 };

@@ -353,6 +353,7 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     expect(() => mapLockedContributions({ snapshot: health, ...ids })).toThrow(/SANTE/);
     const apprentice = structuredClone(ordinary);
     apprentice.inputs.employee.contract = "APPRENTISSAGE";
-    expect(() => mapLockedContributions({ snapshot: apprentice, ...ids })).toThrow(/apprentis/);
+    expect(() => mapLockedContributions({ snapshot: apprentice, ...ids })).toThrow(/dispositif 64/);
+    expect(() => mapLockedContributions({ snapshot: apprentice, ...ids, apprenticePublicPolicyCode: "64" })).toThrow(/exonération salariale de l'apprenti/);
   });
 });

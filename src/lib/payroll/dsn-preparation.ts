@@ -212,7 +212,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
 
     const nir = assertNirFormat(decryptDsnSensitiveValue(dsnProfile.nirCiphertext));
     assertNirBirthYear(nir, dsnProfile.birthDate, employee.id);
-    const contributions = mapLockedContributions({ snapshot: calculation.calculationSnapshot, previousSnapshot: previousByEmployee.get(employee.id), employeeNir: nir, urssafSiret, retirementOps: retirementSiret, complementaryAffiliations: complementaryByEmployee.get(employee.id) });
+    const contributions = mapLockedContributions({ snapshot: calculation.calculationSnapshot, previousSnapshot: previousByEmployee.get(employee.id), employeeNir: nir, urssafSiret, retirementOps: retirementSiret, complementaryAffiliations: complementaryByEmployee.get(employee.id), apprenticePublicPolicyCode: dsnProfile.publicPolicyCode });
     financial.push(contributions);
     const workLocationId = requiredString(dsnProfile.workLocationId, `le lieu de travail du salarié ${employee.id}`).replace(/\s+/g, "");
     if (workLocationId !== siret) throw new Error(`DSN bloquée pour ${employee.firstName} ${employee.lastName} : le périmètre actuel couvre uniquement le lieu de travail correspondant au SIRET employeur. Les autres lieux nécessitent le bloc S21.G00.85.`);
@@ -221,8 +221,17 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
     if (riskCode === "999ZZ") throw new Error(`DSN bloquée pour ${employee.firstName} ${employee.lastName} : un taux AT/MP est déjà utilisé par le calcul de paie, le code risque d'attente 999ZZ serait incohérent.`);
 
     if (dsnProfile.workUnitCode !== "10") throw new Error("DSN bloquée : seuls les contrats horaires sont raccordés au moteur actuel.");
-    const expectedNature = locked.inputs.employee.contract === "CDI" ? "01" : locked.inputs.employee.contract === "CDD" ? "02" : null;
-    if (!expectedNature || dsnProfile.contractNatureCode !== expectedNature || dsnProfile.publicPolicyCode !== "99") throw new Error("DSN bloquée : la nature déclarative du contrat ne correspond pas au contrat ordinaire du bulletin verrouillé.");
+    const lockedContract = locked.inputs.employee.contract;
+    if (lockedContract === "APPRENTISSAGE") {
+      // Contrat d'apprentissage : CDD (02) à terme fixé, ou CDI (01) dont l'apprentissage ouvre la relation.
+      const expected = locked.inputs.employee.contractEndDate ? "02" : "01";
+      if (dsnProfile.contractNatureCode !== expected || !["64", "65"].includes(dsnProfile.publicPolicyCode)) {
+        throw new Error(`DSN bloquée pour ${employee.firstName} ${employee.lastName} : le profil DSN de l'apprenti doit indiquer la nature ${expected === "02" ? "02 (CDD)" : "01 (CDI)"} et le dispositif 64 ou 65.`);
+      }
+    } else {
+      const expectedNature = lockedContract === "CDI" ? "01" : lockedContract === "CDD" ? "02" : null;
+      if (!expectedNature || dsnProfile.contractNatureCode !== expectedNature || dsnProfile.publicPolicyCode !== "99") throw new Error("DSN bloquée : la nature déclarative du contrat ne correspond pas au contrat ordinaire du bulletin verrouillé.");
+    }
     const referenceWorkQuota = requiredNumber(dsnProfile.referenceWorkQuota, `la quotité de référence du salarié ${employee.id}`);
     const contractWorkQuota = requiredNumber(dsnProfile.contractWorkQuota, `la quotité contractuelle du salarié ${employee.id}`);
     const lockedMonthlyHours = profileSnapshot.monthlyHours == null ? null : Number(profileSnapshot.monthlyHours);
