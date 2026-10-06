@@ -2,10 +2,7 @@
    cadres de téléphone sobres (pas de maquette d'appareil). */
 
 .hero {
-  background: #f6f4ee;
-  border-bottom: 1px solid #e9e4e1;
-  padding: 72px 0 0;
-  overflow: hidden;
+  padding: 80px 0 0;
 }
 .heroGrid {
   display: grid;
@@ -17,17 +14,14 @@
   padding-bottom: 72px;
 }
 .heroTitle {
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 500;
-  font-size: clamp(40px, 4.4vw, 62px);
-  line-height: 1.08;
-  letter-spacing: -0.04em;
-  margin: 0 0 24px;
-  max-width: 620px;
-}
-.heroTitle em {
-  font-style: italic;
-  color: #ba3827;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(42px, 4.9vw, 72px);
+  line-height: 0.98;
+  letter-spacing: -0.052em;
+  margin: 0 0 26px;
+  max-width: 640px;
+  color: #fff;
 }
 .heroNote {
   margin-top: 18px;

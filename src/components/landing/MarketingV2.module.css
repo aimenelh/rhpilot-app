@@ -17,8 +17,51 @@
 }
 .hero {
   padding: 76px 0 58px;
-  background: #f6f4ee;
+  background: #f5f5f3;
   overflow: hidden;
+}
+/* En-tête corail des pages intérieures (même aplat que la page d'accueil).
+   Les boutons et le texte d'introduction s'y inversent. */
+.band {
+  position: relative;
+  isolation: isolate;
+  overflow: clip;
+  background:
+    radial-gradient(1200px 520px at 12% 0%, #d8432a 0%, rgba(216, 67, 42, 0) 70%),
+    linear-gradient(#c8361f, #c8361f);
+  color: #fff;
+}
+.band h1 {
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-weight: 700;
+  color: #fff;
+}
+.band .lead {
+  color: rgba(255, 255, 255, 0.9);
+  font-size: clamp(17px, 1.3vw, 19px);
+  line-height: 1.6;
+}
+.band .primary {
+  background: #fff;
+  color: #17181c;
+  border-radius: 10px;
+  padding: 17px 24px;
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: 0 14px 30px -14px rgba(60, 10, 0, 0.55);
+  transition: transform 0.25s, box-shadow 0.25s;
+}
+.band .primary:hover {
+  background: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 20px 36px -16px rgba(60, 10, 0, 0.6);
+}
+.band .secondary {
+  color: #fff;
+  text-decoration-color: rgba(255, 255, 255, 0.55);
+}
+.band .secondary:hover {
+  text-decoration-color: #fff;
 }
 .heroGrid {
   display: grid;
@@ -28,16 +71,16 @@
 }
 .hero h1,
 .pageHero h1 {
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 500;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-weight: 700;
   font-size: clamp(44px, 4.5vw, 66px);
-  line-height: 1.07;
+  line-height: 1.04;
   letter-spacing: -0.045em;
   margin: 0 0 26px;
 }
 .hero h1 em {
-  font-style: italic;
-  color: #ba3827;
+  font-style: normal;
+  color: inherit;
 }
 .lead {
   font-size: 18px;
@@ -154,11 +197,11 @@
   margin-bottom: 36px;
 }
 .title {
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
   font-size: clamp(32px, 3.3vw, 46px);
-  font-weight: 500;
-  line-height: 1.15;
-  letter-spacing: -0.035em;
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.045em;
   max-width: 660px;
 }
 .copy {
@@ -212,7 +255,7 @@
   font-size: 15px;
 }
 .tabImage {
-  background: #f5f5f0;
+  background: #f5f5f3;
   border-radius: 8px;
   padding: 22px;
   min-width: 0;
@@ -229,7 +272,7 @@
   text-underline-offset: 5px;
 }
 .case {
-  background: #f6f4ee;
+  background: #f5f5f3;
 }
 .caseGrid {
   display: grid;
@@ -295,7 +338,8 @@
   gap: 40px;
 }
 .payroll h2 {
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-weight: 700;
   font-size: 29px;
 }
 .payroll p {
@@ -323,7 +367,7 @@
   aspect-ratio: 4/3;
   object-fit: cover;
   border-radius: 5px;
-  background: #eee7dd;
+  background: #ececea;
 }
 .signature {
   padding-top: 23px;
@@ -371,33 +415,8 @@
   margin-top: 14px;
   padding-right: 20px;
 }
-.cta {
-  background: #14151a;
-  color: #fff;
-  padding: 62px 0;
-  overflow: hidden;
-}
-.ctaInner {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 30px;
-}
-.cta .title {
-  max-width: 650px;
-}
-.cta p {
-  color: #dedee2;
-  line-height: 1.8;
-  margin-top: 16px;
-}
-.cta .primary {
-  background: #e8432e;
-  color: #fff;
-  white-space: nowrap;
-}
 .pageHero {
-  background: #f6f4ee;
+  background: #f5f5f3;
   padding: 65px 0;
 }
 .pageHero h1 {
@@ -441,7 +460,7 @@
 }
 .demo {
   scroll-margin-top: 110px;
-  background: #f6f4ee;
+  background: #f5f5f3;
 }
 .demo .title {
   margin-bottom: 30px;
@@ -469,9 +488,6 @@
   }
   .payrollInner > a {
     grid-column: 2;
-  }
-  .ctaInner {
-    align-items: start;
   }
   .hero {
     padding-top: 58px;
@@ -571,13 +587,6 @@
     aspect-ratio: 16/10;
   }
   .faqGrid {
-    gap: 25px;
-  }
-  .cta {
-    padding: 48px 0;
-  }
-  .ctaInner {
-    flex-direction: column;
     gap: 25px;
   }
   .pageHero {

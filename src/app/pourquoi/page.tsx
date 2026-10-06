@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { MarketingPage, MarketingCTA } from "@/components/landing/MarketingPage";
 import { WhyConversationScene } from "@/components/landing/WhyConversationScene";
+import { BandThread } from "@/components/landing/BandThread";
 import s from "@/components/landing/MarketingV2.module.css";
 import p from "@/components/landing/InnerPages.module.css";
 import w from "./WhyPage.module.css";
@@ -14,11 +15,12 @@ export const metadata = {
 export default function WhyPage() {
   return (
     <MarketingPage>
-      <section className={w.hero}>
+      <section className={`${w.hero} ${s.band}`}>
+        <BandThread />
         <div className={`${s.wrap} ${w.heroGrid}`}>
           <div className={w.heroCopy}>
             <h1 className={w.heroTitle}>
-              Tout commence parfois par un <em>« je pensais que c’était toi ».</em>
+              Tout commence parfois par un « je pensais que c’était toi ».
             </h1>
             <p className={w.heroLead}>
               Une arrivée, un document, une échéance. Quand les informations se

@@ -72,7 +72,7 @@ export function CopilotCards() {
           <h2 id="copilotes-title">
             Vous décidez.
             <br />
-            <em>RH Pilot prépare.</em>
+            RH Pilot prépare.
           </h2>
           <p>
             Un événement arrive dans l’équipe : RH Pilot prépare la suite, datée et répartie.

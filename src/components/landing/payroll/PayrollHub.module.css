@@ -1,7 +1,7 @@
 /* Pages paie : en-tête, bulletin, mois raconté sur un fil, index des sujets. */
 
 .page {
-  background: #f7f5ef;
+  background: #fff;
   color: #20211f;
 }
 .inner {
@@ -9,39 +9,75 @@
   margin: 0 auto;
 }
 
+/* En-tête : l'aplat corail du haut de la page d'accueil. La démonstration
+   est à cheval entre l'aplat et la page (bande blanche tirée sous elle). */
 .hero {
-  padding: 64px 0 72px;
+  --pb: 80px;
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  padding: 72px 0 var(--pb);
+  background:
+    radial-gradient(1200px 520px at 12% 0%, #d8432a 0%, rgba(216, 67, 42, 0) 70%),
+    linear-gradient(#c8361f, #c8361f);
+  color: #fff;
+}
+.hero .demo {
+  position: relative;
+}
+.hero .demo::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 150px;
+  bottom: calc(var(--pb) * -1);
+  left: -100vw;
+  right: -100vw;
+  background: #fff;
 }
 .kicker {
-  margin: 0;
-  font-size: 13px;
+  margin: 0 0 18px;
+  font-size: 14px;
   font-weight: 600;
-  color: #b73927;
+  color: rgba(255, 255, 255, 0.85);
 }
 .kicker a {
   color: inherit;
   text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration-color: rgba(255, 255, 255, 0.5);
+  text-underline-offset: 4px;
+}
+.kicker a:hover {
+  color: #fff;
+  text-decoration-color: #fff;
 }
 .title {
-  max-width: 860px;
-  margin: 12px 0 0;
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 500;
-  font-size: clamp(38px, 4.6vw, 64px);
-  line-height: 1.02;
-  letter-spacing: -0.045em;
+  max-width: 980px;
+  margin: 0;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(40px, 5.6vw, 84px);
+  line-height: 0.98;
+  letter-spacing: -0.052em;
 }
 .title em {
-  font-style: italic;
-  color: #b73927;
+  font-style: normal;
+  color: inherit;
 }
 .intro {
   max-width: 660px;
-  margin: 18px 0 0;
-  font-size: 17.5px;
-  line-height: 1.65;
-  color: #615e58;
+  margin: 22px 0 0;
+  font-size: clamp(17px, 1.3vw, 19px);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.9);
+}
+.intro + .intro {
+  margin-top: 12px;
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.78);
+}
+.intro strong {
+  color: #fff;
 }
 .demo {
   margin-top: 40px;
@@ -50,10 +86,10 @@
   max-width: 660px;
   margin: 22px 0 0;
   padding-left: 14px;
-  border-left: 2px solid #e8432e;
+  border-left: 2px solid rgba(255, 255, 255, 0.7);
   font-size: 15px;
   line-height: 1.6;
-  color: #20211f;
+  color: #fff;
 }
 .try + .demo {
   margin-top: 24px;
@@ -112,15 +148,15 @@
 }
 .h2 {
   margin: 0;
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 500;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-weight: 700;
   font-size: clamp(32px, 3.6vw, 50px);
-  line-height: 1.05;
-  letter-spacing: -0.04em;
+  line-height: 1.04;
+  letter-spacing: -0.045em;
 }
 .h2 em {
-  font-style: italic;
-  color: #b73927;
+  font-style: normal;
+  color: inherit;
 }
 .lead {
   max-width: 620px;
@@ -170,8 +206,9 @@
 .date {
   margin: 2px 0 0;
   text-align: right;
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-style: italic;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-weight: 600;
+  font-style: normal;
   font-size: 18px;
   color: #b73927;
 }
@@ -210,15 +247,17 @@
   margin: 18px 0 0 216px;
   padding: 18px 22px;
   border-left: 3px solid #20211f;
-  background: #f7f5ef;
+  background: #f5f5f3;
   font-size: 16px;
   line-height: 1.6;
   color: #4a4a4d;
 }
 .promise em {
   display: block;
+  font-style: normal;
   margin-top: 4px;
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-weight: 700;
   font-size: 19px;
   color: #20211f;
 }
@@ -226,13 +265,14 @@
 .topics {
   padding: 72px 0 80px;
   border-top: 1px solid #e3ddd3;
+  background: #f5f5f3;
 }
 .h2Small {
   margin: 0;
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 500;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-weight: 700;
   font-size: clamp(26px, 2.6vw, 36px);
-  letter-spacing: -0.035em;
+  letter-spacing: -0.045em;
 }
 .groups {
   display: grid;
@@ -313,7 +353,11 @@
     width: calc(100% - 32px);
   }
   .hero {
-    padding: 40px 0 48px;
+    --pb: 48px;
+    padding-top: 44px;
+  }
+  .hero .demo::before {
+    top: 110px;
   }
   .month {
     padding: 60px 0;

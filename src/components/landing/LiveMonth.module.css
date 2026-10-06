@@ -8,7 +8,7 @@
 .live {
   padding: 92px 0 96px;
   border-top: 1px solid #e3ddd3;
-  background: #f7f5ef;
+  background: #f5f5f3;
   color: #20211f;
 }
 .inner {
@@ -20,15 +20,15 @@
 }
 .title {
   margin: 0;
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 500;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-weight: 700;
   font-size: clamp(36px, 4.2vw, 58px);
   line-height: 1.04;
   letter-spacing: -0.045em;
 }
 .title em {
-  font-style: italic;
-  color: #b73927;
+  font-style: normal;
+  color: inherit;
 }
 .lead {
   max-width: 640px;
@@ -95,7 +95,7 @@
   transition: background 0.2s;
 }
 .controls button:hover {
-  background: #f6efe7;
+  background: #f5f5f3;
 }
 .controls button:disabled {
   opacity: 0.35;
@@ -120,7 +120,7 @@
 }
 .line {
   right: 0;
-  background: #ece3da;
+  background: #ececea;
 }
 .progress {
   background: #e8432e;
@@ -330,14 +330,15 @@
 .ask {
   padding: 16px 24px 12px;
   border-top: 1px solid #eee8df;
-  background: #fbfaf7;
+  background: #f5f5f3;
 }
 .ask label {
   display: block;
   margin-bottom: 8px;
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-weight: 600;
   font-size: 19px;
-  font-style: italic;
+  font-style: normal;
   color: #b73927;
 }
 .field {
@@ -412,9 +413,10 @@
 .outro {
   margin: 30px 0 0;
   text-align: center;
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-weight: 700;
   font-size: clamp(22px, 2.4vw, 32px);
-  letter-spacing: -0.03em;
+  letter-spacing: -0.045em;
   opacity: 0;
   transform: translateY(10px);
   transition:
@@ -426,8 +428,8 @@
   transform: none;
 }
 .outro em {
-  font-style: italic;
-  color: #b73927;
+  font-style: normal;
+  color: inherit;
 }
 
 @keyframes knotIn {

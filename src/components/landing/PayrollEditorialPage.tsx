@@ -133,14 +133,12 @@ function Demo({ keyName }: { keyName: PageKey }) {
 }
 
 function TopicPage({
-  eyebrow,
   title,
   intro,
   keyName,
   steps,
   sources,
 }: {
-  eyebrow: string;
   title: string;
   intro: string;
   keyName: PageKey;
@@ -155,7 +153,7 @@ function TopicPage({
         <section className={h.hero} aria-labelledby="payroll-topic-title">
           <div className={h.inner}>
             <p className={h.kicker}>
-              <Link href="/gestion-paie">Gestion de la paie</Link> · {eyebrow}
+              <Link href="/gestion-paie">Gestion de la paie</Link>
             </p>
             <h1 id="payroll-topic-title" className={h.title}>
               <AccentTitle title={title} phrase={page.accent} />
@@ -213,7 +211,6 @@ function TopicPage({
 export function PayrollFeatureEditorial({ feature }: { feature: PayrollEditorialFeature }) {
   return (
     <TopicPage
-      eyebrow={feature.eyebrow}
       title={feature.title}
       intro={feature.intro}
       keyName={pageKey(feature.eyebrow)}
@@ -226,7 +223,6 @@ export function PayrollFeatureEditorial({ feature }: { feature: PayrollEditorial
 export function PayrollCapabilityEditorial({ capability }: { capability: PayrollEditorialCapability }) {
   return (
     <TopicPage
-      eyebrow={capability.eyebrow}
       title={capability.title}
       intro={capability.intro}
       keyName={pageKey(capability.eyebrow, capability.variant)}

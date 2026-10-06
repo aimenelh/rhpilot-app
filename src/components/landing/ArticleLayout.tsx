@@ -4,7 +4,7 @@ import {
   PageIntro,
   MarketingCTA,
 } from "@/components/landing/MarketingPage";
-import s from "@/components/landing/MarketingV2.module.css";
+import { BandThread } from "@/components/landing/BandThread";
 import p from "@/components/landing/InnerPages.module.css";
 export function ArticleLayout({
   category,
@@ -20,17 +20,20 @@ export function ArticleLayout({
   return (
     <MarketingPage>
       <article>
-        <header className={p.tint}>
+        <header className={p.intro}>
+          <BandThread />
           <div className={p.readingHeader}>
-            <Link href="/ressources" className={s.textLink}>
+            <Link href="/ressources" className={p.back}>
               ← Toutes les ressources
             </Link>
             <div className={p.readingMeta}>
               <span>{category}</span>
-              <span>{readTime} de lecture</span>
+              <span>{readTime}</span>
             </div>
-            <h1 className={p.h1}>{title}</h1>
-            <p className="mt-4 text-sm text-ink-soft">Par Aimen El Housseini · Révisé le <time dateTime="2026-09-29">29 septembre 2026</time></p>
+            <h1 className={p.h1}>{title.replace(/ ([:;?!])/g, "\u00a0$1")}</h1>
+            <p className={p.byline}>
+              Par Aimen El Housseini · Révisé le <time dateTime="2026-09-29">29 septembre 2026</time>
+            </p>
           </div>
         </header>
         <div className={p.articleBody}>

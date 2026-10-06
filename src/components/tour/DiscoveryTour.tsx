@@ -128,7 +128,7 @@ function Accent({ text }: { text: string }) {
     <>
       {text.split("*").map((part, i) =>
         i % 2 === 1 ? (
-          <em key={i} className="font-display font-normal italic text-brand-primary">
+          <em key={i} className="not-italic">
             {part}
           </em>
         ) : (

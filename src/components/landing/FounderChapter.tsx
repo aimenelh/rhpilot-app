@@ -49,7 +49,7 @@ export function FounderChapter() {
             <h2 id="fondateur-title">
               Le terrain comme
               <br />
-              <em>point de départ.</em>
+              point de départ.
             </h2>
           </div>
           <div className={s.story}>

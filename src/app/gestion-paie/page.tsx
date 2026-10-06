@@ -22,7 +22,6 @@ export default function GestionPaiePage() {
       <main id="main-content">
         <section className={s.hero} aria-labelledby="payroll-title">
           <div className={s.inner}>
-            <p className={s.kicker}>Gestion de la paie</p>
             <h1 id="payroll-title" className={s.title}>
               Un bulletin qui se&nbsp;calcule
               <em> devant vous.</em>

@@ -16,16 +16,16 @@
   align-items: end;
 }
 .head h2 {
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
   font-size: clamp(36px, 3.9vw, 56px);
-  font-weight: 500;
+  font-weight: 700;
   line-height: 1.04;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.045em;
   color: #20211f;
 }
 .head h2 em {
-  font-style: italic;
-  color: #ba3827;
+  font-style: normal;
+  color: inherit;
 }
 .head p {
   font-size: 16px;
@@ -42,7 +42,7 @@
 .card {
   display: flex;
   flex-direction: column;
-  border: 1px solid #e7e2d9;
+  border: 1px solid #e6e6e2;
   border-radius: 18px;
   overflow: hidden;
   background: #fff;
@@ -52,9 +52,9 @@
   transform: translateY(-4px);
   box-shadow: 0 18px 40px -24px rgba(32, 33, 31, 0.35);
 }
-.card[data-tone="suivi"] { --tone: #f3ede4; }
+.card[data-tone="suivi"] { --tone: #fbe9e4; }
 .card[data-tone="paie"] { --tone: #e9efe9; }
-.card[data-tone="espace"] { --tone: #f7ecda; }
+.card[data-tone="espace"] { --tone: #e7edf6; }
 
 /* ------------------------------------------------ scène illustrée */
 .stage {
@@ -74,7 +74,7 @@
   align-items: flex-start;
   margin: 0;
   padding: 12px 14px 12px 10px;
-  background: #fffdf8;
+  background: #fff;
   border: 1px solid rgba(32, 33, 31, 0.1);
   border-radius: 14px 14px 14px 4px;
   flex-direction: column;
@@ -105,7 +105,8 @@
 }
 .request q {
   display: block;
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-weight: 600;
   font-size: 17px;
   line-height: 1.3;
   letter-spacing: -0.01em;
@@ -174,7 +175,7 @@
 .result {
   margin: 18px 0 0;
   padding-top: 16px;
-  border-top: 1px solid #ece8e0;
+  border-top: 1px solid #ececea;
   font-size: 14.5px;
   line-height: 1.55;
   font-weight: 600;

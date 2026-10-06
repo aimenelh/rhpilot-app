@@ -1,9 +1,12 @@
-/* Appel final sur fond encre, avec le fil qui se dessine à l'arrivée de la section. */
+/* Appel final sur l'aplat corail du haut de page, avec le fil blanc qui se
+   dessine à l'arrivée de la section. */
 .close {
   position: relative;
   overflow: hidden;
-  padding: 104px 0 96px;
-  background: #14151a;
+  padding: 112px 0 104px;
+  background:
+    radial-gradient(1100px 480px at 88% 100%, #d8432a 0%, rgba(216, 67, 42, 0) 70%),
+    linear-gradient(#c8361f, #c8361f);
   color: #fff;
 }
 .thread {
@@ -15,8 +18,8 @@
 }
 .thread path {
   fill: none;
-  stroke: #e8432e;
-  stroke-width: 2.5;
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 2.4;
   stroke-linecap: round;
   stroke-dasharray: 1 2;
   stroke-dashoffset: 0;
@@ -39,22 +42,20 @@
 }
 .title {
   margin: 0;
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-weight: 500;
-  font-size: clamp(34px, 4vw, 58px);
-  line-height: 1.08;
-  letter-spacing: -0.04em;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(36px, 3.9vw, 56px);
+  line-height: 1;
+  letter-spacing: -0.05em;
 }
-.title em {
+.accent {
   display: block;
-  font-style: italic;
-  color: #f26a55;
 }
 .text {
   margin-top: 18px;
-  font-size: 16px;
-  line-height: 1.7;
-  color: #d6d6db;
+  font-size: 17px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.88);
 }
 .action {
   display: flex;
@@ -65,29 +66,31 @@
 }
 .action span {
   font-size: 12.5px;
-  color: #a9a9b1;
+  color: rgba(255, 255, 255, 0.8);
 }
 .primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 17px 26px;
-  border-radius: 8px;
-  background: #e8432e;
-  color: #fff;
-  font-size: 15px;
-  font-weight: 600;
+  padding: 18px 26px;
+  border-radius: 10px;
+  background: #fff;
+  color: #17181c;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
   white-space: nowrap;
+  box-shadow: 0 14px 30px -14px rgba(60, 10, 0, 0.55);
   transition:
     transform 0.25s,
-    background 0.25s;
+    box-shadow 0.25s;
 }
 .primary:hover {
-  background: #cf3a27;
   transform: translateY(-2px);
+  box-shadow: 0 20px 36px -16px rgba(60, 10, 0, 0.6);
 }
 .primary:focus-visible {
-  outline: 2px solid #f26a55;
+  outline: 2px solid #fff;
   outline-offset: 5px;
 }
 @keyframes draw {

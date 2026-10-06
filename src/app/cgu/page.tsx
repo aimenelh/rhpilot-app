@@ -1,6 +1,7 @@
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import p from "@/components/landing/InnerPages.module.css";
+import { PageIntro } from "@/components/landing/MarketingPage";
 import { Reveal } from "@/components/landing/Reveal";
 import { LEGAL_VERSIONS } from "@/lib/legalVersions";
 
@@ -11,20 +12,16 @@ export default function CguPage() {
     <div className={p.editorial}>
       <MarketingHeader />
       <main id="main-content" className={p.legal}>
+        <PageIntro
+          title="Conditions générales d’utilisation"
+          intro="Les conditions de vente et le contrat de sous-traitance complètent ces conditions pour les organisations clientes."
+        >
+          <p className={p.introNote}>Version du {LEGAL_VERSIONS.cgu.label}</p>
+        </PageIntro>
         <div className="relative mx-auto max-w-2xl px-6 py-16">
           <Reveal>
-            <div className="rounded-2xl border border-surface-border bg-white/75 p-8 shadow-sm backdrop-blur-md sm:p-10">
-              <p className="text-xs font-medium uppercase tracking-wide text-brand-primary">
-                Conditions d’utilisation
-              </p>
-              <h1 className="mt-2 text-3xl font-semibold text-ink">
-                Conditions Générales d&apos;Utilisation
-              </h1>
-              <p className="mt-4 text-sm leading-relaxed text-ink-soft">
-                Version du {LEGAL_VERSIONS.cgu.label}. Les conditions de vente et le contrat de sous-traitance complètent ces conditions pour les organisations clientes.
-              </p>
-
-              <div className="mt-10 flex flex-col gap-8 text-sm leading-relaxed text-ink-soft">
+            <div>
+              <div className="flex flex-col gap-8 text-[15px] leading-relaxed text-ink-soft">
                 <section>
                   <h2 className="text-base font-semibold text-ink">1. Objet</h2>
                   <p className="mt-2">

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import { TutorialGuide } from "@/components/landing/TutorialGuide";
+import { BandThread } from "@/components/landing/BandThread";
 import styles from "@/components/landing/TutorialGuide.module.css";
 
 export const metadata: Metadata = {
@@ -13,21 +14,26 @@ export default function TutorielsPage() {
   return (
     <div className="min-h-screen bg-white text-ink">
       <MarketingHeader />
-      <main id="main-content" className={styles.page}>
-        <header className={styles.header}>
-          <div>
-            <h1 className={styles.pageTitle}>Les tutoriels</h1>
-            <p className={styles.pageIntro}>Retrouvez les principales fonctions de RH Pilot en vidéo.</p>
-          </div>
-          <div className={styles.author}>
-            <img src="/team/maxime-dekens-final.jpg" alt="Maxime Dekens" width={48} height={48} />
+      <main id="main-content">
+        <section className={styles.band}>
+          <BandThread />
+          <header className={styles.header}>
             <div>
-              <p>Réalisés avec <strong>Maxime Dekens</strong></p>
-              <p>Assistant RH dans le domaine de l’hôtellerie</p>
+              <h1 className={styles.pageTitle}>Les tutoriels</h1>
+              <p className={styles.pageIntro}>Retrouvez les principales fonctions de RH Pilot en vidéo.</p>
             </div>
-          </div>
-        </header>
-        <TutorialGuide />
+            <div className={styles.author}>
+              <img src="/team/maxime-dekens-final.jpg" alt="Maxime Dekens" width={48} height={48} />
+              <div>
+                <p>Réalisés avec <strong>Maxime Dekens</strong></p>
+                <p>Assistant RH dans le domaine de l’hôtellerie</p>
+              </div>
+            </div>
+          </header>
+        </section>
+        <div className={styles.page}>
+          <TutorialGuide />
+        </div>
       </main>
       <MarketingFooter />
     </div>

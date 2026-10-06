@@ -5,7 +5,7 @@
   position: relative;
   padding: 112px 0 120px;
   background: #14151a;
-  color: #f6f2ea;
+  color: #fff;
   overflow: hidden;
 }
 .inner {
@@ -25,17 +25,17 @@
   margin: 0 0 20px;
 }
 .head h2 {
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
   font-size: clamp(40px, 4.6vw, 68px);
-  font-weight: 500;
+  font-weight: 700;
   line-height: 1.02;
   letter-spacing: -0.045em;
-  color: #f6f2ea;
+  color: #fff;
   margin: 0;
 }
 .head h2 em {
-  font-style: italic;
-  color: #f2836f;
+  font-style: normal;
+  color: inherit;
 }
 .story p {
   font-size: 17px;
@@ -54,7 +54,7 @@
 }
 .signature strong {
   display: block;
-  color: #f6f2ea;
+  color: #fff;
   font-weight: 600;
 }
 
@@ -177,13 +177,14 @@
   flex-direction: column;
   padding: 30px 28px 24px;
   border-radius: 12px;
-  background: #fffdf8;
+  background: #fff;
   color: #20211f;
 }
 .reviews blockquote {
   margin: 0;
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-style: italic;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-weight: 500;
+  font-style: normal;
   font-size: 20px;
   line-height: 1.45;
   letter-spacing: -0.01em;
@@ -204,7 +205,7 @@
   margin-top: 40px;
   font-size: 14px;
   font-weight: 600;
-  color: #f6f2ea;
+  color: #fff;
   text-decoration: underline;
   text-underline-offset: 5px;
 }

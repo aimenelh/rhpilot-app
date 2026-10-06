@@ -102,7 +102,7 @@
 .workspace-brand>svg{flex-shrink:0}
 
 .workspace-organization{display:flex;align-items:center;text-align:left;padding:12px 10px;gap:10px;background:#f7f8f4;border:1px solid #e6e7e0;border-radius:9px;margin-bottom:27px;width:100%}
-.workspace-organization>span{width:32px;height:32px;border-radius:7px;display:grid;place-items:center;background:#e8ece3;font-family:var(--font-fraunces),Georgia,serif;font-size:18px;flex-shrink:0}
+.workspace-organization>span{width:32px;height:32px;border-radius:7px;display:grid;place-items:center;background:#e8ece3;font-family:var(--font-dm-sans), system-ui, sans-serif;font-weight:700;font-size:18px;flex-shrink:0}
 .workspace-organization>div{min-width:0}
 .workspace-organization strong{display:block;font-size:13px;font-weight:600;overflow-wrap:anywhere}
 .workspace-organization small{font-size:11px;color:#62685e;display:block}

@@ -25,7 +25,8 @@ export function SoftwareOverview() {
           <div className={h.inner}>
             <h1 id="software-title" className={h.title}>
               Écrivez ce qui arrive.
-              <em> RH Pilot prépare la suite.</em>
+              <br />
+              RH Pilot prépare la suite.
             </h1>
             <p className={h.intro}>
               Essayez-le ici, sans créer de compte : un événement devient un parcours daté, rangé dans la fiche du salarié et

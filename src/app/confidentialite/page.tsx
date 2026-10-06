@@ -2,6 +2,7 @@ import Link from "next/link";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import p from "@/components/landing/InnerPages.module.css";
+import { PageIntro } from "@/components/landing/MarketingPage";
 import { Reveal } from "@/components/landing/Reveal";
 import { Card } from "@/components/ui/Card";
 
@@ -84,25 +85,14 @@ export default function ConfidentialitePage() {
     <div className={p.editorial}>
       <MarketingHeader />
       <main id="main-content" className={p.legal}>
-        <section className="mx-auto max-w-2xl px-6 py-16">
-          <Reveal variant="left">
-            <h1 className="text-4xl font-semibold leading-tight tracking-tight text-ink sm:text-5xl">
-              Politique de confidentialité
-            </h1>
-            <p className="mt-4 text-base text-ink-faint">
-              Dernière mise à jour : {LAST_UPDATED}
-            </p>
-            <p className="mt-4 text-lg text-ink-soft">
-              Cette page dit précisément quelles données RH Pilot collecte,
-              pourquoi, avec qui elles sont partagées, et où elles sont
-              réellement hébergées, prestataire par prestataire. Pas de formule
-              vague du type « vos données sont en sécurité » sans expliquer ce
-              que ça recouvre.
-            </p>
-          </Reveal>
-        </section>
+        <PageIntro
+          title="Politique de confidentialité"
+          intro="Quelles données RH Pilot collecte, pourquoi, avec qui elles sont partagées et où elles sont hébergées, prestataire par prestataire."
+        >
+          <p className={p.introNote}>Dernière mise à jour : {LAST_UPDATED}</p>
+        </PageIntro>
 
-        <section className="mx-auto max-w-2xl px-6 pb-16">
+        <section className="mx-auto max-w-2xl px-6 py-16">
           <Section title="1. Deux rôles distincts">
             <p>
               RH Pilot traite deux catégories de données, avec deux

@@ -45,14 +45,15 @@
 .ask {
   padding: 20px 22px 12px;
   border-bottom: 1px solid #eee8df;
-  background: #fbfaf7;
+  background: #f5f5f3;
 }
 .ask label {
   display: block;
   margin-bottom: 8px;
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-weight: 600;
   font-size: 21px;
-  font-style: italic;
+  font-style: normal;
   color: #b73927;
 }
 .field {
@@ -154,7 +155,7 @@
   height: 4px;
   margin-bottom: 8px;
   border-radius: 4px;
-  background: #f0ebe4;
+  background: #ececea;
 }
 .progress i {
   display: block;
@@ -263,10 +264,10 @@
   transition: background 0.2s;
 }
 .team button:hover {
-  background: #fbf8f3;
+  background: #f5f5f3;
 }
 .team button[aria-pressed="true"] {
-  background: #f6efe7;
+  background: #f5f5f3;
 }
 .team i {
   width: 8px;
@@ -349,7 +350,7 @@
 }
 .day[data-has="true"]:hover,
 .day[data-open="true"] {
-  background: #f6efe7;
+  background: #f5f5f3;
 }
 .day[data-today="true"] > span:first-child {
   display: grid;
@@ -407,7 +408,7 @@
 .copilot {
   grid-column: 1 / -1;
   border-top: 1px solid #eee8df;
-  background: #fbfaf7;
+  background: #f5f5f3;
 }
 .questions {
   display: flex;

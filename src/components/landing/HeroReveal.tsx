@@ -127,16 +127,16 @@ export function HeroReveal() {
       <div className={s.copy}>
         <h1 id="hero-title" className={s.title}>
           <span className={s.line}>
-            <span>Vos RH, sans rien</span>
+            <span>Le logiciel RH</span>
           </span>
           <span className={s.line}>
-            <span>laisser filer.</span>
+            <span>des TPE et PME.</span>
           </span>
         </h1>
         <div className={s.below}>
           <p className={s.lead}>
-            Embauches, absences, paie, rappels : RH Pilot transforme chaque événement en plan daté et prévient la bonne
-            personne au bon moment. Gratuit jusqu’à 3 salariés.
+            Salariés, embauches, absences, documents et paie au même endroit. Pour chaque événement, RH Pilot prépare
+            les tâches, les dates et les rappels. Gratuit jusqu’à 3 salariés.
           </p>
           <div className={s.actions}>
             <Link href="/sign-up" className={s.primary}>

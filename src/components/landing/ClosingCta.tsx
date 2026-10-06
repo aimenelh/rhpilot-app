@@ -3,7 +3,7 @@ import s from "./ClosingCta.module.css";
 
 type ClosingCtaProps = { title?: string; accent?: string; text?: string; action?: string; href?: string };
 
-/** Fin de page : le fil corail de l'introduction revient et traverse l'appel final. */
+/** Fin de page : l'aplat corail du haut de page revient, traversé par le fil. */
 export function ClosingCta({
   title = "Le prochain événement RH arrive.",
   accent = "Gardez le fil.",
@@ -14,13 +14,13 @@ export function ClosingCta({
   return (
     <section className={s.close} aria-labelledby="closing-title">
       <svg className={s.thread} viewBox="0 0 1440 360" preserveAspectRatio="none" aria-hidden="true">
-        <path pathLength={1} d="M-30 300 C 180 330 330 250 470 280 C 610 310 700 350 820 300 C 960 240 1010 150 1120 160 C 1230 170 1300 110 1470 70" />
+        <path pathLength={1} d="M-30 342 C 200 352 420 328 650 338 C 860 348 960 318 1060 252 C 1160 186 1270 128 1470 84" />
       </svg>
       <div className={s.inner}>
         <div>
           <h2 id="closing-title" className={s.title}>
             {title}
-            <em>{accent}</em>
+            {accent ? <span className={s.accent}>{accent}</span> : null}
           </h2>
           <p className={s.text}>{text}</p>
         </div>

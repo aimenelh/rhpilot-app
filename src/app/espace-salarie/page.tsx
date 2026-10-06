@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { MarketingCTA, MarketingPage } from "@/components/landing/MarketingPage";
+import { BandThread } from "@/components/landing/BandThread";
 import s from "@/components/landing/MarketingV2.module.css";
 import p from "@/components/landing/InnerPages.module.css";
 import e from "./espace-salarie.module.css";
@@ -59,11 +60,12 @@ const LAW = [
 export default function EmployeeSpaceMarketingPage() {
   return (
     <MarketingPage>
-      <section className={e.hero}>
+      <section className={`${e.hero} ${s.band}`}>
+        <BandThread />
         <div className={`${s.wrap} ${e.heroGrid}`}>
           <div className={e.heroCopy}>
             <h1 className={e.heroTitle}>
-              Les bulletins de vos salariés, <em>sur leur téléphone.</em>
+              Les bulletins de vos salariés, sur leur téléphone.
             </h1>
             <p className={s.lead}>
               Chaque salarié a son espace : ses bulletins, ses congés, ses demandes d’absence et ses documents de fin de

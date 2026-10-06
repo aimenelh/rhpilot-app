@@ -26,19 +26,6 @@ const caveat = localFont({
   variable: "--font-handwriting",
 });
 
-// Police d'affichage réservée aux gros titres éditoriaux du marketing
-// (hero, titres de page) : un sérif chaleureux et légèrement décalé,
-// à côté de DM Sans qui reste la police de tout le reste (interface,
-// texte courant, application). Jamais utilisée dans le produit lui-même.
-const fraunces = localFont({
-  src: [
-    { path: "./fonts/fraunces.woff2", weight: "500 700", style: "normal" },
-    { path: "./fonts/fraunces-italic.woff2", weight: "500 700", style: "italic" },
-  ],
-  display: "swap",
-  variable: "--font-fraunces",
-});
-
 export const viewport: Viewport = {
   themeColor: "#E8432E",
 };
@@ -98,7 +85,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider localization={frFR as any} appearance={clerkAppearance}>
-      <html lang="fr" className={`${dmSans.variable} ${caveat.variable} ${fraunces.variable}`}>
+      <html lang="fr" className={`${dmSans.variable} ${caveat.variable}`}>
         <body className={`${dmSans.className} antialiased`}>
           {children}
           <CookieConsent />

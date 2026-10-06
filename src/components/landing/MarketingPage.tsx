@@ -1,7 +1,8 @@
-import Link from "next/link";
 import { MarketingHeader } from "./MarketingHeader";
 import { MarketingFooter } from "./MarketingFooter";
 import { MascotScene } from "./MascotScene";
+import { BandThread } from "./BandThread";
+import { ClosingCta } from "./ClosingCta";
 import s from "./MarketingV2.module.css";
 import p from "./InnerPages.module.css";
 
@@ -29,11 +30,12 @@ export function PageIntro({
   children?: React.ReactNode;
 }) {
   return (
-    <section className={p.intro}>
+    <section className={`${p.intro} ${s.band}`}>
+      <BandThread />
       <div className={`${s.wrap} ${mascot ? p.introGrid : ""}`}>
         <div>
           <h1 className={p.h1}>{title}</h1>
-          <p className={s.lead}>{intro}</p>
+          <p className={p.introLead}>{intro}</p>
           {children}
         </div>
         {mascot && (
@@ -47,28 +49,18 @@ export function PageIntro({
     </section>
   );
 }
+/** Appel de fin de page : le même aplat corail que la page d'accueil. */
 export function MarketingCTA({
-  title = "Le prochain pas, à votre rythme.",
-  text = "Créez votre espace et préparez votre premier parcours RH. Gratuit jusqu’à 3 salariés.",
-  href = "/sign-up",
-  action = "Créer mon espace",
+  title,
+  text,
+  href,
+  action,
 }: {
   title?: string;
   text?: string;
   href?: string;
   action?: string;
 }) {
-  return (
-    <section className={s.cta}>
-      <div className={`${s.wrap} ${s.ctaInner}`}>
-        <div>
-          <h2 className={s.title}>{title}</h2>
-          <p>{text}</p>
-        </div>
-        <Link href={href} className={s.primary}>
-          {action}
-        </Link>
-      </div>
-    </section>
-  );
+  if (!title) return <ClosingCta text={text} href={href} action={action} />;
+  return <ClosingCta title={title} accent="" text={text} href={href} action={action ?? "Créer mon espace"} />;
 }

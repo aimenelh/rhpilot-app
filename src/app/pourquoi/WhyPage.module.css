@@ -1,20 +1,5 @@
 .hero {
-  position: relative;
-  overflow: hidden;
-  padding: 62px 0 70px;
-  background: #faf7f5;
-  border-bottom: 1px solid #e9e4e1;
-}
-
-.hero::before {
-  content: "";
-  position: absolute;
-  width: 480px;
-  height: 480px;
-  left: -220px;
-  top: -220px;
-  border-radius: 50%;
-  background: rgba(232, 67, 46, 0.045);
+  padding: 80px 0 88px;
 }
 
 .heroGrid {
@@ -32,26 +17,20 @@
 .heroTitle {
   max-width: 650px;
   margin: 0;
-  font-family: var(--font-fraunces), Georgia, serif;
-  font-size: clamp(43px, 4.4vw, 65px);
-  font-weight: 500;
-  line-height: 1.06;
-  letter-spacing: -0.045em;
-  color: #20211f;
-}
-
-.heroTitle em {
-  color: #b93a28;
-  font-style: italic;
-  font-weight: 500;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-size: clamp(40px, 4.1vw, 60px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.052em;
+  color: #fff;
 }
 
 .heroLead {
   max-width: 570px;
-  margin-top: 27px;
-  color: #575851;
-  font-size: 18px;
-  line-height: 1.72;
+  margin-top: 26px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: clamp(17px, 1.3vw, 19px);
+  line-height: 1.6;
 }
 
 .actions {
@@ -97,9 +76,10 @@
   display: block;
   margin-bottom: 38px;
   color: #b83b2a;
-  font-family: var(--font-fraunces), Georgia, serif;
+  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-weight: 700;
   font-size: 17px;
-  font-style: italic;
+  font-style: normal;
 }
 
 .pillar h3 {
