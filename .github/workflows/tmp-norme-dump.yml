@@ -45,7 +45,7 @@ jobs:
                       scan(name + "!" + info.filename, z.read(info), depth + 1)
                   return
               inventory.append(f"{len(data)} {name}")
-              if any(k in data for k in keys) and len(data) < 40_000_000:
+              if (any(k in data for k in keys) or name.endswith(".saturne")) and len(data) < 40_000_000:
                   safe = name.replace("/", "__").replace("!", "--")
                   with open(os.path.join(out, safe), "wb") as h:
                       h.write(data)
