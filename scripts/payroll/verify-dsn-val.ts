@@ -129,6 +129,32 @@ accept("bulletin-titres-transport-avantages-frais", buildDsnP26V01Complete(compu
   expenses: [{ code: "EXPENSE_REAL", label: "Frais sur justificatifs", amount: 42.5 }, { code: "EXPENSE_KILOMETRIC", label: "Indemnités kilométriques", amount: 60 }, { code: "SUSTAINABLE_MOBILITY", label: "Forfait mobilités durables", amount: 25 }],
 })));
 
+// Fins de contrat : démission avec préavis effectué, licenciement avec préavis payé non effectué,
+// rupture conventionnelle (contribution 719, CSG sans abattement), fin de CDD avec indemnité de précarité.
+const notice = { conventionSignatureDate: null, dismissalProcedureDate: null, lastWorkedPaidDate: null, transactionPending: false, legalSeveranceAmount: null };
+const leavingEmployee = (contract: "CDI" | "CDD", end: string, hireDate = "2024-01-01") => ({ id: "employee-test", displayName: "Maxime Dupont", contract, executive: false, hireDate, contractEndDate: end, ...(contract === "CDD" ? { plannedContractDays: 92 } : {}) });
+accept("sortie-demission", buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, false, undefined, false, {
+  employee: leavingEmployee("CDI", "2026-01-20"),
+  termination: { reason: "DEMISSION", paidLeaveCompensation: { amount: 800 }, dsn: { ...notice, endReasonCode: "059", notificationDate: "2025-12-20", noticeTypeCode: "01", noticeStartDate: "2025-12-21", noticeEndDate: "2026-01-20" } },
+})));
+accept("sortie-licenciement", buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, false, undefined, false, {
+  employee: leavingEmployee("CDI", "2026-01-31"),
+  termination: { reason: "LICENCIEMENT", noticeCompensation: 2500, paidLeaveCompensation: { amount: 600 }, severance: { amount: 3000, legalOrConventionalMinimum: 2500, previousYearGross: 30000 },
+    dsn: { ...notice, endReasonCode: "020", notificationDate: "2026-01-05", dismissalProcedureDate: "2025-12-15", lastWorkedPaidDate: "2026-01-05", noticeTypeCode: "02", noticeStartDate: "2026-01-06", noticeEndDate: "2026-01-31", legalSeveranceAmount: 2000 } },
+})));
+accept("sortie-rupture-conventionnelle", buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, false, undefined, false, {
+  employee: leavingEmployee("CDI", "2026-01-31"),
+  termination: { reason: "RUPTURE_CONVENTIONNELLE", paidLeaveCompensation: { amount: 500 }, severance: { amount: 4000, legalOrConventionalMinimum: 3000, previousYearGross: 30000 },
+    dsn: { ...notice, endReasonCode: "043", notificationDate: null, conventionSignatureDate: "2025-12-10", noticeTypeCode: "90", noticeStartDate: null, noticeEndDate: null } },
+})));
+const cddEnd = computedDsnFixture(2500, 151.67, false, undefined, false, {
+  employee: leavingEmployee("CDD", "2026-01-31", "2025-11-01"),
+  termination: { reason: "FIN_CDD", paidLeaveCompensation: { amount: 400 }, cddEndAllowance: { amount: 600 },
+    dsn: { ...notice, endReasonCode: "031", notificationDate: null, noticeTypeCode: "90", noticeStartDate: null, noticeEndDate: null } },
+});
+cddEnd.employees[0].contract.fixedTermReasonCode = "02"; // Cas synthétique : accroissement temporaire d'activité.
+accept("sortie-fin-cdd", buildDsnP26V01Complete(cddEnd));
+
 // Primes non mensuelles : 13e mois rattaché à l'année écoulée, prime exceptionnelle, prime non liée à l'activité.
 accept("bulletin-13e-mois", buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, false, undefined, false, {
   bonuses: [{ code: "YEAR_END_BONUS", label: "13e mois", amount: 2500, excludedFromPaidLeaveBase: true, dsn: { type: "027", attachmentStart: "2025-01-01", attachmentEnd: "2025-12-31" } }],

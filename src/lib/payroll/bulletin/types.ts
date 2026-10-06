@@ -1,3 +1,4 @@
+import type { TerminationDsnData } from "../dsn-termination";
 import type { IsoDay, WeeklySchedule } from "./calendar";
 import type { PasTerritory, SickPayRule } from "./params";
 
@@ -169,6 +170,8 @@ export type TerminationReason =
 
 export type TerminationInput = {
   reason: TerminationReason;
+  /** Données déclaratives (motif DSN, dates, préavis), figées avec le calcul. Sans effet sur le bulletin. */
+  dsn?: TerminationDsnData | null;
   /** Indemnité compensatrice de congés payés : calculée sur les soldes si le montant n'est pas fourni. */
   paidLeaveCompensation?: { amount?: number | null } | null;
   noticeCompensation?: number | null;

@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getPayrollMembership } from "@/lib/payrollAccess";
 import { userFacingError } from "@/lib/userFacingError";
+import { terminationDsnIssue, type TerminationDsnData } from "@/lib/payroll/dsn-termination";
 
 export type TerminationFormState = { error?: string; saved?: boolean } | undefined;
 
@@ -27,7 +28,7 @@ async function editableContext(periodId: string, employeeId: string) {
   const period = await prisma.payrollPeriod.findFirst({ where: { id: periodId, organizationId: membership.organizationId }, select: { id: true, year: true, month: true, status: true } });
   if (!period) throw new Error("Période de paie introuvable.");
   if (period.status !== "DRAFT") throw new Error("La fiche de sortie ne peut être modifiée que sur une période en préparation.");
-  const employee = await prisma.employee.findFirst({ where: { id: employeeId, organizationId: membership.organizationId, deletedAt: null }, select: { id: true, contractEndDate: true, contractType: true } });
+  const employee = await prisma.employee.findFirst({ where: { id: employeeId, organizationId: membership.organizationId, deletedAt: null }, select: { id: true, hireDate: true, contractEndDate: true, contractType: true } });
   if (!employee) throw new Error("Salarié introuvable.");
   const first = new Date(Date.UTC(period.year, period.month - 1, 1));
   const last = new Date(Date.UTC(period.year, period.month, 0, 23, 59, 59));
@@ -50,6 +51,26 @@ export async function saveTermination(periodId: string, employeeId: string, _pre
     if (cddMode === "AMOUNT" && cddAmount === null) return { error: "Indiquez le montant de l'indemnité de fin de contrat." };
     const cddRatePercent = amount(formData, "cddEndAllowanceRate");
     if (cddRatePercent !== null && (cddRatePercent < 6 || cddRatePercent > 50)) return { error: "Le taux de l'indemnité de fin de contrat doit être de 10 % (6 % avec un accord d'accès à la formation)." };
+    const date = (name: string): string | null => {
+      const raw = String(formData.get(name) ?? "").trim();
+      if (!raw) return null;
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(raw)) throw new Error("Une date de la fiche de sortie est invalide.");
+      return raw;
+    };
+    const dsn: TerminationDsnData = {
+      endReasonCode: String(formData.get("dsnEndReasonCode") ?? "") as TerminationDsnData["endReasonCode"],
+      notificationDate: date("notificationDate"), conventionSignatureDate: date("conventionSignatureDate"),
+      dismissalProcedureDate: date("dismissalProcedureDate"), lastWorkedPaidDate: date("lastWorkedPaidDate"),
+      noticeTypeCode: String(formData.get("noticeTypeCode") ?? "") as TerminationDsnData["noticeTypeCode"],
+      noticeStartDate: date("noticeStartDate"), noticeEndDate: date("noticeEndDate"),
+      transactionPending: formData.get("transactionPending") === "on",
+      legalSeveranceAmount: amount(formData, "legalSeveranceAmount"),
+    };
+    const issue = terminationDsnIssue(dsn, {
+      reason: reason as (typeof REASONS)[number], contractStart: employee.hireDate.toISOString().slice(0, 10), contractEnd: employee.contractEndDate!.toISOString().slice(0, 10),
+      noticeCompensation: amount(formData, "noticeCompensation"), severanceAmount,
+    });
+    if (issue) return { error: issue };
     const values = {
       reason,
       noticeCompensation: amount(formData, "noticeCompensation"),
@@ -65,10 +86,12 @@ export async function saveTermination(periodId: string, employeeId: string, _pre
     await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`DELETE FROM "payroll_terminations" WHERE "organizationId" = ${membership.organizationId} AND "payrollPeriodId" = ${period.id} AND "employeeId" = ${employee.id}`;
       await tx.$executeRaw`
-        INSERT INTO "payroll_terminations" ("id", "organizationId", "payrollPeriodId", "employeeId", "reason", "noticeCompensation", "severanceAmount", "severanceLegalMinimum", "previousYearGross", "eligibleForFullPension", "cddEndAllowanceMode", "cddEndAllowanceAmount", "cddEndAllowanceRate", "paidLeaveCompensationAmount", "createdAt", "updatedAt")
-        VALUES (${randomUUID()}, ${membership.organizationId}, ${period.id}, ${employee.id}, ${values.reason}, ${values.noticeCompensation}, ${values.severanceAmount}, ${values.severanceLegalMinimum}, ${values.previousYearGross}, ${values.eligibleForFullPension}, ${values.cddEndAllowanceMode}, ${values.cddEndAllowanceAmount}, ${values.cddEndAllowanceRate}, ${values.paidLeaveCompensationAmount}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        INSERT INTO "payroll_terminations" ("id", "organizationId", "payrollPeriodId", "employeeId", "reason", "noticeCompensation", "severanceAmount", "severanceLegalMinimum", "previousYearGross", "eligibleForFullPension", "cddEndAllowanceMode", "cddEndAllowanceAmount", "cddEndAllowanceRate", "paidLeaveCompensationAmount",
+          "dsnEndReasonCode", "notificationDate", "conventionSignatureDate", "dismissalProcedureDate", "lastWorkedPaidDate", "noticeTypeCode", "noticeStartDate", "noticeEndDate", "transactionPending", "legalSeveranceAmount", "createdAt", "updatedAt")
+        VALUES (${randomUUID()}, ${membership.organizationId}, ${period.id}, ${employee.id}, ${values.reason}, ${values.noticeCompensation}, ${values.severanceAmount}, ${values.severanceLegalMinimum}, ${values.previousYearGross}, ${values.eligibleForFullPension}, ${values.cddEndAllowanceMode}, ${values.cddEndAllowanceAmount}, ${values.cddEndAllowanceRate}, ${values.paidLeaveCompensationAmount},
+          ${dsn.endReasonCode}, ${dsn.notificationDate}::date, ${dsn.conventionSignatureDate}::date, ${dsn.dismissalProcedureDate}::date, ${dsn.lastWorkedPaidDate}::date, ${dsn.noticeTypeCode}, ${dsn.noticeStartDate}::date, ${dsn.noticeEndDate}::date, ${dsn.transactionPending}, ${dsn.legalSeveranceAmount}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
       `;
-      await tx.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.termination.saved", entityType: "PayrollPeriod", entityId: period.id, metadata: { employeeId: employee.id, ...values } } });
+      await tx.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "payroll.termination.saved", entityType: "PayrollPeriod", entityId: period.id, metadata: { employeeId: employee.id, ...values, dsnEndReasonCode: dsn.endReasonCode, noticeTypeCode: dsn.noticeTypeCode } } });
     });
     revalidatePath(`/dashboard/payroll/${period.id}`);
     return { saved: true };

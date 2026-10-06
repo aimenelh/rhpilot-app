@@ -6,6 +6,7 @@ import { mapLockedContributions } from "../../src/lib/payroll/dsn-locked-contrib
 import type { DsnP26CompleteInput } from "../../src/lib/payroll/dsn-p26v01-complete";
 import { mappedDsnFixture } from "./dsn-fixture";
 import { dsnPasFromLockedBulletin } from "../../src/lib/payroll/dsn-locked-pas";
+import { dsnContractEnd } from "../../src/lib/payroll/dsn-termination";
 
 type FixtureStoppageMetadata = {
   absenceId: string; type: string; startDate: string; endDate: string;
@@ -84,6 +85,7 @@ export function computedDsnFixture(
     ...(item.recoveryDate ? { recoveryDate: new Date(item.recoveryDate + "T00:00:00.000Z"), recoveryReasonCode: item.recoveryReasonCode } : {}),
     ...(item.accidentDate ? { accidentDate: new Date(item.accidentDate + "T00:00:00.000Z") } : {}),
   }));
+  employee.contract.end = mapped.remuneration.contractEnd ? dsnContractEnd(mapped.remuneration.contractEnd) : null;
   employee.contract.suspensions = mapped.unpaidAbsence.suspensions.map((item) => ({
     reasonCode: item.reasonCode,
     startDate: new Date(item.start + "T00:00:00.000Z"),
@@ -97,6 +99,7 @@ export function computedDsnFixture(
     restoredSalary: mapped.remuneration.restoredSalary,
     paidLeaveIndemnities: mapped.remuneration.paidLeaveIndemnities.map((item) => ({ type: item.type, amount: item.amount, startDate: new Date(item.start + "T00:00:00.000Z"), endDate: new Date(item.end + "T00:00:00.000Z") })),
     otherRevenues: mapped.remuneration.otherRevenues,
+    terminationIndemnities: mapped.remuneration.contractEnd?.indemnities ?? [],
     bonuses: mapped.remuneration.bonuses.map((item) => ({ type: item.type, amount: item.amount, startDate: item.start ? new Date(item.start + "T00:00:00.000Z") : null, endDate: item.end ? new Date(item.end + "T00:00:00.000Z") : null })),
     netBeforeTax: totals.netBeforeTax, netTaxableAmount: employeePas.fiscalNetBeforeExemption ?? totals.netTaxable, netSocialAmount: totals.netSocial,
     withholdingTax: totals.withholdingTax,

@@ -2,6 +2,7 @@ import { identifyDsnAffiliations, normalizeDsnComplementaryAffiliations } from "
 import type { DsnOpsPayment } from "./dsn-p26v01-complete";
 import { Prisma } from "@prisma/client";
 import { assertDsnRetirementScope, assertDsnStableContract } from "./dsn-contract-scope";
+import { dsnContractEnd } from "./dsn-termination";
 import { prisma } from "@/lib/prisma";
 import type { DsnP26MonthlyInput } from "./dsn-p26v01";
 import { buildDsnP26V01Complete } from "./dsn-p26v01-complete";
@@ -62,7 +63,8 @@ const DSN_UNMAPPED_BULLETIN_LINES = new Set(["SEVERANCE", "PAID_LEAVE_COMPENSATI
  */
 export function dsnScopeIssues(snapshot: { variables?: unknown[]; validatedAbsences?: Array<{ type?: string }>; bulletin?: { lines?: Array<{ code?: string; base?: number }> } }): string[] {
   const issues: string[] = [];
-  if ((snapshot.bulletin?.lines ?? []).some((line) => line.code && DSN_UNMAPPED_BULLETIN_LINES.has(line.code))) issues.push("entrée, sortie ou indemnité de fin de contrat (blocs S21.G00.62 non émis)");
+  const termination = (snapshot as { inputs?: { termination?: { dsn?: unknown } | null } }).inputs?.termination;
+  if (!termination?.dsn && (snapshot.bulletin?.lines ?? []).some((line) => line.code && DSN_UNMAPPED_BULLETIN_LINES.has(line.code))) issues.push("sortie calculée avant la saisie de sa partie déclarative (rouvrez la saisie, complétez la fiche de sortie et recalculez)");
   const supportedAbsences = new Set(["PAID_LEAVE", "UNPAID_LEAVE", "RTT", "FAMILY_EVENT", "SICK_LEAVE", "MATERNITY", "PATERNITY", "WORK_ACCIDENT"]);
   const unsupportedAbsences = (snapshot.validatedAbsences ?? []).filter((absence) => !supportedAbsences.has(absence?.type ?? ""));
   if (unsupportedAbsences.length > 0) issues.push("absences non encore raccordées (congés payés ou autre suspension)");
@@ -173,7 +175,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
     if (locked.inputs.employee.contract !== employee.contractType || locked.inputs.employee.hireDate !== employee.hireDate.toISOString().slice(0, 10) ||
         (locked.inputs.employee.contractEndDate ?? null) !== (employee.contractEndDate?.toISOString().slice(0, 10) ?? null)) throw new Error("DSN bloquée : le contrat actuel diverge du contrat du bulletin verrouillé. Vérifiez les changements déclaratifs.");
     const previousSnapshot = previousByEmployee.get(employee.id);
-    assertDsnStableContract(locked.inputs.employee, period, previousSnapshot ? readLockedContributionSnapshot(previousSnapshot).inputs.employee : undefined);
+    assertDsnStableContract(locked.inputs.employee, period, previousSnapshot ? readLockedContributionSnapshot(previousSnapshot).inputs.employee : undefined, Boolean(locked.inputs.termination?.dsn));
     assertDsnRetirementScope(locked.inputs.employee.executive, dsnProfile.retirementStatusCode);
     const profileSnapshot = snapshot.profile;
     if (!profileSnapshot) throw new Error(`DSN bloquée : le profil paie verrouillé du salarié ${employee.id} est absent.`);
@@ -277,6 +279,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
           startDate: new Date(`${item.start}T00:00:00.000Z`),
           endDate: new Date(`${item.end}T00:00:00.000Z`),
         })),
+        end: contributions.remuneration.contractEnd ? dsnContractEnd(contributions.remuneration.contractEnd) : null,
       },
       payroll: {
         baseSalary: baseSalaryCents / 100,
@@ -288,6 +291,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
         restoredSalary: contributions.remuneration.restoredSalary,
         paidLeaveIndemnities: contributions.remuneration.paidLeaveIndemnities.map((item) => ({ type: item.type, amount: item.amount, startDate: new Date(item.start + "T00:00:00.000Z"), endDate: new Date(item.end + "T00:00:00.000Z") })),
         otherRevenues: contributions.remuneration.otherRevenues,
+        terminationIndemnities: contributions.remuneration.contractEnd?.indemnities ?? [],
         bonuses: contributions.remuneration.bonuses.map((item) => ({ type: item.type, amount: item.amount, startDate: item.start ? new Date(item.start + "T00:00:00.000Z") : null, endDate: item.end ? new Date(item.end + "T00:00:00.000Z") : null })),
         paidHours: contributions.activityPaidHours,
         netBeforeTax,

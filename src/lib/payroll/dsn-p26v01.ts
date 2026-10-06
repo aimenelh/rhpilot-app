@@ -93,6 +93,12 @@ export type DsnP26MonthlyInput = {
       }>;
       /** Suspensions mensuelles rattachées au contrat. */
       suspensions?: Array<{ reasonCode: "501"; startDate: Date; endDate: Date }>;
+      /** Fin du contrat dans le mois (S21.G00.62) et préavis (S21.G00.63). */
+      end?: {
+        endDate: Date; reasonCode: string; notificationDate?: Date | null; conventionSignatureDate?: Date | null;
+        dismissalProcedureDate?: Date | null; lastWorkedPaidDate?: Date | null; transactionPending: boolean;
+        notice: { typeCode: string; startDate?: Date | null; endDate?: Date | null };
+      } | null;
     };
     payroll: {
       baseSalary: number;
@@ -103,6 +109,8 @@ export type DsnP26MonthlyInput = {
       unemploymentRemuneration?: number;
       restoredSalary?: number;
       paidLeaveIndemnities?: Array<{ type: "046"; amount: number; startDate: Date; endDate: Date }>;
+      /** Indemnités liées à la fin du contrat (S21.G00.52 : 001, 003 à 007, 011, 020, 021, 023). */
+      terminationIndemnities?: Array<{ type: string; amount: number }>;
       /** Autres éléments de revenu brut (S21.G00.54) rattachés au contrat. */
       otherRevenues?: Array<{ type: string; amount: number }>;
       /** Primes non mensuelles : 026/027 avec période de rattachement, 028 avec ou sans. */
@@ -388,6 +396,25 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
       // S21.G00.60.012 est réservé au signalement événementiel AT : il n'est pas reporté dans la DSN mensuelle.
     }
 
+    const end = employee.contract.end;
+    if (end) {
+      if (!employee.contract.endDate || dsnDate(employee.contract.endDate) !== dsnDate(end.endDate)) throw new Error("DSN bloquée : la fin de contrat déclarée ne correspond pas à la date de fin du contrat.");
+      if (end.endDate < periodStart || end.endDate > periodEnd) throw new Error("DSN bloquée : la fin de contrat ne tombe pas dans le mois déclaré.");
+      add(lines, "S21.G00.62.001", dsnDate(end.endDate));
+      add(lines, "S21.G00.62.002", assertDigits(end.reasonCode, 3, "le motif de fin de contrat"));
+      add(lines, "S21.G00.62.003", end.notificationDate ? dsnDate(end.notificationDate) : null);
+      add(lines, "S21.G00.62.004", end.conventionSignatureDate ? dsnDate(end.conventionSignatureDate) : null);
+      add(lines, "S21.G00.62.005", end.dismissalProcedureDate ? dsnDate(end.dismissalProcedureDate) : null);
+      add(lines, "S21.G00.62.006", end.lastWorkedPaidDate ? dsnDate(end.lastWorkedPaidDate) : null);
+      add(lines, "S21.G00.62.008", end.transactionPending ? "01" : "02");
+      if (!["01", "02", "03", "60", "90"].includes(end.notice.typeCode)) throw new Error("DSN bloquée : la situation du préavis est invalide.");
+      const datedNotice = end.notice.typeCode !== "90";
+      if (datedNotice !== Boolean(end.notice.startDate && end.notice.endDate)) throw new Error("DSN bloquée : les dates du préavis sont incomplètes ou interdites pour ce type.");
+      add(lines, "S21.G00.63.001", end.notice.typeCode);
+      add(lines, "S21.G00.63.002", datedNotice ? dsnDate(end.notice.startDate!) : null);
+      add(lines, "S21.G00.63.003", datedNotice ? dsnDate(end.notice.endDate!) : null);
+    }
+
     for (const suspension of employee.contract.suspensions ?? []) {
       if (suspension.endDate < suspension.startDate) throw new Error("DSN bloquée : une suspension de contrat se termine avant de commencer.");
       add(lines, "S21.G00.65.001", suspension.reasonCode);
@@ -434,6 +461,15 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
       add(lines, "S21.G00.52.002", money(indemnity.amount));
       add(lines, "S21.G00.52.003", dsnDate(indemnity.startDate));
       add(lines, "S21.G00.52.004", dsnDate(indemnity.endDate));
+      add(lines, "S21.G00.52.006", contractNumber);
+    }
+    const indemnityTypes = (employee.payroll.terminationIndemnities ?? []).map((item) => item.type);
+    if (new Set(indemnityTypes).size !== indemnityTypes.length) throw new Error("DSN bloquée : une indemnité de fin de contrat est déclarée deux fois.");
+    if (indemnityTypes.length > 0 && !end) throw new Error("DSN bloquée : des indemnités de fin de contrat sont déclarées sans fin de contrat.");
+    for (const indemnity of employee.payroll.terminationIndemnities ?? []) {
+      if (!["001", "003", "004", "005", "006", "007", "011", "020", "021", "023"].includes(indemnity.type) || !Number.isFinite(indemnity.amount) || indemnity.amount <= 0) throw new Error("DSN bloquée : une indemnité de fin de contrat est invalide.");
+      add(lines, "S21.G00.52.001", indemnity.type);
+      add(lines, "S21.G00.52.002", money(indemnity.amount));
       add(lines, "S21.G00.52.006", contractNumber);
     }
     for (const bonus of employee.payroll.bonuses ?? []) {

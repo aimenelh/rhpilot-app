@@ -19,6 +19,7 @@ import { calculateAgeAtDate, resolveEmployeeAlternanceProfile } from "./alternan
 import { assertPayrollOutputConsistency } from "./payroll-output-consistency";
 import { BULLETIN_ENGINE_VERSION, computePayslip } from "./bulletin/compute";
 import { daysBetweenInclusive, monthBounds, toIsoDay } from "./bulletin/calendar";
+import { terminationDsnIssue, type TerminationDsnData } from "./dsn-termination";
 import { mapAbsences, mapPayrollVariables, parsePrevoyanceRates, resolveWeeklySchedule } from "./bulletin/inputs";
 import { effectiveAbsenceEnd, freezeWorkStoppages } from "./work-stoppage";
 import { assertCurrentPayrollAbsences, assertPayrollPeriodStatus, lockPayrollAbsenceChanges } from "./period-absence-safety";
@@ -50,7 +51,20 @@ function toJson<T>(value: T): Prisma.InputJsonValue {
 /** Indemnité de fin de CDD non due : rupture anticipée à l'initiative du salarié, rupture pendant l'essai (C. trav. art. L1243-10). */
 const CDD_ALLOWANCE_EXCLUDED_REASONS = new Set(["DEMISSION", "FIN_PERIODE_ESSAI"]);
 
-function terminationInput(stored: StoredTermination, contract: string, prior: { contractGrossBefore: number; contractGrossComplete: boolean }, displayName: string, warnings: string[]): TerminationInput {
+function terminationDsn(stored: StoredTermination, dates: { hireDate: string; contractEndDate: string }, displayName: string): TerminationDsnData {
+  const raw = stored.dsn;
+  const data: TerminationDsnData = {
+    endReasonCode: (raw.endReasonCode ?? "") as TerminationDsnData["endReasonCode"],
+    notificationDate: raw.notificationDate, conventionSignatureDate: raw.conventionSignatureDate, dismissalProcedureDate: raw.dismissalProcedureDate,
+    lastWorkedPaidDate: raw.lastWorkedPaidDate, noticeTypeCode: (raw.noticeTypeCode ?? "") as TerminationDsnData["noticeTypeCode"],
+    noticeStartDate: raw.noticeStartDate, noticeEndDate: raw.noticeEndDate, transactionPending: raw.transactionPending, legalSeveranceAmount: raw.legalSeveranceAmount,
+  };
+  const issue = terminationDsnIssue(data, { reason: stored.reason, contractStart: dates.hireDate, contractEnd: dates.contractEndDate, noticeCompensation: stored.noticeCompensation, severanceAmount: stored.severanceAmount });
+  if (issue) throw new Error(`Calcul bloqué pour ${displayName} : complétez la partie déclarative de la fiche de sortie. ${issue}`);
+  return data;
+}
+
+function terminationInput(stored: StoredTermination, contract: string, prior: { contractGrossBefore: number; contractGrossComplete: boolean }, displayName: string, warnings: string[], dates: { hireDate: string; contractEndDate: string }): TerminationInput {
   const severanceAmount = stored.severanceAmount ?? 0;
   if (severanceAmount > 0 && stored.severanceLegalMinimum === null) {
     throw new Error(`Calcul bloqué pour ${displayName} : renseignez l'indemnité légale ou conventionnelle de référence, elle détermine la part exonérée de l'indemnité de rupture.`);
@@ -66,6 +80,7 @@ function terminationInput(stored: StoredTermination, contract: string, prior: { 
   }
   return {
     reason: stored.reason,
+    dsn: terminationDsn(stored, dates, displayName),
     noticeCompensation: stored.noticeCompensation,
     paidLeaveCompensation: stored.paidLeaveCompensationAmount !== null ? { amount: stored.paidLeaveCompensationAmount } : null,
     cddEndAllowance,
@@ -314,7 +329,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     if (leavesThisMonth && !storedTermination) throw new Error(`Calcul bloqué pour ${displayName} : son contrat se termine le ${contractEndDate!.split("-").reverse().join("/")}. Renseignez la fiche de sortie (motif et indemnités) pour établir le solde de tout compte.`);
     if (storedTermination && !leavesThisMonth) throw new Error(`Calcul bloqué pour ${displayName} : une fiche de sortie est saisie mais la date de fin de contrat n'est pas dans le mois.`);
     const terminationWarnings: string[] = [];
-    const termination = storedTermination ? terminationInput(storedTermination, employee.contractType, prior, displayName, terminationWarnings) : null;
+    const termination = storedTermination ? terminationInput(storedTermination, employee.contractType, prior, displayName, terminationWarnings, { hireDate, contractEndDate: contractEndDate ?? bounds.last }) : null;
 
     // --- Prélèvement à la source ---
     const withholdingProfile = await resolveEmployeeWithholdingTaxProfile({ organizationId: input.organizationId, employeeId: employee.id, periodDate: calculationDate });

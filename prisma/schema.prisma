@@ -927,6 +927,16 @@ model payroll_terminations {
   cddEndAllowanceAmount       Decimal?      @db.Decimal(12, 2)
   cddEndAllowanceRate         Decimal?      @db.Decimal(5, 4)
   paidLeaveCompensationAmount Decimal?      @db.Decimal(12, 2)
+  dsnEndReasonCode            String?       @db.VarChar(3)
+  notificationDate            DateTime?     @db.Date
+  conventionSignatureDate     DateTime?     @db.Date
+  dismissalProcedureDate      DateTime?     @db.Date
+  lastWorkedPaidDate          DateTime?     @db.Date
+  noticeTypeCode              String?       @db.VarChar(2)
+  noticeStartDate             DateTime?     @db.Date
+  noticeEndDate               DateTime?     @db.Date
+  transactionPending          Boolean       @default(false)
+  legalSeveranceAmount        Decimal?      @db.Decimal(12, 2)
   createdAt                   DateTime      @default(now())
   updatedAt                   DateTime      @default(now())
   employees                   Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade, map: "payroll_terminations_employee_fk")

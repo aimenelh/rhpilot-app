@@ -1,4 +1,5 @@
 import type { DsnBonusType, PayslipInput, PayslipResult } from "./bulletin/types";
+import { TERMINATION_INDEMNITY_CODES, terminationIndemnities, type TerminationDsnData } from "./dsn-termination";
 
 export type LockedRemunerationDeclaration = {
   employmentStart: string;
@@ -12,6 +13,8 @@ export type LockedRemunerationDeclaration = {
   bonuses: Array<{ type: DsnBonusType; amount: number; start: string | null; end: string | null }>;
   /** Autres éléments de revenu brut (S21.G00.54) : avantages en nature, frais, titres-restaurant, transport. */
   otherRevenues: Array<{ type: DsnOtherRevenueType; amount: number }>;
+  /** Fin de contrat du mois : blocs S21.G00.62/63 et indemnités S21.G00.52. */
+  contractEnd: { date: string; data: TerminationDsnData; indemnities: Array<{ type: string; amount: number }> } | null;
 };
 
 /** Nomenclature P26V01 S21.G00.54.001 (types utilisés par le moteur). */
@@ -45,8 +48,14 @@ export function readLockedRemunerationDeclaration({ bulletin, inputs }: { bullet
   const authorizedDeductions = -sum(new Set(["ABS_UNPAID_LEAVE", "ABS_SICK_LEAVE", "ABS_WORK_ACCIDENT", "ABS_MATERNITY", "ABS_PATERNITY", "ENTRY_EXIT"]));
   // Le maintien n'est pas du travail rémunéré pour les droits chômage ; le salaire rétabli
   // rétablit la retenue sans compter une deuxième fois ce maintien.
-  const unemploymentRemuneration = round(gross - maintenance);
-  const restoredSalary = round(gross + authorizedDeductions - maintenance);
+  // Indemnités liées à la rupture : déclarées en bloc 52, exclues du salaire servant aux droits chômage
+  // et du salaire rétabli. Seule leur fraction soumise figure dans le brut soumis.
+  const terminationSubject = round(grossLines.filter((line) => TERMINATION_INDEMNITY_CODES.has(line.code)).reduce((total, line) => {
+    if (line.code !== "SEVERANCE") return total + money(line.amount, line.code);
+    return total + money(line.detail?.subjectToContributions, "la fraction soumise de l'indemnité de rupture");
+  }, 0));
+  const unemploymentRemuneration = round(gross - maintenance - terminationSubject);
+  const restoredSalary = round(gross + authorizedDeductions - maintenance - terminationSubject);
   if (unemploymentRemuneration < 0 || restoredSalary < 0) throw new Error("DSN bloquée : les rémunérations déclaratives du bulletin sont incohérentes.");
 
   const entryLines = grossLines.filter((line) => line.code === "ENTRY_EXIT");
@@ -129,5 +138,16 @@ export function readLockedRemunerationDeclaration({ bulletin, inputs }: { bullet
     addRevenue("18", paid);
   }
   const otherRevenues = [...totals].sort(([left], [right]) => left.localeCompare(right)).map(([type, amount]) => ({ type, amount }));
-  return { employmentStart, employmentEnd, unemploymentRemuneration, restoredSalary, outsideContractHours: round(outsideContractHours), paidLeaveIndemnities, bonuses, otherRevenues };
+
+  let contractEnd: LockedRemunerationDeclaration["contractEnd"] = null;
+  if (inputs.termination) {
+    const data = inputs.termination.dsn;
+    if (!data) throw new Error("DSN bloquée : la sortie a été calculée sans sa partie déclarative. Rouvrez la saisie, complétez la fiche de sortie et recalculez.");
+    const endDate = inputs.employee.contractEndDate;
+    if (!endDate || endDate < bulletin.period.first || endDate > bulletin.period.last) throw new Error("DSN bloquée : la date de fin du contrat ne tombe pas dans le mois déclaré.");
+    contractEnd = { date: endDate, data, indemnities: terminationIndemnities(grossLines, data) };
+  } else if (grossLines.some((line) => TERMINATION_INDEMNITY_CODES.has(line.code))) {
+    throw new Error("DSN bloquée : une indemnité de fin de contrat figure au bulletin sans fiche de sortie.");
+  }
+  return { employmentStart, employmentEnd, unemploymentRemuneration, restoredSalary, outsideContractHours: round(outsideContractHours), paidLeaveIndemnities, bonuses, otherRevenues, contractEnd };
 }

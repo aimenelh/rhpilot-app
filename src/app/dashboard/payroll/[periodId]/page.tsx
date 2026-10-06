@@ -225,7 +225,7 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
       const stored = terminations.get(employee.id);
       return {
         id: employee.id, name: `${employee.firstName} ${employee.lastName}`.trim(), contractType: employee.contractType, exitDate: employee.contractEndDate!.toISOString().slice(0, 10),
-        termination: stored ? { reason: stored.reason, noticeCompensation: stored.noticeCompensation, severanceAmount: stored.severanceAmount, severanceLegalMinimum: stored.severanceLegalMinimum, previousYearGross: stored.previousYearGross, eligibleForFullPension: stored.eligibleForFullPension, cddEndAllowanceMode: stored.cddEndAllowanceMode, cddEndAllowanceAmount: stored.cddEndAllowanceAmount, cddEndAllowanceRate: stored.cddEndAllowanceRate, paidLeaveCompensationAmount: stored.paidLeaveCompensationAmount } : null,
+        termination: stored ? { reason: stored.reason, noticeCompensation: stored.noticeCompensation, severanceAmount: stored.severanceAmount, severanceLegalMinimum: stored.severanceLegalMinimum, previousYearGross: stored.previousYearGross, eligibleForFullPension: stored.eligibleForFullPension, cddEndAllowanceMode: stored.cddEndAllowanceMode, cddEndAllowanceAmount: stored.cddEndAllowanceAmount, cddEndAllowanceRate: stored.cddEndAllowanceRate, paidLeaveCompensationAmount: stored.paidLeaveCompensationAmount, dsn: stored.dsn } : null,
       };
     });
   const subCounts: Record<SubTab, number> = {

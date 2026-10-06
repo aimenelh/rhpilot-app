@@ -407,7 +407,7 @@ export function mapLockedContributions(input: {
     throw new Error("DSN bloquée : cette absence nécessite encore son bloc déclaratif spécifique (congé payé ou autre suspension).");
   }
   if ((inputs.netAdjustments?.length ?? 0) > 0) throw new Error("DSN bloquée : les acomptes et retenues sur net du bulletin nécessitent encore leur rapprochement avec le net versé.");
-  if (inputs.termination) throw new Error("DSN bloquée : les événements et autres revenus du bulletin nécessitent leurs blocs déclaratifs spécifiques.");
+  if (inputs.termination && !inputs.termination.dsn) throw new Error("DSN bloquée : la sortie a été calculée sans sa partie déclarative. Rouvrez la saisie, complétez la fiche de sortie (motif DSN, dates, préavis) et recalculez.");
   const journal = bulletin.lines.filter((line) => line.section !== "GROSS" && line.section !== "NET_ITEMS");
   if (journal.some((line) => !line || !line.code || !line.section)) throw new Error("DSN bloquée : une rubrique du journal de cotisations est invalide.");
   if (new Set(journal.map((line) => line.code)).size !== journal.length) throw new Error("DSN bloquée : une rubrique de cotisation est dupliquée dans le bulletin.");
@@ -535,17 +535,23 @@ export function mapLockedContributions(input: {
     if (cents(csgMainBase) !== cents(base("CSG_CRDS_NON_DEDUCTIBLE"))) throw new Error("DSN bloquée : les assiettes CSG ordinaires diffèrent.");
     const overtimeCsgLine = byCode.get("CSG_NON_IMPOSABLE");
     const overtimeCsgBase = overtimeCsgLine ? numeric(overtimeCsgLine.base, "l'assiette CSG des heures défiscalisées") : 0;
-    const crdsBase = numeric(line("CSG_CRDS_NON_DEDUCTIBLE").detail?.crdsBase, "l'assiette CRDS");
-    if (cents(crdsBase) !== cents(csgMainBase + overtimeCsgBase)) throw new Error("DSN bloquée : l'assiette CSG/CRDS ne couvre pas exactement les heures défiscalisées.");
+    const crdsMainBase = numeric(line("CSG_CRDS_NON_DEDUCTIBLE").detail?.crdsBase, "l'assiette CRDS");
+    if (cents(crdsMainBase) !== cents(csgMainBase + overtimeCsgBase)) throw new Error("DSN bloquée : l'assiette CSG/CRDS ne couvre pas exactement les heures défiscalisées.");
+    // Indemnité de rupture : CSG/CRDS sans abattement sur la fraction imposable et sur la fraction exonérée d'impôt.
+    const ruptureTaxable = byCode.get("CSG_RUPTURE_DEDUCTIBLE");
+    const ruptureTaxableBase = ruptureTaxable ? numeric(ruptureTaxable.base, "l'assiette CSG de l'indemnité de rupture") : 0;
+    if (ruptureTaxable && cents(ruptureTaxableBase) !== cents(base("CSG_CRDS_RUPTURE_NON_DEDUCTIBLE"))) throw new Error("DSN bloquée : les assiettes CSG de l'indemnité de rupture diffèrent.");
+    const ruptureExemptBase = byCode.has("CSG_CRDS_RUPTURE_EXONEREE_IR") ? base("CSG_CRDS_RUPTURE_EXONEREE_IR") : 0;
+    const crdsBase = round(crdsMainBase + ruptureTaxableBase + ruptureExemptBase);
     const crdsAmount = round(crdsBase * 0.005);
-    const csgSources = ["CSG_DEDUCTIBLE", "CSG_CRDS_NON_DEDUCTIBLE", ...(overtimeCsgLine ? ["CSG_NON_IMPOSABLE"] : [])];
-    const combinedCsg = round(amount("CSG_DEDUCTIBLE") + amount("CSG_CRDS_NON_DEDUCTIBLE") + (overtimeCsgLine ? amount("CSG_NON_IMPOSABLE") : 0));
+    const ruptureCodes = ["CSG_RUPTURE_DEDUCTIBLE", "CSG_CRDS_RUPTURE_NON_DEDUCTIBLE", "CSG_CRDS_RUPTURE_EXONEREE_IR"].filter((code) => byCode.has(code));
+    const csgSources = ["CSG_DEDUCTIBLE", "CSG_CRDS_NON_DEDUCTIBLE", ...(overtimeCsgLine ? ["CSG_NON_IMPOSABLE"] : []), ...ruptureCodes];
+    const combinedCsg = round(csgSources.reduce((total, code) => total + amount(code), 0));
     addBase("04", crdsBase);
     addIndividual("072", "04", input.urssafSiret, round(combinedCsg - crdsAmount), csgSources, 9.2, crdsBase);
     addIndividual("079", "04", input.urssafSiret, crdsAmount, csgSources, 0.5, crdsBase);
     addAggregate("260", "920", combinedCsg, csgSources, { baseAmount: crdsBase });
-    mapped.add("CSG_DEDUCTIBLE"); mapped.add("CSG_CRDS_NON_DEDUCTIBLE");
-    if (overtimeCsgLine) mapped.add("CSG_NON_IMPOSABLE");
+    csgSources.forEach((code) => mapped.add(code));
   }
 
   if (overtime.totalAmount > 0) {
@@ -667,6 +673,15 @@ export function mapLockedContributions(input: {
     });
     if (!active.length || cents(allocated) !== cents(amount("VERSEMENT_MOBILITE"))) throw new Error("DSN bloquée : la ventilation mobilité ne couvre pas la charge du bulletin.");
     mapped.add("VERSEMENT_MOBILITE");
+  }
+  if (byCode.has("CONTRIBUTION_RUPTURE") && amount("CONTRIBUTION_RUPTURE") !== 0) {
+    // Contribution patronale sur l'indemnité de rupture conventionnelle ou de mise à la retraite (CSS art. L137-12), CTP 719.
+    const b = base("CONTRIBUTION_RUPTURE");
+    const rate = numeric(line("CONTRIBUTION_RUPTURE").employerRate, "le taux de la contribution sur l'indemnité de rupture");
+    if (b <= 0 || amount("CONTRIBUTION_RUPTURE") < 0) throw new Error("DSN bloquée : la contribution sur l'indemnité de rupture est incohérente.");
+    addIndividual("093", "03", input.urssafSiret, amount("CONTRIBUTION_RUPTURE"), ["CONTRIBUTION_RUPTURE"], rate * 100, b);
+    addAggregate("719", "920", amount("CONTRIBUTION_RUPTURE"), ["CONTRIBUTION_RUPTURE"], { baseAmount: b });
+    mapped.add("CONTRIBUTION_RUPTURE");
   }
   // Une rubrique explicitement nulle ne nécessite pas d'affiliation, mais une rubrique inconnue reste bloquante.
   for (const code of ["PREVOYANCE", "PREVOYANCE_T2", "SANTE", "VERSEMENT_MOBILITE", "FORFAIT_SOCIAL"]) if (byCode.has(code) && amount(code) === 0) mapped.add(code);

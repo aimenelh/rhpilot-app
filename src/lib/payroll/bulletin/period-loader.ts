@@ -124,12 +124,21 @@ export type StoredTermination = {
   cddEndAllowanceAmount: number | null;
   cddEndAllowanceRate: number | null;
   paidLeaveCompensationAmount: number | null;
+  dsn: {
+    endReasonCode: string | null; notificationDate: string | null; conventionSignatureDate: string | null; dismissalProcedureDate: string | null;
+    lastWorkedPaidDate: string | null; noticeTypeCode: string | null; noticeStartDate: string | null; noticeEndDate: string | null;
+    transactionPending: boolean; legalSeveranceAmount: number | null;
+  };
 };
+
+const isoOrNull = (value: unknown): string | null => (value instanceof Date ? value.toISOString().slice(0, 10) : typeof value === "string" && value ? value.slice(0, 10) : null);
 
 export async function loadTerminations(organizationId: string, periodId: string): Promise<Map<string, StoredTermination>> {
   const rows = await prisma.$queryRaw<Array<Record<string, unknown> & { employeeId: string; reason: TerminationReason }>>`
     SELECT "employeeId", "reason", "noticeCompensation", "severanceAmount", "severanceLegalMinimum", "previousYearGross", "eligibleForFullPension",
-           "cddEndAllowanceMode", "cddEndAllowanceAmount", "cddEndAllowanceRate", "paidLeaveCompensationAmount"
+           "cddEndAllowanceMode", "cddEndAllowanceAmount", "cddEndAllowanceRate", "paidLeaveCompensationAmount",
+           "dsnEndReasonCode", "notificationDate", "conventionSignatureDate", "dismissalProcedureDate", "lastWorkedPaidDate",
+           "noticeTypeCode", "noticeStartDate", "noticeEndDate", "transactionPending", "legalSeveranceAmount"
     FROM "payroll_terminations" WHERE "organizationId" = ${organizationId} AND "payrollPeriodId" = ${periodId}
   `;
   return new Map(rows.map((row) => [row.employeeId, {
@@ -144,6 +153,14 @@ export async function loadTerminations(organizationId: string, periodId: string)
     cddEndAllowanceAmount: toNumber(row.cddEndAllowanceAmount),
     cddEndAllowanceRate: toNumber(row.cddEndAllowanceRate),
     paidLeaveCompensationAmount: toNumber(row.paidLeaveCompensationAmount),
+    dsn: {
+      endReasonCode: typeof row.dsnEndReasonCode === "string" ? row.dsnEndReasonCode : null,
+      notificationDate: isoOrNull(row.notificationDate), conventionSignatureDate: isoOrNull(row.conventionSignatureDate),
+      dismissalProcedureDate: isoOrNull(row.dismissalProcedureDate), lastWorkedPaidDate: isoOrNull(row.lastWorkedPaidDate),
+      noticeTypeCode: typeof row.noticeTypeCode === "string" ? row.noticeTypeCode : null,
+      noticeStartDate: isoOrNull(row.noticeStartDate), noticeEndDate: isoOrNull(row.noticeEndDate),
+      transactionPending: row.transactionPending === true, legalSeveranceAmount: toNumber(row.legalSeveranceAmount),
+    },
   }]));
 }
 
