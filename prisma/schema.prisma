@@ -572,6 +572,9 @@ model PayrollVariable {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @default(now()) @updatedAt
   reference       String?
+  dsnBonusType    String?       @db.VarChar(3)
+  attachmentStart DateTime?     @db.Date
+  attachmentEnd   DateTime?     @db.Date
   employees       Employee      @relation(fields: [organizationId, employeeId], references: [organizationId, id], map: "payroll_variables_employee_fk")
   payroll_periods PayrollPeriod @relation(fields: [organizationId, payrollPeriodId], references: [organizationId, id], map: "payroll_variables_period_fk")
 
@@ -702,6 +705,7 @@ model dsn_employee_profiles {
   workAccidentRegimeCode   String?
   workAccidentRiskCode     String?
   complementaryAffiliations Json?
+  preparedDiplomaLevel     String?  @db.VarChar(2)
   employees                Employee @relation(fields: [organizationId, employeeId], references: [organizationId, id], map: "dsn_employee_profiles_employee_fk")
 
   @@unique([organizationId, employeeId], map: "dsn_employee_profiles_org_employee_unique")
@@ -923,6 +927,16 @@ model payroll_terminations {
   cddEndAllowanceAmount       Decimal?      @db.Decimal(12, 2)
   cddEndAllowanceRate         Decimal?      @db.Decimal(5, 4)
   paidLeaveCompensationAmount Decimal?      @db.Decimal(12, 2)
+  dsnEndReasonCode            String?       @db.VarChar(3)
+  notificationDate            DateTime?     @db.Date
+  conventionSignatureDate     DateTime?     @db.Date
+  dismissalProcedureDate      DateTime?     @db.Date
+  lastWorkedPaidDate          DateTime?     @db.Date
+  noticeTypeCode              String?       @db.VarChar(2)
+  noticeStartDate             DateTime?     @db.Date
+  noticeEndDate               DateTime?     @db.Date
+  transactionPending          Boolean       @default(false)
+  legalSeveranceAmount        Decimal?      @db.Decimal(12, 2)
   createdAt                   DateTime      @default(now())
   updatedAt                   DateTime      @default(now())
   employees                   Employee      @relation(fields: [employeeId], references: [id], onDelete: Cascade, map: "payroll_terminations_employee_fk")

@@ -2,7 +2,7 @@
 
 import { useFormState, useFormStatus } from "react-dom";
 import { useState, type ChangeEvent } from "react";
-import { DSN_FIXED_TERM_REASONS } from "@/lib/payroll/dsn-fixed-term";
+import { DSN_FIXED_TERM_REASONS, DSN_PREPARED_DIPLOMA_LEVELS, DSN_PUBLIC_POLICIES } from "@/lib/payroll/dsn-fixed-term";
 import { saveDsnEmployeeProfile, type DsnFormState } from "./dsnActions";
 
 export type DsnEmployeeFormInitial = {
@@ -12,6 +12,7 @@ export type DsnEmployeeFormInitial = {
   referenceWorkQuota: string; contractWorkQuota: string; workModalityCode: string; baseSchemeSupplementCode: string;
   sicknessRegimeCode: string; workLocationId: string; oldAgeRegimeCode: string; foreignWorkerCode: string; employmentStatusCode: string;
   multipleJobsCode: string; multipleEmployersCode: string; workAccidentRegimeCode: string; workAccidentRiskCode: string;
+  preparedDiplomaLevel: string;
 };
 
 function SubmitButton() { const { pending } = useFormStatus(); return <button type="submit" disabled={pending} className="rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">{pending ? "Enregistrement sécurisé…" : "Enregistrer le profil DSN"}</button>; }
@@ -20,13 +21,15 @@ function Field({ name, label, defaultValue, placeholder, type = "text", required
   return <label className="text-sm text-ink-soft">{label}<input name={name} type={type} required={required} defaultValue={defaultValue} placeholder={placeholder} onChange={onChange} step={type === "number" ? "0.01" : undefined} className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm text-ink" />{help ? <span className="mt-1 block text-xs leading-5 text-ink-faint">{help}</span> : null}</label>;
 }
 
-function SelectField({ name, label, defaultValue, options, help }: { name: string; label: string; defaultValue: string; options: Array<[string, string]>; help?: string }) {
-  return <label className="text-sm text-ink-soft">{label}<select name={name} required defaultValue={defaultValue} className="mt-1.5 w-full rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm text-ink"><option value="">Sélectionner</option>{options.map(([value, text]) => <option key={value} value={value}>{text} ({value})</option>)}</select>{help ? <span className="mt-1 block text-xs leading-5 text-ink-faint">{help}</span> : null}</label>;
+function SelectField({ name, label, defaultValue, options, help, onChange }: { name: string; label: string; defaultValue: string; options: Array<[string, string]>; help?: string; onChange?: (event: ChangeEvent<HTMLSelectElement>) => void }) {
+  return <label className="text-sm text-ink-soft">{label}<select name={name} required defaultValue={defaultValue} onChange={onChange} className="mt-1.5 w-full rounded-lg border border-surface-border bg-white px-3 py-2.5 text-sm text-ink"><option value="">Sélectionner</option>{options.map(([value, text]) => <option key={value} value={value}>{text} ({value})</option>)}</select>{help ? <span className="mt-1 block text-xs leading-5 text-ink-faint">{help}</span> : null}</label>;
 }
 
 export default function DsnEmployeeForm({ employeeId, initial }: { employeeId: string; initial: DsnEmployeeFormInitial }) {
   const boundAction = saveDsnEmployeeProfile.bind(null, employeeId);
   const [contractNature, setContractNature] = useState(initial.contractNatureCode);
+  const [publicPolicy, setPublicPolicy] = useState(initial.publicPolicyCode);
+  const apprenticeship = publicPolicy === "64" || publicPolicy === "65";
   const [state, action] = useFormState<DsnFormState, FormData>(boundAction, undefined);
   return (
     <form action={action} className="space-y-7">
@@ -50,9 +53,10 @@ export default function DsnEmployeeForm({ employeeId, initial }: { employeeId: s
         <h2 className="font-semibold text-ink">Contrat : codes NEODeS</h2><p className="mt-1 text-xs leading-5 text-ink-faint">RH Pilot ne devine pas les codes déclaratifs. Ils doivent correspondre à la nomenclature P26V01 et aux notifications de l'entreprise.</p>
         <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Field name="contractNumber" label="Numéro du contrat" defaultValue={initial.contractNumber} help="Entre 5 et 20 caractères." />
-          <Field name="contractNatureCode" label="Nature du contrat" defaultValue={initial.contractNatureCode} placeholder="01 CDI privé, 02 CDD privé" onChange={(event) => setContractNature(event.target.value.trim())} />
-          {contractNature === "02" && <SelectField name="fixedTermReasonCode" label="Motif de recours au CDD" defaultValue={initial.fixedTermReasonCode} options={DSN_FIXED_TERM_REASONS} help="Reprenez le motif du contrat signé. Aucune valeur n'est choisie automatiquement." />}
-          <Field name="publicPolicyCode" label="Dispositif" defaultValue={initial.publicPolicyCode} placeholder="99 si non concerné" />
+          <SelectField name="contractNatureCode" label="Nature du contrat" defaultValue={initial.contractNatureCode} options={[["01", "CDI de droit privé"], ["02", "CDD de droit privé"]]} help="Un contrat d'apprentissage à durée limitée est un CDD." onChange={(event) => setContractNature(event.target.value)} />
+          <SelectField name="publicPolicyCode" label="Dispositif" defaultValue={initial.publicPolicyCode} options={DSN_PUBLIC_POLICIES} onChange={(event) => setPublicPolicy(event.target.value)} />
+          {contractNature === "02" && !apprenticeship && <SelectField name="fixedTermReasonCode" label="Motif de recours au CDD" defaultValue={initial.fixedTermReasonCode} options={DSN_FIXED_TERM_REASONS} help="Reprenez le motif du contrat signé. Aucune valeur n'est choisie automatiquement." />}
+          {apprenticeship && <SelectField name="preparedDiplomaLevel" label="Diplôme préparé par l'apprenti" defaultValue={initial.preparedDiplomaLevel} options={DSN_PREPARED_DIPLOMA_LEVELS} help="Niveau du diplôme ou du titre visé par le contrat d'apprentissage." />}
           <Field name="pcsEsecCode" label="PCS-ESE" defaultValue={initial.pcsEsecCode} />
           <Field name="conventionalStatusCode" label="Statut conventionnel" defaultValue={initial.conventionalStatusCode} />
           <Field name="retirementStatusCode" label="Statut retraite complémentaire" defaultValue={initial.retirementStatusCode} />

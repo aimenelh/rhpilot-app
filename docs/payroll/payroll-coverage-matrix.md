@@ -27,7 +27,7 @@
 | Domaine | État | Notes |
 |---|---|---|
 | Primes mensuelles | ✅ | Calcul et DSN courante raccordés dans le brut et les assiettes lorsqu'aucun bloc 52 spécifique n'est requis |
-| Primes annuelles / exceptionnelles | 🟠 | Calculées par le moteur ; export DSN bloqué tant que le type S21.G00.52 et la période de rattachement ne sont pas explicitement saisis |
+| Primes annuelles / exceptionnelles | ✅ | Nature S21.G00.52 (026, 027, 028) et période de rattachement saisies avec la variable, figées au calcul, déclarées en DSN |
 | Rappel de salaire | 🟠 | Saisi en montant ; pas de recalcul rétroactif des périodes antérieures |
 | Indemnité compensatrice de congés payés | ✅ | Par période d'acquisition, au plus favorable du maintien et du dixième ; compteurs soldés |
 | Indemnité compensatrice de préavis | ✅ | Soumise comme un salaire, intégrée au dixième |
@@ -58,7 +58,7 @@
 | Frais professionnels | ✅ | Remboursements hors brut (montants saisis dans les limites d'exonération) |
 | Titres-restaurant | ✅ | Part patronale 50 à 60 %, exonération plafonnée par titre, excédent réintégré |
 | Transport public | ✅ | Prise en charge ≥ 50 %, exonération jusqu'à 75 % |
-| Forfait mobilités durables, prime transport | ✅ | Plafonds annuels et cumul avec le transport public suivis ; excédent réintégré. Export DSN encore bloqué |
+| Forfait mobilités durables, prime transport | ✅ | Plafonds annuels et cumul avec le transport public suivis ; excédent réintégré. DSN bloc 54 type 19 |
 
 ## 5. Cotisations et protection sociale
 
@@ -67,7 +67,7 @@
 | Cotisations du régime général 2026 | ✅ | Taux datés et sourcés, validés par l'oracle Urssaf |
 | Régularisation progressive des tranches | ✅ | T1, T2, 4 plafonds, CET cumulés sur l'année |
 | RGDU | ✅ | Calcul annuel cumulé, Smic figé au 1er janvier 2026 |
-| Apprentis | ✅ | Exonérations salariales 50 % / 79 % du Smic, CSG, impôt jusqu'au Smic |
+| Apprentis | ✅ | Exonérations salariales 50 % / 79 % du Smic, CSG, impôt jusqu'au Smic. DSN : CTP 726 et 423, codes 001/002, exonération Agirc-Arrco 109, diplôme préparé |
 | Effectif et seuils | ✅ | Moyenne de l’année précédente, première embauche et neutralisation Pacte ; prorata des temps partiels conservé à deux décimales. Saisie de l’effectif Urssaf possible |
 | Complémentaire santé | ✅ | Proratisée à l'entrée et à la sortie ; dispense par salarié |
 | Prévoyance | ✅ | Taux T1 / T2 par population, minimum cadre de 1,50 % |
@@ -94,4 +94,4 @@
 | Cycle préparer, calculer, contrôler, valider, clôturer | ✅ | Calcul séquentiel : un mois précédent non validé bloque le suivant |
 | Bulletin clarifié | ✅ | Rubriques par risque, allègements, net social, PAS, congés, cumuls, mentions obligatoires |
 | Points d'attention du calcul | ✅ | Affichés avant validation |
-| DSN | 🟠 | Mapping P26V01 versionné depuis les paies verrouillées, dettes rapprochées au centime, archives chiffrées immuables. Variables courantes, absences, AT, subrogation, CP, entrées et CDD court raccordés. Signalements 04/05 en test ; saisie d'une reprise ultérieure avec conservation des mois clôturés et recalcul des mois ouverts. Dsn-Val 2026.1.0.17 : 38 fichiers sans anomalie. Restent notamment sorties/FCTU, apprentis, avantages/frais spécifiques, régularisations, contributions annuelles et dépôt/retours métier. Dépôt réel désactivé |
+| DSN | 🟠 | Mapping P26V01 versionné depuis les paies verrouillées, dettes rapprochées au centime, archives chiffrées immuables. Variables courantes, absences, AT, subrogation, CP, entrées, CDD court, primes non mensuelles, apprentis, titres-restaurant, transport, avantages en nature, frais et fins de contrat (motif mensuel et indemnités) raccordés. Signalements 04/05 en essai. Restent notamment le signalement FCTU, les acomptes, les changements de contrat, les régularisations, les contributions annuelles et le dépôt réel. Fichiers d'essai uniquement |

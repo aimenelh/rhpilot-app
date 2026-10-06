@@ -390,17 +390,24 @@ export function mapLockedContributions(input: {
   urssafSiret: string;
   retirementOps: string;
   complementaryAffiliations?: IdentifiedDsnAffiliation[];
+  /** Apprentis : dispositif S21.G00.40.008 du profil DSN (64 = loi de 1979, 65 = loi de 1987). */
+  apprenticePublicPolicyCode?: string | null;
 }): LockedContributionData {
   const { bulletin, inputs } = readLockedContributionSnapshot(input.snapshot);
   if (!/^\d{14}$/.test(input.urssafSiret) || !/^\d{14}$/.test(input.retirementOps)) throw new Error("DSN bloquée : les organismes Urssaf et retraite doivent être renseignés depuis les notifications d'affiliation.");
-  if (inputs.employee.contract === "APPRENTISSAGE") throw new Error("DSN bloquée : les exonérations sociales spécifiques des apprentis nécessitent encore leur mapping déclaratif.");
+  const apprentice = inputs.employee.contract === "APPRENTISSAGE";
+  const apprenticeLawCode = !apprentice ? null : input.apprenticePublicPolicyCode === "64" ? "001" : input.apprenticePublicPolicyCode === "65" ? "002" : null;
+  if (apprentice && !apprenticeLawCode) throw new Error("DSN bloquée : précisez dans le profil DSN de l'apprenti le dispositif 64 (entreprise artisanale ou de moins de 11 salariés) ou 65 (au moins 11 salariés).");
+  if (apprentice && (!bulletin.apprenticeExemption || !Number.isFinite(bulletin.apprenticeExemption.exemptBase) || bulletin.apprenticeExemption.exemptBase < 0)) {
+    throw new Error("DSN bloquée : l'exonération salariale de l'apprenti n'est pas détaillée dans ce calcul. Rouvrez la saisie du mois et recalculez la période.");
+  }
   if (inputs.organization.territory !== "METROPOLE" || inputs.organization.alsaceMoselle) throw new Error("DSN bloquée : le mapping social actuel couvre la métropole hors régime local Alsace-Moselle.");
-  if ((inputs.bonuses ?? []).some((bonus) => bonus.excludedFromPaidLeaveBase)) throw new Error("DSN bloquée : une prime annuelle ou exceptionnelle nécessite son type S21.G00.52 et sa période de rattachement explicites.");
   const supportedAbsenceKinds = new Set(["PAID_LEAVE", "UNPAID_LEAVE", "RTT", "FAMILY_EVENT", "SICK_LEAVE", "WORK_ACCIDENT", "MATERNITY", "PATERNITY"]);
   if ((inputs.absences ?? []).some((absence) => !supportedAbsenceKinds.has(absence.kind))) {
     throw new Error("DSN bloquée : cette absence nécessite encore son bloc déclaratif spécifique (congé payé ou autre suspension).");
   }
-  if ([inputs.benefitsInKind, inputs.expenses, inputs.netAdjustments].some((items) => (items?.length ?? 0) > 0) || inputs.termination || inputs.mealVouchers || inputs.publicTransport) throw new Error("DSN bloquée : les événements et autres revenus du bulletin nécessitent leurs blocs déclaratifs spécifiques.");
+  if ((inputs.netAdjustments?.length ?? 0) > 0) throw new Error("DSN bloquée : les acomptes et retenues sur net du bulletin nécessitent encore leur rapprochement avec le net versé.");
+  if (inputs.termination && !inputs.termination.dsn) throw new Error("DSN bloquée : la sortie a été calculée sans sa partie déclarative. Rouvrez la saisie, complétez la fiche de sortie (motif DSN, dates, préavis) et recalculez.");
   const journal = bulletin.lines.filter((line) => line.section !== "GROSS" && line.section !== "NET_ITEMS");
   if (journal.some((line) => !line || !line.code || !line.section)) throw new Error("DSN bloquée : une rubrique du journal de cotisations est invalide.");
   if (new Set(journal.map((line) => line.code)).size !== journal.length) throw new Error("DSN bloquée : une rubrique de cotisation est dupliquée dans le bulletin.");
@@ -454,10 +461,27 @@ export function mapLockedContributions(input: {
   addBase("02", t1);
   addBase("03", g, [{ code: "01", amount: rgdu.smic }]);
   addBase("07", unemploymentBase);
+  // Apprentis (fiche DIDA CTP 726) : la part de rémunération sous le seuil d'exonération salariale
+  // relève du CTP 726 avec les seuls taux patronaux ; le surplus reste au régime général (CTP 100).
+  const apprenticeBelow = apprentice ? (() => {
+    const exemptBase = round(bulletin.apprenticeExemption!.exemptBase);
+    if (exemptBase > g + 0.005) throw new Error("DSN bloquée : la part exonérée de l'apprenti dépasse son brut soumis.");
+    return { "920": exemptBase, "921": round(Math.min(t1, exemptBase)) };
+  })() : null;
+  const addGeneralScheme = (qualifier: "920" | "921", totalBase: number, value: number, employerRate: number, employeeAmount: number, sources: string[], fields: Partial<DsnAggregatedContribution>): void => {
+    if (!apprenticeBelow) { addAggregate("100", qualifier, value, sources, { baseAmount: totalBase, ...fields }); return; }
+    const belowBase = apprenticeBelow[qualifier];
+    const aboveBase = round(totalBase - belowBase);
+    if (aboveBase < 0) throw new Error("DSN bloquée : la part exonérée de l'apprenti dépasse son assiette.");
+    // Les parts salariales ne portent que sur le surplus ; l'arrondi reste dans la part exonérée.
+    const above = round(aboveBase * employerRate + employeeAmount);
+    addAggregate("726", qualifier, round(value - above), sources, { baseAmount: belowBase, ...fields });
+    if (aboveBase > 0 || cents(above) !== 0) addAggregate("100", qualifier, above, sources, { baseAmount: aboveBase, ...fields });
+  };
   const ordinary = [
     ["ATMP", "045", "03", "100", "920"], ["CSA", "068", "03", "100", "920"],
     ["VIEILLESSE_DEPLAF", "076", "03", "100", "920"], ["VIEILLESSE_PLAF", "076", "02", "100", "921"],
-    ["CHOMAGE", "040", "07", "772", "920"], ["AGS", "048", "07", "937", "920"],
+    ["CHOMAGE", "040", "07", apprentice ? "423" : "772", "920"], ["AGS", "048", "07", "937", "920"],
     ["DIALOGUE_SOCIAL", "100", "03", "027", "920"],
   ] as const;
   const atmpRatePercent = numeric(line("ATMP").employerRate, "le taux AT/MP") * 100;
@@ -466,8 +490,15 @@ export function mapLockedContributions(input: {
     if (cents(b) !== cents(parent === "02" ? t1 : parent === "07" ? unemploymentBase : g)) throw new Error(`DSN bloquée : l'assiette ${source} diverge de sa base assujettie.`);
     const rate = numeric(line(source).rate ?? 0, source) + numeric(line(source).employerRate ?? 0, source);
     addIndividual(code, parent, input.urssafSiret, amount(source), [source], rate * 100, b);
-    addAggregate(ctp, qualifier, amount(source), [source], { baseAmount: b, ...(ctp === "100" && qualifier === "920" ? { ratePercent: atmpRatePercent } : {}) });
+    if (ctp === "100") addGeneralScheme(qualifier, b, amount(source), numeric(line(source).employerRate ?? 0, source), numeric(line(source).amount ?? 0, source), [source], qualifier === "920" ? { ratePercent: atmpRatePercent } : {});
+    else addAggregate(ctp, qualifier, amount(source), [source], { baseAmount: b });
     mapped.add(source);
+  }
+  if (apprenticeBelow && apprenticeLawCode) {
+    // Code d'exonération apprenti : assiette sous le seuil, sans montant ni taux (DIDA CTP 726).
+    for (const [baseCode, qualifier] of [["03", "920"], ["02", "921"]] as const) {
+      individual.push({ employeeNir: input.employeeNir, code: apprenticeLawCode, baseCode, opsIdentifier: input.urssafSiret, baseAmount: apprenticeBelow[qualifier], sourcePayrollCode: "APPRENTI_EXONERATION", mappingVersion: LOCKED_CONTRIBUTION_MAPPING_VERSION });
+    }
   }
   for (const [source, normalCode, extraCode, ctp, normalRate] of [
     ["MALADIE", "075", "907", "635", 0.07], ["FAMILLE", "074", "102", "430", 0.0345],
@@ -480,7 +511,7 @@ export function mapLockedContributions(input: {
     const extra = round(amount(source) - regular);
     addIndividual(normalCode, "03", input.urssafSiret, regular, [source], normalRate * 100, b);
     addIndividual(extraCode, "03", input.urssafSiret, extra, [source], (fullRate - normalRate) * 100, b);
-    addAggregate("100", "920", regular, [source], { baseAmount: b, ratePercent: atmpRatePercent });
+    addGeneralScheme("920", b, regular, normalRate, 0, [source], { ratePercent: atmpRatePercent });
     addAggregate(ctp, "920", extra, [source], { baseAmount: b });
     mapped.add(source);
   }
@@ -498,21 +529,30 @@ export function mapLockedContributions(input: {
     addAggregate(ctp, "920", amount(source), [source], { baseAmount: b });
     mapped.add(source);
   }
-  const csgMainBase = base("CSG_DEDUCTIBLE");
-  if (cents(csgMainBase) !== cents(base("CSG_CRDS_NON_DEDUCTIBLE"))) throw new Error("DSN bloquée : les assiettes CSG ordinaires diffèrent.");
-  const overtimeCsgLine = byCode.get("CSG_NON_IMPOSABLE");
-  const overtimeCsgBase = overtimeCsgLine ? numeric(overtimeCsgLine.base, "l'assiette CSG des heures défiscalisées") : 0;
-  const crdsBase = numeric(line("CSG_CRDS_NON_DEDUCTIBLE").detail?.crdsBase, "l'assiette CRDS");
-  if (cents(crdsBase) !== cents(csgMainBase + overtimeCsgBase)) throw new Error("DSN bloquée : l'assiette CSG/CRDS ne couvre pas exactement les heures défiscalisées.");
-  const crdsAmount = round(crdsBase * 0.005);
-  const csgSources = ["CSG_DEDUCTIBLE", "CSG_CRDS_NON_DEDUCTIBLE", ...(overtimeCsgLine ? ["CSG_NON_IMPOSABLE"] : [])];
-  const combinedCsg = round(amount("CSG_DEDUCTIBLE") + amount("CSG_CRDS_NON_DEDUCTIBLE") + (overtimeCsgLine ? amount("CSG_NON_IMPOSABLE") : 0));
-  addBase("04", crdsBase);
-  addIndividual("072", "04", input.urssafSiret, round(combinedCsg - crdsAmount), csgSources, 9.2, crdsBase);
-  addIndividual("079", "04", input.urssafSiret, crdsAmount, csgSources, 0.5, crdsBase);
-  addAggregate("260", "920", combinedCsg, csgSources, { baseAmount: crdsBase });
-  mapped.add("CSG_DEDUCTIBLE"); mapped.add("CSG_CRDS_NON_DEDUCTIBLE");
-  if (overtimeCsgLine) mapped.add("CSG_NON_IMPOSABLE");
+  // Apprentis sous l'ancien régime (79 % du Smic) : aucune CSG/CRDS sous le seuil, donc aucun bloc 04 ni CTP 260.
+  if (!(apprentice && !byCode.has("CSG_DEDUCTIBLE") && !byCode.has("CSG_CRDS_NON_DEDUCTIBLE"))) {
+    const csgMainBase = base("CSG_DEDUCTIBLE");
+    if (cents(csgMainBase) !== cents(base("CSG_CRDS_NON_DEDUCTIBLE"))) throw new Error("DSN bloquée : les assiettes CSG ordinaires diffèrent.");
+    const overtimeCsgLine = byCode.get("CSG_NON_IMPOSABLE");
+    const overtimeCsgBase = overtimeCsgLine ? numeric(overtimeCsgLine.base, "l'assiette CSG des heures défiscalisées") : 0;
+    const crdsMainBase = numeric(line("CSG_CRDS_NON_DEDUCTIBLE").detail?.crdsBase, "l'assiette CRDS");
+    if (cents(crdsMainBase) !== cents(csgMainBase + overtimeCsgBase)) throw new Error("DSN bloquée : l'assiette CSG/CRDS ne couvre pas exactement les heures défiscalisées.");
+    // Indemnité de rupture : CSG/CRDS sans abattement sur la fraction imposable et sur la fraction exonérée d'impôt.
+    const ruptureTaxable = byCode.get("CSG_RUPTURE_DEDUCTIBLE");
+    const ruptureTaxableBase = ruptureTaxable ? numeric(ruptureTaxable.base, "l'assiette CSG de l'indemnité de rupture") : 0;
+    if (ruptureTaxable && cents(ruptureTaxableBase) !== cents(base("CSG_CRDS_RUPTURE_NON_DEDUCTIBLE"))) throw new Error("DSN bloquée : les assiettes CSG de l'indemnité de rupture diffèrent.");
+    const ruptureExemptBase = byCode.has("CSG_CRDS_RUPTURE_EXONEREE_IR") ? base("CSG_CRDS_RUPTURE_EXONEREE_IR") : 0;
+    const crdsBase = round(crdsMainBase + ruptureTaxableBase + ruptureExemptBase);
+    const crdsAmount = round(crdsBase * 0.005);
+    const ruptureCodes = ["CSG_RUPTURE_DEDUCTIBLE", "CSG_CRDS_RUPTURE_NON_DEDUCTIBLE", "CSG_CRDS_RUPTURE_EXONEREE_IR"].filter((code) => byCode.has(code));
+    const csgSources = ["CSG_DEDUCTIBLE", "CSG_CRDS_NON_DEDUCTIBLE", ...(overtimeCsgLine ? ["CSG_NON_IMPOSABLE"] : []), ...ruptureCodes];
+    const combinedCsg = round(csgSources.reduce((total, code) => total + amount(code), 0));
+    addBase("04", crdsBase);
+    addIndividual("072", "04", input.urssafSiret, round(combinedCsg - crdsAmount), csgSources, 9.2, crdsBase);
+    addIndividual("079", "04", input.urssafSiret, crdsAmount, csgSources, 0.5, crdsBase);
+    addAggregate("260", "920", combinedCsg, csgSources, { baseAmount: crdsBase });
+    csgSources.forEach((code) => mapped.add(code));
+  }
 
   if (overtime.totalAmount > 0) {
     const employeeReduction = amount("REDUCTION_HS_SALARIALE");
@@ -547,7 +587,22 @@ export function mapLockedContributions(input: {
   const cetT1Employee = cet && numeric(cet.base, "l'assiette CET") !== 0 ? round(numeric(cet.amount ?? 0, "la CET salariale") * t1 / numeric(cet.base, "l'assiette CET")) : 0;
   const cetT1Employer = cet && numeric(cet.base, "l'assiette CET") !== 0 ? round(numeric(cet.employerAmount ?? 0, "la CET patronale") * t1 / numeric(cet.base, "l'assiette CET")) : 0;
   if (cet && cents(numeric(cet.base, "l'assiette CET")) !== 0 && cents(numeric(cet.base, "l'assiette CET")) !== cents(t1 + t2)) throw new Error("DSN bloquée : une régularisation CET sur des périodes antérieures doit être rattachée explicitement.");
-  addIndividual("131", "02", null, round(amount("RETRAITE_T1") + cetT1Employee + cetT1Employer), ["RETRAITE_T1", "CET"]);
+  // Apprentis : la cotisation Agirc-Arrco est déclarée entière (131) et l'exonération salariale
+  // prise en charge par l'État en négatif (109), pour un montant dû inchangé.
+  let apprenticeRetirementExemption = 0;
+  if (apprentice) {
+    if (t2 !== 0) throw new Error("DSN bloquée : un apprenti rémunéré au-delà du plafond de la Sécurité sociale nécessite une ventilation de l'exonération par tranche.");
+    for (const code of ["RETRAITE_T1", "CET"]) {
+      const item = byCode.get(code);
+      if (!item) continue;
+      const full = round(numeric(item.base, `l'assiette ${code}`) * numeric(item.rate ?? 0, `le taux salarial ${code}`));
+      const actual = numeric(item.amount ?? 0, code);
+      if (actual > full + 0.01) throw new Error("DSN bloquée : la part salariale de retraite de l'apprenti dépasse la cotisation entière.");
+      apprenticeRetirementExemption = round(apprenticeRetirementExemption + full - actual);
+    }
+  }
+  addIndividual("131", "02", null, round(amount("RETRAITE_T1") + cetT1Employee + cetT1Employer + apprenticeRetirementExemption), ["RETRAITE_T1", "CET"]);
+  if (apprenticeRetirementExemption > 0) addIndividual("109", "02", null, -apprenticeRetirementExemption, ["RETRAITE_T1", "CET"]);
   if (t2Amount !== 0 || (cet && amount("CET") !== cetT1Employee + cetT1Employer)) addIndividual("131", "03", null, round(t2Amount + (cet ? amount("CET") : 0) - cetT1Employee - cetT1Employer), ["RETRAITE_T2", "CET"]);
   addIndividual("142", "02", input.urssafSiret, numeric(line("RETRAITE_T1").employerAmount, "la retraite patronale T1"), ["RETRAITE_T1"], numeric(line("RETRAITE_T1").employerRate, "le taux retraite patronale T1") * 100);
   const controlT2 = round(numeric(t2Line?.employerAmount ?? 0, "la retraite patronale T2") + numeric(cet?.employerAmount ?? 0, "la CET patronale"));
@@ -618,6 +673,15 @@ export function mapLockedContributions(input: {
     });
     if (!active.length || cents(allocated) !== cents(amount("VERSEMENT_MOBILITE"))) throw new Error("DSN bloquée : la ventilation mobilité ne couvre pas la charge du bulletin.");
     mapped.add("VERSEMENT_MOBILITE");
+  }
+  if (byCode.has("CONTRIBUTION_RUPTURE") && amount("CONTRIBUTION_RUPTURE") !== 0) {
+    // Contribution patronale sur l'indemnité de rupture conventionnelle ou de mise à la retraite (CSS art. L137-12), CTP 719.
+    const b = base("CONTRIBUTION_RUPTURE");
+    const rate = numeric(line("CONTRIBUTION_RUPTURE").employerRate, "le taux de la contribution sur l'indemnité de rupture");
+    if (b <= 0 || amount("CONTRIBUTION_RUPTURE") < 0) throw new Error("DSN bloquée : la contribution sur l'indemnité de rupture est incohérente.");
+    addIndividual("093", "03", input.urssafSiret, amount("CONTRIBUTION_RUPTURE"), ["CONTRIBUTION_RUPTURE"], rate * 100, b);
+    addAggregate("719", "920", amount("CONTRIBUTION_RUPTURE"), ["CONTRIBUTION_RUPTURE"], { baseAmount: b });
+    mapped.add("CONTRIBUTION_RUPTURE");
   }
   // Une rubrique explicitement nulle ne nécessite pas d'affiliation, mais une rubrique inconnue reste bloquante.
   for (const code of ["PREVOYANCE", "PREVOYANCE_T2", "SANTE", "VERSEMENT_MOBILITE", "FORFAIT_SOCIAL"]) if (byCode.has(code) && amount(code) === 0) mapped.add(code);

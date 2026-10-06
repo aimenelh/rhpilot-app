@@ -11,9 +11,12 @@ export function assertDsnRetirementScope(executive: boolean, retirementStatusCod
 }
 
 /** Les événements de contrat nécessitent une déclaration distincte de la paie courante. */
-export function assertDsnStableContract(current: Contract, period: { year: number; month: number }, previous?: Contract): void {
+export function assertDsnStableContract(current: Contract, period: { year: number; month: number }, previous?: Contract, declaredEnd = false): void {
   const end = new Date(Date.UTC(period.year, period.month, 0)).toISOString().slice(0, 10);
-  if (current.hireDate > end || (current.contractEndDate && current.contractEndDate <= end)) {
+  const first = `${end.slice(0, 7)}-01`;
+  // Une fin de contrat du mois est déclarée avec ses blocs S21.G00.62/63 lorsqu'elle est qualifiée dans la fiche de sortie.
+  const endsThisMonth = Boolean(current.contractEndDate && current.contractEndDate >= first && current.contractEndDate <= end);
+  if (current.hireDate > end || (current.contractEndDate && current.contractEndDate <= end && !(declaredEnd && endsThisMonth))) {
     throw new Error("DSN bloquée : les fins de contrat et rappels après sortie nécessitent leurs blocs événementiels, même sans prorata sur le bulletin.");
   }
   if (previous && (previous.contract !== current.contract || previous.hireDate !== current.hireDate ||

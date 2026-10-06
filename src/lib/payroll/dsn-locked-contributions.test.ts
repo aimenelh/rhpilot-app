@@ -220,11 +220,11 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     expect(content).not.toContain("S21.G00.52.");
   });
 
-  it("bloque une prime annuelle ou exceptionnelle sans type et période S21.G00.52 explicites", () => {
+  it("bloque une prime annuelle calculée sans nature DSN figée (ancien calcul)", () => {
     const snapshot = computedSnapshot({
       bonuses: [{ code: "YEAR_END_BONUS", label: "13e mois", amount: 1000, excludedFromPaidLeaveBase: true }],
     });
-    expect(() => mapLockedContributions({ snapshot, ...ids })).toThrow(/S21\.G00\.52.*période de rattachement/i);
+    expect(() => mapLockedContributions({ snapshot, ...ids })).toThrow(/13e mois.*nature DSN.*recalculez/i);
   });
 
   it("conserve les arrondis en cumul sur la réduction générale", () => {
@@ -353,6 +353,7 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     expect(() => mapLockedContributions({ snapshot: health, ...ids })).toThrow(/SANTE/);
     const apprentice = structuredClone(ordinary);
     apprentice.inputs.employee.contract = "APPRENTISSAGE";
-    expect(() => mapLockedContributions({ snapshot: apprentice, ...ids })).toThrow(/apprentis/);
+    expect(() => mapLockedContributions({ snapshot: apprentice, ...ids })).toThrow(/dispositif 64/);
+    expect(() => mapLockedContributions({ snapshot: apprentice, ...ids, apprenticePublicPolicyCode: "64" })).toThrow(/exonération salariale de l'apprenti/);
   });
 });

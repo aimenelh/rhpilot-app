@@ -1,4 +1,5 @@
-import type { PayslipInput, PayslipResult } from "./bulletin/types";
+import type { DsnBonusType, PayslipInput, PayslipResult } from "./bulletin/types";
+import { TERMINATION_INDEMNITY_CODES, terminationIndemnities, type TerminationDsnData } from "./dsn-termination";
 
 export type LockedRemunerationDeclaration = {
   employmentStart: string;
@@ -8,9 +9,28 @@ export type LockedRemunerationDeclaration = {
   restoredSalary: number;
   outsideContractHours: number;
   paidLeaveIndemnities: Array<{ type: "046"; amount: number; start: string; end: string }>;
+  /** Primes non mensuelles (S21.G00.52), montants repris des lignes figées du bulletin. */
+  bonuses: Array<{ type: DsnBonusType; amount: number; start: string | null; end: string | null }>;
+  /** Autres éléments de revenu brut (S21.G00.54) : avantages en nature, frais, titres-restaurant, transport. */
+  otherRevenues: Array<{ type: DsnOtherRevenueType; amount: number }>;
+  /** Fin de contrat du mois : blocs S21.G00.62/63 et indemnités S21.G00.52. */
+  contractEnd: { date: string; data: TerminationDsnData; indemnities: Array<{ type: string; amount: number }> } | null;
+};
+
+/** Nomenclature P26V01 S21.G00.54.001 (types utilisés par le moteur). */
+export type DsnOtherRevenueType = "02" | "03" | "04" | "05" | "06" | "07" | "09" | "17" | "18" | "19";
+
+const BENEFIT_TYPES: Readonly<Record<string, DsnOtherRevenueType>> = {
+  BENEFIT_MEAL: "02", BENEFIT_HOUSING: "03", BENEFIT_VEHICLE: "04", BENEFIT_TECHNOLOGY: "05", BENEFIT_OTHER: "06",
+};
+// 07 : frais remboursés au forfait (barèmes) ; 09 : au réel sur justificatifs ; 19 : transports personnels.
+const EXPENSE_TYPES: Readonly<Record<string, DsnOtherRevenueType>> = {
+  EXPENSE_REAL: "09", EXPENSE_HOTEL: "09", EXPENSE_MEAL: "07", EXPENSE_KILOMETRIC: "07", EXPENSE_TRAVEL: "07",
+  SUSTAINABLE_MOBILITY: "19", TRANSPORT_ALLOWANCE: "19",
 };
 
 const round = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+const cents = (value: number) => Math.round(value * 100);
 const money = (value: unknown, label: string) => {
   if (typeof value !== "number" || !Number.isFinite(value)) throw new Error(`DSN bloquée : ${label} du bulletin est absent ou invalide.`);
   return value;
@@ -28,8 +48,14 @@ export function readLockedRemunerationDeclaration({ bulletin, inputs }: { bullet
   const authorizedDeductions = -sum(new Set(["ABS_UNPAID_LEAVE", "ABS_SICK_LEAVE", "ABS_WORK_ACCIDENT", "ABS_MATERNITY", "ABS_PATERNITY", "ENTRY_EXIT"]));
   // Le maintien n'est pas du travail rémunéré pour les droits chômage ; le salaire rétabli
   // rétablit la retenue sans compter une deuxième fois ce maintien.
-  const unemploymentRemuneration = round(gross - maintenance);
-  const restoredSalary = round(gross + authorizedDeductions - maintenance);
+  // Indemnités liées à la rupture : déclarées en bloc 52, exclues du salaire servant aux droits chômage
+  // et du salaire rétabli. Seule leur fraction soumise figure dans le brut soumis.
+  const terminationSubject = round(grossLines.filter((line) => TERMINATION_INDEMNITY_CODES.has(line.code)).reduce((total, line) => {
+    if (line.code !== "SEVERANCE") return total + money(line.amount, line.code);
+    return total + money(line.detail?.subjectToContributions, "la fraction soumise de l'indemnité de rupture");
+  }, 0));
+  const unemploymentRemuneration = round(gross - maintenance - terminationSubject);
+  const restoredSalary = round(gross + authorizedDeductions - maintenance - terminationSubject);
   if (unemploymentRemuneration < 0 || restoredSalary < 0) throw new Error("DSN bloquée : les rémunérations déclaratives du bulletin sont incohérentes.");
 
   const entryLines = grossLines.filter((line) => line.code === "ENTRY_EXIT");
@@ -59,5 +85,69 @@ export function readLockedRemunerationDeclaration({ bulletin, inputs }: { bullet
     const end = absence.end < employmentEnd ? absence.end : employmentEnd;
     paidLeaveIndemnities.push({ type: "046", amount: round(amount), start: end < start ? employmentStart : start, end: end < start ? employmentEnd : end });
   }
-  return { employmentStart, employmentEnd, unemploymentRemuneration, restoredSalary, outsideContractHours: round(outsideContractHours), paidLeaveIndemnities };
+
+  // Primes non mensuelles : nature et rattachement figés avec la variable au calcul (S21.G00.52.001/.003/.004).
+  const annualInputs = (inputs.bonuses ?? []).filter((bonus) => bonus.excludedFromPaidLeaveBase && bonus.amount > 0);
+  const annualLines = grossLines.filter((line) => line.detail?.excludedFromPaidLeaveBase === true);
+  if (annualLines.length !== annualInputs.length || new Set(annualLines.map((line) => line.code)).size !== annualLines.length) {
+    throw new Error("DSN bloquée : les primes non mensuelles du bulletin ne correspondent pas à la saisie figée.");
+  }
+  const bonuses: LockedRemunerationDeclaration["bonuses"] = [];
+  for (const bonus of annualInputs) {
+    const line = annualLines.find((item) => item.code === bonus.code);
+    if (!line) throw new Error("DSN bloquée : les primes non mensuelles du bulletin ne correspondent pas à la saisie figée.");
+    const declaration = bonus.dsn;
+    if (!declaration || !["026", "027", "028"].includes(declaration.type)) {
+      throw new Error(`DSN bloquée : la prime « ${bonus.label} » a été calculée sans sa nature DSN. Rouvrez la saisie, précisez sa nature et sa période dans Primes non mensuelles, puis recalculez.`);
+    }
+    const amount = money(line.amount, `le montant de « ${bonus.label} »`);
+    if (amount <= 0 || cents(amount) !== cents(bonus.amount)) throw new Error(`DSN bloquée : le montant de « ${bonus.label} » diverge entre la saisie et le bulletin.`);
+    const { attachmentStart: start, attachmentEnd: end } = declaration;
+    if ((start === null) !== (end === null) || (declaration.type !== "028" && start === null) || (start !== null && end !== null && end < start)) {
+      throw new Error(`DSN bloquée : la période de rattachement de « ${bonus.label} » est incomplète ou incohérente.`);
+    }
+    bonuses.push({ type: declaration.type, amount: round(amount), start, end });
+  }
+
+  // Autres éléments de revenu brut : montant total versé ou attribué, la part soumise étant déjà dans le brut.
+  const totals = new Map<DsnOtherRevenueType, number>();
+  const addRevenue = (type: DsnOtherRevenueType, amount: number) => { if (amount > 0) totals.set(type, round((totals.get(type) ?? 0) + amount)); };
+  const lineAmount = (section: "GROSS" | "NET_ITEMS", code: string) => round(bulletin.lines.filter((line) => line.section === section && line.code === code).reduce((total, line) => total + money(line.amount, code), 0));
+  for (const benefit of inputs.benefitsInKind ?? []) {
+    const type = BENEFIT_TYPES[benefit.code];
+    if (!type) throw new Error(`DSN bloquée : l'avantage en nature « ${benefit.label} » n'a pas de type déclaratif.`);
+    if (benefit.amount <= 0) continue;
+    if (cents(lineAmount("GROSS", benefit.code)) !== cents(benefit.amount)) throw new Error(`DSN bloquée : l'avantage en nature « ${benefit.label} » diverge entre la saisie et le bulletin.`);
+    addRevenue(type, benefit.amount);
+  }
+  for (const expense of inputs.expenses ?? []) {
+    const type = EXPENSE_TYPES[expense.code];
+    if (!type) throw new Error(`DSN bloquée : le remboursement « ${expense.label} » n'a pas de type déclaratif.`);
+    addRevenue(type, money(expense.amount, `le remboursement « ${expense.label} »`));
+  }
+  if (inputs.mealVouchers && inputs.mealVouchers.count > 0) {
+    const { count, faceValue, employerShare } = inputs.mealVouchers;
+    const employerTotal = round(round(faceValue * employerShare) * count);
+    if (lineAmount("GROSS", "MEAL_VOUCHER_EXCESS") > employerTotal + 0.005) throw new Error("DSN bloquée : la part patronale des titres-restaurant est incohérente avec le bulletin.");
+    addRevenue("17", employerTotal);
+  }
+  if (inputs.publicTransport && inputs.publicTransport.monthlySubscription > 0) {
+    const expected = round(inputs.publicTransport.monthlySubscription * inputs.publicTransport.employerShare);
+    const paid = round(lineAmount("NET_ITEMS", "PUBLIC_TRANSPORT") + lineAmount("GROSS", "TRANSPORT_EXCESS"));
+    if (cents(paid) !== cents(expected)) throw new Error("DSN bloquée : la prise en charge du transport public diverge entre la saisie et le bulletin.");
+    addRevenue("18", paid);
+  }
+  const otherRevenues = [...totals].sort(([left], [right]) => left.localeCompare(right)).map(([type, amount]) => ({ type, amount }));
+
+  let contractEnd: LockedRemunerationDeclaration["contractEnd"] = null;
+  if (inputs.termination) {
+    const data = inputs.termination.dsn;
+    if (!data) throw new Error("DSN bloquée : la sortie a été calculée sans sa partie déclarative. Rouvrez la saisie, complétez la fiche de sortie et recalculez.");
+    const endDate = inputs.employee.contractEndDate;
+    if (!endDate || endDate < bulletin.period.first || endDate > bulletin.period.last) throw new Error("DSN bloquée : la date de fin du contrat ne tombe pas dans le mois déclaré.");
+    contractEnd = { date: endDate, data, indemnities: terminationIndemnities(grossLines, data) };
+  } else if (grossLines.some((line) => TERMINATION_INDEMNITY_CODES.has(line.code))) {
+    throw new Error("DSN bloquée : une indemnité de fin de contrat figure au bulletin sans fiche de sortie.");
+  }
+  return { employmentStart, employmentEnd, unemploymentRemuneration, restoredSalary, outsideContractHours: round(outsideContractHours), paidLeaveIndemnities, bonuses, otherRevenues, contractEnd };
 }

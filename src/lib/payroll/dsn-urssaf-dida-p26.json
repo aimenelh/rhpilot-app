@@ -355,6 +355,138 @@
       "aggregateAmount": false,
       "aggregateCommune": false,
       "version": "2.5"
+    },
+    {
+      "ctp": "423",
+      "baseCode": "07",
+      "individualCode": "040",
+      "baseQualifier": "920",
+      "aggregateRate": false,
+      "aggregateBase": true,
+      "aggregateAmount": false,
+      "aggregateCommune": false,
+      "version": "1.8"
+    },
+    {
+      "ctp": "726",
+      "baseCode": "02",
+      "individualCode": "001",
+      "baseQualifier": "921",
+      "aggregateRate": false,
+      "aggregateBase": true,
+      "aggregateAmount": false,
+      "aggregateCommune": false,
+      "version": "1.0"
+    },
+    {
+      "ctp": "726",
+      "baseCode": "02",
+      "individualCode": "002",
+      "baseQualifier": "921",
+      "aggregateRate": false,
+      "aggregateBase": true,
+      "aggregateAmount": false,
+      "aggregateCommune": false,
+      "version": "1.0"
+    },
+    {
+      "ctp": "726",
+      "baseCode": "02",
+      "individualCode": "076",
+      "baseQualifier": "921",
+      "aggregateRate": false,
+      "aggregateBase": true,
+      "aggregateAmount": false,
+      "aggregateCommune": false,
+      "version": "1.1"
+    },
+    {
+      "ctp": "726",
+      "baseCode": "03",
+      "individualCode": "001",
+      "baseQualifier": "920",
+      "aggregateRate": true,
+      "aggregateBase": true,
+      "aggregateAmount": false,
+      "aggregateCommune": false,
+      "version": "1.0"
+    },
+    {
+      "ctp": "726",
+      "baseCode": "03",
+      "individualCode": "002",
+      "baseQualifier": "920",
+      "aggregateRate": true,
+      "aggregateBase": true,
+      "aggregateAmount": false,
+      "aggregateCommune": false,
+      "version": "1.0"
+    },
+    {
+      "ctp": "726",
+      "baseCode": "03",
+      "individualCode": "045",
+      "baseQualifier": "920",
+      "aggregateRate": true,
+      "aggregateBase": true,
+      "aggregateAmount": false,
+      "aggregateCommune": false,
+      "version": "1.1"
+    },
+    {
+      "ctp": "726",
+      "baseCode": "03",
+      "individualCode": "068",
+      "baseQualifier": "920",
+      "aggregateRate": true,
+      "aggregateBase": true,
+      "aggregateAmount": false,
+      "aggregateCommune": false,
+      "version": "1.1"
+    },
+    {
+      "ctp": "726",
+      "baseCode": "03",
+      "individualCode": "074",
+      "baseQualifier": "920",
+      "aggregateRate": true,
+      "aggregateBase": true,
+      "aggregateAmount": false,
+      "aggregateCommune": false,
+      "version": "1.1"
+    },
+    {
+      "ctp": "726",
+      "baseCode": "03",
+      "individualCode": "075",
+      "baseQualifier": "920",
+      "aggregateRate": true,
+      "aggregateBase": true,
+      "aggregateAmount": false,
+      "aggregateCommune": false,
+      "version": "1.1"
+    },
+    {
+      "ctp": "726",
+      "baseCode": "03",
+      "individualCode": "076",
+      "baseQualifier": "920",
+      "aggregateRate": true,
+      "aggregateBase": true,
+      "aggregateAmount": false,
+      "aggregateCommune": false,
+      "version": "1.1"
+    },
+    {
+      "ctp": "719",
+      "baseCode": "03",
+      "individualCode": "093",
+      "baseQualifier": "920",
+      "aggregateRate": false,
+      "aggregateBase": true,
+      "aggregateAmount": false,
+      "aggregateCommune": false,
+      "version": "1.1"
     }
   ]
 }

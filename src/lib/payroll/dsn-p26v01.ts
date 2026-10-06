@@ -45,6 +45,8 @@ export type DsnP26MonthlyInput = {
     postalCode: string;
     city: string;
     countryCode?: string | null;
+    /** S21.G00.30.025 : niveau de diplôme préparé, obligatoire pour un apprenti. */
+    preparedDiplomaLevel?: string | null;
     position: string;
     contract: {
       startDate: Date;
@@ -91,6 +93,12 @@ export type DsnP26MonthlyInput = {
       }>;
       /** Suspensions mensuelles rattachées au contrat. */
       suspensions?: Array<{ reasonCode: "501"; startDate: Date; endDate: Date }>;
+      /** Fin du contrat dans le mois (S21.G00.62) et préavis (S21.G00.63). */
+      end?: {
+        endDate: Date; reasonCode: string; notificationDate?: Date | null; conventionSignatureDate?: Date | null;
+        dismissalProcedureDate?: Date | null; lastWorkedPaidDate?: Date | null; transactionPending: boolean;
+        notice: { typeCode: string; startDate?: Date | null; endDate?: Date | null };
+      } | null;
     };
     payroll: {
       baseSalary: number;
@@ -101,6 +109,12 @@ export type DsnP26MonthlyInput = {
       unemploymentRemuneration?: number;
       restoredSalary?: number;
       paidLeaveIndemnities?: Array<{ type: "046"; amount: number; startDate: Date; endDate: Date }>;
+      /** Indemnités liées à la fin du contrat (S21.G00.52 : 001, 003 à 007, 011, 020, 021, 023). */
+      terminationIndemnities?: Array<{ type: string; amount: number }>;
+      /** Autres éléments de revenu brut (S21.G00.54) rattachés au contrat. */
+      otherRevenues?: Array<{ type: string; amount: number }>;
+      /** Primes non mensuelles : 026/027 avec période de rattachement, 028 avec ou sans. */
+      bonuses?: Array<{ type: "026" | "027" | "028"; amount: number; startDate?: Date | null; endDate?: Date | null }>;
       paidHours?: number;
       netBeforeTax: number;
       netTaxableAmount: number;
@@ -315,6 +329,9 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
     add(lines, "S21.G00.30.013", assertCode(employee.euClassificationCode, "la codification UE", 2, 2));
     add(lines, "S21.G00.30.014", assertCode(employee.birthDepartment, "le département de naissance", 2, 2));
     add(lines, "S21.G00.30.015", assertCountry(employee.birthCountryCode, "le pays de naissance"));
+    const apprenticeship = ["64", "65", "81"].includes(employee.contract.publicPolicyCode);
+    if (apprenticeship && !["03", "04", "05", "06", "07", "08"].includes(employee.preparedDiplomaLevel ?? "")) throw new Error("DSN bloquée : indiquez dans le profil DSN de l'apprenti le niveau du diplôme préparé.");
+    add(lines, "S21.G00.30.025", apprenticeship ? employee.preparedDiplomaLevel ?? null : null);
 
     add(lines, "S21.G00.40.001", dsnDate(employee.contract.startDate));
     add(lines, "S21.G00.40.002", assertCode(employee.contract.conventionalStatusCode, "le statut conventionnel", 2, 2));
@@ -379,6 +396,16 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
       // S21.G00.60.012 est réservé au signalement événementiel AT : il n'est pas reporté dans la DSN mensuelle.
     }
 
+    const end = employee.contract.end;
+    if (end) {
+      if (!employee.contract.endDate || dsnDate(employee.contract.endDate) !== dsnDate(end.endDate)) throw new Error("DSN bloquée : la fin de contrat déclarée ne correspond pas à la date de fin du contrat.");
+      if (end.endDate < periodStart || end.endDate > periodEnd) throw new Error("DSN bloquée : la fin de contrat ne tombe pas dans le mois déclaré.");
+      // DSN mensuelle : seuls la date et le motif sont admis (Dsn-Val CST-02/CST-04). Les dates de la
+      // rupture, la transaction et le préavis relèvent du signalement de fin de contrat (FCTU).
+      add(lines, "S21.G00.62.001", dsnDate(end.endDate));
+      add(lines, "S21.G00.62.002", assertDigits(end.reasonCode, 3, "le motif de fin de contrat"));
+    }
+
     for (const suspension of employee.contract.suspensions ?? []) {
       if (suspension.endDate < suspension.startDate) throw new Error("DSN bloquée : une suspension de contrat se termine avant de commencer.");
       add(lines, "S21.G00.65.001", suspension.reasonCode);
@@ -426,6 +453,39 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
       add(lines, "S21.G00.52.003", dsnDate(indemnity.startDate));
       add(lines, "S21.G00.52.004", dsnDate(indemnity.endDate));
       add(lines, "S21.G00.52.006", contractNumber);
+    }
+    const indemnityTypes = (employee.payroll.terminationIndemnities ?? []).map((item) => item.type);
+    if (new Set(indemnityTypes).size !== indemnityTypes.length) throw new Error("DSN bloquée : une indemnité de fin de contrat est déclarée deux fois.");
+    if (indemnityTypes.length > 0 && !end) throw new Error("DSN bloquée : des indemnités de fin de contrat sont déclarées sans fin de contrat.");
+    for (const indemnity of employee.payroll.terminationIndemnities ?? []) {
+      if (!["001", "003", "004", "005", "006", "007", "011", "020", "021", "023"].includes(indemnity.type) || !Number.isFinite(indemnity.amount) || indemnity.amount <= 0) throw new Error("DSN bloquée : une indemnité de fin de contrat est invalide.");
+      add(lines, "S21.G00.52.001", indemnity.type);
+      add(lines, "S21.G00.52.002", money(indemnity.amount));
+      add(lines, "S21.G00.52.006", contractNumber);
+    }
+    for (const bonus of employee.payroll.bonuses ?? []) {
+      if (!["026", "027", "028"].includes(bonus.type) || !Number.isFinite(bonus.amount) || bonus.amount <= 0) throw new Error("DSN bloquée : une prime non mensuelle déclarative est invalide.");
+      const hasStart = Boolean(bonus.startDate);
+      const hasEnd = Boolean(bonus.endDate);
+      // Dsn-Val S21.G00.52.003/CCH-12 et .004/CCH-13 : période obligatoire pour 026 et 027.
+      if (hasStart !== hasEnd || (bonus.type !== "028" && !hasStart) || (bonus.startDate && bonus.endDate && bonus.endDate < bonus.startDate)) {
+        throw new Error("DSN bloquée : la période de rattachement d'une prime non mensuelle est incomplète ou incohérente.");
+      }
+      add(lines, "S21.G00.52.001", bonus.type);
+      add(lines, "S21.G00.52.002", money(bonus.amount));
+      if (bonus.startDate && bonus.endDate) {
+        add(lines, "S21.G00.52.003", dsnDate(bonus.startDate));
+        add(lines, "S21.G00.52.004", dsnDate(bonus.endDate));
+      }
+      add(lines, "S21.G00.52.006", contractNumber);
+    }
+    const revenueTypes = (employee.payroll.otherRevenues ?? []).map((item) => item.type);
+    if (new Set(revenueTypes).size !== revenueTypes.length) throw new Error("DSN bloquée : les autres éléments de revenu brut doivent être agrégés par type.");
+    for (const revenue of employee.payroll.otherRevenues ?? []) {
+      if (!["02", "03", "04", "05", "06", "07", "09", "17", "18", "19"].includes(revenue.type) || !Number.isFinite(revenue.amount) || revenue.amount <= 0) throw new Error("DSN bloquée : un autre élément de revenu brut est invalide.");
+      add(lines, "S21.G00.54.001", revenue.type);
+      add(lines, "S21.G00.54.002", money(revenue.amount));
+      add(lines, "S21.G00.54.005", contractNumber);
     }
     const overtimeTaxExemptNetAmount = employee.payroll.overtimeTaxExemptNetAmount ?? 0;
     if (!Number.isFinite(overtimeTaxExemptNetAmount) || overtimeTaxExemptNetAmount < 0) throw new Error("DSN bloquée : le montant net fiscal des heures exonérées est invalide.");

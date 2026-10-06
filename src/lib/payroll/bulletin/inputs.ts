@@ -14,6 +14,7 @@ import type {
   BenefitInKindInput,
   BonusInput,
   ComplementaryHoursInput,
+  DsnBonusType,
   ExpenseInput,
   NetAdjustmentInput,
   OvertimeInput,
@@ -28,7 +29,35 @@ export { BULLETIN_VARIABLES, ENGINE_COMPUTED_VARIABLES, getBulletinVariable, typ
 
 const DEFINITIONS = new Map(BULLETIN_VARIABLES.map((definition) => [definition.code, definition]));
 
-export type StoredVariable = { id: string; code: string; label: string; amount: number; unit: string; reference?: string | null };
+export type StoredVariable = {
+  id: string; code: string; label: string; amount: number; unit: string; reference?: string | null;
+  /** Primes non mensuelles : nature S21.G00.52.001 et période de rattachement. */
+  dsnBonusType?: string | null; attachmentStart?: IsoDay | null; attachmentEnd?: IsoDay | null;
+};
+
+export const DSN_BONUS_TYPES: Readonly<Record<DsnBonusType, string>> = {
+  "027": "Prime liée à l'activité avec période de rattachement spécifique",
+  "026": "Prime exceptionnelle liée à l'activité avec période de rattachement spécifique",
+  "028": "Prime non liée à l'activité",
+};
+
+/**
+ * Nature et rattachement DSN d'une prime non mensuelle. Les types 026 et 027 exigent
+ * leur période (Dsn-Val S21.G00.52.003/CCH-12 et .004/CCH-13) ; le 028 l'accepte sans l'exiger.
+ */
+export function readDsnBonusDeclaration(variable: Pick<StoredVariable, "dsnBonusType" | "attachmentStart" | "attachmentEnd">, label: string, periodLast: IsoDay): { value: NonNullable<BonusInput["dsn"]> } | { error: string } {
+  const type = variable.dsnBonusType?.trim() ?? "";
+  if (!(type in DSN_BONUS_TYPES)) return { error: `Précisez la nature DSN de « ${label} » et sa période de rattachement dans la saisie du mois (Primes non mensuelles).` };
+  const start = variable.attachmentStart ?? null;
+  const end = variable.attachmentEnd ?? null;
+  if ((start === null) !== (end === null)) return { error: `La période de rattachement de « ${label} » doit comporter un début et une fin.` };
+  if (type !== "028" && (start === null || end === null)) return { error: `« ${label} » est liée à l'activité : renseignez la période de travail à laquelle elle se rattache.` };
+  if (start !== null && end !== null) {
+    if (end < start) return { error: `La période de rattachement de « ${label} » se termine avant de commencer.` };
+    if (start > periodLast) return { error: `La période de rattachement de « ${label} » ne peut pas commencer après le mois de paie.` };
+  }
+  return { value: { type: type as DsnBonusType, attachmentStart: start, attachmentEnd: end } };
+}
 
 export type MappedVariables = {
   overtime: OvertimeInput;
@@ -48,7 +77,7 @@ export type MappedVariables = {
  * absence de rattachement sont affectées à l'unique arrêt indemnisable du mois,
  * et refusées s'il y en a plusieurs.
  */
-export function mapPayrollVariables(variables: readonly StoredVariable[], absences: readonly AbsenceInput[]): MappedVariables {
+export function mapPayrollVariables(variables: readonly StoredVariable[], absences: readonly AbsenceInput[], periodLast?: IsoDay): MappedVariables {
   const out: MappedVariables = {
     overtime: {},
     complementaryHours: {},
@@ -80,7 +109,15 @@ export function mapPayrollVariables(variables: readonly StoredVariable[], absenc
       case "COMPLEMENTARY_TENTH": out.complementaryHours.hoursWithinTenth = add(out.complementaryHours.hoursWithinTenth, amount); break;
       case "COMPLEMENTARY_BEYOND": out.complementaryHours.hoursBeyondTenth = add(out.complementaryHours.hoursBeyondTenth, amount); break;
       case "BONUS": out.bonuses.push({ code, label: definition.label, amount }); break;
-      case "BONUS_ANNUAL": out.bonuses.push({ code, label: definition.label, amount, excludedFromPaidLeaveBase: true }); break;
+      case "BONUS_ANNUAL": {
+        if (amount === 0) break;
+        // Sans mois de paie connu (aperçus), la nature DSN n'est pas encore exigée.
+        if (!periodLast) { out.bonuses.push({ code, label: definition.label, amount, excludedFromPaidLeaveBase: true }); break; }
+        const declaration = readDsnBonusDeclaration(variable, definition.label, periodLast);
+        if ("error" in declaration) { out.errors.push(declaration.error); break; }
+        out.bonuses.push({ code, label: definition.label, amount, excludedFromPaidLeaveBase: true, dsn: declaration.value });
+        break;
+      }
       case "BENEFIT": out.benefitsInKind.push({ code: code as BenefitInKindInput["code"], label: definition.label, amount }); break;
       case "EXPENSE": out.expenses.push({ code, label: definition.label, amount }); break;
       case "PUBLIC_TRANSPORT": out.publicTransportCost += amount; break;

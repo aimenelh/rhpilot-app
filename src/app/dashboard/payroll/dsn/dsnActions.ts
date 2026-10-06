@@ -10,7 +10,7 @@ import { getPayrollMembership } from "@/lib/payrollAccess";
 import { userFacingError } from "@/lib/userFacingError";
 import { dsnOpsSiret, dsnPaymentIban, dsnPaymentBic } from "@/lib/payroll/dsn-payment-settings";
 import { assertDsnWorkAccidentRiskCode } from "@/lib/payroll/dsn-nomenclature";
-import { dsnFixedTermReason } from "@/lib/payroll/dsn-fixed-term";
+import { DSN_PREPARED_DIPLOMA_LEVELS, dsnFixedTermReason } from "@/lib/payroll/dsn-fixed-term";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
 
 export type DsnFormState = { error?: string; success?: string } | undefined;
@@ -180,6 +180,9 @@ export async function saveDsnEmployeeProfile(
     const contractNatureCode = exactCode(formData, "contractNatureCode", "La nature du contrat", 2);
     const publicPolicyCode = exactCode(formData, "publicPolicyCode", "Le dispositif de politique publique", 2);
     const fixedTermReasonCode = dsnFixedTermReason(contractNatureCode, publicPolicyCode, value(formData, "fixedTermReasonCode"));
+    const apprenticeship = ["64", "65"].includes(publicPolicyCode);
+    const preparedDiplomaLevel = apprenticeship ? value(formData, "preparedDiplomaLevel") : "";
+    if (apprenticeship && !DSN_PREPARED_DIPLOMA_LEVELS.some(([level]) => level === preparedDiplomaLevel)) throw new Error("Indiquez le niveau du diplôme préparé par l'apprenti : il est obligatoire dans la DSN.");
     const pcsEsecCode = code(formData, "pcsEsecCode", "Le code PCS-ESE", 6);
     const conventionalStatusCode = exactCode(formData, "conventionalStatusCode", "Le statut conventionnel", 2);
     const retirementStatusCode = exactCode(formData, "retirementStatusCode", "Le statut retraite complémentaire", 2);
@@ -214,7 +217,7 @@ export async function saveDsnEmployeeProfile(
            "retirementStatusCode", "workUnitCode", "referenceWorkQuota", "contractWorkQuota",
            "workModalityCode", "baseSchemeSupplementCode", "sicknessRegimeCode", "workLocationId", "oldAgeRegimeCode",
            "foreignWorkerCode", "employmentStatusCode", "multipleJobsCode", "multipleEmployersCode",
-           "workAccidentRegimeCode", "workAccidentRiskCode", "updatedAt")
+           "workAccidentRegimeCode", "workAccidentRiskCode", "preparedDiplomaLevel", "updatedAt")
         VALUES
           (${id}, ${membership.organizationId}, ${employee.id}, ${nirCiphertext}, ${birthDate}::date, ${birthPlace},
            ${birthDepartment}, ${birthCountryCode}, ${euClassificationCode}, ${addressLine}, ${postalCode}, ${city}, ${countryCode}, ${contractNumber},
@@ -222,7 +225,7 @@ export async function saveDsnEmployeeProfile(
            ${retirementStatusCode}, ${workUnitCode}, ${referenceWorkQuota}, ${contractWorkQuota},
            ${workModalityCode}, ${baseSchemeSupplementCode}, ${sicknessRegimeCode}, ${workLocationId}, ${oldAgeRegimeCode},
            ${foreignWorkerCode}, ${employmentStatusCode}, ${multipleJobsCode}, ${multipleEmployersCode},
-           ${workAccidentRegimeCode}, ${workAccidentRiskCode}, CURRENT_TIMESTAMP)
+           ${workAccidentRegimeCode}, ${workAccidentRiskCode}, ${preparedDiplomaLevel || null}, CURRENT_TIMESTAMP)
         ON CONFLICT ("organizationId", "employeeId") DO UPDATE SET
           "nirCiphertext" = EXCLUDED."nirCiphertext",
           "birthDate" = EXCLUDED."birthDate",
@@ -255,6 +258,7 @@ export async function saveDsnEmployeeProfile(
           "multipleEmployersCode" = EXCLUDED."multipleEmployersCode",
           "workAccidentRegimeCode" = EXCLUDED."workAccidentRegimeCode",
           "workAccidentRiskCode" = EXCLUDED."workAccidentRiskCode",
+          "preparedDiplomaLevel" = EXCLUDED."preparedDiplomaLevel",
           "updatedAt" = CURRENT_TIMESTAMP
       `;
       await tx.auditLog.create({
