@@ -19,7 +19,7 @@ import { calculateAgeAtDate, resolveEmployeeAlternanceProfile } from "./alternan
 import { assertPayrollOutputConsistency } from "./payroll-output-consistency";
 import { BULLETIN_ENGINE_VERSION, computePayslip } from "./bulletin/compute";
 import { daysBetweenInclusive, monthBounds, toIsoDay } from "./bulletin/calendar";
-import { terminationDsnIssue, type TerminationDsnData } from "./dsn-termination";
+import { terminationMonthlyIssue, type TerminationDsnData } from "./dsn-termination";
 import { mapAbsences, mapPayrollVariables, parsePrevoyanceRates, resolveWeeklySchedule } from "./bulletin/inputs";
 import { effectiveAbsenceEnd, freezeWorkStoppages } from "./work-stoppage";
 import { assertCurrentPayrollAbsences, assertPayrollPeriodStatus, lockPayrollAbsenceChanges } from "./period-absence-safety";
@@ -59,7 +59,8 @@ function terminationDsn(stored: StoredTermination, dates: { hireDate: string; co
     lastWorkedPaidDate: raw.lastWorkedPaidDate, noticeTypeCode: (raw.noticeTypeCode ?? "") as TerminationDsnData["noticeTypeCode"],
     noticeStartDate: raw.noticeStartDate, noticeEndDate: raw.noticeEndDate, transactionPending: raw.transactionPending, legalSeveranceAmount: raw.legalSeveranceAmount,
   };
-  const issue = terminationDsnIssue(data, { reason: stored.reason, contractStart: dates.hireDate, contractEnd: dates.contractEndDate, noticeCompensation: stored.noticeCompensation, severanceAmount: stored.severanceAmount });
+  void dates;
+  const issue = terminationMonthlyIssue(data, { reason: stored.reason, severanceAmount: stored.severanceAmount });
   if (issue) throw new Error(`Calcul bloqué pour ${displayName} : complétez la partie déclarative de la fiche de sortie. ${issue}`);
   return data;
 }

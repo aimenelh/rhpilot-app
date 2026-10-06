@@ -62,7 +62,9 @@ describe("fin de contrat en DSN mensuelle", () => {
 
   it("déclare une démission avec préavis effectué et l'indemnité compensatrice de congés", () => {
     const content = buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, false, undefined, false, resignation));
-    expect(content).toContain("S21.G00.62.001,'20012026'\r\nS21.G00.62.002,'059'\r\nS21.G00.62.003,'20122025'\r\nS21.G00.62.008,'02'\r\nS21.G00.63.001,'01'\r\nS21.G00.63.002,'21122025'\r\nS21.G00.63.003,'20012026'");
+    expect(content).toContain("S21.G00.62.001,'20012026'\r\nS21.G00.62.002,'059'\r\n");
+    // Préavis et dates de rupture relèvent du signalement FCTU, interdits en mensuelle.
+    expect(content).not.toMatch(/S21\.G00\.63\.|S21\.G00\.62\.00[3-8]/);
     expect(content).toContain("S21.G00.52.001,'020'\r\nS21.G00.52.002,'800.00'");
   });
 
@@ -80,8 +82,7 @@ describe("fin de contrat en DSN mensuelle", () => {
     expect(mapped.aggregates.some((item) => item.code === "719" && item.baseQualifier === "920")).toBe(true);
     expect(mapped.individual.find((item) => item.code === "093")!.contributionAmount).toBeGreaterThan(0);
     const content = buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, false, undefined, false, conventional));
-    expect(content).toContain("S21.G00.62.002,'043'\r\nS21.G00.62.004,'10122025'");
-    expect(content).toContain("S21.G00.63.001,'90'");
+    expect(content).toContain("S21.G00.62.002,'043'");
     expect(content).toContain("S21.G00.52.001,'001'\r\nS21.G00.52.002,'4000.00'");
   });
 

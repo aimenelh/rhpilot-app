@@ -400,19 +400,10 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
     if (end) {
       if (!employee.contract.endDate || dsnDate(employee.contract.endDate) !== dsnDate(end.endDate)) throw new Error("DSN bloquée : la fin de contrat déclarée ne correspond pas à la date de fin du contrat.");
       if (end.endDate < periodStart || end.endDate > periodEnd) throw new Error("DSN bloquée : la fin de contrat ne tombe pas dans le mois déclaré.");
+      // DSN mensuelle : seuls la date et le motif sont admis (Dsn-Val CST-02/CST-04). Les dates de la
+      // rupture, la transaction et le préavis relèvent du signalement de fin de contrat (FCTU).
       add(lines, "S21.G00.62.001", dsnDate(end.endDate));
       add(lines, "S21.G00.62.002", assertDigits(end.reasonCode, 3, "le motif de fin de contrat"));
-      add(lines, "S21.G00.62.003", end.notificationDate ? dsnDate(end.notificationDate) : null);
-      add(lines, "S21.G00.62.004", end.conventionSignatureDate ? dsnDate(end.conventionSignatureDate) : null);
-      add(lines, "S21.G00.62.005", end.dismissalProcedureDate ? dsnDate(end.dismissalProcedureDate) : null);
-      add(lines, "S21.G00.62.006", end.lastWorkedPaidDate ? dsnDate(end.lastWorkedPaidDate) : null);
-      add(lines, "S21.G00.62.008", end.transactionPending ? "01" : "02");
-      if (!["01", "02", "03", "60", "90"].includes(end.notice.typeCode)) throw new Error("DSN bloquée : la situation du préavis est invalide.");
-      const datedNotice = end.notice.typeCode !== "90";
-      if (datedNotice !== Boolean(end.notice.startDate && end.notice.endDate)) throw new Error("DSN bloquée : les dates du préavis sont incomplètes ou interdites pour ce type.");
-      add(lines, "S21.G00.63.001", end.notice.typeCode);
-      add(lines, "S21.G00.63.002", datedNotice ? dsnDate(end.notice.startDate!) : null);
-      add(lines, "S21.G00.63.003", datedNotice ? dsnDate(end.notice.endDate!) : null);
     }
 
     for (const suspension of employee.contract.suspensions ?? []) {

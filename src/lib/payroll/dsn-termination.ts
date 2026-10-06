@@ -121,6 +121,22 @@ export function terminationDsnIssue(data: TerminationDsnData, context: {
   return null;
 }
 
+/**
+ * Contrôle minimal exigé au calcul et pour la DSN mensuelle : motif cohérent et ventilation
+ * de l'indemnité. Les dates et le préavis, contrôlés à la saisie, servent au signalement FCTU.
+ */
+export function terminationMonthlyIssue(data: Pick<TerminationDsnData, "endReasonCode" | "legalSeveranceAmount">, context: { reason: TerminationReason; severanceAmount: number | null }): string | null {
+  const definition = DSN_END_REASONS.find((item) => item.code === data.endReasonCode);
+  if (!definition) return "Choisissez le motif de fin de contrat à déclarer en DSN.";
+  if (!definition.reasons.includes(context.reason)) return `Le motif DSN « ${definition.label} » ne correspond pas au type de sortie choisi.`;
+  const severance = context.severanceAmount ?? 0;
+  if (severance > 0) {
+    if (!SEVERANCE_REASONS.has(data.endReasonCode)) return "Une indemnité de rupture n'est déclarable que pour un licenciement (hors faute grave ou lourde), une rupture conventionnelle ou un départ en retraite.";
+    if (data.endReasonCode !== "043" && (data.legalSeveranceAmount === null || data.legalSeveranceAmount < 0 || data.legalSeveranceAmount > severance + 0.005)) return "Indiquez la part légale de l'indemnité, sans dépasser l'indemnité versée.";
+  }
+  return null;
+}
+
 type IndemnityLine = { code: string; amount?: number };
 
 /**

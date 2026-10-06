@@ -53,71 +53,125 @@ export default async function DsnPreparationPage() {
   const settings = settingsRows[0];
   const configuredIds = new Set(dsnStatusRows.map((row) => row.employeeId));
   const configuredCount = employees.filter((employee) => configuredIds.has(employee.id)).length;
-  const organizationReady = Boolean(settings?.contactName && settings.contactEmail && settings.contactPhone && settings.declaredContactType && settings.enterpriseApenCode && settings.urssafSiret && settings.retirementSiret && settings.paymentAccountConfigured && settings.paymentBic && settings.sepaMandatesConfirmed);
+  const missingOrganization = [
+    [settings?.contactName && settings.contactEmail && settings.contactPhone && settings.declaredContactType, "contact DSN"],
+    [settings?.enterpriseApenCode, "code APEN de l'entreprise"],
+    [settings?.urssafSiret, "SIRET de l'Urssaf"],
+    [settings?.retirementSiret, "SIRET de la caisse de retraite"],
+    [settings?.paymentAccountConfigured && settings.paymentBic, "compte de prélèvement"],
+    [settings?.sepaMandatesConfirmed, "confirmation des mandats SEPA"],
+  ].filter(([ok]) => !ok).map(([, label]) => label as string);
+  const organizationReady = missingOrganization.length === 0;
+  const sortedEmployees = [...employees].sort((left, right) => Number(configuredIds.has(left.id)) - Number(configuredIds.has(right.id)));
+  const missingProfiles = employees.length - configuredCount;
+  const status = (ok: boolean, text: string) => <p className={`mt-1 text-sm ${ok ? "text-ink-soft" : "text-accent-amber"}`}>{text}</p>;
 
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-5xl">
       <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-        <div><p className="text-xs font-semibold uppercase tracking-wider text-brand-primary">Paie · DSN</p><h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink">Préparer la DSN P26V01</h1><p className="mt-1 max-w-3xl text-sm leading-6 text-ink-soft">La DSN est construite à partir des calculs de paie verrouillés. Les données déclaratives manquantes bloquent l'export au lieu d'être inventées.</p></div>
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">Paie</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink">DSN du mois</h1>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-soft">RH Pilot construit la DSN à partir des paies clôturées. Une donnée manquante bloque le fichier : rien n&apos;est deviné.</p>
+        </div>
         <Link href="/dashboard/payroll" className="text-sm font-medium text-brand-primary hover:underline">Retour à la paie</Link>
       </div>
 
-      <div className="mt-6 rounded-xl border border-accent-amber/30 bg-accent-amber/5 p-5"><p className="text-sm font-semibold text-ink">Mode pré-contrôle uniquement</p><p className="mt-1 text-sm leading-6 text-ink-soft">RH Pilot génère un fichier P26V01 en mode test. Le dépôt réel reste bloqué tant que les événements, régularisations et retours des organismes n’ont pas été validés. Un pré-contrôle accepté par Dsn-Val ne vaut pas acceptation métier.</p></div>
-
-      <div className="mt-6 grid gap-4 sm:grid-cols-3">
-        <div className="rounded-xl border border-surface-border bg-white p-5"><p className="text-xs text-ink-faint">Émetteur / déclaré</p><p className="mt-2 text-lg font-semibold text-ink">{organizationReady ? "Configuré" : "À compléter"}</p></div>
-        <div className="rounded-xl border border-surface-border bg-white p-5"><p className="text-xs text-ink-faint">Profils salariés DSN</p><p className="mt-2 text-lg font-semibold text-ink">{configuredCount}/{employees.length}</p></div>
-        <div className="rounded-xl border border-surface-border bg-white p-5"><p className="text-xs text-ink-faint">Périodes 2026 clôturées</p><p className="mt-2 text-lg font-semibold text-ink">{lockedPeriods.length}</p></div>
+      <div className="mt-6 border-l-2 border-ink pl-4">
+        <p className="text-sm font-semibold text-ink">Phase pilote : vous déposez des DSN d&apos;essai</p>
+        <p className="mt-1 max-w-3xl text-sm leading-6 text-ink-soft">Votre déclaration réelle continue de partir de votre outil actuel. Le fichier d&apos;essai de RH Pilot passe tous les contrôles officiels de net-entreprises sans être transmis aux organismes : c&apos;est ce qui permet de comparer les deux, mois après mois, avant de basculer.</p>
       </div>
 
-      <section className="mt-7 rounded-xl border border-surface-border bg-white p-5"><h2 className="font-semibold text-ink">Émetteur et contact chez le déclaré</h2><p className="mt-1 text-xs leading-5 text-ink-faint">Ces données alimentent les blocs S10 et S20.G00.07 obligatoires de la DSN mensuelle.</p><DsnOrganizationForm initial={{ contactName: settings?.contactName ?? "", contactEmail: settings?.contactEmail ?? "", contactPhone: settings?.contactPhone ?? "", declaredContactType: settings?.declaredContactType ?? "", enterpriseApenCode: settings?.enterpriseApenCode ?? "", urssafSiret: settings?.urssafSiret ?? "", retirementSiret: settings?.retirementSiret ?? "", paymentBic: settings?.paymentBic ?? "", paymentAccountConfigured: settings?.paymentAccountConfigured ?? false, subrogationBic: settings?.subrogationBic ?? "", subrogationAccountConfigured: settings?.subrogationAccountConfigured ?? false, sepaMandatesConfirmed: settings?.sepaMandatesConfirmed ?? false }} /></section>
+      <section id="entreprise" className="mt-8 scroll-mt-24 border-t border-surface-border pt-6">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+          <h2 className="text-lg font-semibold text-ink">L&apos;entreprise</h2>
+          {status(organizationReady, organizationReady ? "Informations complètes" : `À compléter : ${missingOrganization.join(", ")}`)}
+        </div>
+        <p className="mt-1 text-xs leading-5 text-ink-faint">Contact, organismes et comptes de prélèvement, repris des notifications d&apos;affiliation. Ils alimentent les blocs émetteur et paiement de chaque DSN.</p>
+        <details open={!organizationReady} className="group mt-3">
+          <summary className="cursor-pointer text-sm font-medium text-brand-primary hover:underline">{organizationReady ? "Modifier les informations" : "Renseigner les informations"}</summary>
+          <DsnOrganizationForm initial={{ contactName: settings?.contactName ?? "", contactEmail: settings?.contactEmail ?? "", contactPhone: settings?.contactPhone ?? "", declaredContactType: settings?.declaredContactType ?? "", enterpriseApenCode: settings?.enterpriseApenCode ?? "", urssafSiret: settings?.urssafSiret ?? "", retirementSiret: settings?.retirementSiret ?? "", paymentBic: settings?.paymentBic ?? "", paymentAccountConfigured: settings?.paymentAccountConfigured ?? false, subrogationBic: settings?.subrogationBic ?? "", subrogationAccountConfigured: settings?.subrogationAccountConfigured ?? false, sepaMandatesConfirmed: settings?.sepaMandatesConfirmed ?? false }} />
+        </details>
+      </section>
 
-      <section className="mt-7 rounded-xl border border-surface-border bg-white">
-        <div className="border-b border-surface-border px-5 py-4"><h2 className="font-semibold text-ink">Données déclaratives des salariés</h2><p className="mt-1 text-xs leading-5 text-ink-faint">NIR chiffré, identité, adresse, affiliation et codes NEODeS du contrat. Aucune de ces données ne modifie le calcul de paie.</p></div>
-        <div className="divide-y divide-surface-border">
-          {employees.length === 0 ? <p className="px-5 py-8 text-sm text-ink-soft">Aucun salarié actif.</p> : null}
-          {employees.map((employee) => { const configured = configuredIds.has(employee.id); return <div key={employee.id} className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"><div><p className="font-medium text-ink">{employee.firstName} {employee.lastName}</p><p className="mt-0.5 text-xs text-ink-faint">{employee.position || "Poste non renseigné"} · {employee.contractType || "Contrat non renseigné"}</p></div><div className="flex items-center gap-3"><span className={`rounded-full px-3 py-1 text-xs font-semibold ${configured ? "bg-surface-subtle text-ink-soft" : "bg-accent-amber/10 text-accent-amber"}`}>{configured ? "Profil présent" : "À configurer"}</span><Link href={`/dashboard/payroll/dsn/employees/${employee.id}`} className="rounded-lg border border-surface-border px-3 py-2 text-sm font-medium text-ink hover:bg-surface-subtle">{configured ? "Vérifier" : "Configurer"}</Link></div></div>; })}
+      <section id="salaries" className="mt-8 scroll-mt-24 border-t border-surface-border pt-6">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
+          <h2 className="text-lg font-semibold text-ink">Les salariés</h2>
+          {status(missingProfiles === 0 && employees.length > 0, employees.length === 0 ? "Aucun salarié actif" : missingProfiles === 0 ? `${configuredCount} profils DSN enregistrés` : `${missingProfiles} profil${missingProfiles > 1 ? "s" : ""} DSN à créer sur ${employees.length}`)}
+        </div>
+        <p className="mt-1 text-xs leading-5 text-ink-faint">NIR chiffré, identité, adresse et codes du contrat. Ces données ne modifient pas le calcul de paie.</p>
+        <div className="mt-3 divide-y divide-surface-border rounded-xl border border-surface-border bg-white">
+          {sortedEmployees.map((employee) => { const configured = configuredIds.has(employee.id); return (
+            <div key={employee.id} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+              <div><p className="font-medium text-ink">{employee.firstName} {employee.lastName}</p><p className="mt-0.5 text-xs text-ink-faint">{employee.position || "Poste non renseigné"} · {employee.contractType || "Contrat non renseigné"}</p></div>
+              <div className="flex items-center gap-3">
+                <span className={`text-xs ${configured ? "text-ink-faint" : "font-semibold text-accent-amber"}`}>{configured ? "Profil enregistré" : "Profil à créer"}</span>
+                <Link href={`/dashboard/payroll/dsn/employees/${employee.id}`} className="rounded-lg border border-surface-border px-3 py-1.5 text-sm font-medium text-ink hover:bg-surface-subtle">{configured ? "Vérifier" : "Créer"}</Link>
+              </div>
+            </div>
+          ); })}
         </div>
       </section>
 
-      <section className="mt-7 rounded-xl border border-surface-border bg-white">
-        <div className="border-b border-surface-border px-5 py-4"><h2 className="font-semibold text-ink">Signalements d'arrêt et de reprise anticipée</h2><p className="mt-1 text-xs leading-5 text-ink-faint">Préparation depuis les arrêts validés, sans attendre la clôture mensuelle. Les prolongations continues conservent le DJT initial. La reprise à la date prévue est récapitulée dans la DSN mensuelle. Aucun fichier n'est transmis par RH Pilot.</p></div>
-        <div className="divide-y divide-surface-border">
-          {stoppages.length === 0 && <p className="px-5 py-8 text-sm text-ink-soft">Aucun arrêt validé disponible.</p>}
-          {stoppages.map((absence) => <div key={absence.id} className="flex flex-col gap-3 px-5 py-4 md:flex-row md:items-center md:justify-between">
-            <div><p className="font-medium text-ink">{absence.employee.firstName} {absence.employee.lastName}</p><p className="mt-1 text-xs text-ink-faint">{{ SICK_LEAVE: "Maladie", WORK_ACCIDENT: "Accident du travail", MATERNITY: "Maternité", PATERNITY: "Paternité" }[absence.type as "SICK_LEAVE" | "WORK_ACCIDENT" | "MATERNITY" | "PATERNITY"]} · Du {absence.startDate.toLocaleDateString("fr-FR", { timeZone: "UTC" })} au {absence.endDate.toLocaleDateString("fr-FR", { timeZone: "UTC" })}</p>{!absence.lastWorkedDate && <p className="mt-1 text-xs text-accent-amber">Dernier jour travaillé à renseigner dans l'absence.</p>}</div>
+      <section id="mois" className="mt-8 scroll-mt-24 border-t border-surface-border pt-6">
+        <h2 className="text-lg font-semibold text-ink">Les mois clôturés</h2>
+        <p className="mt-1 text-xs leading-5 text-ink-faint">Le fichier reprend les montants figés à la clôture, pas les données actuelles du salarié. S&apos;il est bloqué, le message indique quoi corriger et où.</p>
+        <div className="mt-3 divide-y divide-surface-border rounded-xl border border-surface-border bg-white">
+          {lockedPeriods.length === 0 ? <p className="px-4 py-6 text-sm text-ink-soft">Aucun mois de 2026 n&apos;est encore clôturé. Calculez, validez puis clôturez un mois dans la paie pour préparer sa DSN.</p> : null}
+          {lockedPeriods.map((period) => {
+            const versions = archives.filter((archive) => archive.payrollPeriodId === period.id);
+            return (
+              <div key={period.id} className="flex flex-col gap-3 px-4 py-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="font-medium text-ink">{MONTHS[period.month - 1]} {period.year}</p>
+                  <p className="mt-0.5 text-xs text-ink-faint">Paiement le {period.paymentDate ? period.paymentDate.toLocaleDateString("fr-FR", { timeZone: "UTC" }) : "date non renseignée"}{versions.length > 0 ? ` · ${versions.length} fichier${versions.length > 1 ? "s" : ""} généré${versions.length > 1 ? "s" : ""}, dernier le ${versions[0].createdAt.toLocaleDateString("fr-FR", { timeZone: "Europe/Paris" })}` : ""}</p>
+                </div>
+                <DsnExportButton periodId={period.id} />
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section id="depot" className="mt-8 scroll-mt-24 border-t border-surface-border pt-6">
+        <h2 className="text-lg font-semibold text-ink">Le dépôt d&apos;essai sur net-entreprises</h2>
+        <ol className="mt-3 max-w-3xl list-decimal space-y-2 pl-5 text-sm leading-6 text-ink-soft marker:text-ink-faint">
+          <li>Connectez-vous à net-entreprises.fr avec le compte qui sert déjà aux déclarations de l&apos;entreprise.</li>
+          <li>Dans votre espace DSN, choisissez le dépôt d&apos;un fichier et sélectionnez le fichier téléchargé ici, sans l&apos;ouvrir ni le modifier.</li>
+          <li>Le fichier est marqué « essai » : il est contrôlé comme une vraie déclaration, mais n&apos;est transmis à aucun organisme. Votre DSN réelle reste à déposer comme d&apos;habitude.</li>
+          <li>Consultez le bilan du dépôt dans votre tableau de bord DSN. S&apos;il signale une anomalie, transmettez-le à RH Pilot avec le mois concerné.</li>
+          <li>Comparez enfin les montants avec la DSN produite par votre outil actuel pour le même mois : bruts, cotisations par organisme et prélèvement à la source.</li>
+        </ol>
+      </section>
+
+      <section id="signalements" className="mt-8 scroll-mt-24 border-t border-surface-border pt-6">
+        <h2 className="text-lg font-semibold text-ink">Signalements d&apos;arrêt et de reprise anticipée</h2>
+        <p className="mt-1 text-xs leading-5 text-ink-faint">À préparer dès qu&apos;un arrêt est validé, sans attendre la clôture du mois. Une reprise à la date prévue se déclare dans la DSN mensuelle.</p>
+        <div className="mt-3 divide-y divide-surface-border rounded-xl border border-surface-border bg-white">
+          {stoppages.length === 0 && <p className="px-4 py-6 text-sm text-ink-soft">Aucun arrêt validé.</p>}
+          {stoppages.map((absence) => <div key={absence.id} className="flex flex-col gap-3 px-4 py-4 md:flex-row md:items-center md:justify-between">
+            <div><p className="font-medium text-ink">{absence.employee.firstName} {absence.employee.lastName}</p><p className="mt-1 text-xs text-ink-faint">{{ SICK_LEAVE: "Maladie", WORK_ACCIDENT: "Accident du travail", MATERNITY: "Maternité", PATERNITY: "Paternité" }[absence.type as "SICK_LEAVE" | "WORK_ACCIDENT" | "MATERNITY" | "PATERNITY"]} · du {absence.startDate.toLocaleDateString("fr-FR", { timeZone: "UTC" })} au {absence.endDate.toLocaleDateString("fr-FR", { timeZone: "UTC" })}</p>{!absence.lastWorkedDate && <p className="mt-1 text-xs text-accent-amber">Dernier jour travaillé à renseigner dans l&apos;absence.</p>}</div>
             <DsnWorkEventButton absenceId={absence.id} anticipatedRecovery={Boolean(absence.returnDate && absence.returnDate <= absence.endDate && absence.returnDate <= new Date())} />
           </div>)}
         </div>
       </section>
 
-      <section className="mt-7 rounded-xl border border-surface-border bg-white">
-        <div className="border-b border-surface-border px-5 py-4"><h2 className="font-semibold text-ink">Exports depuis les paies verrouillées</h2><p className="mt-1 text-xs leading-5 text-ink-faint">Le taux PAS et les montants proviennent du snapshot de la période clôturée, pas des données vivantes du salarié.</p></div>
-        <div className="divide-y divide-surface-border">
-          {lockedPeriods.length === 0 ? <p className="px-5 py-8 text-sm text-ink-soft">Aucune période 2026 clôturée n'est disponible.</p> : null}
-          {lockedPeriods.map((period) => <div key={period.id} className="flex flex-col gap-4 px-5 py-4 md:flex-row md:items-center md:justify-between"><div><p className="font-medium text-ink">{MONTHS[period.month - 1]} {period.year}</p><p className="mt-0.5 text-xs text-ink-faint">Date de paiement : {period.paymentDate ? period.paymentDate.toLocaleDateString("fr-FR") : "non renseignée"}</p></div><DsnExportButton periodId={period.id} /></div>)}
-        </div>
-      </section>
-      <section className="mt-7 rounded-xl border border-surface-border bg-white p-5">
-        <h2 className="font-semibold text-ink">Historique des signalements de pré-contrôle</h2><p className="mt-1 text-xs leading-5 text-ink-faint">Les versions sont chiffrées et immuables. Le numéro d'ordre continue d'un mois à l'autre. Une nouvelle version de test ne remplace pas un dépôt réel accepté par un organisme.</p>
-        <div className="mt-4 divide-y divide-surface-border">
-          {workEvents.length === 0 && <p className="py-4 text-sm text-ink-soft">Aucun signalement archivé.</p>}
-          {workEvents.map((event) => <div key={event.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div><p className="text-sm font-medium text-ink">{event.nature === "04" ? "Arrêt de travail" : "Reprise anticipée"} · Version {event.version} · Ordre {event.declarationOrder.toString()}</p><p className="mt-1 text-xs text-ink-faint">{event.createdAt.toLocaleString("fr-FR", { timeZone: "Europe/Paris" })} · Pré-contrôle</p><p className="mt-1 break-all font-mono text-xs text-ink-faint">SHA-256 : {event.sha256}</p>{Array.isArray(event.warnings) && event.warnings.filter((warning): warning is string => typeof warning === "string").map((warning) => <p key={warning} className="mt-1 max-w-3xl text-xs leading-5 text-ink-soft">{warning}</p>)}</div>
-            <a href={`/api/payroll/absences/${event.absenceId}/dsn?mode=test&archiveId=${event.id}`} className="shrink-0 rounded-lg border border-surface-border px-3 py-2 text-sm font-medium text-ink">Télécharger cette version</a>
-          </div>)}
-        </div>
-      </section>
-      <section className="mt-7 rounded-xl border border-surface-border bg-white p-5">
-        <h2 className="font-semibold text-ink">Historique des fichiers de pré-contrôle</h2>
-        <p className="mt-1 text-xs leading-5 text-ink-faint">Chaque fichier est conservé chiffré avec son empreinte. Un téléchargement reprend les octets de la version archivée. Une correction nécessite une nouvelle génération. Aucun fichier de cet historique n’a été déposé par RH Pilot.</p>
-        <div className="mt-4 divide-y divide-surface-border">
-          {archives.length === 0 && <p className="py-4 text-sm text-ink-soft">Aucun fichier archivé.</p>}
-          {archives.map((archive) => <div key={archive.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <div><p className="text-sm font-medium text-ink">{archive.fileName} · {archive.employeeCount} salarié(s)</p><p className="mt-1 text-xs text-ink-faint">{archive.createdAt.toLocaleString("fr-FR", { timeZone: "Europe/Paris" })} · Version {archive.version} · Pré-contrôle</p><p className="mt-1 break-all font-mono text-xs text-ink-faint">SHA-256 : {archive.sha256}</p></div>
-            <a href={`/api/payroll/periods/${archive.payrollPeriodId}/dsn?mode=test&archiveId=${archive.id}`} className="shrink-0 rounded-lg border border-surface-border px-3 py-2 text-sm font-medium text-ink">Télécharger cette version</a>
-          </div>)}
-        </div>
+      <section id="historique" className="mt-8 scroll-mt-24 border-t border-surface-border pt-6 pb-10">
+        <details>
+          <summary className="cursor-pointer text-lg font-semibold text-ink">Historique des fichiers</summary>
+          <p className="mt-2 text-xs leading-5 text-ink-faint">Chaque fichier est conservé chiffré avec son empreinte ; un téléchargement restitue exactement la version archivée. Aucun de ces fichiers n&apos;a été déposé par RH Pilot.</p>
+          <div className="mt-4 divide-y divide-surface-border">
+            {archives.length === 0 && workEvents.length === 0 && <p className="py-4 text-sm text-ink-soft">Aucun fichier archivé.</p>}
+            {archives.map((archive) => <div key={archive.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div><p className="text-sm font-medium text-ink">{archive.fileName} · {archive.employeeCount} salarié(s)</p><p className="mt-1 text-xs text-ink-faint">{archive.createdAt.toLocaleString("fr-FR", { timeZone: "Europe/Paris" })} · version {archive.version} · essai</p><p className="mt-1 break-all font-mono text-xs text-ink-faint">SHA-256 : {archive.sha256}</p></div>
+              <a href={`/api/payroll/periods/${archive.payrollPeriodId}/dsn?mode=test&archiveId=${archive.id}`} className="shrink-0 rounded-lg border border-surface-border px-3 py-2 text-sm font-medium text-ink">Télécharger</a>
+            </div>)}
+            {workEvents.map((event) => <div key={event.id} className="flex flex-col gap-3 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div><p className="text-sm font-medium text-ink">{event.nature === "04" ? "Signalement d'arrêt" : "Signalement de reprise anticipée"} · version {event.version} · ordre {event.declarationOrder.toString()}</p><p className="mt-1 text-xs text-ink-faint">{event.createdAt.toLocaleString("fr-FR", { timeZone: "Europe/Paris" })} · essai</p><p className="mt-1 break-all font-mono text-xs text-ink-faint">SHA-256 : {event.sha256}</p>{Array.isArray(event.warnings) && event.warnings.filter((warning): warning is string => typeof warning === "string").map((warning) => <p key={warning} className="mt-1 max-w-3xl text-xs leading-5 text-ink-soft">{warning}</p>)}</div>
+              <a href={`/api/payroll/absences/${event.absenceId}/dsn?mode=test&archiveId=${event.id}`} className="shrink-0 rounded-lg border border-surface-border px-3 py-2 text-sm font-medium text-ink">Télécharger</a>
+            </div>)}
+          </div>
+        </details>
       </section>
     </div>
   );

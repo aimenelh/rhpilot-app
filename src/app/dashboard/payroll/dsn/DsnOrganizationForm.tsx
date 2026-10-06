@@ -39,7 +39,7 @@ export default function DsnOrganizationForm({ initial }: { initial: { contactNam
         </div>
       </div>
       <label className="md:col-span-2 lg:col-span-3 flex items-start gap-2 text-sm text-ink-soft"><input type="checkbox" name="sepaMandatesConfirmed" value="1" defaultChecked={initial.sepaMandatesConfirmed} className="mt-1" />Les mandats SEPA pour ce compte sont enregistrés auprès de l'Urssaf, de la caisse de retraite et de la DGFiP. Le fichier de test ne déclenche aucun prélèvement.</label>
-      <div className="md:col-span-2 lg:col-span-3 flex flex-wrap items-center gap-3"><SubmitButton /><p className="text-xs text-ink-faint">Le mode réel reste désactivé : l'export est réservé au pré-contrôle.</p></div>
+      <div className="md:col-span-2 lg:col-span-3 flex flex-wrap items-center gap-3"><SubmitButton /><p className="text-xs text-ink-faint">Pendant la phase pilote, RH Pilot produit uniquement des fichiers d'essai.</p></div>
       {state?.error ? <p className="md:col-span-2 lg:col-span-3 rounded-lg bg-accent-amber/10 px-3 py-2 text-sm text-accent-amber" role="alert">{state.error}</p> : null}
       {state?.success ? <p className="md:col-span-2 lg:col-span-3 rounded-lg bg-surface-subtle px-3 py-2 text-sm text-ink-soft" role="status">{state.success}</p> : null}
     </form>
