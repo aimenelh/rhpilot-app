@@ -17,7 +17,6 @@ export default function WhyPage() {
       <section className={w.hero}>
         <div className={`${s.wrap} ${w.heroGrid}`}>
           <div className={w.heroCopy}>
-            <p className={s.eyebrow}>Pourquoi RH Pilot</p>
             <h1 className={w.heroTitle}>
               Tout commence parfois par un <em>« je pensais que c’était toi ».</em>
             </h1>
@@ -35,11 +34,6 @@ export default function WhyPage() {
                 Comprendre le constat ↓
               </a>
             </div>
-            <p className={w.microcopy}>
-              La scène ci-contre reprend une situation banale : personne n’a
-              oublié volontairement. Chacun pensait simplement que quelqu’un
-              d’autre s’en occupait.
-            </p>
           </div>
 
           <WhyConversationScene />
@@ -76,7 +70,6 @@ export default function WhyPage() {
         <div className={s.wrap}>
           <div className={p.columns}>
             <div>
-              <p className={s.eyebrow}>Notre façon de construire</p>
               <h2 className={s.title}>Rendre la suite visible.</h2>
             </div>
             <div className={p.story}>
@@ -90,7 +83,6 @@ export default function WhyPage() {
 
           <div className={w.pillars}>
             <article className={w.pillar}>
-              <span className={w.pillarIndex}>Au lieu de chercher</span>
               <h3>Centraliser</h3>
               <p>
                 Réunir les informations, documents et échéances au même endroit
@@ -98,7 +90,6 @@ export default function WhyPage() {
               </p>
             </article>
             <article className={w.pillar}>
-              <span className={w.pillarIndex}>Au lieu de supposer</span>
               <h3>Clarifier</h3>
               <p>
                 Savoir qui doit intervenir et ce qui reste à organiser, sans
@@ -106,7 +97,6 @@ export default function WhyPage() {
               </p>
             </article>
             <article className={w.pillar}>
-              <span className={w.pillarIndex}>Au lieu d’oublier</span>
               <h3>Suivre</h3>
               <p>
                 Garder les prochaines actions visibles jusqu’à leur réalisation,

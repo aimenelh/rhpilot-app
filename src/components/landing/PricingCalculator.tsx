@@ -21,11 +21,7 @@ export function PricingCalculator() {
 
   return (
     <div className="rounded-2xl border border-surface-border bg-white p-6 sm:p-8">
-      <p className="text-xs font-semibold uppercase tracking-[0.15em] text-ink-faint">
-        Combien ça coûte, pour vous ?
-      </p>
-
-      <div className="mt-5 flex items-baseline justify-between gap-4">
+      <div className="flex items-baseline justify-between gap-4">
         <label htmlFor="headcount" className="text-sm text-ink-soft">
           Nombre de salariés
         </label>

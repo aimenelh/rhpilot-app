@@ -62,13 +62,13 @@ export default function EmployeeSpaceMarketingPage() {
       <section className={e.hero}>
         <div className={`${s.wrap} ${e.heroGrid}`}>
           <div className={e.heroCopy}>
-            <p className={s.eyebrow}>Espace salarié</p>
             <h1 className={e.heroTitle}>
               Les bulletins de vos salariés, <em>sur leur téléphone.</em>
             </h1>
             <p className={s.lead}>
               Chaque salarié a son espace : ses bulletins, ses congés, ses demandes d’absence et ses documents de fin de
-              contrat. Vous n’envoyez plus rien par e-mail, et il garde tout après son départ.
+              contrat. Vous n’envoyez plus rien par e-mail, et il garde tout après son départ. L’espace est inclus sans coût par
+              compte ; les bulletins y arrivent avec le module paie de l’offre Pro.
             </p>
             <div className={s.actions}>
               <Link href="/sign-up" className={s.primary}>
@@ -81,10 +81,6 @@ export default function EmployeeSpaceMarketingPage() {
                 Voir les tarifs
               </Link>
             </div>
-            <p className={e.heroNote}>
-              Inclus dans RH Pilot, sans coût par compte salarié. Les bulletins arrivent avec le module paie de l’offre
-              Pro ; les absences et les documents sont compris dans toutes les offres.
-            </p>
           </div>
           <div className={e.heroPhones} aria-hidden="true">
             <div className={e.phone}>
@@ -151,7 +147,6 @@ export default function EmployeeSpaceMarketingPage() {
                 sizes="(max-width: 960px) 95vw, 640px"
               />
             </div>
-            <figcaption className={e.caption}>Mise à disposition des bulletins, après la clôture du mois.</figcaption>
           </figure>
         </div>
       </section>

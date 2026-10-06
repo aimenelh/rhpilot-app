@@ -23,7 +23,6 @@ export function SoftwareOverview() {
       <main id="main-content">
         <section className={h.hero} aria-labelledby="software-title">
           <div className={h.inner}>
-            <p className={h.kicker}>Le logiciel</p>
             <h1 id="software-title" className={h.title}>
               Écrivez ce qui arrive.
               <em> RH Pilot prépare la suite.</em>
@@ -51,9 +50,6 @@ export function SoftwareOverview() {
                 </div>
               ))}
             </div>
-            <p className={h.sources}>
-              La paie en détail : <Link href="/gestion-paie">calculez un bulletin en direct</Link>. Les tarifs : <Link href="/tarifs">gratuit jusqu’à 3 salariés</Link>.
-            </p>
           </div>
         </section>
 
@@ -67,7 +63,7 @@ export function SoftwareOverview() {
               <InteractiveDemo />
             </div>
             <p className={h.sources}>
-              Vous préférez la vidéo ? <Link href="/tutoriels">Voir les tutoriels</Link>.
+              Les mêmes écrans existent en <Link href="/tutoriels">tutoriels vidéo</Link>, si vous préférez regarder.
             </p>
           </div>
         </section>

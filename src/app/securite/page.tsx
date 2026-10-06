@@ -69,7 +69,6 @@ export default function SecurityPage() {
   return (
     <MarketingPage>
       <PageIntro
-        eyebrow="Sécurité"
         title="La protection de vos données RH."
         intro="Vos données RH sont sensibles. Voici, concrètement, comment RH Pilot les traite, sans jargon, et sans rien promettre que nous ne fassions déjà."
       />
@@ -77,7 +76,6 @@ export default function SecurityPage() {
       <section className={p.section}>
         <div className={`${s.wrap} ${p.columns}`}>
           <div>
-            <p className={s.eyebrow}>Les fondamentaux</p>
             <h2 className={s.title}>Ce qui protège vos données.</h2>
           </div>
           <ul className={`${p.rows} ${sec.rows}`}>
@@ -96,7 +94,6 @@ export default function SecurityPage() {
 
       <section className={`${p.section} ${p.tint}`}>
         <div className={s.wrap}>
-          <p className={s.eyebrow}>Notre infrastructure</p>
           <h2 className={s.title}>Avec qui nous travaillons</h2>
           <p className={`${s.body} ${sec.narrow}`}>
             L’infrastructure de RH Pilot est détaillée dans notre{" "}
@@ -121,7 +118,6 @@ export default function SecurityPage() {
       <section className={p.section}>
         <div className={`${s.wrap} ${p.columns}`}>
           <div>
-            <p className={s.eyebrow}>Vos droits</p>
             <h2 className={s.title}>Vos droits sur vos données</h2>
           </div>
           <div className={p.story}>

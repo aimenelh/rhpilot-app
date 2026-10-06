@@ -89,7 +89,6 @@ export default function QuestionsPage() {
   return (
     <MarketingPage>
       <PageIntro
-        eyebrow="Questions fréquentes"
         title="Quelques réponses avant de commencer."
         intro="Le fonctionnement, les offres, vos données : les informations utiles pour prendre vos repères."
       />

@@ -61,7 +61,6 @@ export default function ResourcesPage() {
   return (
     <MarketingPage>
       <PageIntro
-        eyebrow="Les ressources"
         title="Des repères pour votre quotidien RH."
         intro="Prenez le temps de comprendre un sujet, puis retrouvez les sources et les points de vigilance dans chaque article."
         mascot="/illustrations/mascot/search.png"

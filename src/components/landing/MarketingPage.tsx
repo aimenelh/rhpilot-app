@@ -21,7 +21,8 @@ export function PageIntro({
   mascot,
   children,
 }: {
-  eyebrow: string;
+  /** Conservé pour compatibilité : le surtitre n’est plus affiché. */
+  eyebrow?: string;
   title: string;
   intro: string;
   mascot?: string;
@@ -31,7 +32,6 @@ export function PageIntro({
     <section className={p.intro}>
       <div className={`${s.wrap} ${mascot ? p.introGrid : ""}`}>
         <div>
-          <p className={s.eyebrow}>{eyebrow}</p>
           <h1 className={p.h1}>{title}</h1>
           <p className={s.lead}>{intro}</p>
           {children}

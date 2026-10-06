@@ -15,7 +15,6 @@ export default function DiagnosticPage() {
   return (
     <MarketingPage>
       <PageIntro
-        eyebrow="Le diagnostic RH"
         title="Faites le point sur votre organisation."
         intro="Six questions pour identifier vos points d’attention. Aucune inscription requise."
       />

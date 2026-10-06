@@ -16,7 +16,6 @@ export default function TarifsPage() {
   return (
     <MarketingPage>
       <PageIntro
-        eyebrow="Les tarifs"
         title="Un prix que vous pouvez calculer."
         intro="Commencez avec votre équipe actuelle. Votre abonnement suit ensuite votre effectif."
       />
@@ -24,7 +23,6 @@ export default function TarifsPage() {
         <div className={s.wrap}>
           <div className={p.pricing}>
             <article className={p.plan}>
-              <p className={p.label}>Pour commencer</p>
               <h2>Gratuit</h2>
               <p className={p.price}>0 €</p>
               <p>Jusqu’à 3 salariés</p>
@@ -39,7 +37,6 @@ export default function TarifsPage() {
               </Link>
             </article>
             <article className={`${p.plan} ${p.planPro}`}>
-              <p className={p.label}>Pour accompagner votre croissance</p>
               <h2>Pro</h2>
               <p className={p.price}>
                 15 € HT <span style={{ fontSize: 18 }}> / mois</span>
@@ -73,7 +70,6 @@ export default function TarifsPage() {
       <section className={p.section}>
         <div className={`${s.wrap} ${p.columns}`}>
           <div>
-            <p className={s.eyebrow}>Inclus, sans supplément</p>
             <h2 className={s.title}>Un espace pour chaque salarié.</h2>
           </div>
           <div>
@@ -93,7 +89,6 @@ export default function TarifsPage() {
       <section className={`${p.section} ${p.tint}`}>
         <div className={`${s.wrap} ${p.calculator}`}>
           <div>
-            <p className={s.eyebrow}>Votre budget</p>
             <h2 className={s.title}>Et pour votre équipe ?</h2>
             <p className={s.body}>
               Ajustez le nombre de salariés pour voir le montant mensuel. La

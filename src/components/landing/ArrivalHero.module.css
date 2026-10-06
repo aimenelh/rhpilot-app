@@ -1,6 +1,0 @@
-/* Le contenu du haut de page (phrase + fil) vit dans ThreadHero.module.css. */
-.hero {
-  background: #f7f5ef;
-  color: #20211f;
-  overflow: clip;
-}

@@ -1,12 +1,13 @@
 import { LandingMotion } from "./LandingMotion";
-import { ArrivalHero } from "./ArrivalHero";
+import { HeroReveal } from "./HeroReveal";
 import { BrandIntro } from "./BrandIntro";
 import Link from "next/link";
 import { MarketingHeader } from "./MarketingHeader";
 import { MarketingFooter } from "./MarketingFooter";
 import s from "./MarketingV2.module.css";
 import { ProductStory } from "./ProductStory";
-import { ModulesOverview } from "./ModulesOverview";
+import { CopilotCards } from "./CopilotCards";
+import { FounderChapter } from "./FounderChapter";
 import { ClosingCta } from "./ClosingCta";
 
 export function LandingPage() {
@@ -17,53 +18,10 @@ export function LandingPage() {
       <BrandIntro />
       <MarketingHeader />
       <main id="main-content">
-        <ArrivalHero />
-        <ModulesOverview />
+        <HeroReveal />
+        <CopilotCards />
+        <FounderChapter />
         <ProductStory />
-        <section className={s.section}>
-          <div className={`${s.wrap} ${s.storyGrid}`}>
-            <div>
-              <video
-                controls
-                playsInline
-                preload="none"
-                poster="/illustrations/illu-cta-final.png"
-                className={s.video}
-                style={{ objectFit: "contain" }}
-                aria-label="Spot RH Pilot : même lundi, pas la même semaine"
-              >
-                <source
-                  src="/marketing/rhpilot-spot-2.mp4"
-                  type="video/mp4"
-                />
-                Votre navigateur ne permet pas la lecture de cette vidéo.
-              </video>
-              <p className={s.note}>
-                RH Pilot · Même lundi. Pas la même semaine.
-              </p>
-            </div>
-            <div>
-              <p className={s.eyebrow}>À l’origine de RH Pilot</p>
-              <h2 className={s.title}>
-                Le terrain comme
-                <br />
-                point de départ.
-              </h2>
-              <p className={`${s.copy} mt-6`}>
-                Des tableaux dispersés, des documents à retrouver, des échéances
-                à garder en tête. RH Pilot est né de ces situations et
-                d’échanges avec des professionnels RH sur leur quotidien.
-              </p>
-              <div className={s.signature}>
-                <strong>Aimen El Housseini</strong>Fondateur de RH Pilot ·
-                Montpellier
-              </div>
-              <Link href="/pourquoi" className={s.textLink}>
-                Lire l’histoire du projet
-              </Link>
-            </div>
-          </div>
-        </section>
         <section className={`${s.section} ${s.case}`}>
           <div className={`${s.wrap} ${s.faqGrid}`}>
             <div>

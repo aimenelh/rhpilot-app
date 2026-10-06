@@ -41,7 +41,6 @@ export function ProductStory() {
               <figure className={s.frame}>
                 <div className={s.bar}>
                   <span>RH Pilot</span>
-                  <span>{chapter.label}</span>
                 </div>
                 <Image src={chapter.image.src} alt={chapter.image.alt} width={chapter.image.width} height={chapter.image.height} sizes="(max-width: 900px) 95vw, 680px" />
               </figure>
@@ -49,7 +48,7 @@ export function ProductStory() {
           ))}
         </div>
         <p className={s.more}>
-          Captures réelles de l’application. <Link href="/services#demo">Explorer la démonstration</Link>
+          <Link href="/services#demo">Explorer la démonstration</Link>
         </p>
       </div>
     </section>

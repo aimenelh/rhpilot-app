@@ -7,7 +7,7 @@ type ClosingCtaProps = { title?: string; accent?: string; text?: string; action?
 export function ClosingCta({
   title = "Le prochain événement RH arrive.",
   accent = "Gardez le fil.",
-  text = "Créez votre espace et préparez votre premier parcours.",
+  text = "Créez votre espace et préparez votre premier parcours. C’est gratuit jusqu’à 3 salariés.",
   action = "Créer mon premier plan",
   href = "/sign-up",
 }: ClosingCtaProps = {}) {
@@ -28,7 +28,6 @@ export function ClosingCta({
           <Link href={href} className={s.primary}>
             {action}
           </Link>
-          <span>Gratuit jusqu’à 3 salariés.</span>
         </div>
       </div>
     </section>
