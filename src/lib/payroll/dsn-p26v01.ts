@@ -45,6 +45,8 @@ export type DsnP26MonthlyInput = {
     postalCode: string;
     city: string;
     countryCode?: string | null;
+    /** S21.G00.30.025 : niveau de diplôme préparé, obligatoire pour un apprenti. */
+    preparedDiplomaLevel?: string | null;
     position: string;
     contract: {
       startDate: Date;
@@ -319,6 +321,9 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
     add(lines, "S21.G00.30.013", assertCode(employee.euClassificationCode, "la codification UE", 2, 2));
     add(lines, "S21.G00.30.014", assertCode(employee.birthDepartment, "le département de naissance", 2, 2));
     add(lines, "S21.G00.30.015", assertCountry(employee.birthCountryCode, "le pays de naissance"));
+    const apprenticeship = ["64", "65", "81"].includes(employee.contract.publicPolicyCode);
+    if (apprenticeship && !["03", "04", "05", "06", "07", "08"].includes(employee.preparedDiplomaLevel ?? "")) throw new Error("DSN bloquée : indiquez dans le profil DSN de l'apprenti le niveau du diplôme préparé.");
+    add(lines, "S21.G00.30.025", apprenticeship ? employee.preparedDiplomaLevel ?? null : null);
 
     add(lines, "S21.G00.40.001", dsnDate(employee.contract.startDate));
     add(lines, "S21.G00.40.002", assertCode(employee.contract.conventionalStatusCode, "le statut conventionnel", 2, 2));

@@ -705,6 +705,7 @@ model dsn_employee_profiles {
   workAccidentRegimeCode   String?
   workAccidentRiskCode     String?
   complementaryAffiliations Json?
+  preparedDiplomaLevel     String?  @db.VarChar(2)
   employees                Employee @relation(fields: [organizationId, employeeId], references: [organizationId, id], map: "dsn_employee_profiles_employee_fk")
 
   @@unique([organizationId, employeeId], map: "dsn_employee_profiles_org_employee_unique")

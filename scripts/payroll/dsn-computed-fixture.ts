@@ -68,7 +68,7 @@ export function computedDsnFixture(
   data.period = { ...snapshot.inputs.period, paymentDate: new Date(snapshot.inputs.paymentDate ?? new Date(Date.UTC(snapshot.inputs.period.year, snapshot.inputs.period.month, 0)).toISOString().slice(0, 10)) };
   employee.contract.startDate = new Date(snapshot.inputs.employee.hireDate + "T00:00:00.000Z");
   employee.contract.contractNatureCode = snapshot.inputs.employee.contract === "CDD" || (apprenticePolicy && snapshot.inputs.employee.contractEndDate) ? "02" : "01";
-  if (apprenticePolicy) employee.contract.publicPolicyCode = apprenticePolicy;
+  if (apprenticePolicy) { employee.contract.publicPolicyCode = apprenticePolicy; employee.preparedDiplomaLevel = "03"; }
   employee.contract.endDate = snapshot.inputs.employee.contractEndDate ? new Date(snapshot.inputs.employee.contractEndDate + "T00:00:00.000Z") : null;
   employee.contract.workAccidentRate = mapped.atmpRatePercent;
   employee.contract.conventionalStatusCode = executive ? "04" : "06";

@@ -64,6 +64,13 @@ describe("apprentis en DSN (CTP 726, 423 et exonération Agirc-Arrco)", () => {
     expect(content).toContain("S21.G00.23.001,'726'");
     expect(content).toContain("S21.G00.23.001,'423'");
     expect(content).toContain("S21.G00.81.001,'109'");
+    expect(content).toContain("S21.G00.30.025,'03'");
+  });
+
+  it("exige le niveau de diplôme préparé de l'apprenti", () => {
+    const data = computedDsnFixture(1100, 151.67, false, undefined, false, apprentice("2025-09-01", 1100));
+    data.employees[0].preparedDiplomaLevel = null;
+    expect(() => buildDsnP26V01Complete(data)).toThrow(/diplôme préparé/);
   });
 
   it("n'admet que le motif de recours 11 pour un apprenti", () => {

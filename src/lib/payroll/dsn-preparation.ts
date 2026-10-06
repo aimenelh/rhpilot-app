@@ -28,7 +28,7 @@ type OrganizationDsnRow = {
 type DsnEmployeeProfileRow = {
   complementaryAffiliations: unknown;
   employeeId: string; nirCiphertext: string; birthDate: Date; birthPlace: string; birthDepartment: string; birthCountryCode: string | null; euClassificationCode: string | null;
-  addressLine: string; postalCode: string; city: string; countryCode: string | null; contractNumber: string; contractNatureCode: string; fixedTermReasonCode: string | null; publicPolicyCode: string;
+  addressLine: string; postalCode: string; city: string; countryCode: string | null; contractNumber: string; contractNatureCode: string; fixedTermReasonCode: string | null; publicPolicyCode: string; preparedDiplomaLevel: string | null;
   pcsEsecCode: string; conventionalStatusCode: string; retirementStatusCode: string; workUnitCode: string; referenceWorkQuota: unknown; contractWorkQuota: unknown;
   workModalityCode: string; baseSchemeSupplementCode: string | null; sicknessRegimeCode: string; workLocationId: string | null; oldAgeRegimeCode: string;
   foreignWorkerCode: string | null; employmentStatusCode: string | null; multipleJobsCode: string | null; multipleEmployersCode: string | null;
@@ -129,7 +129,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
     prisma.employee.findMany({ where: { organizationId: input.organizationId, id: { in: employeeIds } }, select: { id: true, firstName: true, lastName: true, position: true, hireDate: true, contractEndDate: true, contractType: true } }),
     prisma.$queryRaw<DsnEmployeeProfileRow[]>`
       SELECT "employeeId", "nirCiphertext", "birthDate", "birthPlace", "birthDepartment", "birthCountryCode", "euClassificationCode",
-             "addressLine", "postalCode", "city", "countryCode", "contractNumber", "contractNatureCode", "fixedTermReasonCode", "publicPolicyCode", "pcsEsecCode", "conventionalStatusCode",
+             "addressLine", "postalCode", "city", "countryCode", "contractNumber", "contractNatureCode", "fixedTermReasonCode", "publicPolicyCode", "preparedDiplomaLevel", "pcsEsecCode", "conventionalStatusCode",
              "retirementStatusCode", "workUnitCode", "referenceWorkQuota", "contractWorkQuota", "workModalityCode", "baseSchemeSupplementCode", "sicknessRegimeCode",
              "workLocationId", "oldAgeRegimeCode", "foreignWorkerCode", "employmentStatusCode", "multipleJobsCode", "multipleEmployersCode",
              "workAccidentRegimeCode", "workAccidentRiskCode", "complementaryAffiliations"
@@ -242,6 +242,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
       birthDepartment: dsnProfile.birthDepartment, birthCountryCode: requiredString(dsnProfile.birthCountryCode, `le pays de naissance du salarié ${employee.id}`),
       euClassificationCode: requiredString(dsnProfile.euClassificationCode, `la codification UE du salarié ${employee.id}`), addressLine: dsnProfile.addressLine,
       postalCode: dsnProfile.postalCode, city: dsnProfile.city, countryCode: null, position: requiredString(employee.position, `l'emploi du salarié ${employee.id}`),
+      preparedDiplomaLevel: dsnProfile.preparedDiplomaLevel,
       contract: {
         startDate: employee.hireDate, endDate: employee.contractEndDate, contractNumber: dsnProfile.contractNumber, contractNatureCode: dsnProfile.contractNatureCode,
         fixedTermReasonCode: dsnProfile.fixedTermReasonCode,

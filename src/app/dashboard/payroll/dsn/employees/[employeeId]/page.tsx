@@ -15,6 +15,7 @@ type DsnProfileRow = {
   referenceWorkQuota: unknown; contractWorkQuota: unknown; workModalityCode: string; baseSchemeSupplementCode: string | null;
   sicknessRegimeCode: string; workLocationId: string | null; oldAgeRegimeCode: string; foreignWorkerCode: string | null; employmentStatusCode: string | null;
   multipleJobsCode: string | null; multipleEmployersCode: string | null; workAccidentRegimeCode: string | null; workAccidentRiskCode: string | null;
+  preparedDiplomaLevel: string | null;
 };
 
 function dateInput(date: Date | null | undefined): string { return date instanceof Date && !Number.isNaN(date.getTime()) ? date.toISOString().slice(0, 10) : ""; }
@@ -33,7 +34,7 @@ export default async function DsnEmployeeSetupPage({ params }: { params: { emplo
              "addressLine", "postalCode", "city", "countryCode", "contractNumber", "contractNatureCode", "fixedTermReasonCode", "publicPolicyCode", "pcsEsecCode",
              "conventionalStatusCode", "retirementStatusCode", "workUnitCode", "referenceWorkQuota", "contractWorkQuota", "workModalityCode",
              "baseSchemeSupplementCode", "sicknessRegimeCode", "workLocationId", "oldAgeRegimeCode", "foreignWorkerCode", "employmentStatusCode",
-             "multipleJobsCode", "multipleEmployersCode", "workAccidentRegimeCode", "workAccidentRiskCode", "complementaryAffiliations"
+             "multipleJobsCode", "multipleEmployersCode", "workAccidentRegimeCode", "workAccidentRiskCode", "complementaryAffiliations", "preparedDiplomaLevel"
       FROM "dsn_employee_profiles"
       WHERE "organizationId" = ${membership.organizationId} AND "employeeId" = ${employee.id}
       LIMIT 1
@@ -43,7 +44,7 @@ export default async function DsnEmployeeSetupPage({ params }: { params: { emplo
   ]);
   const row = rows[0];
   const complementary = normalizeDsnComplementaryAffiliations(row?.complementaryAffiliations);
-  const safeContractNature = employee.contractType === "CDI" ? "01" : employee.contractType === "CDD" ? "02" : "";
+  const safeContractNature = employee.contractType === "CDI" ? "01" : employee.contractType === "CDD" || employee.contractType === "APPRENTISSAGE" ? "02" : "";
   const safePublicPolicy = employee.contractType === "CDI" || employee.contractType === "CDD" ? "99" : "";
   const monthlyHours = payrollProfile?.monthlyHours ? String(payrollProfile.monthlyHours) : "";
   const initial: DsnEmployeeFormInitial = {
@@ -58,6 +59,7 @@ export default async function DsnEmployeeSetupPage({ params }: { params: { emplo
     workLocationId: row?.workLocationId ?? organization?.siret ?? "", oldAgeRegimeCode: row?.oldAgeRegimeCode ?? "200", foreignWorkerCode: row?.foreignWorkerCode ?? "99",
     employmentStatusCode: row?.employmentStatusCode ?? "99", multipleJobsCode: row?.multipleJobsCode ?? "01", multipleEmployersCode: row?.multipleEmployersCode ?? "01",
     workAccidentRegimeCode: row?.workAccidentRegimeCode ?? "200", workAccidentRiskCode: row?.workAccidentRiskCode ?? "",
+    preparedDiplomaLevel: row?.preparedDiplomaLevel ?? "",
   };
 
   return (
