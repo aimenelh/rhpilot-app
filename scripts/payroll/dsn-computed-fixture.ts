@@ -93,6 +93,7 @@ export function computedDsnFixture(
     unemploymentRemuneration: mapped.remuneration.unemploymentRemuneration,
     restoredSalary: mapped.remuneration.restoredSalary,
     paidLeaveIndemnities: mapped.remuneration.paidLeaveIndemnities.map((item) => ({ type: item.type, amount: item.amount, startDate: new Date(item.start + "T00:00:00.000Z"), endDate: new Date(item.end + "T00:00:00.000Z") })),
+    bonuses: mapped.remuneration.bonuses.map((item) => ({ type: item.type, amount: item.amount, startDate: item.start ? new Date(item.start + "T00:00:00.000Z") : null, endDate: item.end ? new Date(item.end + "T00:00:00.000Z") : null })),
     netBeforeTax: totals.netBeforeTax, netTaxableAmount: employeePas.fiscalNetBeforeExemption ?? totals.netTaxable, netSocialAmount: totals.netSocial,
     withholdingTax: totals.withholdingTax,
     pas: dsnPasFromLockedBulletin({ withholding: employeePas, profile: { rate: employeePas.rate, validFrom: new Date("2026-01-01"), validUntil: null, source: snapshot.inputs.withholding.mode === "PERSONALIZED" ? "DGFIP" : "NON_PERSONNALISE", sourceReference: employeePas.rateIdentifier },

@@ -90,7 +90,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
   const [employees, profiles, variables, rules, validatedAbsences, socialContext, settings, terminations] = await Promise.all([
     prisma.employee.findMany({ where: { organizationId: input.organizationId, deletedAt: null, hireDate: { lte: end }, OR: [{ contractEndDate: null }, { contractEndDate: { gte: start } }] }, select: { id: true, firstName: true, lastName: true, hireDate: true, contractEndDate: true, contractType: true, professionalCategory: true }, orderBy: { id: "asc" } }),
     prisma.payrollProfile.findMany({ where: { organizationId: input.organizationId, effectiveFrom: { lte: end }, OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: start } }] }, select: { id: true, employeeId: true, baseSalaryCents: true, monthlyHours: true, effectiveFrom: true, effectiveUntil: true, collectiveAgreementId: true, classificationCode: true, classificationLabel: true, level: true, coefficient: true, seniorityDate: true }, orderBy: { effectiveFrom: "desc" } }),
-    prisma.payrollVariable.findMany({ where: { organizationId: input.organizationId, payrollPeriodId: period.id }, select: { id: true, employeeId: true, code: true, label: true, amount: true, unit: true, source: true, reference: true }, orderBy: { createdAt: "asc" } }),
+    prisma.payrollVariable.findMany({ where: { organizationId: input.organizationId, payrollPeriodId: period.id }, select: { id: true, employeeId: true, code: true, label: true, amount: true, unit: true, source: true, reference: true, dsnBonusType: true, attachmentStart: true, attachmentEnd: true }, orderBy: { createdAt: "asc" } }),
     resolvePayrollRuleSetFromPrisma({ code: input.ruleCode, scope: input.ruleScope, periodDate: calculationDate }),
     resolveValidatedAbsencesForPayrollPeriod({ organizationId: input.organizationId, year: period.year, month: period.month, includePaidLeaveTail: true }),
     resolveOrganizationLegalCategory(input.organizationId),
@@ -294,8 +294,9 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
     for (const [mergedId, ids] of mapped.chainIds) for (const id of ids) alias.set(id, mergedId);
     const employeeVariables = variables.filter((variable) => variable.employeeId === employee.id);
     const variableInputs = mapPayrollVariables(
-      employeeVariables.map((variable) => ({ id: variable.id, code: variable.code, label: variable.label, amount: Number(variable.amount), unit: variable.unit, reference: variable.reference ? alias.get(variable.reference) ?? variable.reference : null })),
+      employeeVariables.map((variable) => ({ id: variable.id, code: variable.code, label: variable.label, amount: Number(variable.amount), unit: variable.unit, reference: variable.reference ? alias.get(variable.reference) ?? variable.reference : null, dsnBonusType: variable.dsnBonusType, attachmentStart: variable.attachmentStart ? toIsoDay(variable.attachmentStart) : null, attachmentEnd: variable.attachmentEnd ? toIsoDay(variable.attachmentEnd) : null })),
       mapped.absences,
+      bounds.last,
     );
     if (variableInputs.errors.length > 0) throw new Error(`Calcul bloqué pour ${displayName} : ${variableInputs.errors.join(" ")}`);
     const absences = mapped.absences.map((absence) => (variableInputs.ijssByAbsence.has(absence.id) ? { ...absence, ijssGrossAmount: variableInputs.ijssByAbsence.get(absence.id) } : absence));
@@ -406,7 +407,7 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
         calculatedAt: new Date().toISOString(),
         period: { id: period.id, year: period.year, month: period.month },
         profile: { id: profile.id, baseSalaryCents: profile.baseSalaryCents, monthlyHours: profile.monthlyHours === null ? null : String(profile.monthlyHours), effectiveFrom: profile.effectiveFrom.toISOString(), effectiveUntil: profile.effectiveUntil?.toISOString() ?? null, collectiveAgreementId: profile.collectiveAgreementId, classificationCode: profile.classificationCode, classificationLabel: profile.classificationLabel, level: profile.level, coefficient: profile.coefficient, seniorityDate: profile.seniorityDate?.toISOString() ?? null },
-        variables: entry.variables.map((variable) => ({ code: variable.code, label: variable.label, amount: Number(variable.amount), unit: variable.unit, source: variable.source, reference: variable.reference ?? null })),
+        variables: entry.variables.map((variable) => ({ code: variable.code, label: variable.label, amount: Number(variable.amount), unit: variable.unit, source: variable.source, reference: variable.reference ?? null, dsnBonusType: variable.dsnBonusType ?? null, attachmentStart: variable.attachmentStart ? toIsoDay(variable.attachmentStart) : null, attachmentEnd: variable.attachmentEnd ? toIsoDay(variable.attachmentEnd) : null })),
         dsnWorkStoppages: entry.dsnWorkStoppages,
         validatedAbsences: entry.validatedAbsences.map((absence) => ({
           absenceId: absence.absenceId,

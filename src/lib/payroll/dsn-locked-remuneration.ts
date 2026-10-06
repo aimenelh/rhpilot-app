@@ -1,4 +1,4 @@
-import type { PayslipInput, PayslipResult } from "./bulletin/types";
+import type { DsnBonusType, PayslipInput, PayslipResult } from "./bulletin/types";
 
 export type LockedRemunerationDeclaration = {
   employmentStart: string;
@@ -8,9 +8,12 @@ export type LockedRemunerationDeclaration = {
   restoredSalary: number;
   outsideContractHours: number;
   paidLeaveIndemnities: Array<{ type: "046"; amount: number; start: string; end: string }>;
+  /** Primes non mensuelles (S21.G00.52), montants repris des lignes figées du bulletin. */
+  bonuses: Array<{ type: DsnBonusType; amount: number; start: string | null; end: string | null }>;
 };
 
 const round = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+const cents = (value: number) => Math.round(value * 100);
 const money = (value: unknown, label: string) => {
   if (typeof value !== "number" || !Number.isFinite(value)) throw new Error(`DSN bloquée : ${label} du bulletin est absent ou invalide.`);
   return value;
@@ -59,5 +62,28 @@ export function readLockedRemunerationDeclaration({ bulletin, inputs }: { bullet
     const end = absence.end < employmentEnd ? absence.end : employmentEnd;
     paidLeaveIndemnities.push({ type: "046", amount: round(amount), start: end < start ? employmentStart : start, end: end < start ? employmentEnd : end });
   }
-  return { employmentStart, employmentEnd, unemploymentRemuneration, restoredSalary, outsideContractHours: round(outsideContractHours), paidLeaveIndemnities };
+
+  // Primes non mensuelles : nature et rattachement figés avec la variable au calcul (S21.G00.52.001/.003/.004).
+  const annualInputs = (inputs.bonuses ?? []).filter((bonus) => bonus.excludedFromPaidLeaveBase && bonus.amount > 0);
+  const annualLines = grossLines.filter((line) => line.detail?.excludedFromPaidLeaveBase === true);
+  if (annualLines.length !== annualInputs.length || new Set(annualLines.map((line) => line.code)).size !== annualLines.length) {
+    throw new Error("DSN bloquée : les primes non mensuelles du bulletin ne correspondent pas à la saisie figée.");
+  }
+  const bonuses: LockedRemunerationDeclaration["bonuses"] = [];
+  for (const bonus of annualInputs) {
+    const line = annualLines.find((item) => item.code === bonus.code);
+    if (!line) throw new Error("DSN bloquée : les primes non mensuelles du bulletin ne correspondent pas à la saisie figée.");
+    const declaration = bonus.dsn;
+    if (!declaration || !["026", "027", "028"].includes(declaration.type)) {
+      throw new Error(`DSN bloquée : la prime « ${bonus.label} » a été calculée sans sa nature DSN. Rouvrez la saisie, précisez sa nature et sa période dans Primes non mensuelles, puis recalculez.`);
+    }
+    const amount = money(line.amount, `le montant de « ${bonus.label} »`);
+    if (amount <= 0 || cents(amount) !== cents(bonus.amount)) throw new Error(`DSN bloquée : le montant de « ${bonus.label} » diverge entre la saisie et le bulletin.`);
+    const { attachmentStart: start, attachmentEnd: end } = declaration;
+    if ((start === null) !== (end === null) || (declaration.type !== "028" && start === null) || (start !== null && end !== null && end < start)) {
+      throw new Error(`DSN bloquée : la période de rattachement de « ${bonus.label} » est incomplète ou incohérente.`);
+    }
+    bonuses.push({ type: declaration.type, amount: round(amount), start, end });
+  }
+  return { employmentStart, employmentEnd, unemploymentRemuneration, restoredSalary, outsideContractHours: round(outsideContractHours), paidLeaveIndemnities, bonuses };
 }

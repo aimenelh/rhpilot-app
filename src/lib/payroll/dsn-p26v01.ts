@@ -101,6 +101,8 @@ export type DsnP26MonthlyInput = {
       unemploymentRemuneration?: number;
       restoredSalary?: number;
       paidLeaveIndemnities?: Array<{ type: "046"; amount: number; startDate: Date; endDate: Date }>;
+      /** Primes non mensuelles : 026/027 avec période de rattachement, 028 avec ou sans. */
+      bonuses?: Array<{ type: "026" | "027" | "028"; amount: number; startDate?: Date | null; endDate?: Date | null }>;
       paidHours?: number;
       netBeforeTax: number;
       netTaxableAmount: number;
@@ -425,6 +427,22 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
       add(lines, "S21.G00.52.002", money(indemnity.amount));
       add(lines, "S21.G00.52.003", dsnDate(indemnity.startDate));
       add(lines, "S21.G00.52.004", dsnDate(indemnity.endDate));
+      add(lines, "S21.G00.52.006", contractNumber);
+    }
+    for (const bonus of employee.payroll.bonuses ?? []) {
+      if (!["026", "027", "028"].includes(bonus.type) || !Number.isFinite(bonus.amount) || bonus.amount <= 0) throw new Error("DSN bloquée : une prime non mensuelle déclarative est invalide.");
+      const hasStart = Boolean(bonus.startDate);
+      const hasEnd = Boolean(bonus.endDate);
+      // Dsn-Val S21.G00.52.003/CCH-12 et .004/CCH-13 : période obligatoire pour 026 et 027.
+      if (hasStart !== hasEnd || (bonus.type !== "028" && !hasStart) || (bonus.startDate && bonus.endDate && bonus.endDate < bonus.startDate)) {
+        throw new Error("DSN bloquée : la période de rattachement d'une prime non mensuelle est incomplète ou incohérente.");
+      }
+      add(lines, "S21.G00.52.001", bonus.type);
+      add(lines, "S21.G00.52.002", money(bonus.amount));
+      if (bonus.startDate && bonus.endDate) {
+        add(lines, "S21.G00.52.003", dsnDate(bonus.startDate));
+        add(lines, "S21.G00.52.004", dsnDate(bonus.endDate));
+      }
       add(lines, "S21.G00.52.006", contractNumber);
     }
     const overtimeTaxExemptNetAmount = employee.payroll.overtimeTaxExemptNetAmount ?? 0;

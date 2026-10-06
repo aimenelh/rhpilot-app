@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getBulletinVariable } from "@/lib/payroll/bulletin/variables";
+import { readDsnBonusDeclaration } from "@/lib/payroll/bulletin/inputs";
 import { RECURRING_CODES, entryTabOf, parseCellInput } from "@/lib/payroll/entry-grid";
 import { calculatePayrollPeriod } from "@/lib/payroll/payroll-period-calculation";
 import { getPayrollMembership } from "@/lib/payrollAccess";
@@ -71,6 +72,12 @@ export async function saveEntryCells(periodId: string, cells: Array<{ employeeId
     const unique = new Map(accepted.map((cell) => [`${cell.employeeId}:${cell.code}`, cell]));
     const cellsToSave = [...unique.values()];
     if (cellsToSave.length > 0) {
+      // Une prime non mensuelle ressaisie garde sa nature DSN et sa période de rattachement.
+      const kept = await prisma.payrollVariable.findMany({
+        where: { organizationId, payrollPeriodId: period.id, reference: null, dsnBonusType: { not: null }, OR: cellsToSave.map((cell) => ({ employeeId: cell.employeeId, code: cell.code })) },
+        select: { employeeId: true, code: true, dsnBonusType: true, attachmentStart: true, attachmentEnd: true },
+      });
+      const declarations = new Map(kept.map((row) => [`${row.employeeId}:${row.code}`, { dsnBonusType: row.dsnBonusType, attachmentStart: row.attachmentStart, attachmentEnd: row.attachmentEnd }]));
       await prisma.$transaction([
         prisma.payrollVariable.deleteMany({
           where: { organizationId, payrollPeriodId: period.id, reference: null, OR: cellsToSave.map((cell) => ({ employeeId: cell.employeeId, code: cell.code })) },
@@ -78,7 +85,7 @@ export async function saveEntryCells(periodId: string, cells: Array<{ employeeId
         prisma.payrollVariable.createMany({
           data: cellsToSave
             .filter((cell) => cell.value !== null)
-            .map((cell) => ({ id: randomUUID(), organizationId, payrollPeriodId: period.id, employeeId: cell.employeeId, code: cell.code, label: cell.label, amount: cell.value as number, unit: cell.unit, source: "MANUAL" })),
+            .map((cell) => ({ id: randomUUID(), organizationId, payrollPeriodId: period.id, employeeId: cell.employeeId, code: cell.code, label: cell.label, amount: cell.value as number, unit: cell.unit, source: "MANUAL", ...declarations.get(`${cell.employeeId}:${cell.code}`) })),
         }),
         prisma.auditLog.create({ data: { id: randomUUID(), organizationId, actorUserId: userId, action: "payroll.entry.saved", entityType: "PayrollPeriod", entityId: period.id, metadata: { cells: cellsToSave.length } } }),
       ]);
@@ -86,6 +93,37 @@ export async function saveEntryCells(periodId: string, cells: Array<{ employeeId
     refresh(period.id);
     if (Object.keys(cellErrors).length > 0) return { error: "Certaines valeurs n'ont pas été enregistrées.", cellErrors };
     return { ok: true, count: accepted.length };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+
+/** Nature S21.G00.52.001 et période de rattachement d'une prime non mensuelle saisie. */
+export async function saveBonusDsnDeclaration(periodId: string, employeeId: string, code: string, raw: { type: string; start: string; end: string }): Promise<EntryActionResult> {
+  try {
+    const { organizationId, userId, period } = await context(periodId, { draftOnly: true });
+    const definition = getBulletinVariable(code);
+    if (!definition || definition.kind !== "BONUS_ANNUAL") return { error: "Cet élément n'est pas une prime non mensuelle." };
+    const start = raw.start?.trim() || null;
+    const end = raw.end?.trim() || null;
+    if ((start && !ISO_DAY.test(start)) || (end && !ISO_DAY.test(end))) return { error: "Date invalide." };
+    const last = new Date(Date.UTC(period.year, period.month, 0)).toISOString().slice(0, 10);
+    const checked = readDsnBonusDeclaration({ dsnBonusType: raw.type, attachmentStart: start, attachmentEnd: end }, definition.label, last);
+    if ("error" in checked) return { error: checked.error };
+    const variable = await prisma.payrollVariable.findFirst({ where: { organizationId, payrollPeriodId: period.id, employeeId, code: definition.code, reference: null }, select: { id: true } });
+    if (!variable) return { error: "Saisissez d'abord le montant de la prime." };
+    await prisma.$transaction([
+      prisma.payrollVariable.update({ where: { id: variable.id }, data: {
+        dsnBonusType: checked.value.type,
+        attachmentStart: checked.value.attachmentStart ? new Date(`${checked.value.attachmentStart}T00:00:00.000Z`) : null,
+        attachmentEnd: checked.value.attachmentEnd ? new Date(`${checked.value.attachmentEnd}T00:00:00.000Z`) : null,
+      } }),
+      prisma.auditLog.create({ data: { id: randomUUID(), organizationId, actorUserId: userId, action: "payroll.bonus_dsn.saved", entityType: "PayrollPeriod", entityId: period.id, metadata: { employeeId, code: definition.code, type: checked.value.type } } }),
+    ]);
+    refresh(period.id);
+    return { ok: true };
   } catch (error) {
     return failure(error);
   }

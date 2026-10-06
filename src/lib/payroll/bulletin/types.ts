@@ -121,12 +121,20 @@ export type ComplementaryHoursInput = {
   beyondTenthRate?: number;
 };
 
+/** Nature S21.G00.52.001 d'une prime non mensuelle (nomenclature P26V01). */
+export type DsnBonusType = "026" | "027" | "028";
+
 export type BonusInput = {
   code: string;
   label: string;
   amount: number;
   /** Prime exclue de l'assiette du dixième des congés payés (prime annuelle non affectée par les congés). */
   excludedFromPaidLeaveBase?: boolean;
+  /**
+   * Prime non mensuelle : nature déclarative et période de rattachement saisies avec la
+   * variable, figées dans le calcul pour la DSN. Sans effet sur le calcul du bulletin.
+   */
+  dsn?: { type: DsnBonusType; attachmentStart: IsoDay | null; attachmentEnd: IsoDay | null } | null;
 };
 export type BenefitInKindInput = { code: "BENEFIT_MEAL" | "BENEFIT_HOUSING" | "BENEFIT_VEHICLE" | "BENEFIT_TECHNOLOGY" | "BENEFIT_OTHER"; label: string; amount: number };
 export type ExpenseInput = { code: string; label: string; amount: number };

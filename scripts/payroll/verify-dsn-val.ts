@@ -24,9 +24,17 @@ function validate(name: string, content: string): string {
   if (!xml.includes("Version : 2026.1.0.17")) throw new Error("La version de Dsn-Val diffère de celle validée dans le projet.");
   return xml;
 }
+/** Les journaux CI ne sont pas toujours consultables : les anomalies remontent aussi en annotations GitHub. */
+function annotate(name: string, report: string): void {
+  if (!process.env.GITHUB_ACTIONS) return;
+  const text = report.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
+  const anomalies = [...text.matchAll(/S2\d\.G00\.\d\d\.\d{3}\/(?:CCH|SIG|CSL|CRE)-\d+.{0,400}/g)].map((match) => match[0]).slice(0, 6);
+  const body = (anomalies.length > 0 ? anomalies.join(" | ") : text.slice(0, 1500)).replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+  console.log(`::error title=Dsn-Val ${name}::${body}`);
+}
 function accept(name: string, content: string): void {
   const report = validate(name, content);
-  try { assertDsnValReportAccepted(report); } catch (error) { console.error("Rapport synthétique refusé :", name, report); throw error; }
+  try { assertDsnValReportAccepted(report); } catch (error) { console.error("Rapport synthétique refusé :", name, report); annotate(name, report); throw error; }
   acceptedCount += 1;
   console.log(`Dsn-Val : ${name} accepté.`);
 }
@@ -106,6 +114,17 @@ accept("bulletin-reprise-premier-fevrier", buildDsnP26V01Complete(computedDsnFix
 )));
 accept("bulletin-entree-12-janvier", buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, false, undefined, false, { employee: ordinaryEmployee })));
 accept("bulletin-droits-chomage-18000", buildDsnP26V01Complete(computedDsnFixture(18000)));
+
+// Primes non mensuelles : 13e mois rattaché à l'année écoulée, prime exceptionnelle, prime non liée à l'activité.
+accept("bulletin-13e-mois", buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, false, undefined, false, {
+  bonuses: [{ code: "YEAR_END_BONUS", label: "13e mois", amount: 2500, excludedFromPaidLeaveBase: true, dsn: { type: "027", attachmentStart: "2025-01-01", attachmentEnd: "2025-12-31" } }],
+})));
+accept("bulletin-primes-026-028", buildDsnP26V01Complete(computedDsnFixture(2500, 151.67, false, undefined, false, {
+  bonuses: [
+    { code: "EXCEPTIONAL_BONUS", label: "Prime exceptionnelle", amount: 400, excludedFromPaidLeaveBase: true, dsn: { type: "026", attachmentStart: "2025-10-01", attachmentEnd: "2025-12-31" } },
+    { code: "VACATION_BONUS", label: "Prime de naissance", amount: 150, excludedFromPaidLeaveBase: true, dsn: { type: "028", attachmentStart: null, attachmentEnd: null } },
+  ],
+})));
 
 // Témoin négatif : l'outil doit réellement détecter un bloc obligatoire supprimé.
 const rejected = validate("temoin-invalide", content.replace(/^S21\.G00\.71\.002,.*\r\n/m, ""));

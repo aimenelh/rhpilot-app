@@ -18,6 +18,8 @@ import { EXIT_DOCUMENT_KINDS } from "@/lib/employee-space/labels";
 import { electronicPayslipReadiness } from "@/lib/employee-space/notice-rules";
 import PayrollEntryGrid, { type GridEmployee } from "./PayrollEntryGrid";
 import PayrollAbsencesPanel, { type PeriodAbsenceRow } from "./PayrollAbsencesPanel";
+import BonusDsnPanel, { type BonusDsnRow } from "./BonusDsnPanel";
+import { getBulletinVariable } from "@/lib/payroll/bulletin/variables";
 import PayslipReview, { type PayslipReviewRow } from "./PayslipReview";
 import { BackToEntryButton, ClosePeriodButton, RunCalculationButton } from "./PeriodActions";
 import { getPayrollMembership } from "@/lib/payrollAccess";
@@ -84,7 +86,7 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
       orderBy: { effectiveFrom: "desc" },
     }),
     prisma.payrollCalculation.findMany({ where: { organizationId, payrollPeriodId: period.id }, select: { employeeId: true, calculationSnapshot: true } }),
-    prisma.payrollVariable.findMany({ where: { organizationId, payrollPeriodId: period.id }, select: { employeeId: true, code: true, amount: true, reference: true } }),
+    prisma.payrollVariable.findMany({ where: { organizationId, payrollPeriodId: period.id }, select: { employeeId: true, code: true, label: true, amount: true, reference: true, dsnBonusType: true, attachmentStart: true, attachmentEnd: true } }),
     prisma.payrollRuleVersion.findMany({
       where: { status: "VALIDATED", validFrom: { lte: calculationDate }, OR: [{ validUntil: null }, { validUntil: { gte: calculationDate } }] },
       select: { id: true, code: true, version: true, scope: true, sourceName: true },
@@ -111,6 +113,30 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
     return { id: employee.id, name: `${employee.firstName} ${employee.lastName}`.trim(), hint, partTime, reviewed: reviewedIds.has(employee.id) };
   });
   const values = Object.fromEntries(cellValues(variables.map((variable) => ({ employeeId: variable.employeeId, code: variable.code, amount: Number(variable.amount), reference: variable.reference }))));
+
+  const isoDay = (date: Date | null | undefined) => (date ? date.toISOString().slice(0, 10) : "");
+  const bonusRows: BonusDsnRow[] = variables
+    .filter((variable) => !variable.reference && Number(variable.amount) > 0 && getBulletinVariable(variable.code)?.kind === "BONUS_ANNUAL")
+    .map((variable) => {
+      const employee = employees.find((candidate) => candidate.id === variable.employeeId);
+      // Proposition : l'année civile, bornée au contrat. Une prime exceptionnelle n'a pas de nature par défaut.
+      const yearStart = `${period.year}-01-01`;
+      const yearEnd = `${period.year}-12-31`;
+      const hire = isoDay(employee?.hireDate);
+      const leave = isoDay(employee?.contractEndDate);
+      const start = hire && hire > yearStart ? hire : yearStart;
+      const end = leave && leave < yearEnd ? leave : yearEnd;
+      return {
+        employeeId: variable.employeeId,
+        employeeName: employeeName(variable.employeeId),
+        code: variable.code,
+        label: getBulletinVariable(variable.code)?.label ?? variable.label,
+        amount: Number(variable.amount),
+        saved: variable.dsnBonusType ? { type: variable.dsnBonusType, start: isoDay(variable.attachmentStart), end: isoDay(variable.attachmentEnd) } : null,
+        suggestion: variable.code === "EXCEPTIONAL_BONUS" ? { type: "", start, end } : { type: "027", start, end },
+      };
+    })
+    .sort((left, right) => left.employeeName.localeCompare(right.employeeName, "fr") || left.label.localeCompare(right.label, "fr"));
 
   const readiness = checkPayrollPeriodReadiness(employees.map((employee) => {
     const profile = profileByEmployee.get(employee.id);
@@ -299,6 +325,7 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
           {employees.length > 0 && (sub === "heures" || sub === "variables") ? (
             <PayrollEntryGrid periodId={period.id} tab={sub as EntryTab} employees={gridEmployees} values={values} editable={editable} focusCell={searchParams.focus ?? null} />
           ) : null}
+          {sub === "variables" ? <BonusDsnPanel periodId={period.id} rows={bonusRows} editable={editable} /> : null}
           {sub === "absences" ? <PayrollAbsencesPanel periodId={period.id} rows={absenceRows} pendingCount={pendingAbsences} editable={editable} focusAbsenceId={searchParams.absence ?? null} /> : null}
           {sub === "mouvements" ? (
             <div className="p-5">

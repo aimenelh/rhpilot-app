@@ -572,6 +572,9 @@ model PayrollVariable {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @default(now()) @updatedAt
   reference       String?
+  dsnBonusType    String?       @db.VarChar(3)
+  attachmentStart DateTime?     @db.Date
+  attachmentEnd   DateTime?     @db.Date
   employees       Employee      @relation(fields: [organizationId, employeeId], references: [organizationId, id], map: "payroll_variables_employee_fk")
   payroll_periods PayrollPeriod @relation(fields: [organizationId, payrollPeriodId], references: [organizationId, id], map: "payroll_variables_period_fk")
 

@@ -220,11 +220,11 @@ describe("DSN construite depuis les cotisations du bulletin", () => {
     expect(content).not.toContain("S21.G00.52.");
   });
 
-  it("bloque une prime annuelle ou exceptionnelle sans type et période S21.G00.52 explicites", () => {
+  it("bloque une prime annuelle calculée sans nature DSN figée (ancien calcul)", () => {
     const snapshot = computedSnapshot({
       bonuses: [{ code: "YEAR_END_BONUS", label: "13e mois", amount: 1000, excludedFromPaidLeaveBase: true }],
     });
-    expect(() => mapLockedContributions({ snapshot, ...ids })).toThrow(/S21\.G00\.52.*période de rattachement/i);
+    expect(() => mapLockedContributions({ snapshot, ...ids })).toThrow(/13e mois.*nature DSN.*recalculez/i);
   });
 
   it("conserve les arrondis en cumul sur la réduction générale", () => {
