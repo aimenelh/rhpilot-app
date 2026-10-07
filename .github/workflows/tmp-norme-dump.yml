@@ -1,0 +1,29 @@
+name: tmp-norme-dump
+
+# Workflow temporaire : extrait la table PCS-ESE de la norme P26V01 embarquée dans Dsn-Val.
+# Supprimé avant fusion.
+on:
+  push:
+    branches:
+      - claude/demo-paie-dsn
+
+permissions:
+  contents: write
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Extract PCS-ESE
+        shell: bash
+        run: |
+          curl --fail --location --retry 3 --max-time 180 https://dsn-val.net-entreprises.fr/2026.1/autocontrole-dsn-val_linux_2026.1.0.17_64.zip --output "$RUNNER_TEMP/dsn-val.zip"
+          echo "6b00a8c8fc9bb18891ee53026f971a42ca626675c7f63b2d2b0d64626b4f699e  $RUNNER_TEMP/dsn-val.zip" | sha256sum --check
+          unzip -q "$RUNNER_TEMP/dsn-val.zip" -d "$RUNNER_TEMP/dsn-val"
+          mkdir -p "$RUNNER_TEMP/out" && cd "$RUNNER_TEMP/out"
+          JAR=$(find "$RUNNER_TEMP/dsn-val" -name 'n4ds.dsn.p03v01.all_*.jar' | head -1)
+          unzip -q -o "$JAR" 'n4ds/dsn/p03v01/all/datasources/NEODESP26-PCSESE-P26V01.csv' 'n4ds/dsn/p03v01/all/datasources/NEODESP26-OCI-P26V01.csv' -d .
+          git init -q && git config user.name "github-actions" && git config user.email "github-actions@users.noreply.github.com"
+          git checkout -q -b tmp/norme-p26v01 && git add -A && git commit -q -m "PCS-ESE P26V01"
+          git push -q --force "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" tmp/norme-p26v01
