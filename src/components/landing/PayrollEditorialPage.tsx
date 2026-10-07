@@ -134,7 +134,7 @@ function TopicPage({
                   <Link href="/gestion-paie">Gestion de la paie</Link>
                 </p>
                 <h1 id="payroll-topic-title" className={h.title}>
-                  {name.replace("&", "et")}
+                  {name.replace(/&/g, "et")}
                 </h1>
                 <p className={h.intro}>
                   {title} {richText(intro)}
