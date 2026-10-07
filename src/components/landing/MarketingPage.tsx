@@ -1,6 +1,5 @@
 import { MarketingHeader } from "./MarketingHeader";
 import { MarketingFooter } from "./MarketingFooter";
-import { MascotScene } from "./MascotScene";
 import { BandThread } from "./BandThread";
 import { ClosingCta } from "./ClosingCta";
 import s from "./MarketingV2.module.css";
@@ -16,35 +15,27 @@ export function MarketingPage({ children }: { children: React.ReactNode }) {
   );
 }
 export function PageIntro({
-  eyebrow,
   title,
   intro,
-  mascot,
+  scene,
   children,
 }: {
-  /** Conservé pour compatibilité : le surtitre n’est plus affiché. */
-  eyebrow?: string;
   title: string;
-  intro: string;
-  mascot?: string;
+  intro?: string;
+  /** Illustration à droite du titre (un copilote, voir CopilotScene). */
+  scene?: React.ReactNode;
   children?: React.ReactNode;
 }) {
   return (
-    <section className={`${p.intro} ${s.band}`}>
+    <section className={`${p.intro} ${s.band}`} data-scene={scene ? "true" : undefined}>
       <BandThread />
-      <div className={`${s.wrap} ${mascot ? p.introGrid : ""}`}>
-        <div>
+      <div className={`${s.wrap} ${scene ? p.introGrid : ""}`}>
+        <div className={p.introCopy}>
           <h1 className={p.h1}>{title}</h1>
-          <p className={p.introLead}>{intro}</p>
+          {intro ? <p className={p.introLead}>{intro}</p> : null}
           {children}
         </div>
-        {mascot && (
-          <MascotScene
-            src={mascot}
-            alt="La mascotte RH Pilot accompagne le suivi de votre équipe"
-            priority
-          />
-        )}
+        {scene}
       </div>
     </section>
   );
@@ -62,5 +53,5 @@ export function MarketingCTA({
   action?: string;
 }) {
   if (!title) return <ClosingCta text={text} href={href} action={action} />;
-  return <ClosingCta title={title} accent="" text={text} href={href} action={action ?? "Créer mon espace"} />;
+  return <ClosingCta title={title} text={text} href={href} action={action} />;
 }

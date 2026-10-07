@@ -1,18 +1,29 @@
 .intro {
+  --pb: 96px;
   position: relative;
   isolation: isolate;
   overflow: clip;
-  padding: 84px 0 96px;
+  padding: 84px 0 var(--pb);
   background:
     radial-gradient(1200px 520px at 12% 0%, #d8432a 0%, rgba(216, 67, 42, 0) 70%),
     linear-gradient(#c8361f, #c8361f);
   color: #fff;
 }
+.intro[data-scene] {
+  padding-top: 48px;
+}
 .introGrid {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
-  gap: 60px;
-  align-items: center;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 40px;
+  align-items: end;
+}
+.introCopy {
+  align-self: center;
+  padding-top: 24px;
+}
+.introGrid > :last-child {
+  margin-bottom: calc(var(--pb) * -1);
 }
 .h1 {
   font-family: var(--font-dm-sans), system-ui, sans-serif;
@@ -259,9 +270,28 @@
   line-height: 1.85;
 }
 .readingHeader {
-  max-width: 950px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 24px;
+  align-items: end;
+  max-width: 1120px;
   margin: auto;
   padding: 0 24px;
+}
+.readingCopy {
+  align-self: center;
+}
+.readingHeader .readingScene {
+  height: 320px;
+  margin-bottom: calc(var(--pb) * -1);
+}
+@media (max-width: 900px) {
+  .readingHeader {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .readingHeader .readingScene {
+    display: none;
+  }
 }
 .readingHeader .h1 {
   margin: 22px 0 0;
@@ -360,8 +390,8 @@
 }
 @media (max-width: 900px) {
   .introGrid {
-    gap: 20px;
-    grid-template-columns: 1.2fr 0.8fr;
+    gap: 8px;
+    grid-template-columns: minmax(0, 1fr);
   }
   .columns,
   .calculator {
@@ -377,7 +407,11 @@
 }
 @media (max-width: 700px) {
   .intro {
-    padding: 48px 0 64px;
+    --pb: 64px;
+    padding-top: 48px;
+  }
+  .intro[data-scene] {
+    padding-top: 40px;
   }
   .introGrid,
   .columns,

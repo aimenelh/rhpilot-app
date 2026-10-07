@@ -1,23 +1,29 @@
 import Link from "next/link";
-import {
-  MarketingPage,
-  PageIntro,
-  MarketingCTA,
-} from "@/components/landing/MarketingPage";
+import { MarketingPage, PageIntro, MarketingCTA } from "@/components/landing/MarketingPage";
+import { CopilotScene } from "@/components/landing/CopilotScene";
 import s from "@/components/landing/MarketingV2.module.css";
 import p from "@/components/landing/InnerPages.module.css";
 import { PricingCalculator } from "@/components/landing/PricingCalculator";
+
 export const metadata = {
   title: "Tarifs",
   description:
-    "Gratuit jusqu’à 3 salariés. Pro : 15 € par mois + 3 € par salarié. Espace salarié inclus, sans coût par compte.",
+    "Gratuit jusqu’à 3 salariés. Offre Pro : 15 € HT par mois et 3 € HT par salarié. Espace salarié inclus, sans coût par compte.",
 };
+
 export default function TarifsPage() {
   return (
     <MarketingPage>
       <PageIntro
-        title="Un prix que vous pouvez calculer."
-        intro="Commencez avec votre équipe actuelle. Votre abonnement suit ensuite votre effectif."
+        title="Tarifs"
+        intro="Gratuit jusqu’à 3 salariés. Au-delà, l’offre Pro coûte 15 € HT par mois, plus 3 € HT par salarié suivi."
+        scene={
+          <CopilotScene
+            figure="tarifs"
+            ask={{ persona: "marc", text: "Combien pour 12 salariés ?" }}
+            answer="51 € HT par mois avec l’offre Pro."
+          />
+        }
       />
       <section className={p.section}>
         <div className={s.wrap}>
@@ -27,13 +33,13 @@ export default function TarifsPage() {
               <p className={p.price}>0 €</p>
               <p>Jusqu’à 3 salariés</p>
               <ul>
-                <li>Votre équipe réunie au même endroit</li>
-                <li>Parcours RH et suivi des échéances</li>
-                <li>Espace salarié : absences et documents</li>
-                <li>Copilote inclus</li>
+                <li>Fiches salariés et documents</li>
+                <li>Parcours RH et échéances</li>
+                <li>Espace salarié : congés, absences, documents</li>
+                <li>Copilote RH</li>
               </ul>
               <Link className={s.secondary} href="/sign-up">
-                Créer mon compte
+                Créer mon espace
               </Link>
             </article>
             <article className={`${p.plan} ${p.planPro}`}>
@@ -41,28 +47,25 @@ export default function TarifsPage() {
               <p className={p.price}>
                 15 € HT <span style={{ fontSize: 18 }}> / mois</span>
               </p>
-              <p>+ 3 € HT par salarié / mois</p>
+              <p>+ 3 € HT par salarié et par mois</p>
               <ul>
-                <li>Sans limite de salariés</li>
-                <li>Parcours et rappels illimités</li>
-                <li>Suivi RH complet pour votre équipe</li>
+                <li>Nombre de salariés illimité</li>
+                <li>Parcours, rappels et documents illimités</li>
                 <li>Espace salarié et dépôt de bulletins externes</li>
-                <li>Copilote inclus dans votre abonnement</li>
+                <li>Copilote RH</li>
               </ul>
               <Link className={s.primary} href="/sign-up">
-                Commencer avec RH Pilot
+                Créer mon espace
               </Link>
             </article>
           </div>
           <div className={p.comparison}>
             <div>
-              <h2>Un besoin plus spécifique ?</h2>
-              <p className={s.body}>
-                L’offre Entreprise est disponible sur devis.
-              </p>
+              <h2>Offre Entreprise</h2>
+              <p className={s.body}>Pour plusieurs établissements ou un besoin particulier, sur devis.</p>
             </div>
-            <Link href="mailto:contact@rhpilot.fr" className={s.textLink}>
-              Échanger avec l’équipe
+            <Link href="/contact" className={s.textLink}>
+              Nous contacter
             </Link>
           </div>
         </div>
@@ -70,18 +73,15 @@ export default function TarifsPage() {
       <section className={p.section}>
         <div className={`${s.wrap} ${p.columns}`}>
           <div>
-            <h2 className={s.title}>Un espace pour chaque salarié.</h2>
+            <h2 className={s.title}>Les comptes salariés ne sont pas facturés.</h2>
           </div>
           <div>
             <p className={s.body}>
-              Vos salariés retrouvent leurs bulletins, leurs congés, leurs
-              demandes d&apos;absence et leurs documents de fin de contrat sur
-              leur téléphone. Leurs comptes ne sont pas facturés : votre prix
-              dépend du nombre de salariés suivis, pas du nombre de personnes
-              connectées.
+              Le prix dépend du nombre de salariés suivis dans RH Pilot, pas du nombre de personnes connectées. Chaque
+              salarié consulte ses bulletins, ses congés et ses documents depuis son espace, sur téléphone ou ordinateur.
             </p>
             <Link href="/espace-salarie" className={s.textLink}>
-              Découvrir l&apos;espace salarié
+              L’espace salarié
             </Link>
           </div>
         </div>
@@ -89,21 +89,17 @@ export default function TarifsPage() {
       <section className={`${p.section} ${p.tint}`}>
         <div className={`${s.wrap} ${p.calculator}`}>
           <div>
-            <h2 className={s.title}>Et pour votre équipe ?</h2>
-            <p className={s.body}>
-              Ajustez le nombre de salariés pour voir le montant mensuel. La
-              facturation est mensuelle et l’abonnement peut être résilié.
-            </p>
+            <h2 className={s.title}>Montant mensuel selon l’effectif</h2>
+            <p className={s.body}>Facturation mensuelle, calculée sur le nombre de salariés suivis.</p>
           </div>
           <PricingCalculator />
         </div>
       </section>
       <div className={s.wrap}>
         <p className={p.support}>
-          Le Copilote et l&apos;espace salarié sont inclus dans les offres
-          Gratuit et Pro. TVA non applicable, article 293 B du CGI. Le calcul de paie est en accès anticipé,
-          sur invitation, avec un périmètre limité. L’abonnement Pro ne donne pas automatiquement accès au calcul de paie.
-          Vous pouvez déposer des bulletins établis par votre comptable ou un autre logiciel.
+          Le Copilote RH et l’espace salarié sont inclus dans les deux offres. Le calcul de la paie est en accès anticipé,
+          sur invitation, et n’est pas inclus d’office dans l’offre Pro. Vous pouvez déposer dans l’espace salarié les
+          bulletins établis par votre expert-comptable ou par un autre logiciel. TVA non applicable, article 293 B du CGI.
         </p>
       </div>
       <MarketingCTA />

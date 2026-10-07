@@ -3,6 +3,7 @@ import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import p from "@/components/landing/InnerPages.module.css";
 import { PageIntro } from "@/components/landing/MarketingPage";
+import { CopilotScene } from "@/components/landing/CopilotScene";
 import { Reveal } from "@/components/landing/Reveal";
 import { Card } from "@/components/ui/Card";
 
@@ -87,6 +88,7 @@ export default function ConfidentialitePage() {
       <main id="main-content" className={p.legal}>
         <PageIntro
           title="Politique de confidentialité"
+          scene={<CopilotScene figure="legal" />}
           intro="Quelles données RH Pilot collecte, pourquoi, avec qui elles sont partagées et où elles sont hébergées, prestataire par prestataire."
         >
           <p className={p.introNote}>Dernière mise à jour : {LAST_UPDATED}</p>

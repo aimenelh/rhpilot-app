@@ -1,6 +1,9 @@
 .page { max-width: 1280px; margin: 0 auto; padding: 48px 32px 72px; }
-.band { position: relative; isolation: isolate; overflow: clip; padding: 72px 0 80px; color: #fff; background: radial-gradient(1200px 520px at 12% 0%, #d8432a 0%, rgba(216, 67, 42, 0) 70%), linear-gradient(#c8361f, #c8361f); }
-.header { display: flex; justify-content: space-between; align-items: flex-end; gap: 28px; max-width: 1280px; margin: 0 auto; padding: 0 32px; }
+.band { position: relative; isolation: isolate; overflow: clip; padding: 48px 0 0; color: #fff; background: radial-gradient(1200px 520px at 12% 0%, #d8432a 0%, rgba(216, 67, 42, 0) 70%), linear-gradient(#c8361f, #c8361f); }
+.header { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 460px); align-items: end; gap: 32px; max-width: 1280px; margin: 0 auto; padding: 0 32px; }
+.headCopy { align-self: center; padding: 24px 0 72px; }
+.headScene.headScene { height: 360px; }
+.author { margin-top: 28px; }
 .pageTitle { margin: 0; font-family: var(--font-dm-sans), system-ui, sans-serif; font-size: clamp(42px, 5.6vw, 84px); font-weight: 700; letter-spacing: -0.052em; line-height: 0.98; }
 .pageIntro { margin-top: 22px; color: rgba(255, 255, 255, 0.9); font-size: clamp(17px, 1.3vw, 19px); line-height: 1.6; }
 .author { display: flex; align-items: center; gap: 12px; max-width: 350px; }
@@ -21,7 +24,8 @@
 .primaryButton { min-height: 46px; display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 12px 17px; border-radius: 6px; background: #e8432e; color: #fff; font-size: 13px; font-weight: 600; transition: background .15s; }
 .primaryButton:hover { background: #c93322; }
 .coverDuration { font-size: 12px; color: #777165; margin-top: 10px; }
-.coverArt { width: 100%; height: auto; }
+.coverArt { align-self: end; justify-self: center; width: 300px; max-width: 100%; aspect-ratio: 320 / 400; margin-bottom: -32px; }
+.coverArt img { display: block; width: 100%; height: 100%; transform: scaleX(-1); }
 .video { display: block; width: 100%; aspect-ratio: 16 / 9; background: #111; }
 .videoCaption { padding-top: 20px; }
 .videoCaption h2 { font-size: 20px; font-weight: 600; line-height: 1.4; }
@@ -52,7 +56,6 @@
 .resetButton { margin-top: 6px; min-height: 32px; font-size: 11px; color: #777165; text-decoration: underline; text-underline-offset: 3px; }
 .guide button:focus-visible, .guide a:focus-visible, .guide select:focus-visible, .guide summary:focus-visible { outline: 2px solid #c93322; outline-offset: 4px; }
 @media (max-width: 1023px) {
-  .header { align-items: flex-start; }
   .author { max-width: 280px; }
   .guide { display: flex; flex-direction: column; gap: 18px; }
   .mobileSelect { display: block; width: 100%; }
@@ -65,8 +68,10 @@
 }
 @media (max-width: 639px) {
   .page { padding: 28px 20px 48px; }
-  .band { padding: 48px 0 56px; }
-  .header { flex-direction: column; align-items: flex-start; gap: 22px; padding: 0 20px; }
+  .band { padding-top: 40px; }
+  .header { grid-template-columns: minmax(0, 1fr); gap: 0; padding: 0 20px; }
+  .headCopy { padding-bottom: 8px; }
+  .headScene.headScene { height: 280px; }
   .pageIntro { font-size: 14px; margin-top: 10px; }
   .author { max-width: none; }
   .author img { width: 40px; height: 40px; }
@@ -76,9 +81,14 @@
   .coverTitle { font-size: 1.9rem; }
   .coverDescription { margin-top: 12px; font-size: 13px; }
   .coverActions { margin-top: 20px; }
-  .coverArt { max-width: 270px; height: 175px; object-fit: contain; justify-self: center; margin-top: 5px; }
+  .coverArt { width: 190px; margin: 8px 0 -10px; }
   .coverDuration { margin-top: 8px; }
   .playerFooter { flex-wrap: wrap; }
   .watchedButton { order: 3; flex-basis: 100%; min-height: 36px; }
   .details { padding-top: 14px; }
+}
+@media (max-width: 900px) {
+  .header { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .headCopy { padding-bottom: 8px; }
+  .headScene.headScene { height: 300px; }
 }

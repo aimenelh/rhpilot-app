@@ -1,5 +1,5 @@
 // Les sujets de la paie, rangés comme on les rencontre : le mois qui se prépare,
-// le calcul, puis le dossier qui l'alimente. Sert au menu, à la page d'ensemble
+// puis le calcul et le bulletin. Sert au menu, à la page d'ensemble
 // et au bas de chaque page paie.
 
 export type PayrollTopic = { href: string; label: string; text: string };
@@ -16,21 +16,11 @@ export const PAYROLL_TOPIC_GROUPS: PayrollTopicGroup[] = [
     ],
   },
   {
-    title: "Le calcul",
+    title: "Le calcul et le bulletin",
     topics: [
       { href: "/gestion-paie/cotisations-sociales", label: "Cotisations sociales", text: "Chaque ligne, sa base, son taux, son montant." },
-      { href: "/gestion-paie/montant-net-social", label: "Montant net social", text: "Le montant que le salarié déclare pour ses aides." },
-      { href: "/gestion-paie/complementaire-sante", label: "Complémentaire santé", text: "Montant du contrat et part employeur." },
-      { href: "/gestion-paie/tracabilite-calcul", label: "Traçabilité du calcul", text: "La règle et la source derrière chaque montant." },
-    ],
-  },
-  {
-    title: "Le dossier",
-    topics: [
-      { href: "/gestion-paie/bulletin-de-paie", label: "Bulletin de paie", text: "Généré seulement quand tout est prêt." },
       { href: "/gestion-paie/referentiel-conventionnel", label: "Convention collective", text: "Minimum conventionnel comparé au Smic." },
-      { href: "/gestion-paie/profil-paie", label: "Profil de paie", text: "Salaire, horaire, statut, classification." },
-      { href: "/gestion-paie/contexte-employeur", label: "Contexte employeur", text: "Taux accidents du travail, établissement." },
+      { href: "/gestion-paie/bulletin-de-paie", label: "Bulletin de paie", text: "Généré seulement quand tout est prêt." },
     ],
   },
 ];

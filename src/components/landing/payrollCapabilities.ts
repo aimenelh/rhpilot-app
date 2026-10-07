@@ -6,7 +6,7 @@ export type PayrollCapability = {
   title: string;
   intro: string;
   summary: string;
-  variant: "agreement" | "health" | "contributions" | "netSocial" | "payslip" | "traceability" | "profile" | "employer";
+  variant: "agreement" | "contributions" | "payslip";
   moments: PayrollMoment[];
   sources?: { name: string; detail: string; href: string }[];
 };
@@ -34,20 +34,6 @@ export const PAYROLL_CAPABILITIES: Record<string, PayrollCapability> = {
     ],
     sources: SOURCES,
   },
-  health: {
-    key: "health",
-    eyebrow: "Complémentaire santé",
-    title: "La complémentaire santé entre naturellement dans la paie.",
-    intro: "RH Pilot enregistre le montant de la complémentaire santé et la part payée par l’employeur avant de calculer la paie.",
-    summary: "Les montants sont contrôlés avant le calcul et apparaissent ensuite dans le détail de la paie.",
-    variant: "health",
-    moments: [
-      { heading: "Deux informations simples", body: "RH Pilot prend en compte **le montant mensuel de la complémentaire santé** et **la part payée par l’employeur**." },
-      { heading: "Un contrôle avant le calcul", body: "La part employeur est vérifiée avant de lancer le calcul afin d’éviter une donnée incohérente." },
-      { heading: "Visible sur le résultat", body: "La participation de l’employeur apparaît ensuite **dans le détail des cotisations** de la paie." },
-    ],
-    sources: SOURCES,
-  },
   contributions: {
     key: "contributions",
     eyebrow: "Cotisations sociales",
@@ -62,20 +48,6 @@ export const PAYROLL_CAPABILITIES: Record<string, PayrollCapability> = {
     ],
     sources: SOURCES,
   },
-  netSocial: {
-    key: "net-social",
-    eyebrow: "Montant net social",
-    title: "Le montant net social est présenté clairement au salarié.",
-    intro: "RH Pilot calcule le montant net social en complément du net avant impôt et le conserve dans le résultat de paie.",
-    summary: "Le montant net social et le net avant impôt sont deux informations différentes du même bulletin.",
-    variant: "netSocial",
-    moments: [
-      { heading: "On part du salaire brut", body: "Le calcul commence avec **le salaire brut et les éléments du mois**, avant de prendre en compte les cotisations." },
-      { heading: "Les cotisations font évoluer le résultat", body: "Les cotisations servent ensuite à déterminer les différents montants qui apparaissent sur la paie." },
-      { heading: "Deux montants à ne pas confondre", body: "RH Pilot conserve **le net avant impôt** et **le montant net social** séparément dans le résultat." },
-    ],
-    sources: SOURCES,
-  },
   payslip: {
     key: "payslip",
     eyebrow: "Bulletin de paie",
@@ -87,48 +59,6 @@ export const PAYROLL_CAPABILITIES: Record<string, PayrollCapability> = {
       { heading: "La période doit être terminée", body: "Le bulletin peut être généré lorsque **le calcul du mois est terminé et la période est verrouillée**." },
       { heading: "Un calcul pour chaque salarié", body: "Chaque salarié actif doit disposer **d’un calcul enregistré pour la période** avant la création du bulletin." },
       { heading: "Les informations obligatoires", body: "RH Pilot vérifie notamment **l’identification de l’employeur et du salarié**, ainsi que la convention applicable." },
-    ],
-    sources: SOURCES,
-  },
-  traceability: {
-    key: "traceability",
-    eyebrow: "Suivi du calcul",
-    title: "Retrouver facilement comment une paie a été calculée.",
-    intro: "RH Pilot garde les informations importantes utilisées pour chaque calcul afin de pouvoir expliquer le résultat plus tard.",
-    summary: "Les données du mois, les règles utilisées et le résultat sont conservés ensemble pour chaque période.",
-    variant: "traceability",
-    moments: [
-      { heading: "Les règles utilisées", body: "Chaque calcul garde **les règles utilisées et leur version**, ainsi que leur source." },
-      { heading: "Les informations du mois", body: "Le salarié, les variables, les absences et les autres informations utiles sont conservés avec **le calcul de la période**." },
-      { heading: "Le résultat final", body: "Les principaux montants, dont **le total des cotisations et le montant net social**, sont conservés avec le reste du calcul." },
-    ],
-    sources: SOURCES,
-  },
-  profile: {
-    key: "profile",
-    eyebrow: "Profil de paie",
-    title: "Les informations du salarié servent de base au calcul.",
-    intro: "Le profil de paie réunit le salaire, le contrat et les informations utiles pour préparer la paie du mois.",
-    summary: "Les données du salarié sont regroupées au même endroit avant de calculer sa paie.",
-    variant: "profile",
-    moments: [
-      { heading: "Le salaire de base", body: "Le profil indique **le salaire brut mensuel** qui sert de base au calcul de la paie." },
-      { heading: "Le contrat et la date d’embauche", body: "**Le type de contrat et la date d’embauche** font partie des informations utilisées pour préparer la période." },
-      { heading: "Les informations complémentaires", body: "Le niveau, le coefficient, le statut et la convention collective peuvent être renseignés **lorsqu’ils sont nécessaires**." },
-    ],
-    sources: SOURCES,
-  },
-  employer: {
-    key: "employer",
-    eyebrow: "Informations de l’entreprise",
-    title: "La paie tient aussi compte de l’entreprise.",
-    intro: "RH Pilot prend en compte les informations de l’entreprise et de l’établissement qui peuvent modifier le calcul de la paie.",
-    summary: "Les informations de l’entreprise sont vérifiées avant d’être utilisées pour calculer la paie.",
-    variant: "employer",
-    moments: [
-      { heading: "La forme de l’entreprise", body: "**La forme juridique de l’entreprise** fait partie des informations nécessaires au calcul." },
-      { heading: "Un taux lié à l’établissement", body: "**Le taux lié aux accidents du travail et aux maladies professionnelles** est pris en compte lorsqu’il s’applique à l’établissement." },
-      { heading: "Le lieu et la date de création", body: "La localisation de l’établissement et **la date de création de l’entreprise** complètent les informations utilisées pour la paie." },
     ],
     sources: SOURCES,
   },

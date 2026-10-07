@@ -25,7 +25,7 @@ export function LandingPage() {
         <section className={`${s.section} ${s.case}`}>
           <div className={`${s.wrap} ${s.faqGrid}`}>
             <div>
-              <h2 className={s.title}>Quelques repères.</h2>
+              <h2 className={s.title}>Questions fréquentes</h2>
               <Link href="/questions" className={s.textLink}>
                 Toutes les questions
               </Link>

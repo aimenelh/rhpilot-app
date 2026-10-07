@@ -2,6 +2,7 @@ import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import p from "@/components/landing/InnerPages.module.css";
 import { PageIntro } from "@/components/landing/MarketingPage";
+import { CopilotScene } from "@/components/landing/CopilotScene";
 import { Reveal } from "@/components/landing/Reveal";
 import { LEGAL_VERSIONS } from "@/lib/legalVersions";
 
@@ -14,6 +15,7 @@ export default function CguPage() {
       <main id="main-content" className={p.legal}>
         <PageIntro
           title="Conditions générales d’utilisation"
+          scene={<CopilotScene figure="legal" />}
           intro="Les conditions de vente et le contrat de sous-traitance complètent ces conditions pour les organisations clientes."
         >
           <p className={p.introNote}>Version du {LEGAL_VERSIONS.cgu.label}</p>

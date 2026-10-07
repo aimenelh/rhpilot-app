@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { MarketingCTA, MarketingPage } from "@/components/landing/MarketingPage";
 import { BandThread } from "@/components/landing/BandThread";
+import { CopilotScene } from "@/components/landing/CopilotScene";
 import s from "@/components/landing/MarketingV2.module.css";
 import p from "@/components/landing/InnerPages.module.css";
 import e from "./espace-salarie.module.css";
@@ -65,12 +66,12 @@ export default function EmployeeSpaceMarketingPage() {
         <div className={`${s.wrap} ${e.heroGrid}`}>
           <div className={e.heroCopy}>
             <h1 className={e.heroTitle}>
-              Les bulletins de vos salariés, sur leur téléphone.
+              L’espace salarié
             </h1>
             <p className={s.lead}>
-              Chaque salarié a son espace : ses bulletins, ses congés, ses demandes d’absence et ses documents de fin de
-              contrat. Vous n’envoyez plus rien par e-mail, et il garde tout après son départ. L’espace est inclus sans coût par
-              compte ; les bulletins y arrivent avec le module paie de l’offre Pro.
+              Chaque salarié a son espace, sur téléphone ou ordinateur : ses bulletins, ses congés, ses demandes d’absence
+              et ses documents de fin de contrat. Il les garde après son départ. L’espace est inclus sans coût par compte ;
+              les bulletins y arrivent avec le module paie de l’offre Pro.
             </p>
             <div className={s.actions}>
               <Link href="/sign-up" className={s.primary}>
@@ -119,7 +120,7 @@ export default function EmployeeSpaceMarketingPage() {
       <section className={`${p.section} ${p.tint}`}>
         <div className={`${s.wrap} ${e.split}`}>
           <div>
-            <h2 className={s.title}>Côté RH, un bouton.</h2>
+            <h2 className={s.title}>Côté employeur</h2>
             <p className={s.body}>
               Une fois la paie du mois validée, « Mettre à disposition » dépose chaque bulletin dans l’espace du salarié.
               Il reçoit un e-mail, sans le PDF en pièce jointe, et vous voyez qui l’a ouvert.
@@ -155,7 +156,7 @@ export default function EmployeeSpaceMarketingPage() {
 
       <section className={p.section}>
         <div className={s.wrap}>
-          <h2 className={s.title}>Ce que prévoit la loi, c’est déjà fait.</h2>
+          <h2 className={s.title}>Ce que prévoit le Code du travail</h2>
           <div className={e.law}>
             {LAW.map((item) => (
               <div key={item.title}>
@@ -171,10 +172,11 @@ export default function EmployeeSpaceMarketingPage() {
       <section className={`${s.section} ${s.case}`}>
         <div className={`${s.wrap} ${s.faqGrid}`}>
           <div>
-            <h2 className={s.title}>Les questions qu’on nous pose.</h2>
+            <h2 className={s.title}>Questions fréquentes</h2>
             <Link href="/questions" className={s.textLink}>
-              Toutes les questions →
+              Toutes les questions
             </Link>
+            <CopilotScene figure="espace" tone="light" side="left" className={e.faqScene} />
           </div>
           <div className={s.faq}>
             <details>
@@ -210,7 +212,7 @@ export default function EmployeeSpaceMarketingPage() {
       </section>
 
       <MarketingCTA
-        title="Plus aucun bulletin à envoyer un par un."
+        title="Ouvrir l’espace salarié à votre équipe"
         text="Créez votre espace RH Pilot, puis invitez vos salariés depuis leur fiche."
       />
     </MarketingPage>

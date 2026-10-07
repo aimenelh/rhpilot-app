@@ -187,3 +187,17 @@
     gap: 44px;
   }
 }
+
+/* copilote sous le titre de la foire aux questions */
+.faqScene.faqScene {
+  --w: 230px;
+  height: 300px;
+  max-width: 300px;
+  margin-top: 32px;
+  justify-self: start;
+}
+@media (max-width: 900px) {
+  .faqScene.faqScene {
+    display: none;
+  }
+}

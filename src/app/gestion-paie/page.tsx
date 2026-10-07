@@ -1,6 +1,7 @@
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import { ClosingCta } from "@/components/landing/ClosingCta";
+import { CopilotScene } from "@/components/landing/CopilotScene";
 import { LivePayslip } from "@/components/landing/payroll/LivePayslip";
 import { PayrollMonth, PayrollTopics } from "@/components/landing/payroll/PayrollHub";
 import { computePayslipDemo, DEFAULT_DEMO_INPUT } from "@/components/landing/payroll/payslipDemo";
@@ -22,15 +23,27 @@ export default function GestionPaiePage() {
       <main id="main-content">
         <section className={s.hero} aria-labelledby="payroll-title">
           <div className={s.inner}>
-            <h1 id="payroll-title" className={s.title}>
-              Un bulletin qui se&nbsp;calcule
-              <em> devant vous.</em>
-            </h1>
-            <p className={s.intro}>
-              Changez le salaire, passez le salarié cadre, ouvrez une ligne : c’est le moteur de RH Pilot qui recalcule,
-              et chaque montant montre sa base, son taux et sa source officielle.
-            </p>
-            <p className={s.intro}>Démonstration sur un salarié fictif. Le calcul de paie dans l’application est en accès anticipé sur invitation, distinct de Pro. La DSN reste en préparation, sans dépôt.</p>
+            <div className={s.heroHead}>
+              <div>
+                <h1 id="payroll-title" className={s.title}>
+                  Gestion de la paie
+                </h1>
+                <p className={s.intro}>
+                  Le moteur de calcul de RH Pilot, en démonstration sur un salarié fictif. Changez le salaire ou le
+                  statut : chaque montant affiche sa base, son taux et sa source officielle.
+                </p>
+                <p className={s.intro}>
+                  Le calcul de paie dans l’application est en accès anticipé, sur invitation, et distinct de l’offre Pro.
+                  La DSN est en préparation, sans dépôt.
+                </p>
+              </div>
+              <CopilotScene
+                figure="paie"
+                className={s.heroScene}
+                ask={{ persona: "marc", text: "Combien coûte un salarié à 2 500 € brut ?" }}
+                answer="3 172,65 € par mois pour l’employeur."
+              />
+            </div>
             <div className={s.demo} id="bulletin">
               <LivePayslip initial={initial} />
             </div>
@@ -40,10 +53,10 @@ export default function GestionPaiePage() {
         <PayrollTopics />
       </main>
       <ClosingCta
-        title="Votre prochaine paie se prépare déjà."
-        accent="Autant la voir venir."
-        text="Contactez-nous pour connaître le périmètre pris en charge et demander un accès anticipé."
-        action="Demander un accès" href="/contact"
+        title="Le calcul de la paie est en accès anticipé."
+        text="Contactez-nous pour connaître le périmètre pris en charge et demander un accès."
+        action="Demander un accès"
+        href="/contact"
       />
       <MarketingFooter />
     </div>

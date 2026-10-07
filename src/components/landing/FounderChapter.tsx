@@ -26,20 +26,64 @@ const REVIEWS = [
   },
 ];
 
-export function FounderChapter() {
+/**
+ * Lecteur de la vidéo « Gardez le fil ». Le fichier ne se charge qu'au clic.
+ * Si la lecture échoue (fichier absent, format refusé), un lien direct vers le
+ * fichier remplace le bouton, plutôt qu'un cadre vide.
+ */
+export function FounderVideo({ className }: { className?: string }) {
   const video = useRef<HTMLVideoElement>(null);
-  const [started, setStarted] = useState(false);
+  const [state, setState] = useState<"idle" | "playing" | "error">("idle");
 
   function play() {
-    setStarted(true);
     const el = video.current;
     if (!el) return;
+    setState("playing");
     el.controls = true;
-    void el.play().catch(() => {
-      // Lecture refusée par le navigateur : les contrôles natifs restent disponibles.
+    el.play().catch((error: unknown) => {
+      // Lecture automatique refusée : les contrôles natifs restent disponibles.
+      if (error instanceof DOMException && error.name === "NotAllowedError") return;
+      setState("error");
     });
   }
 
+  return (
+    <div className={`${s.player} ${className ?? ""}`} data-started={state !== "idle" ? "true" : undefined}>
+      <video
+        ref={video}
+        preload="none"
+        playsInline
+        poster="/marketing/rhpilot-histoire-poster.webp"
+        className={s.video}
+        aria-label="L’histoire de RH Pilot, racontée par son fondateur"
+        onError={() => setState("error")}
+      >
+        <source src="/marketing/rhpilot-histoire.mp4" type="video/mp4" onError={() => setState("error")} />
+        Votre navigateur ne permet pas la lecture de cette vidéo.
+      </video>
+      {state === "idle" && (
+        <button type="button" className={s.play} onClick={play} aria-label="Lire la vidéo : l’histoire de RH Pilot, 1 min 25">
+          <span className={s.playIcon} aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="22" height="22">
+              <path d="M8 5.5v13l10.5-6.5z" fill="currentColor" />
+            </svg>
+          </span>
+          <span className={s.playText}>
+            Voir l’histoire
+            <small>1 min 25 · avec le son</small>
+          </span>
+        </button>
+      )}
+      {state === "error" && (
+        <p className={s.videoError}>
+          La vidéo ne se lance pas ici. <a href="/marketing/rhpilot-histoire.mp4">Ouvrir le fichier vidéo</a>
+        </p>
+      )}
+    </div>
+  );
+}
+
+export function FounderChapter() {
   return (
     <section className={s.chapter} aria-labelledby="fondateur-title" id="histoire" data-no-reveal>
       <ScrollStage scopeId="histoire" watch="[data-reviews]" threshold={0.35} />
@@ -65,32 +109,7 @@ export function FounderChapter() {
           </div>
         </div>
 
-        <div className={s.player} data-started={started ? "true" : undefined}>
-          <video
-            ref={video}
-            preload="none"
-            playsInline
-            poster="/marketing/rhpilot-histoire-poster.webp"
-            className={s.video}
-            aria-label="L’histoire de RH Pilot, racontée par son fondateur"
-          >
-            <source src="/marketing/rhpilot-histoire.mp4" type="video/mp4" />
-            Votre navigateur ne permet pas la lecture de cette vidéo.
-          </video>
-          {!started && (
-            <button type="button" className={s.play} onClick={play} aria-label="Lire la vidéo : l’histoire de RH Pilot, 1 min 25">
-              <span className={s.playIcon} aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="22" height="22">
-                  <path d="M8 5.5v13l10.5-6.5z" fill="currentColor" />
-                </svg>
-              </span>
-              <span className={s.playText}>
-                Voir l’histoire
-                <small>1 min 25 · avec le son</small>
-              </span>
-            </button>
-          )}
-        </div>
+        <FounderVideo />
 
         <div className={s.reviews} data-reviews>
           <svg className={s.thread} viewBox="0 0 1200 70" preserveAspectRatio="none" aria-hidden="true">
@@ -109,7 +128,7 @@ export function FounderChapter() {
               </li>
             ))}
           </ul>
-          <Link href="/pourquoi" className={s.link}>
+          <Link href="/a-propos" className={s.link}>
             Lire l’histoire du projet
           </Link>
         </div>

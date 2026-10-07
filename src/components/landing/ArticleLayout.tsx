@@ -5,6 +5,7 @@ import {
   MarketingCTA,
 } from "@/components/landing/MarketingPage";
 import { BandThread } from "@/components/landing/BandThread";
+import { CopilotScene } from "@/components/landing/CopilotScene";
 import p from "@/components/landing/InnerPages.module.css";
 export function ArticleLayout({
   category,
@@ -23,17 +24,23 @@ export function ArticleLayout({
         <header className={p.intro}>
           <BandThread />
           <div className={p.readingHeader}>
-            <Link href="/ressources" className={p.back}>
-              ← Toutes les ressources
-            </Link>
-            <div className={p.readingMeta}>
-              <span>{category}</span>
-              <span>{readTime}</span>
+            <div className={p.readingCopy}>
+              <Link href="/ressources" className={p.back}>
+                ← Toutes les ressources
+              </Link>
+              <div className={p.readingMeta}>
+                <span>{category}</span>
+                <span>{readTime}</span>
+              </div>
+              <h1 className={p.h1}>
+                {title.replace(/ ([:;?!])/g, "\u00a0$1")}
+              </h1>
+              <p className={p.byline}>
+                Par Aimen El Housseini · Révisé le{" "}
+                <time dateTime="2026-09-29">29 septembre 2026</time>
+              </p>
             </div>
-            <h1 className={p.h1}>{title.replace(/ ([:;?!])/g, "\u00a0$1")}</h1>
-            <p className={p.byline}>
-              Par Aimen El Housseini · Révisé le <time dateTime="2026-09-29">29 septembre 2026</time>
-            </p>
+            <CopilotScene figure="ressources" className={p.readingScene} />
           </div>
         </header>
         <div className={p.articleBody}>

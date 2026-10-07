@@ -7,8 +7,8 @@ import { Bell, CalendarDays, FileText, LayoutGrid, Leaf, Route, Search, Settings
 import { Logomark } from "@/components/Brand";
 import s from "./HeroReveal.module.css";
 
-// Haut de page : un aplat corail, un titre court, et le logiciel qui se redresse
-// au défilement. L'écran est une reproduction fidèle du tableau de bord (mêmes
+// Haut de page : un aplat corail, « Gardez le fil. » souligné par le fil blanc,
+// et le logiciel qui se redresse au défilement. L'écran est une reproduction fidèle du tableau de bord (mêmes
 // rubriques, mêmes notions), avec des données d'exemple d'une boulangerie.
 // Chorégraphie : une seule séquence au chargement (calée sur --intro-offset de
 // BrandIntro), puis un seul effet lié au défilement (variable --p, de 0 à 1).
@@ -51,6 +51,8 @@ const PLAN = [
 export function HeroReveal() {
   const root = useRef<HTMLElement>(null);
   const stage = useRef<HTMLDivElement>(null);
+  const thread = useRef<SVGSVGElement>(null);
+  const fil = useRef<HTMLSpanElement>(null);
 
   // Mise à l'échelle de l'écran (dessiné à 1160 px de large) et défilement.
   useEffect(() => {
@@ -59,13 +61,60 @@ export function HeroReveal() {
     if (!hero || !box) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
 
+    // Le fil passe sous « Gardez le fil. », fait sa boucle après le point,
+    // puis repart vers l'écran du logiciel. Tracé en pixels à partir des
+    // positions réelles du titre (sans les transformations de défilement).
+    const offsetIn = (el: HTMLElement) => {
+      let x = 0;
+      let y = 0;
+      let node: HTMLElement | null = el;
+      while (node && node !== hero) {
+        x += node.offsetLeft;
+        y += node.offsetTop;
+        node = node.offsetParent as HTMLElement | null;
+      }
+      return { x, y };
+    };
+    const drawThread = () => {
+      const svg = thread.current;
+      const word = fil.current;
+      if (!svg || !word) return;
+      const W = hero.clientWidth;
+      const H = hero.clientHeight;
+      const fs = parseFloat(getComputedStyle(word).fontSize) || 100;
+      const o = offsetIn(word);
+      const titleLeft = offsetIn(word.parentElement as HTMLElement).x;
+      // ligne de base du titre, puis le point final, que le fil entoure
+      const yB = o.y + fs * 0.97;
+      const yU = yB + fs * 0.1;
+      // boucle juste après le point final, comme à la fin de la vidéo
+      const px = o.x + word.offsetWidth + fs * 0.2;
+      const py = yB - fs * 0.13;
+      const r = fs * 0.16;
+      const f = (n: number) => n.toFixed(1);
+      const d = [
+        `M -40 ${f(yU + fs * 0.18)}`,
+        `C ${f(titleLeft * 0.6)} ${f(yU + fs * 0.12)} ${f(titleLeft)} ${f(yU)} ${f(titleLeft + fs)} ${f(yU - fs * 0.02)}`,
+        `S ${f(px - fs * 1.4)} ${f(yU + fs * 0.05)} ${f(px - r * 1.4)} ${f(yU)}`,
+        `C ${f(px)} ${f(yU)} ${f(px + r)} ${f(py + r * 0.7)} ${f(px + r)} ${f(py)}`,
+        `C ${f(px + r)} ${f(py - r * 1.3)} ${f(px - r)} ${f(py - r * 1.3)} ${f(px - r)} ${f(py)}`,
+        `C ${f(px - r)} ${f(py + r * 1.25)} ${f(px + r * 1.6)} ${f(yU + r * 0.15)} ${f(px + r * 3)} ${f(yU + r * 0.1)}`,
+        `C ${f(px + fs * 2)} ${f(yU)} ${f(W * 0.78)} ${f(yU - fs * 0.22)} ${f(W + 40)} ${f(yU + fs * 0.04)}`,
+      ].join(" ");
+      svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+      svg.querySelector("path")?.setAttribute("d", d);
+      svg.dataset.ready = "true";
+    };
     const fit = () => {
       const k = Math.min(1, box.clientWidth / 1160);
       hero.style.setProperty("--k", k.toFixed(4));
+      drawThread();
     };
     fit();
     const ro = new ResizeObserver(fit);
     ro.observe(box);
+    ro.observe(hero);
+    void document.fonts?.ready.then(drawThread);
 
     let frame = 0;
     const update = () => {
@@ -117,26 +166,25 @@ export function HeroReveal() {
 
   return (
     <section ref={root} className={s.hero} aria-labelledby="hero-title">
-      <svg className={s.thread} viewBox="0 0 1440 760" preserveAspectRatio="none" aria-hidden="true">
-        <path
-          pathLength={1}
-          d="M-40 610 C 180 570 380 668 620 640 C 820 616 930 576 1010 590 C 1086 604 1104 664 1062 676 C 1018 688 1004 626 1056 612 C 1150 588 1290 640 1480 596"
-        />
+      <svg ref={thread} className={s.thread} aria-hidden="true">
+        <path pathLength={1} />
       </svg>
 
       <div className={s.copy}>
         <h1 id="hero-title" className={s.title}>
           <span className={s.line}>
-            <span>Le logiciel RH</span>
-          </span>
-          <span className={s.line}>
-            <span>des TPE et PME.</span>
+            <span>
+              Gardez le{" "}
+              <span ref={fil} className={s.fil}>
+                fil.
+              </span>
+            </span>
           </span>
         </h1>
         <div className={s.below}>
           <p className={s.lead}>
-            Salariés, embauches, absences, documents et paie au même endroit. Pour chaque événement, RH Pilot prépare
-            les tâches, les dates et les rappels. Gratuit jusqu’à 3 salariés.
+            RH Pilot est le logiciel RH des TPE et PME. Salariés, embauches, absences, documents et paie au même
+            endroit : pour chaque événement, il prépare les tâches, les dates et les rappels.
           </p>
           <div className={s.actions}>
             <Link href="/sign-up" className={s.primary}>

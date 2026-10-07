@@ -2,7 +2,7 @@ import Link from "next/link";
 import s from "./CopilotCards.module.css";
 import { ScrollStage } from "./ScrollStage";
 
-// « Vous décidez. RH Pilot prépare. » : un dirigeant formule un événement,
+// Les trois modules : un dirigeant formule un événement,
 // le copilote au casque corail en prépare la suite. Trois cartes, une par
 // module (suivi RH, paie, espace salarié). Les actions se cochent quand la
 // section entre à l'écran (attribut data-stage posé par ScrollStage) ;
@@ -69,15 +69,10 @@ export function CopilotCards() {
       <ScrollStage scopeId="copilotes" watch="[data-grid]" threshold={0.2} />
       <div className={s.inner}>
         <div className={s.head}>
-          <h2 id="copilotes-title">
-            Vous décidez.
-            <br />
-            RH Pilot prépare.
-          </h2>
+          <h2 id="copilotes-title">Le suivi RH, la paie et l’espace salarié</h2>
           <p>
-            Un événement arrive dans l’équipe : RH Pilot prépare la suite, datée et répartie.
-            Le suivi RH, la paie et l’espace salarié partagent les mêmes fiches, ce qui est saisi
-            une fois sert partout.
+            Les trois modules partagent les mêmes fiches salariés : ce qui est saisi une fois sert partout. Pour chaque
+            événement, RH Pilot prépare les étapes, les dates et les responsables.
           </p>
         </div>
         <div className={s.grid} data-grid>

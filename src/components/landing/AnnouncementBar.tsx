@@ -5,7 +5,7 @@ import Link from "next/link";
 import { X } from "lucide-react";
 
 // Un message différent à chaque arrivée sur une page marketing, pas
-// un seul message figé toute la journée -- sinon la rotation ne se
+// un seul message figé toute la journée, sinon la rotation ne se
 // voit jamais en pratique pour un même visiteur qui navigue le site.
 const ANNOUNCEMENTS = [
   {
@@ -14,8 +14,8 @@ const ANNOUNCEMENTS = [
     cta: "Découvrir",
   },
   {
-    text: "Le module Paie arrive sur RH Pilot, disponible sur le palier Pro.",
-    href: "/tarifs",
+    text: "Le calcul de la paie est en accès anticipé, sur invitation.",
+    href: "/gestion-paie",
     cta: "En savoir plus",
   },
   {
@@ -24,7 +24,7 @@ const ANNOUNCEMENTS = [
     cta: "Voir comment",
   },
   {
-    text: "IA et recrutement : ce que la CNIL contrôle vraiment en 2026.",
+    text: "IA et recrutement : les contrôles de la CNIL en 2026.",
     href: "/ressources/ia-recrutement-cnil-2026",
     cta: "Lire l’article",
   },

@@ -1,0 +1,14 @@
+.signature {
+  margin-top: 32px;
+  font-size: 15px;
+  color: #6d6b66;
+}
+.signature strong {
+  display: block;
+  font-size: 16px;
+  color: #17181c;
+}
+.video {
+  margin-top: 32px;
+  box-shadow: 0 30px 70px -40px rgba(0, 0, 0, 0.45);
+}

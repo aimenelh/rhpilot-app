@@ -1,30 +1,29 @@
 import { ArticleLayout, H2, P, List } from "@/components/landing/ArticleLayout";
 
 export const metadata = {
-  title: "Rupture conventionnelle : indemnisation chômage réduite en 2026",
+  title: "Rupture conventionnelle : l’indemnisation chômage réduite au 1er septembre 2026",
   description:
-    "Depuis le 1er septembre 2026, la durée maximale d'indemnisation chômage après une rupture conventionnelle diminue. Ce que ça change dans une négociation.",
+    "Depuis le 1er septembre 2026, la durée maximale d’indemnisation chômage après une rupture conventionnelle est réduite, de 18 à 15 mois pour les moins de 55 ans. La procédure de rupture reste inchangée.",
 };
 
 export default function Article() {
   return (
     <ArticleLayout
       category="Actualité réglementaire"
-      title="Rupture conventionnelle : l'indemnisation chômage baisse depuis le 1er septembre 2026"
+      title="Rupture conventionnelle : l’indemnisation chômage réduite au 1er septembre 2026"
       readTime="4 min de lecture"
     >
       <P>
-        La rupture conventionnelle reste, sur le papier, exactement la même procédure&nbsp;:
-        un accord entre l&apos;employeur et le salarié, une indemnité de rupture au moins égale
-        à l&apos;indemnité légale de licenciement, une homologation par la DREETS. Ce qui change
-        au 1er septembre 2026, ce n&apos;est pas la procédure, c&apos;est ce qui se passe après,
-        du côté de France Travail.
+        La procédure de rupture conventionnelle ne change pas&nbsp;: un accord entre
+        l’employeur et le salarié, une indemnité de rupture au moins égale à l’indemnité
+        légale de licenciement, une homologation par la DREETS. La modification du 1er
+        septembre 2026 porte sur ce qui se passe après la rupture, du côté de France Travail.
       </P>
 
-      <H2>Ce qui baisse précisément</H2>
+      <H2>La durée maximale d’indemnisation</H2>
       <P>
-        La durée maximale d&apos;indemnisation chômage pour un salarié qui quitte son emploi via
-        une rupture conventionnelle diminue&nbsp;:
+        La durée maximale d’indemnisation chômage d’un salarié qui quitte son emploi par une
+        rupture conventionnelle diminue&nbsp;:
       </P>
       <List
         items={[
@@ -33,31 +32,30 @@ export default function Article() {
         ]}
       />
       <P>
-        Cette baisse ne change rien aux conditions d&apos;éligibilité à l&apos;allocation chômage
-        elle-même (durée d&apos;affiliation, etc.), seulement la durée maximale pendant laquelle
-        elle peut être versée pour ce motif de rupture précis.
+        Les conditions d’éligibilité à l’allocation chômage (durée d’affiliation, etc.) ne
+        changent pas. Seule la durée maximale pendant laquelle l’allocation peut être versée
+        pour ce motif de rupture est réduite.
       </P>
 
-      <H2>Pourquoi c&apos;est le genre de détail qui compte dans une négociation</H2>
+      <H2>L’effet sur la négociation</H2>
       <P>
-        Une rupture conventionnelle se négocie souvent avec, en toile de fond, une estimation
-        implicite de la durée pendant laquelle le salarié pourra être indemnisé le temps de
-        retrouver un poste. Un plafond réduit change cette estimation, indépendamment du
-        montant de l&apos;indemnité de rupture elle-même. Deux dossiers strictement identiques
-        sur le papier, homologués avant et après le 1er septembre 2026, n&apos;ouvrent plus les
-        mêmes droits pour le salarié concerné.
+        Une rupture conventionnelle se négocie souvent en tenant compte, au moins
+        implicitement, de la durée pendant laquelle le salarié pourra être indemnisé avant de
+        retrouver un poste. Un plafond réduit modifie cette estimation, indépendamment du
+        montant de l’indemnité de rupture. Deux dossiers identiques, homologués l’un avant et
+        l’autre après le 1er septembre 2026, n’ouvrent pas les mêmes droits pour le salarié
+        concerné.
       </P>
       <P>
-        Ce n&apos;est pas un détail qui change la façon de mener la négociation RH, mais
-        c&apos;est une information que le salarié va chercher, et qu&apos;il vaut mieux connaître
-        avant lui plutôt qu&apos;après.
+        Ce changement ne modifie pas la manière de conduire la négociation. Il s’agit en
+        revanche d’une information que le salarié prendra en compte, et qu’il est utile de
+        connaître avant l’entretien.
       </P>
 
-      <H2>Une date qui concentre plusieurs changements</H2>
+      <H2>Autres changements au 1er septembre 2026</H2>
       <P>
-        Le 1er septembre 2026 est aussi la date d&apos;entrée en vigueur de la réforme
-        plafonnant la durée des arrêts de travail prescrits, un sujet distinct mais qui entre
-        en vigueur au même moment. Voir{" "}
+        Le 1er septembre 2026 est aussi la date d’entrée en vigueur d’une réforme distincte,
+        qui plafonne la durée des arrêts de travail prescrits. Voir{" "}
         <a
           href="/ressources/reforme-arrets-travail-2026"
           className="text-brand-primary hover:underline"
