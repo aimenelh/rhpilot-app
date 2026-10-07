@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import { Logomark, Wordmark } from "./Brand";
-import { Users, Route, CalendarDays, Settings, Bell, Menu, X, LayoutGrid, Leaf, FileText, Sparkles, ChevronDown, MessageCircle, type LucideIcon } from "lucide-react";
+import { Users, Route, CalendarDays, Settings, Bell, Menu, X, LayoutGrid, Leaf, FileText, Sparkles, ChevronDown, MessageCircle, WalletCards, type LucideIcon } from "lucide-react";
 import { FlashToast } from "./ui/FlashToast";
 import { GlobalSearch } from "./GlobalSearch";
 import { RhNewsToast } from "./RhNewsToast";
@@ -19,7 +19,7 @@ import { NavigationProgress } from "@/components/app/NavigationProgress";
 const AppCopilote = dynamic(() => import("./AppCopilote").then((mod) => mod.AppCopilote), { ssr: false });
 const DiscoveryTour = dynamic(() => import("./tour/DiscoveryTour").then((mod) => mod.DiscoveryTour), { ssr: false });
 
-type NavItem = { href: string; label: string; icon: LucideIcon; section?: string; adminOnly?: boolean };
+type NavItem = { href: string; label: string; icon: LucideIcon; section?: string; adminOnly?: boolean; payrollOnly?: boolean };
 
 const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard", label: "Tableau de bord", icon: LayoutGrid, section: "Votre espace" },
@@ -28,6 +28,8 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/calendar", label: "Calendrier", icon: CalendarDays },
   { href: "/dashboard/absences", label: "Congés & absences", icon: Leaf, adminOnly: true },
   { href: "/dashboard/documents", label: "Documents", icon: FileText, adminOnly: true },
+  // Paie en accès anticipé : visible pour les seules organisations pilotes (lib/payrollAccess).
+  { href: "/dashboard/payroll", label: "Paie", icon: WalletCards, adminOnly: true, payrollOnly: true },
   { href: "/dashboard#copilote", label: "Copilote RH", icon: Sparkles, section: "Pour aller plus loin" },
   { href: "/dashboard/configuration", label: "Configuration", icon: Settings },
 ];
@@ -120,6 +122,7 @@ export function AppShell({
     <nav aria-label="Navigation principale" className="workspace-nav">
       {NAV_ITEMS.map(item => {
         if (item.adminOnly && accessRole !== "OWNER" && accessRole !== "ADMIN") return null;
+        if (item.payrollOnly && !payrollEnabled) return null;
         const isActive = item.href === "/dashboard" ? filDashboard : !item.href.includes("#") && pathname.startsWith(item.href);
         const count = item.href === "/dashboard/employees" ? employeeCount : item.href === "/dashboard/absences" ? pendingRequestsCount : 0;
         return <div key={item.href}>{item.section ? <p className="workspace-nav-label">{item.section}</p> : null}<Link href={preview && item.href === "/dashboard#copilote" ? "#copilote" : item.href} aria-current={isActive ? "page" : undefined} onClick={() => setMobileNavOpen(false)}><item.icon size={20} strokeWidth={1.6}/><span>{item.label}</span>{count > 0 ? <span className="workspace-nav-badge">{count}</span> : null}</Link></div>;
