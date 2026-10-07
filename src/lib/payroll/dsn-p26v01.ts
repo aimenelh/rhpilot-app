@@ -170,6 +170,23 @@ function normalizeText(value: string, label: string, optional = false): string |
 }
 
 function text(value: string, label: string): string { return normalizeText(value, label) as string; }
+
+/**
+ * Localité (type N4DS_Adresse_Localite, motif [A-Za-z0-9\s]+) : lettres sans accent, chiffres et espaces,
+ * en majuscules comme sur l'adressage postal (« Saint-Étienne » devient « SAINT ETIENNE »).
+ */
+const LIGATURES: Readonly<Record<string, string>> = { Æ: "AE", æ: "ae", Œ: "OE", œ: "oe", ß: "ss" };
+
+export function dsnLocality(value: string, label: string): string {
+  if (/[\r\n\0]/.test(value)) throw new Error(`DSN bloquée : ${label} contient un caractère de contrôle incompatible avec le format DSN.`);
+  const normalized = value
+    .replace(/[ÆæŒœß]/g, (character) => LIGATURES[character] ?? character)
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9]+/g, " ").trim().toUpperCase();
+  if (!normalized) throw new Error(`DSN bloquée : ${label} est absent.`);
+  return normalized;
+}
+
 function optionalText(value: string | null | undefined): string | null { return normalizeText(value ?? "", "une donnée facultative", true); }
 
 function assertDigits(value: string, length: number, label: string): string {
@@ -222,7 +239,7 @@ function siretParts(siretValue: string): { siren: string; nic: string; siret: st
 }
 
 /** Encodage commun aux déclarations mensuelles et aux signalements P26V01. */
-export const dsnP26Format = { add, text, assertDigits, assertCode, dsnDate, siretParts, serialize };
+export const dsnP26Format = { add, text, locality: dsnLocality, assertDigits, assertCode, dsnDate, siretParts, serialize };
 
 function addRemuneration(
   lines: DsnLine[],
@@ -281,7 +298,7 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
   add(lines, "S10.G00.01.003", text(input.emitter.name, "la raison sociale de l'émetteur"));
   add(lines, "S10.G00.01.004", text(input.emitter.address, "l'adresse de l'émetteur"));
   add(lines, "S10.G00.01.005", text(input.emitter.postalCode, "le code postal de l'émetteur"));
-  add(lines, "S10.G00.01.006", text(input.emitter.city, "la ville de l'émetteur"));
+  add(lines, "S10.G00.01.006", dsnLocality(input.emitter.city, "la ville de l'émetteur"));
   add(lines, "S10.G00.02.002", text(input.emitter.contactName, "le nom du contact DSN"));
   add(lines, "S10.G00.02.004", text(input.emitter.contactEmail, "l'e-mail du contact DSN"));
   add(lines, "S10.G00.02.005", text(input.emitter.contactPhone, "le téléphone du contact DSN"));
@@ -303,12 +320,12 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
   add(lines, "S21.G00.06.003", apenCode);
   add(lines, "S21.G00.06.004", text(input.emitter.address, "l'adresse de l'entreprise"));
   add(lines, "S21.G00.06.005", text(input.emitter.postalCode, "le code postal de l'entreprise"));
-  add(lines, "S21.G00.06.006", text(input.emitter.city, "la ville de l'entreprise"));
+  add(lines, "S21.G00.06.006", dsnLocality(input.emitter.city, "la ville de l'entreprise"));
   add(lines, "S21.G00.11.001", nic);
   add(lines, "S21.G00.11.002", apetCode);
   add(lines, "S21.G00.11.003", text(input.emitter.address, "l'adresse de l'établissement"));
   add(lines, "S21.G00.11.004", text(input.emitter.postalCode, "le code postal de l'établissement"));
-  add(lines, "S21.G00.11.005", text(input.emitter.city, "la ville de l'établissement"));
+  add(lines, "S21.G00.11.005", dsnLocality(input.emitter.city, "la ville de l'établissement"));
   add(lines, "S21.G00.11.022", establishmentIdcc);
 
   for (const employee of input.employees) {
@@ -324,7 +341,7 @@ export function buildDsnP26V01Monthly(input: DsnP26MonthlyInput): string {
     add(lines, "S21.G00.30.007", text(employee.birthPlace, "le lieu de naissance du salarié"));
     add(lines, "S21.G00.30.008", text(employee.addressLine, "l'adresse du salarié"));
     add(lines, "S21.G00.30.009", assertDigits(employee.postalCode, 5, "le code postal du salarié"));
-    add(lines, "S21.G00.30.010", text(employee.city, "la ville du salarié"));
+    add(lines, "S21.G00.30.010", dsnLocality(employee.city, "la ville du salarié"));
     add(lines, "S21.G00.30.011", optionalText(employee.countryCode));
     add(lines, "S21.G00.30.013", assertCode(employee.euClassificationCode, "la codification UE", 2, 2));
     add(lines, "S21.G00.30.014", assertCode(employee.birthDepartment, "le département de naissance", 2, 2));

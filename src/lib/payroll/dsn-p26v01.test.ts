@@ -247,3 +247,17 @@ describe("DSN P26V01 builder", () => {
     expect(() => buildDsnP26V01Monthly(invalid)).toThrow(/taux AT\/MP/i);
   });
 });
+
+describe("localités DSN", () => {
+  it("écrit les villes sans accent ni ponctuation, comme l'exige le motif N4DS_Adresse_Localite", async () => {
+    const { dsnLocality } = await import("./dsn-p26v01");
+    expect(dsnLocality("Nîmes", "la ville")).toBe("NIMES");
+    expect(dsnLocality("Saint-Étienne", "la ville")).toBe("SAINT ETIENNE");
+    expect(dsnLocality("L'Haÿ-les-Roses", "la ville")).toBe("L HAY LES ROSES");
+    expect(dsnLocality("Œuilly", "la ville")).toBe("OEUILLY");
+    expect(() => dsnLocality("  - ", "la ville")).toThrow(/absent/);
+    const content = buildDsnP26V01Monthly({ ...input(), emitter: { ...input().emitter, city: "Nîmes" } });
+    expect(content).toContain("S10.G00.01.006,'NIMES'");
+    expect(content).not.toMatch(/^S(?:10\.G00\.01\.006|21\.G00\.06\.006|21\.G00\.11\.005|21\.G00\.30\.010),'[^']*[^A-Za-z0-9\s'][^']*'$/m);
+  });
+});
