@@ -218,6 +218,11 @@ export type YearToDate = {
   publicTransportExempt?: number;
   /** Net fiscal des salaires d'apprentissage avant exonération annuelle, hors IJSS. */
   apprenticeFiscalIncome?: number;
+  /**
+   * Reprise uniquement : part Urssaf (CTP 668/669) du cumul RGDU déjà déclarée par l'outil précédent.
+   * Sans bulletin antérieur verrouillé dans RH Pilot, elle permet de ventiler la RGDU du premier mois en DSN.
+   */
+  rgduUrssafAmount?: number;
 };
 
 export type SickPayHistory = {

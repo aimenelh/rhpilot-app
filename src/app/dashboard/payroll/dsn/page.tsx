@@ -39,7 +39,7 @@ export default async function DsnPreparationPage() {
       WHERE "organizationId" = ${membership.organizationId}
       LIMIT 1
     `,
-    prisma.employee.findMany({ where: { organizationId: membership.organizationId, deletedAt: null }, select: { id: true, firstName: true, lastName: true, position: true, contractType: true }, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] }),
+    prisma.employee.findMany({ where: { organizationId: membership.organizationId, deletedAt: null }, select: { id: true, firstName: true, lastName: true, position: true, contractType: true, isDemoData: true }, orderBy: [{ lastName: "asc" }, { firstName: "asc" }] }),
     prisma.$queryRaw<EmployeeDsnStatusRow[]>`SELECT "employeeId" FROM "dsn_employee_profiles" WHERE "organizationId" = ${membership.organizationId}`,
     prisma.payrollPeriod.findMany({ where: { organizationId: membership.organizationId, status: "LOCKED", year: 2026 }, select: { id: true, year: true, month: true, paymentDate: true }, orderBy: [{ year: "desc" }, { month: "desc" }], take: 12 }),
     prisma.dsn_declarations.findMany({ where: { organizationId: membership.organizationId }, orderBy: { createdAt: "desc" }, take: 100,
@@ -51,6 +51,7 @@ export default async function DsnPreparationPage() {
   ]);
 
   const settings = settingsRows[0];
+  const demoOnly = employees.length > 0 && employees.every((employee) => employee.isDemoData);
   const configuredIds = new Set(dsnStatusRows.map((row) => row.employeeId));
   const configuredCount = employees.filter((employee) => configuredIds.has(employee.id)).length;
   const missingOrganization = [
@@ -81,6 +82,12 @@ export default async function DsnPreparationPage() {
         <p className="text-sm font-semibold text-ink">Phase pilote : vous déposez des DSN d&apos;essai</p>
         <p className="mt-1 max-w-3xl text-sm leading-6 text-ink-soft">Votre déclaration réelle continue de partir de votre outil actuel. Le fichier d&apos;essai de RH Pilot passe tous les contrôles officiels de net-entreprises sans être transmis aux organismes : c&apos;est ce qui permet de comparer les deux, mois après mois, avant de basculer.</p>
       </div>
+      {demoOnly ? (
+        <div className="mt-4 rounded-lg border border-accent-amber/30 bg-accent-amber/5 px-4 py-3">
+          <p className="text-sm font-semibold text-ink">Entreprise de démonstration</p>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-ink-soft">SIRET, salariés, NIR, organismes et comptes sont fictifs et déjà renseignés : vous pouvez générer la DSN d&apos;un mois clôturé pour voir le fichier, mais pas la déposer sur net-entreprises. Pour un vrai dépôt d&apos;essai, utilisez une organisation avec votre SIRET et vos salariés.</p>
+        </div>
+      ) : null}
 
       <section id="entreprise" className="mt-8 scroll-mt-24 border-t border-surface-border pt-6">
         <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">

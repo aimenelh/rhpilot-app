@@ -103,6 +103,7 @@ export function PayrollOpeningSection({ employeeId, paidLeave, cumuls }: { emplo
           <NumberField name="rgduSmic" label="RGDU : Smic cumulé" value={c.rgduSmic} />
           <NumberField name="rgduRemuneration" label="RGDU : rémunération cumulée" value={c.rgduRemuneration} />
           <NumberField name="rgduAmount" label="RGDU : réduction cumulée" value={c.rgduAmount} />
+          <NumberField name="rgduUrssafAmount" label="RGDU : part Urssaf déclarée" value={c.rgduUrssafAmount} hint="Cumul des CTP 668/669 de vos DSN de l'année, hors retraite complémentaire. Nécessaire à la première DSN." />
           <NumberField name="overtimeTaxExemptGross" label="Heures sup. défiscalisées" value={c.overtimeTaxExemptGross} />
           <NumberField name="hoursPaid" label="Heures payées" value={c.hoursPaid} />
           <NumberField name="employerCost" label="Coût employeur" value={c.employerCost} />

@@ -352,6 +352,11 @@ export function readLockedOvertimeDeclaration(value: unknown): LockedOvertimeDec
   return { remunerations, totalAmount, employerEligibleAmount, taxExemptGrossAmount, taxExemptNetAmount };
 }
 
+/** Part de la RGDU imputée sur les cotisations Urssaf (le reste s'impute sur la retraite complémentaire). */
+export function rgduUrssafFraction(headcount: number): number {
+  return headcount >= 50 ? 0.3420 / 0.4021 : 0.3380 / 0.3981;
+}
+
 /** Ventilation des cumuls, puis différence mensuelle : pas d'arrondi séparé chaque mois. */
 export function splitLockedRgdu(current: unknown, previous?: unknown): { urssaf: number; retirement: number; smic: number } {
   const { bulletin, inputs } = readLockedContributionSnapshot(current);
@@ -359,10 +364,15 @@ export function splitLockedRgdu(current: unknown, previous?: unknown): { urssaf:
   const priorTotal = numeric(inputs.yearToDate?.rgduAmount ?? 0, "le cumul RGDU antérieur");
   const headcount = numeric(inputs.organization.headcount, "l'effectif");
   if (headcount < 0 || cumulative < 0 || priorTotal < 0) throw new Error("DSN bloquée : les cumuls RGDU ou l'effectif sont négatifs.");
-  const fraction = headcount >= 50 ? 0.3420 / 0.4021 : 0.3380 / 0.3981;
+  const fraction = rgduUrssafFraction(headcount);
   let priorUrssaf = 0;
-  if (priorTotal !== 0) {
-    if (previous === undefined) throw new Error("DSN bloquée : la ventilation RGDU nécessite le bulletin antérieur verrouillé ; une reprise du seul cumul global est insuffisante.");
+  if (priorTotal !== 0 && previous === undefined) {
+    // Premier mois après une reprise : la part Urssaf déjà déclarée par l'outil précédent est reprise telle quelle.
+    const declared = inputs.yearToDate?.rgduUrssafAmount;
+    if (declared === undefined || declared === null) throw new Error("DSN bloquée : la ventilation RGDU nécessite le bulletin antérieur verrouillé, ou la part Urssaf du cumul RGDU dans la reprise des cumuls du salarié.");
+    priorUrssaf = round(numeric(declared, "la part Urssaf du cumul RGDU repris"));
+    if (priorUrssaf < 0 || priorUrssaf > priorTotal + 0.005) throw new Error("DSN bloquée : la part Urssaf du cumul RGDU repris dépasse la réduction cumulée.");
+  } else if (priorTotal !== 0) {
     const prior = readLockedContributionSnapshot(previous);
     if (prior.bulletin.employee.id !== bulletin.employee.id || prior.bulletin.period.month !== bulletin.period.month - 1 ||
         cents(numeric(prior.bulletin.yearToDate.rgduAmount, "le cumul RGDU du bulletin antérieur")) !== cents(priorTotal)) {
@@ -623,8 +633,11 @@ export function mapLockedContributions(input: {
     deferred.push({ employeeNir: input.employeeNir, code: "TAXE_APPRENTISSAGE_SOLDE", amount: value, declaration: "DSN avril 2027, exercice 2026, bloc 82 code 076 (CTP annuel à rapprocher)" });
     mapped.add("TAXE_APPRENTISSAGE_SOLDE");
   }
+  // Une affiliation qui commence à l'embauche ou finit à la sortie couvre tout l'emploi du mois.
+  const coveredFrom = inputs.employee.hireDate > bulletin.period.first ? inputs.employee.hireDate : bulletin.period.first;
+  const coveredUntil = inputs.employee.contractEndDate && inputs.employee.contractEndDate < bulletin.period.last ? inputs.employee.contractEndDate : bulletin.period.last;
   for (const affiliation of input.complementaryAffiliations ?? []) {
-    if (affiliation.validFrom > bulletin.period.first || (affiliation.validUntil && affiliation.validUntil < bulletin.period.last)) throw new Error("DSN bloquée : un changement d'affiliation complémentaire pendant le mois nécessite des périodes segmentées.");
+    if (affiliation.validFrom > coveredFrom || (affiliation.validUntil && affiliation.validUntil < coveredUntil)) throw new Error("DSN bloquée : un changement d'affiliation complémentaire pendant le mois nécessite des périodes segmentées.");
     const sources = affiliation.coverage === "SANTE" ? ["SANTE"] : ["PREVOYANCE", "PREVOYANCE_T2"];
     const covered = sources.filter((code) => byCode.has(code));
     const due = round(covered.reduce((total, code) => total + amount(code), 0));

@@ -4,7 +4,6 @@ import { ArrowRight, CalendarPlus, ChevronRight, FileText, FlaskConical } from "
 import { prisma } from "@/lib/prisma";
 
 import PayrollReopenInlineButton from "./PayrollReopenInlineButton";
-import { prepareDemoPayrollData } from "./demoPayrollActions";
 import { DemoPayrollSetupButton } from "./DemoPayrollSetupButton";
 import { getPayrollMemberships } from "@/lib/payrollAccess";
 
@@ -100,6 +99,8 @@ export default async function PayrollPage() {
   for (const profile of profileRows) if (!profileByEmployee.has(profile.employeeId)) profileByEmployee.set(profile.employeeId, profile);
   const configuredCount = employees.filter((employee) => profileByEmployee.has(employee.id)).length;
   const demoOnly = employees.length > 0 && employees.every((employee) => employee.isDemoData);
+  const demoEmployees = employees.filter((employee) => employee.isDemoData);
+  const realEmployees = employees.filter((employee) => !employee.isDemoData);
   const now = new Date();
   const activePeriod = periods.find((period) => period.status !== "LOCKED") ?? null;
 
@@ -167,8 +168,16 @@ export default async function PayrollPage() {
 
       {demoOnly ? (
         <section className="mt-5 flex flex-col gap-3 rounded-xl border border-surface-border bg-surface-subtle/40 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-          <div><p className="text-sm font-medium text-ink">Entreprise de démonstration</p><p className="mt-1 text-xs text-ink-faint">Prépare les profils, les paramètres de paie et le mois en cours pour essayer le parcours.</p></div>
-          <form action={prepareDemoPayrollData}><DemoPayrollSetupButton /></form>
+          <div className="max-w-2xl">
+            <p className="text-sm font-medium text-ink">Entreprise de démonstration</p>
+            <p className="mt-1 text-xs leading-5 text-ink-faint">Salaires, cumuls depuis janvier, organismes et numéros fictifs : vous pouvez calculer, clôturer et générer la DSN du mois pour essayer tout le parcours. Cette DSN ne peut pas être déposée sur net-entreprises.</p>
+          </div>
+          <DemoPayrollSetupButton hasPayroll={periods.length > 0} />
+        </section>
+      ) : demoEmployees.length > 0 ? (
+        <section className="mt-5 rounded-xl border border-surface-border bg-surface-subtle/40 px-5 py-4">
+          <p className="text-sm font-medium text-ink">Paie de démonstration indisponible</p>
+          <p className="mt-1 max-w-3xl text-xs leading-5 text-ink-faint">Votre organisation mélange des salariés fictifs et des salariés réels ({realEmployees.map((employee) => `${employee.firstName} ${employee.lastName}`.trim()).join(", ")}). Pour essayer la paie avec les salariés fictifs, archivez les salariés réels ; pour démarrer votre vraie paie, archivez plutôt les salariés fictifs.</p>
         </section>
       ) : null}
 

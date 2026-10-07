@@ -13,12 +13,20 @@ export const DSN_PREPARED_DIPLOMA_LEVELS: Array<[string, string]> = [
   ["06", "Bac +3 ou +4 : licence, licence professionnelle, master 1"], ["07", "Bac +5 : master 2, diplôme d'ingénieur"], ["08", "Bac +8 : doctorat"],
 ];
 
-/** Dispositifs de politique publique ouverts au moteur : contrat ordinaire ou apprentissage du secteur privé. */
+/** Dispositifs de politique publique ouverts au moteur : contrat ordinaire, professionnalisation ou apprentissage du secteur privé. */
 export const DSN_PUBLIC_POLICIES: Array<[string, string]> = [
   ["99", "Non concerné"],
+  ["61", "Contrat de professionnalisation"],
   ["64", "Apprentissage : entreprise artisanale ou de moins de 11 salariés"],
   ["65", "Apprentissage : entreprise d'au moins 11 salariés (hors répertoire des métiers)"],
 ];
+
+/** Dispositif attendu pour un contrat d'alternance, ou 99 pour un contrat ordinaire. */
+export function dsnExpectedPublicPolicies(contract: string): string[] {
+  if (contract === "APPRENTISSAGE") return ["64", "65"];
+  if (contract === "PROFESSIONNALISATION") return ["61"];
+  return ["99"];
+}
 
 export function dsnFixedTermReason(nature: string, publicPolicy: string, value: string | null | undefined): string | null {
   const reason = value?.trim() || null;
@@ -27,10 +35,11 @@ export function dsnFixedTermReason(nature: string, publicPolicy: string, value: 
     if (!DSN_FIXED_TERM_REASONS.some(([code]) => code === reason)) throw new Error("DSN bloquée : le motif de recours n'est pas valide pour un CDD privé ordinaire.");
     return reason;
   }
-  // Apprentissage (dispositifs 64/65) : motif facultatif, seul le 11 est admis (Dsn-Val S21.G00.40.021/CCH-12).
-  if (["64", "65"].includes(publicPolicy) && ["01", "02"].includes(nature)) {
-    if (reason && reason !== "11") throw new Error("DSN bloquée : seul le motif 11 (apprentissage) est admis pour un contrat d'apprentissage.");
-    return reason;
+  // Alternance (dispositifs 61, 64 et 65) : le dispositif qualifie déjà le contrat, aucun motif de recours n'est déclaré
+  // (le motif 11, seul admis pour l'apprentissage, est facultatif selon Dsn-Val S21.G00.40.021/CCH-12).
+  if (["61", "64", "65"].includes(publicPolicy) && ["01", "02"].includes(nature)) {
+    if (reason && !(reason === "11" && publicPolicy !== "61")) throw new Error("DSN bloquée : un contrat d'alternance ne porte pas de motif de recours au CDD.");
+    return null;
   }
   if (reason) throw new Error("DSN bloquée : ce motif de recours est réservé à un CDD privé ordinaire dans le périmètre actuel.");
   return null;

@@ -77,6 +77,7 @@ export async function savePayrollOpening(employeeId: string, _prev: PayrollOpeni
     const baseT1 = readNumber(formData, "baseT1") ?? Math.min(gross, ceiling);
     const baseT2 = readNumber(formData, "baseT2") ?? Math.min(Math.max(gross - ceiling, 0), 7 * ceiling);
     if (baseT1 > gross + 0.01 || baseT1 > ceiling + 0.01) return { error: "La base tranche 1 ne peut dépasser ni le brut ni le plafond cumulés." };
+    const rgduUrssafAmount = readNumber(formData, "rgduUrssafAmount");
     const cumuls = {
       grossSubject: gross,
       grossTotal: readNumber(formData, "grossTotal") ?? gross,
@@ -90,6 +91,7 @@ export async function savePayrollOpening(employeeId: string, _prev: PayrollOpeni
       rgduSmic: readNumber(formData, "rgduSmic") ?? 0,
       rgduRemuneration: readNumber(formData, "rgduRemuneration") ?? 0,
       rgduAmount: readNumber(formData, "rgduAmount") ?? 0,
+      ...(rgduUrssafAmount === null ? {} : { rgduUrssafAmount }),
       overtimeTaxExemptGross: readNumber(formData, "overtimeTaxExemptGross") ?? 0,
       netTaxable: readNumber(formData, "netTaxable") ?? 0,
       apprenticeFiscalIncome: readNumber(formData, "apprenticeFiscalIncome", { required: employee.contractType === "APPRENTISSAGE" }) ?? 0,
@@ -102,6 +104,7 @@ export async function savePayrollOpening(employeeId: string, _prev: PayrollOpeni
       employerCost: readNumber(formData, "employerCost") ?? 0,
     };
     if (cumuls.rgduAmount > 0 && (cumuls.rgduSmic <= 0 || cumuls.rgduRemuneration <= 0)) return { error: "Pour reprendre la RGDU, renseignez le Smic cumulé, la rémunération cumulée et la réduction cumulée." };
+    if (cumuls.rgduUrssafAmount !== undefined && cumuls.rgduUrssafAmount > cumuls.rgduAmount) return { error: "La part Urssaf de la RGDU ne peut pas dépasser la réduction cumulée." };
     const sickPayHistory = { fullRateDaysUsed: readNumber(formData, "sickFullRateDays") ?? 0, reducedRateDaysUsed: readNumber(formData, "sickReducedRateDays") ?? 0 };
     await prisma.$transaction(async (tx) => {
       await tx.$executeRaw`DELETE FROM "employee_payroll_openings" WHERE "organizationId" = ${membership.organizationId} AND "employeeId" = ${employee.id} AND "year" = ${year}`;
