@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { MarketingCTA, MarketingPage, PageIntro } from "@/components/landing/MarketingPage";
+import { CopilotScene } from "@/components/landing/CopilotScene";
 import s from "@/components/landing/MarketingV2.module.css";
 import p from "@/components/landing/InnerPages.module.css";
 import sec from "./Securite.module.css";
@@ -8,33 +9,33 @@ import sec from "./Securite.module.css";
 export const metadata = {
   title: "Sécurité",
   description:
-    "Comment RH Pilot protège vos données RH : isolation entre organisations, prestataires techniques, authentification déléguée, traçabilité complète.",
+    "Comment RH Pilot protège vos données RH : cloisonnement entre organisations, hébergement dans l’Union européenne, authentification, journal des actions.",
 };
 
-// Même grille que les autres pages éditoriales (tarifs, questions, pourquoi) :
+// Même grille que les autres pages éditoriales (tarifs, questions, à propos) :
 // en-tête pleine largeur, titre à gauche et contenu à droite.
 
 const PILLARS = [
   {
-    title: "Isolation stricte des données",
-    text: "Chaque organisation cliente est cloisonnée. Vos données ne sont jamais mêlées à celles d’une autre entreprise.",
+    title: "Données cloisonnées",
+    text: "Chaque organisation cliente est isolée : ses données ne sont jamais mêlées à celles d’une autre entreprise.",
   },
   {
-    title: "Une infrastructure identifiée",
-    text: "Base de données Neon en Union européenne. Les fonctions applicatives Vercel sont configurées à Francfort (fra1). Retrouvez nos prestataires ci-dessous.",
+    title: "Hébergement dans l’Union européenne",
+    text: "Base de données Neon en Union européenne. Les fonctions applicatives Vercel sont configurées à Francfort (fra1). La liste des sous-traitants figure plus bas.",
     eu: true,
   },
   {
-    title: "Authentification déléguée",
-    text: "Gérée par Clerk, spécialiste de l’authentification, jamais construite ni stockée par nous-mêmes.",
+    title: "Authentification confiée à Clerk",
+    text: "Les connexions et les mots de passe sont gérés par Clerk, un service spécialisé. RH Pilot ne stocke aucun mot de passe.",
   },
   {
-    title: "Traçabilité complète",
-    text: "Chaque action importante est journalisée, consultable en cas de besoin.",
+    title: "Journal des actions",
+    text: "Les actions importantes sont journalisées et consultables en cas de besoin.",
   },
   {
-    title: "Aucune donnée vendue",
-    text: "Jamais vendues à des tiers, jamais utilisées pour entraîner une IA sans consentement explicite préalable.",
+    title: "Aucune revente de données",
+    text: "Les données ne sont jamais vendues à des tiers, ni utilisées pour entraîner une IA sans consentement explicite préalable.",
   },
 ];
 
@@ -69,14 +70,21 @@ export default function SecurityPage() {
   return (
     <MarketingPage>
       <PageIntro
-        title="La protection de vos données RH."
-        intro="Vos données RH sont sensibles. Voici, concrètement, comment RH Pilot les traite, sans jargon, et sans rien promettre que nous ne fassions déjà."
+        title="Sécurité et protection des données"
+        intro="Comment RH Pilot héberge, cloisonne et protège les données RH de votre entreprise, et avec quels sous-traitants."
+        scene={
+          <CopilotScene
+            figure="securite"
+            ask={{ persona: "sophie", text: "Où sont hébergées nos données ?" }}
+            answer="Dans l’Union européenne : base de données Neon, application à Francfort."
+          />
+        }
       />
 
       <section className={p.section}>
         <div className={`${s.wrap} ${p.columns}`}>
           <div>
-            <h2 className={s.title}>Ce qui protège vos données.</h2>
+            <h2 className={s.title}>Les mesures en place</h2>
           </div>
           <ul className={`${p.rows} ${sec.rows}`}>
             {PILLARS.map((item) => (
@@ -94,7 +102,7 @@ export default function SecurityPage() {
 
       <section className={`${p.section} ${p.tint}`}>
         <div className={s.wrap}>
-          <h2 className={s.title}>Avec qui nous travaillons</h2>
+          <h2 className={s.title}>Sous-traitants</h2>
           <p className={`${s.body} ${sec.narrow}`}>
             L’infrastructure de RH Pilot est détaillée dans notre{" "}
             <Link href="/confidentialite" className={sec.inline}>
@@ -132,17 +140,13 @@ export default function SecurityPage() {
             <Link href="/confidentialite" className={sec.link}>
               Lire la politique de confidentialité complète
             </Link>
-            <blockquote className={p.quote}>
-              RH Pilot n’interprète jamais votre convention collective : il vous oriente vers la bonne source officielle, au bon
-              moment.
-            </blockquote>
           </div>
         </div>
       </section>
 
       <MarketingCTA
-        title="Une question sur vos données ?"
-        text="Écrivez-nous : nous répondons avec les détails techniques."
+        title="Une question sur la sécurité ?"
+        text="Écrivez-nous à contact@rhpilot.fr, nous vous répondons avec les détails techniques."
         href="mailto:contact@rhpilot.fr"
         action="Nous écrire"
       />

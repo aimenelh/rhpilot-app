@@ -34,11 +34,11 @@ const MONTH: { date: string; title: string; text: string; links: { href: string;
     date: "Mercredi 28",
     title: "La période est verrouillée",
     text: "Le calcul est figé avec les règles et leurs versions. Il pourra être relu et rejoué à l’identique, même après un changement de taux.",
-    links: [{ href: "/gestion-paie/tracabilite-calcul", label: "Traçabilité du calcul" }],
+    links: [{ href: "/gestion-paie/cotisations-sociales", label: "Le détail de chaque ligne" }],
   },
   {
     date: "Vendredi 30",
-    title: "Les bulletins partent",
+    title: "Les bulletins sont générés",
     text: "Ils ne sont générés que lorsque les sept prérequis sont réunis : période verrouillée, calcul pour chaque salarié, identification de l’employeur…",
     links: [{ href: "/gestion-paie/bulletin-de-paie", label: "Bulletin de paie" }],
   },
@@ -50,10 +50,9 @@ export function PayrollMonth() {
       <div className={s.inner}>
         <div className={s.monthHead}>
           <h2 id="payroll-month-title" className={s.h2}>
-            Octobre, de la première heure sup
-            <em> au bulletin.</em>
+            Le mois de paie, étape par étape
           </h2>
-          <p className={s.lead}>Une période de paie dans une entreprise de trois salariés, telle que RH Pilot la déroule.</p>
+          <p className={s.lead}>Une période de paie d’octobre dans une entreprise de trois salariés, dans RH Pilot.</p>
         </div>
         <ol className={s.thread}>
           {MONTH.map((step) => (
@@ -75,7 +74,7 @@ export function PayrollMonth() {
         </ol>
         <p className={s.promise}>
           Quand une information manque ou qu’une situation n’est pas encore prise en charge, RH Pilot bloque le calcul
-          au lieu de deviner. <em>Un bulletin faux coûte plus cher qu’un bulletin en attente.</em>
+          plutôt que de produire un bulletin approximatif.
         </p>
       </div>
     </section>

@@ -1,0 +1,191 @@
+/* Scène d'en-tête : un copilote debout sur le bord bas de l'aplat corail.
+   Le parent la colle au bas de l'en-tête (marge négative = marge basse). */
+.scene {
+  --w: 300px;
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  height: 400px;
+  justify-self: end;
+  align-self: end;
+  pointer-events: none;
+}
+.halo {
+  position: absolute;
+  bottom: 40px;
+  width: 340px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+}
+.figure {
+  position: absolute;
+  bottom: 0;
+  width: var(--w);
+  aspect-ratio: 320 / 400;
+}
+.pose,
+.pose img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.blink {
+  opacity: 0;
+}
+
+/* personnage à droite : il se tourne vers le texte et les bulles */
+.scene[data-side="right"] .figure { right: -10px; }
+.scene[data-side="right"] .pose { transform: scaleX(-1); }
+.scene[data-side="right"] .halo { right: -30px; }
+.scene[data-side="left"] .figure { left: -10px; }
+.scene[data-side="left"] .halo { left: -30px; }
+
+/* ------------------------------------------------ bulles */
+.ask,
+.answer,
+.thought {
+  position: absolute;
+  z-index: 2;
+  margin: 0;
+  max-width: 250px;
+  font-size: 15px;
+  line-height: 1.4;
+  box-shadow: 0 16px 30px -18px rgba(40, 8, 0, 0.55);
+}
+.ask {
+  top: 36px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 11px 14px 12px 10px;
+  border-radius: 14px 14px 14px 4px;
+  background: #fff;
+  color: #17181c;
+}
+.ask img {
+  flex: none;
+  width: 30px;
+  height: auto;
+}
+.ask figcaption span {
+  display: block;
+  font-size: 12px;
+  color: #6d6b66;
+}
+.ask q {
+  display: block;
+  font-weight: 600;
+  quotes: "« " " »";
+}
+.answer {
+  top: 150px;
+  padding: 11px 14px;
+  border-radius: 14px 14px 4px 14px;
+  background: #17181c;
+  color: #fff;
+  font-weight: 500;
+}
+.thought {
+  top: 40px;
+  padding: 12px 16px;
+  border: 2px dashed rgba(255, 255, 255, 0.7);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: none;
+}
+.scene[data-side="right"] .ask,
+.scene[data-side="right"] .thought { left: 0; }
+.scene[data-side="right"] .answer { left: 14px; }
+.scene[data-side="left"] .ask,
+.scene[data-side="left"] .thought { right: 0; }
+.scene[data-side="left"] .answer { right: 30px; }
+
+/* sur fond clair (dans une section de page) */
+.light .halo {
+  background: #fbe9e4;
+}
+.light .thought {
+  border-color: #e3a497;
+  background: #fff;
+  color: #17181c;
+}
+
+/* ------------------------------------------------ mouvement */
+@media (prefers-reduced-motion: no-preference) {
+  .figure {
+    animation: rise 0.9s cubic-bezier(0.16, 1, 0.3, 1) calc(var(--intro-offset, 0s) + 0.1s) both;
+  }
+  .ask,
+  .thought {
+    animation: pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) calc(var(--intro-offset, 0s) + 0.7s) both;
+  }
+  .answer {
+    animation: pop 0.5s cubic-bezier(0.2, 0.9, 0.3, 1.2) calc(var(--intro-offset, 0s) + 1.4s) both;
+  }
+  .pose img:first-child {
+    animation: breathe 5.5s ease-in-out infinite;
+  }
+  .blink {
+    animation: blink 4.6s steps(1, end) 1.5s infinite, breathe 5.5s ease-in-out infinite;
+  }
+}
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+}
+@keyframes breathe {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+@keyframes blink {
+  0%,
+  95.5% {
+    opacity: 0;
+  }
+  96%,
+  99% {
+    opacity: 1;
+  }
+  99.5% {
+    opacity: 0;
+  }
+}
+
+/* ------------------------------------------------ petits écrans */
+@media (max-width: 900px) {
+  .scene {
+    --w: 230px;
+    height: 300px;
+    max-width: 440px;
+    justify-self: stretch;
+  }
+  .halo {
+    width: 250px;
+    bottom: 30px;
+  }
+  .ask,
+  .answer,
+  .thought {
+    max-width: 205px;
+    font-size: 14px;
+  }
+  .ask { top: 18px; }
+  .answer { top: 122px; }
+}

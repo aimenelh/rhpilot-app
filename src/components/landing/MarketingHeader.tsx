@@ -24,7 +24,7 @@ const GROUPS = [
   },
   {
     label: "Paie",
-    // Les douze sujets sont rendus par groupes (PAYROLL_TOPIC_GROUPS) sous ces deux entrées.
+    // Les sujets sont rendus par groupes (PAYROLL_TOPIC_GROUPS) sous ces deux entrées.
     links: [
       { href: "/gestion-paie", label: "Vue d’ensemble de la paie" },
       { href: "/gestion-paie#bulletin", label: "Calculer un bulletin en direct" },
@@ -35,7 +35,6 @@ const GROUPS = [
     links: [
       { href: "/ressources", label: "Guides & articles" },
       { href: "/questions", label: "Questions fréquentes" },
-      { href: "/diagnostic", label: "Diagnostic RH" },
       { href: "/securite", label: "Sécurité & données" },
     ],
   },
@@ -231,7 +230,7 @@ export function MarketingHeader() {
                 </div>
               )}
             </div>
-            <Link href="/pourquoi" className={navLink("/pourquoi")}>
+            <Link href="/a-propos" className={navLink("/a-propos")}>
               À propos
             </Link>
           </nav>
@@ -356,7 +355,7 @@ export function MarketingHeader() {
               Tutoriels
             </Link>
             <Link
-              href="/pourquoi"
+              href="/a-propos"
               onClick={close}
               className="block py-3 text-sm font-semibold"
             >

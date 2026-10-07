@@ -25,6 +25,20 @@ const nextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  // Pages retirées du site : redirection permanente vers la page la plus proche,
+  // pour les liens déjà partagés et les moteurs de recherche.
+  async redirects() {
+    return [
+      { source: "/pourquoi", destination: "/a-propos", permanent: true },
+      { source: "/diagnostic", destination: "/", permanent: true },
+      { source: "/feuille-de-route", destination: "/tarifs", permanent: true },
+      { source: "/gestion-paie/montant-net-social", destination: "/gestion-paie", permanent: true },
+      { source: "/gestion-paie/complementaire-sante", destination: "/gestion-paie", permanent: true },
+      { source: "/gestion-paie/profil-paie", destination: "/gestion-paie", permanent: true },
+      { source: "/gestion-paie/contexte-employeur", destination: "/gestion-paie", permanent: true },
+      { source: "/gestion-paie/tracabilite-calcul", destination: "/gestion-paie/cotisations-sociales", permanent: true },
+    ];
+  },
   // ESLint tourne dans la CI (npm run lint) ; une alerte ne doit pas bloquer un déploiement.
   eslint: { ignoreDuringBuilds: true },
   images: {

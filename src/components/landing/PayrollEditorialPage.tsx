@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import { ClosingCta } from "@/components/landing/ClosingCta";
+import { CopilotScene } from "@/components/landing/CopilotScene";
 import { LivePayslip, type PayslipFocus } from "@/components/landing/payroll/LivePayslip";
 import { computePayslipDemo, DEFAULT_DEMO_INPUT } from "@/components/landing/payroll/payslipDemo";
 import { IjssDemo, MinimumDemo, OvertimeDemo, PaidLeaveDemo, PreflightDemo, PrerequisitesDemo } from "@/components/landing/payroll/PayrollDemos";
@@ -54,12 +55,7 @@ type PageKey =
   | "arrets"
   | "payslip"
   | "contributions"
-  | "netSocial"
-  | "health"
-  | "profile"
-  | "agreement"
-  | "employer"
-  | "traceability";
+  | "agreement";
 
 const PAGES: Record<PageKey, { href: string; accent: string; lead: string; payslip?: PayslipFocus }> = {
   production: { href: "/gestion-paie/production", accent: "ce qui doit être contrôlé", lead: "Trois salariés, deux blocages. Réglez-les pour débloquer le calcul : c’est le contrôle que fait le logiciel avant chaque période." },
@@ -68,12 +64,7 @@ const PAGES: Record<PageKey, { href: string; accent: string; lead: string; paysl
   arrets: { href: "/gestion-paie/arrets-travail", accent: "traité en paie", lead: "Faites varier le salaire et la durée de l’arrêt : carence, plafond et indemnités journalières sont recalculés." },
   payslip: { href: "/gestion-paie/bulletin-de-paie", accent: "période verrouillée", lead: "Sept prérequis, deux manquants. Tant qu’ils ne sont pas réunis, la génération reste bloquée. Réglez-les." },
   contributions: { href: "/gestion-paie/cotisations-sociales", accent: "ligne par ligne", lead: "Ouvrez n’importe quelle ligne : base, taux, montant, et la règle officielle qui l’a produite.", payslip: "contributions" },
-  netSocial: { href: "/gestion-paie/montant-net-social", accent: "montant net social", lead: "Le montant net social se calcule avec le reste du bulletin. Faites varier le salaire pour le voir bouger.", payslip: "netSocial" },
-  health: { href: "/gestion-paie/complementaire-sante", accent: "complémentaire santé", lead: "Changez le prix du contrat et la part de l’employeur : les lignes santé et le net imposable suivent.", payslip: "health" },
-  profile: { href: "/gestion-paie/profil-paie", accent: "base au calcul", lead: "Le salaire et le statut du profil changent tout le bulletin. Passez le salarié cadre : l’APEC et la prévoyance apparaissent.", payslip: "profile" },
   agreement: { href: "/gestion-paie/referentiel-conventionnel", accent: "convention collective", lead: "Choisissez une classification : RH Pilot compare le minimum de la convention au Smic et retient le plus élevé." },
-  employer: { href: "/gestion-paie/contexte-employeur", accent: "l’entreprise", lead: "Le taux accidents du travail de l’établissement change la part employeur. Faites-le varier.", payslip: "employer" },
-  traceability: { href: "/gestion-paie/tracabilite-calcul", accent: "comment une paie a été calculée", lead: "La ligne de réduction générale est ouverte : son calcul, la règle du moteur et ses sources officielles.", payslip: "traceability" },
 };
 
 function pageKey(eyebrow: string, variant?: string): PageKey {
@@ -88,29 +79,12 @@ function pageKey(eyebrow: string, variant?: string): PageKey {
   if (value.includes("arrets")) return "arrets";
   if (value.includes("bulletin") || value.includes("payslip")) return "payslip";
   if (value.includes("cotisations") || value.includes("contributions")) return "contributions";
-  if (value.includes("net-social") || value.includes("netsocial")) return "netSocial";
-  if (value.includes("complementaire") || value.includes("health")) return "health";
-  if (value.includes("profil") || value.includes("profile")) return "profile";
   if (value.includes("agreement") || value.includes("convention") || value.includes("referentiel")) return "agreement";
-  if (value.includes("employeur") || value.includes("employer") || value.includes("entreprise")) return "employer";
-  if (value.includes("tracabilite") || value.includes("traceability") || value.includes("suivi")) return "traceability";
   return "production";
 }
 
 function richText(text: string) {
   return text.split(/\*\*(.+?)\*\*/g).map((part, index) => (index % 2 === 1 ? <strong key={index}>{part}</strong> : <span key={index}>{part}</span>));
-}
-
-function AccentTitle({ title, phrase }: { title: string; phrase: string }) {
-  const index = title.toLowerCase().indexOf(phrase.toLowerCase());
-  if (!phrase || index < 0) return <>{title}</>;
-  return (
-    <>
-      {title.slice(0, index)}
-      <em>{title.slice(index, index + phrase.length)}</em>
-      {title.slice(index + phrase.length)}
-    </>
-  );
 }
 
 function Demo({ keyName }: { keyName: PageKey }) {
@@ -133,12 +107,14 @@ function Demo({ keyName }: { keyName: PageKey }) {
 }
 
 function TopicPage({
+  name,
   title,
   intro,
   keyName,
   steps,
   sources,
 }: {
+  name: string;
   title: string;
   intro: string;
   keyName: PageKey;
@@ -152,14 +128,21 @@ function TopicPage({
       <main id="main-content">
         <section className={h.hero} aria-labelledby="payroll-topic-title">
           <div className={h.inner}>
-            <p className={h.kicker}>
-              <Link href="/gestion-paie">Gestion de la paie</Link>
-            </p>
-            <h1 id="payroll-topic-title" className={h.title}>
-              <AccentTitle title={title} phrase={page.accent} />
-            </h1>
-            <p className={h.intro}>{richText(intro)}</p>
-            <p className={h.try}>{page.lead}</p>
+            <div className={h.heroHead}>
+              <div>
+                <p className={h.kicker}>
+                  <Link href="/gestion-paie">Gestion de la paie</Link>
+                </p>
+                <h1 id="payroll-topic-title" className={h.title}>
+                  {name.replace("&", "et")}
+                </h1>
+                <p className={h.intro}>
+                  {title} {richText(intro)}
+                </p>
+                <p className={h.try}>{page.lead}</p>
+              </div>
+              <CopilotScene figure="paie" className={h.heroScene} />
+            </div>
             <div className={h.demo}>
               <Demo keyName={keyName} />
             </div>
@@ -169,7 +152,7 @@ function TopicPage({
         <section className={h.how} aria-labelledby="payroll-how-title">
           <div className={h.inner}>
             <h2 id="payroll-how-title" className={h.h2Small}>
-              Comment RH Pilot s’y prend
+              Dans RH Pilot
             </h2>
             <div className={h.howGrid}>
               {steps.map((step) => (
@@ -198,10 +181,10 @@ function TopicPage({
         <PayrollTopics current={page.href} title="Les autres sujets de la paie" />
       </main>
       <ClosingCta
-        title="Votre prochaine paie se prépare déjà."
-        accent="Autant la voir venir."
-        text="Créez votre espace, ajoutez vos salariés et lancez votre première période."
-        action="Créer mon espace"
+        title="Le calcul de la paie est en accès anticipé."
+        text="Contactez-nous pour connaître le périmètre pris en charge et demander un accès."
+        action="Demander un accès"
+        href="/contact"
       />
       <MarketingFooter />
     </div>
@@ -211,6 +194,7 @@ function TopicPage({
 export function PayrollFeatureEditorial({ feature }: { feature: PayrollEditorialFeature }) {
   return (
     <TopicPage
+      name={feature.eyebrow}
       title={feature.title}
       intro={feature.intro}
       keyName={pageKey(feature.eyebrow)}
@@ -223,6 +207,7 @@ export function PayrollFeatureEditorial({ feature }: { feature: PayrollEditorial
 export function PayrollCapabilityEditorial({ capability }: { capability: PayrollEditorialCapability }) {
   return (
     <TopicPage
+      name={capability.eyebrow}
       title={capability.title}
       intro={capability.intro}
       keyName={pageKey(capability.eyebrow, capability.variant)}

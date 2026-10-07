@@ -25,6 +25,17 @@
 .hero .demo {
   position: relative;
 }
+/* titre à gauche, un copilote à droite qui passe derrière la démonstration */
+.heroHead {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 440px);
+  gap: 32px;
+  align-items: end;
+}
+.heroHead .heroScene {
+  height: 340px;
+  margin-bottom: -72px;
+}
 .hero .demo::before {
   content: "";
   position: absolute;
@@ -322,6 +333,14 @@
 }
 
 @media (max-width: 900px) {
+  .heroHead {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+  .heroHead .heroScene {
+    height: 280px;
+    margin-bottom: -56px;
+  }
   .howGrid {
     grid-template-columns: minmax(0, 1fr);
     gap: 24px;

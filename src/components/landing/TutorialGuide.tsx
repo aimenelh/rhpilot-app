@@ -1,5 +1,4 @@
 "use client";
-import Image from "next/image";
 
 import { useEffect, useRef, useState } from "react";
 import {
@@ -261,7 +260,10 @@ export function TutorialGuide() {
                 </div>
                 {phase === "intro" && <p className={styles.coverDuration}>{active.duration}</p>}
               </div>
-              <Image src="/illustrations/tutorials/mascot-presenter.webp" alt="" width={1536} height={1024} sizes="(max-width: 700px) 160px, 350px" className={styles.coverArt} />
+              <div className={styles.coverArt} aria-hidden="true">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/illustrations/copilotes/tutoriels.svg" alt="" width={320} height={400} />
+              </div>
             </div>
           )}
           {phase === "video" && (

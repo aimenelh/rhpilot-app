@@ -33,22 +33,25 @@
 /* ------------------------------------------------ fil blanc */
 .thread {
   position: absolute;
-  inset: 0 0 auto 0;
+  inset: 0;
   width: 100%;
-  height: 760px;
+  height: 100%;
   z-index: 0;
   pointer-events: none;
-  transform: translateY(calc(var(--p, 0) * -60px));
+  overflow: visible;
+  transform: translateY(calc(var(--p, 0) * -36px));
 }
 .thread path {
   fill: none;
-  stroke: rgba(255, 255, 255, 0.55);
-  stroke-width: 2.4;
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-width: 3;
   stroke-linecap: round;
-  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
   stroke-dasharray: 1;
-  stroke-dashoffset: 0;
-  animation: draw 2.2s calc(var(--intro-offset, 0s) + 0.2s) cubic-bezier(0.55, 0, 0.25, 1) both;
+  stroke-dashoffset: 1;
+}
+.thread[data-ready] path {
+  animation: draw 2.4s calc(var(--intro-offset, 0s) + 0.35s) cubic-bezier(0.55, 0, 0.25, 1) forwards;
 }
 
 /* ------------------------------------------------ texte */
@@ -78,6 +81,10 @@
   display: inline-block;
   animation: lineUp 1s cubic-bezier(0.16, 1, 0.3, 1) both;
   animation-delay: calc(var(--intro-offset, 0s) + 0.05s);
+}
+.fil {
+  position: relative;
+  z-index: 1;
 }
 .line + .line > span {
   animation-delay: calc(var(--intro-offset, 0s) + 0.16s);
@@ -678,7 +685,6 @@
     height: 100%;
     transform: none;
   }
-  .thread { display: none; }
   .tilt { display: none; }
   .phone {
     --py: -40px;

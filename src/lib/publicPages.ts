@@ -1,20 +1,15 @@
 // Toutes les pages publiques indexables, partagées par le sitemap et ses tests.
 
-export const MAIN_PAGES = ["", "/services", "/pourquoi", "/tarifs", "/questions", "/tutoriels", "/espace-salarie", "/securite", "/diagnostic", "/contact", "/feuille-de-route"];
+export const MAIN_PAGES = ["", "/services", "/a-propos", "/tarifs", "/questions", "/tutoriels", "/espace-salarie", "/securite", "/contact"];
 
 export const PAYROLL_PAGES = [
   "/gestion-paie",
   "/gestion-paie/arrets-travail",
   "/gestion-paie/bulletin-de-paie",
-  "/gestion-paie/complementaire-sante",
   "/gestion-paie/conges-absences",
-  "/gestion-paie/contexte-employeur",
   "/gestion-paie/cotisations-sociales",
-  "/gestion-paie/montant-net-social",
   "/gestion-paie/production",
-  "/gestion-paie/profil-paie",
   "/gestion-paie/referentiel-conventionnel",
-  "/gestion-paie/tracabilite-calcul",
   "/gestion-paie/variables",
 ];
 

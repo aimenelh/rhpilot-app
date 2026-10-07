@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { MarketingPage, PageIntro } from "@/components/landing/MarketingPage";
+import { CopilotScene } from "@/components/landing/CopilotScene";
 import s from "@/components/landing/MarketingV2.module.css";
 
 export default function NotFound() {
   return (
     <MarketingPage>
       <PageIntro
-        title="Cette page a été oubliée."
-        intro="Contrairement à vos échéances RH, celle-ci ne reviendra pas toute seule vous le rappeler. La page que vous cherchez n’existe pas, ou a changé d’adresse."
+        title="Page introuvable"
+        intro="L’adresse demandée n’existe pas ou a changé. Vous pouvez revenir à l’accueil ou découvrir le logiciel."
+        scene={<CopilotScene figure="perdu" />}
       >
         <div className={s.actions}>
           <Link href="/" className={s.primary}>

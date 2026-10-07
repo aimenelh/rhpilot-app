@@ -4,6 +4,7 @@ import { MarketingFooter } from "./MarketingFooter";
 import { ClosingCta } from "./ClosingCta";
 import { InteractiveDemo } from "./InteractiveDemo";
 import { SoftwareSandbox } from "./SoftwareSandbox";
+import { CopilotScene } from "./CopilotScene";
 import h from "./payroll/PayrollHub.module.css";
 
 // Page « Le logiciel » : on l'essaie avant de le lire. Les ancres #parcours,
@@ -23,15 +24,23 @@ export function SoftwareOverview() {
       <main id="main-content">
         <section className={h.hero} aria-labelledby="software-title">
           <div className={h.inner}>
-            <h1 id="software-title" className={h.title}>
-              Écrivez ce qui arrive.
-              <br />
-              RH Pilot prépare la suite.
-            </h1>
-            <p className={h.intro}>
-              Essayez-le ici, sans créer de compte : un événement devient un parcours daté, rangé dans la fiche du salarié et
-              dans le calendrier, et le Copilote vous dit par quoi commencer.
-            </p>
+            <div className={h.heroHead}>
+              <div>
+                <h1 id="software-title" className={h.title}>
+                  Découvrir le logiciel
+                </h1>
+                <p className={h.intro}>
+                  Essayez RH Pilot ici, sans créer de compte. Écrivez un événement, une embauche par exemple : le
+                  logiciel prépare le parcours daté, le range dans la fiche du salarié et dans le calendrier.
+                </p>
+              </div>
+              <CopilotScene
+                figure="suivi"
+                className={h.heroScene}
+                ask={{ persona: "nadia", text: "Karim finit sa période d’essai le 20 octobre." }}
+                answer="Entretien prévu le 16, délai de prévenance vérifié."
+              />
+            </div>
             <div className={h.demo}>
               <SoftwareSandbox />
             </div>
@@ -41,7 +50,7 @@ export function SoftwareOverview() {
         <section className={h.how} aria-labelledby="software-beyond-title">
           <div className={h.inner}>
             <h2 id="software-beyond-title" className={h.h2Small}>
-              Et dans le logiciel, en plus
+              Aussi dans le logiciel
             </h2>
             <div className={h.howGrid}>
               {BEYOND.map((item) => (
@@ -57,7 +66,7 @@ export function SoftwareOverview() {
         <section id="demo" className={h.topics} aria-labelledby="software-tour-title">
           <div className={h.inner}>
             <h2 id="software-tour-title" className={h.h2Small}>
-              La visite guidée du vrai logiciel
+              Visite guidée du logiciel
             </h2>
             <p className={h.lead}>Les écrans de RH Pilot, étape par étape, avec les données d’une entreprise de démonstration.</p>
             <div className={h.demo}>

@@ -4,6 +4,7 @@ import {
   PageIntro,
   MarketingCTA,
 } from "@/components/landing/MarketingPage";
+import { CopilotScene } from "@/components/landing/CopilotScene";
 import s from "@/components/landing/MarketingV2.module.css";
 import p from "@/components/landing/InnerPages.module.css";
 const GROUPS = [
@@ -57,9 +58,8 @@ const GROUPS = [
       [
         "Combien coûte RH Pilot ?",
         <>
-          L’offre gratuite couvre jusqu’à 3 salariés. Pro coûte 15 € par mois,
-          plus 3 € par salarié. Retrouvez le{" "}
-          <Link href="/tarifs">calculateur de tarifs</Link>.
+          L’offre gratuite couvre jusqu’à 3 salariés. L’offre Pro coûte 15 € HT par mois, plus 3 € HT par salarié.
+          Le détail est sur la page <Link href="/tarifs">Tarifs</Link>.
         </>,
       ],
       [
@@ -89,8 +89,15 @@ export default function QuestionsPage() {
   return (
     <MarketingPage>
       <PageIntro
-        title="Quelques réponses avant de commencer."
-        intro="Le fonctionnement, les offres, vos données : les informations utiles pour prendre vos repères."
+        title="Questions fréquentes"
+        intro="Les réponses aux questions qu’on nous pose le plus souvent sur le logiciel, les offres et vos données."
+        scene={
+          <CopilotScene
+            figure="salut"
+            ask={{ persona: "sophie", text: "Puis-je essayer avant de m’inscrire ?" }}
+            answer="Oui, la démonstration se parcourt sans compte."
+          />
+        }
       />
       <section className={p.section}>
         <div className={`${s.wrap} ${p.faqLayout}`}>

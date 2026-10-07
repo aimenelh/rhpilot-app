@@ -6,7 +6,7 @@ import { CANONICAL_SITE_URL } from "@/lib/appUrl";
 /**
  * Écran mobile des pages de connexion et d'inscription. L'espace employeur se pilote
  * depuis un ordinateur ; sur téléphone, on oriente sans impasse : le salarié vers son
- * espace, l'employeur vers un lien à rouvrir sur ordinateur ou vers le diagnostic RH.
+ * espace, l'employeur vers un lien à rouvrir sur ordinateur.
  */
 export function MobileAppNotice({ mode }: { mode: "sign-in" | "sign-up" }) {
   const link = `${CANONICAL_SITE_URL}/${mode}`;
@@ -39,10 +39,6 @@ export function MobileAppNotice({ mode }: { mode: "sign-in" | "sign-up" }) {
           <Mail size={16} /> M&apos;envoyer le lien par e-mail
         </a>
         <div className="mt-4 flex flex-wrap gap-4 text-sm font-semibold text-brand-primary-dark"><Link href="/services?demo=1" className="underline">Voir la démonstration</Link><Link href="/contact" className="underline">Demander une présentation</Link></div>
-        <p className="mt-4 text-sm text-ink-soft">
-          En attendant, testez votre suivi RH en deux minutes :{" "}
-          <Link href="/diagnostic" className="font-semibold text-brand-primary-dark underline underline-offset-2">faire le diagnostic</Link>.
-        </p>
       </div>
 
       <Link href="/" className="text-center text-sm font-medium text-ink-soft underline underline-offset-2">

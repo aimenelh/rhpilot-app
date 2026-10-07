@@ -3,11 +3,12 @@ import { MarketingHeader } from "@/components/landing/MarketingHeader";
 import { MarketingFooter } from "@/components/landing/MarketingFooter";
 import { TutorialGuide } from "@/components/landing/TutorialGuide";
 import { BandThread } from "@/components/landing/BandThread";
+import { CopilotScene } from "@/components/landing/CopilotScene";
 import styles from "@/components/landing/TutorialGuide.module.css";
 
 export const metadata: Metadata = {
   title: "Tutoriels",
-  description: "Découvrez RH Pilot en vidéo et prenez rapidement en main les principales fonctionnalités du logiciel.",
+  description: "Les principales fonctions de RH Pilot en vidéo : créer son espace, ajouter un salarié, suivre les échéances, gérer les absences.",
 };
 
 export default function TutorielsPage() {
@@ -18,17 +19,24 @@ export default function TutorielsPage() {
         <section className={styles.band}>
           <BandThread />
           <header className={styles.header}>
-            <div>
-              <h1 className={styles.pageTitle}>Les tutoriels</h1>
-              <p className={styles.pageIntro}>Retrouvez les principales fonctions de RH Pilot en vidéo.</p>
-            </div>
-            <div className={styles.author}>
-              <img src="/team/maxime-dekens-final.jpg" alt="Maxime Dekens" width={48} height={48} />
-              <div>
-                <p>Réalisés avec <strong>Maxime Dekens</strong></p>
-                <p>Assistant RH dans le domaine de l’hôtellerie</p>
+            <div className={styles.headCopy}>
+              <h1 className={styles.pageTitle}>Tutoriels</h1>
+              <p className={styles.pageIntro}>Les principales fonctions de RH Pilot, en vidéos de deux à quatre minutes.</p>
+              <div className={styles.author}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src="/team/maxime-dekens-final.jpg" alt="Maxime Dekens" width={48} height={48} />
+                <div>
+                  <p>Réalisés avec <strong>Maxime Dekens</strong></p>
+                  <p>Assistant RH dans le domaine de l’hôtellerie</p>
+                </div>
               </div>
             </div>
+            <CopilotScene
+              figure="tutoriels"
+              className={styles.headScene}
+              ask={{ persona: "sophie", text: "Comment ajouter un salarié ?" }}
+              answer="Vidéo 3, « Ajouter un salarié », 2 min 30."
+            />
           </header>
         </section>
         <div className={styles.page}>

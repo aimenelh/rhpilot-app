@@ -9,11 +9,9 @@ const PRODUCT_LINKS = [
   { href: "/tutoriels", label: "Tutoriels vidéo" },
   { href: "/tarifs", label: "Tarifs" },
   { href: "/gestion-paie", label: "Gestion de la paie" },
-  { href: "/pourquoi", label: "À propos" },
+  { href: "/a-propos", label: "À propos" },
   { href: "/questions", label: "Questions fréquentes" },
-  { href: "/diagnostic", label: "Diagnostic RH" },
   { href: "/contact", label: "Contact et démonstration" },
-  { href: "/feuille-de-route", label: "Feuille de route" },
   { href: "/sign-up", label: "Créer mon espace" },
   { href: "/sign-in", label: "Se connecter" },
 ];
