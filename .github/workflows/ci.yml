@@ -12,7 +12,24 @@ on:
 jobs:
   dsn-val:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: rhpilot
+          POSTGRES_PASSWORD: rhpilot
+          POSTGRES_DB: rhpilot_dsn
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U rhpilot -d rhpilot_dsn"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql://rhpilot:rhpilot@127.0.0.1:5432/rhpilot_dsn
+      DIRECT_URL: postgresql://rhpilot:rhpilot@127.0.0.1:5432/rhpilot_dsn
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -30,8 +47,13 @@ jobs:
           curl --fail --location --retry 3 --max-time 180 https://dsn-val.net-entreprises.fr/2026.1/autocontrole-dsn-val_linux_2026.1.0.17_64.zip --output "$RUNNER_TEMP/dsn-val.zip"
           echo "6b00a8c8fc9bb18891ee53026f971a42ca626675c7f63b2d2b0d64626b4f699e  $RUNNER_TEMP/dsn-val.zip" | sha256sum --check
           unzip -q "$RUNNER_TEMP/dsn-val.zip" -d "$RUNNER_TEMP/dsn-val"
+      - name: Demo payroll end to end (reset, two closed months, DSN)
+        run: |
+          npx prisma migrate deploy
+          npx prisma generate
+          node --import tsx scripts/payroll/demo-dsn-e2e.ts "$RUNNER_TEMP/demo-dsn"
       - name: Official P26V01 validation and negative control
-        run: DSN_VAL_DIR="$RUNNER_TEMP/dsn-val" node --import tsx scripts/payroll/verify-dsn-val.ts
+        run: DSN_VAL_DIR="$RUNNER_TEMP/dsn-val" DEMO_DSN_DIR="$RUNNER_TEMP/demo-dsn" node --import tsx scripts/payroll/verify-dsn-val.ts
   verify:
     runs-on: ubuntu-latest
     timeout-minutes: 20

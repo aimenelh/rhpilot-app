@@ -251,6 +251,11 @@ export function parseYearToDate(stored: unknown, year: number): YearToDate {
     if (!Number.isFinite(number)) throw new Error(`Le cumul de reprise « ${key} » est invalide.`);
     result[key] = number;
   }
+  if (record.rgduUrssafAmount !== undefined && record.rgduUrssafAmount !== null) {
+    const urssaf = Number(record.rgduUrssafAmount);
+    if (!Number.isFinite(urssaf) || urssaf < 0 || urssaf > result.rgduAmount + 0.005) throw new Error("La part Urssaf du cumul RGDU repris est invalide : elle doit être comprise entre 0 et la réduction cumulée.");
+    result.rgduUrssafAmount = urssaf;
+  }
   return result;
 }
 

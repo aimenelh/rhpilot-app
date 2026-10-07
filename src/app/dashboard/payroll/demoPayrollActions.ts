@@ -1,187 +1,31 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
+import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { ProfessionalCategory } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { getCurrentUser } from "@/lib/auth";
+import { getPayrollMembership } from "@/lib/payrollAccess";
+import { resetDemoPayroll } from "@/lib/payroll/demo-payroll";
+import { userFacingError } from "@/lib/userFacingError";
 
-import { refreshMobilityRateFromUrssaf, syncOrganizationFromRegistry } from "@/lib/organization-registry-sync";
-import { getPayrollMemberships } from "@/lib/payrollAccess";
+export type DemoPayrollResetState = { error?: string } | undefined;
 
-const DEMO_PAYROLL_DATA = [
-  { firstName: "Antoine", professionalCategory: ProfessionalCategory.OUVRIER, classificationCode: "DEMO-OUV", classificationLabel: "Ouvrier", salaryEuros: 2250, pasRate: 0.03 },
-  { firstName: "Emma", professionalCategory: ProfessionalCategory.CADRE, classificationCode: "DEMO-CAD", classificationLabel: "Cadre", salaryEuros: 3900, pasRate: 0.07 },
-  { firstName: "Manon", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-EMP", classificationLabel: "Employé", salaryEuros: 2850, pasRate: 0.05 },
-  { firstName: "Karim", professionalCategory: ProfessionalCategory.OUVRIER, classificationCode: "DEMO-ALT", classificationLabel: "Alternant", salaryEuros: 1200, pasRate: 0.00 },
-  { firstName: "Nicolas", professionalCategory: ProfessionalCategory.CADRE, classificationCode: "DEMO-CAD", classificationLabel: "Cadre", salaryEuros: 4600, pasRate: 0.12 },
-  { firstName: "Julien", professionalCategory: ProfessionalCategory.AUTRE, classificationCode: "DEMO-AUT", classificationLabel: "Autre", salaryEuros: 3100, pasRate: 0.10 },
-  { firstName: "Léa", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-EMP", classificationLabel: "Employé", salaryEuros: 2050, pasRate: 0.03 },
-  { firstName: "Sarah", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-EMP", classificationLabel: "Employé", salaryEuros: 2600, pasRate: 0.07 },
-  { firstName: "Sophie", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-EMP", classificationLabel: "Employé", salaryEuros: 2100, pasRate: 0.05 },
-  { firstName: "Thomas", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-ALT", classificationLabel: "Alternant", salaryEuros: 1950, pasRate: 0.03 },
-  { firstName: "Hugo", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-EMP", classificationLabel: "Employé", salaryEuros: 2400, pasRate: 0.05 },
-  { firstName: "Chloé", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-ALT", classificationLabel: "Alternant", salaryEuros: 1750, pasRate: 0.00 },
-  { firstName: "Inès", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-EMP", classificationLabel: "Employé", salaryEuros: 2700, pasRate: 0.07 },
-  { firstName: "Maxime", professionalCategory: ProfessionalCategory.OUVRIER, classificationCode: "DEMO-OUV", classificationLabel: "Ouvrier", salaryEuros: 1950, pasRate: 0.03 },
-  { firstName: "Camille", professionalCategory: ProfessionalCategory.EMPLOYE, classificationCode: "DEMO-EMP", classificationLabel: "Employé", salaryEuros: 2350, pasRate: 0.05 },
-] as const;
-
-const ALTERNANCE_DATA = {
-  Karim: { birthDate: "2007-04-15", contractYear: 1, hasBaccalaureateOrHigher: null },
-  Thomas: { birthDate: "2002-09-20", contractYear: null, hasBaccalaureateOrHigher: true },
-  Chloé: { birthDate: "2004-02-10", contractYear: 2, hasBaccalaureateOrHigher: null },
-} as const;
-
-function startOfCurrentMonth() {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
-}
-
-async function prepareDemoPayrollDataForOrganization(organizationId: string) {
-  const employees = await prisma.employee.findMany({
-    where: { organizationId, deletedAt: null },
-    select: { id: true, firstName: true, isDemoData: true },
-  });
-
-  if (employees.length === 0 || !employees.every((employee) => employee.isDemoData)) {
-    throw new Error("Le jeu de paie de démonstration est réservé à une organisation contenant uniquement les salariés fictifs générés par RH Pilot.");
-  }
-
-  const employeeByFirstName = new Map(employees.map((employee) => [employee.firstName, employee]));
-  for (const row of DEMO_PAYROLL_DATA) {
-    if (!employeeByFirstName.has(row.firstName)) throw new Error(`Salarié fictif introuvable : ${row.firstName}.`);
-  }
-
-  const periodStart = startOfCurrentMonth();
-  const existingPeriod = await prisma.payrollPeriod.findUnique({
-    where: { organizationId_year_month: { organizationId, year: periodStart.getFullYear(), month: periodStart.getMonth() + 1 } },
-    select: { id: true, status: true },
-  });
-  if (existingPeriod && existingPeriod.status !== "DRAFT") {
-    throw new Error("La période de paie de démonstration existe déjà et n'est plus en préparation. Elle ne sera pas écrasée.");
-  }
-
-  // Identité : celle du vrai SIRET de l'organisation, reprise du répertoire Sirene (jamais remplacée
-  // par des valeurs fictives). Les valeurs de démonstration ne comblent que ce qui manque encore.
+/**
+ * Repart d'une paie de démonstration propre : efface les mois, bulletins et DSN d'essai
+ * de l'organisation fictive, recrée les reprises et les données DSN, puis ouvre le mois en cours.
+ */
+export async function resetDemoPayrollAction(_previous: DemoPayrollResetState, formData: FormData): Promise<DemoPayrollResetState> {
+  const membership = await getPayrollMembership();
+  const user = await getCurrentUser();
+  if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
+  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) return { error: "Seuls les administrateurs peuvent remettre à zéro la paie de démonstration." };
+  if (String(formData.get("confirmation") ?? "") !== "REMETTRE-A-ZERO") return { error: "Confirmez la remise à zéro de la paie de démonstration." };
+  let periodId: string;
   try {
-    await syncOrganizationFromRegistry(organizationId, "FILL_BLANKS");
+    ({ periodId } = await resetDemoPayroll({ organizationId: membership.organizationId, actorUserId: user.id }));
   } catch (error) {
-    console.error("Reprise des données Sirene impossible pour la démonstration :", error);
+    return { error: userFacingError(error, "La paie de démonstration n'a pas pu être remise à zéro. Réessayez dans un instant.") };
   }
-
-  await prisma.$transaction(async (tx) => {
-    // Les expressions de SET lisent les valeurs d'avant la mise à jour.
-    await tx.$executeRaw`
-      UPDATE "organizations"
-      SET "payrollAddress" = COALESCE(NULLIF("payrollAddress", ''), '10 rue de la Démonstration'),
-          "payrollPostalCode" = COALESCE(NULLIF("payrollPostalCode", ''), '30000'),
-          "payrollCity" = COALESCE(NULLIF("payrollCity", ''), 'Nîmes'),
-          "payrollCommuneCode" = CASE WHEN NULLIF("payrollCity", '') IS NULL THEN '30189' ELSE "payrollCommuneCode" END,
-          "payrollDepartment" = COALESCE(NULLIF("payrollDepartment", ''), '30'),
-          "payrollNafCode" = COALESCE(NULLIF("payrollNafCode", ''), '6201Z'),
-          "payrollUrssafReference" = COALESCE(NULLIF("payrollUrssafReference", ''), 'DEMO-URSSAF'),
-          "legalCategory" = COALESCE("legalCategory", 'SAS'),
-          "companyCreationDate" = COALESCE("companyCreationDate", ${new Date(Date.UTC(2020, 0, 1))}),
-          "atmpRate" = COALESCE("atmpRate", 1.00),
-          "healthPlanMonthlyAmount" = COALESCE("healthPlanMonthlyAmount", 30.00),
-          "healthPlanEmployerRate" = COALESCE("healthPlanEmployerRate", 50.00),
-          "payrollHeadcount" = NULL,
-          "mobilityRate" = NULL, "mobilityRateSource" = NULL, "mobilityRateCheckedAt" = NULL, "mobilityRateDetail" = NULL,
-          "ijssSubrogation" = true, "paidLeaveMethod" = 'OUVRABLES', "mealVoucherFaceValue" = 10.00, "mealVoucherEmployerShare" = 0.5
-      WHERE "id" = ${organizationId}
-    `;
-
-    for (const row of DEMO_PAYROLL_DATA) {
-      const employee = employeeByFirstName.get(row.firstName)!;
-      await tx.employee.update({ where: { id: employee.id }, data: { professionalCategory: row.professionalCategory } });
-
-      const profile = await tx.payrollProfile.findFirst({
-        where: { organizationId, employeeId: employee.id, effectiveFrom: periodStart },
-        select: { id: true },
-      });
-      const profileData = {
-        baseSalaryCents: Math.round(row.salaryEuros * 100),
-        monthlyHours: 151.67,
-        payFrequency: "MONTHLY",
-        currency: "EUR",
-        employeeAddress: "12 avenue de la République, 30000 Nîmes",
-        classificationCode: row.classificationCode,
-        classificationLabel: row.classificationLabel,
-        effectiveUntil: null as Date | null,
-      };
-      if (profile) await tx.payrollProfile.update({ where: { id: profile.id }, data: profileData });
-      else await tx.payrollProfile.create({ data: { id: randomUUID(), organizationId, employeeId: employee.id, ...profileData, effectiveFrom: periodStart } });
-
-      // Reprise des compteurs arrêtés à la fin du mois précédent : N acquis depuis le 1er juin jusqu'à ce mois-là.
-      // En juin, les compteurs de mai portent encore sur l'ancienne période : ils basculent au calcul.
-      const referenceYear = periodStart.getMonth() + 1 >= 6 ? periodStart.getFullYear() : periodStart.getFullYear() - 1;
-      const monthsSinceJune = periodStart.getMonth() + 1 === 6 ? 12 : (periodStart.getFullYear() - referenceYear) * 12 + periodStart.getMonth() - 5;
-      const asOf = new Date(Date.UTC(periodStart.getFullYear(), periodStart.getMonth(), 1));
-      await tx.$executeRaw`
-        DELETE FROM "employee_paid_leave_openings" WHERE "organizationId" = ${organizationId} AND "employeeId" = ${employee.id} AND "asOf" = ${asOf}
-      `;
-      await tx.$executeRaw`
-        INSERT INTO "employee_paid_leave_openings"
-          ("id", "organizationId", "employeeId", "asOf", "previousAcquired", "previousTaken", "currentAcquired", "currentTaken", "referenceGross", "referenceAcquiredDays", "currentReferenceGross", "createdAt", "updatedAt")
-        VALUES
-          (${randomUUID()}, ${organizationId}, ${employee.id}, ${asOf}, 30, ${monthsSinceJune === 12 ? 30 : 18}, ${monthsSinceJune * 2.5}, 0, ${row.salaryEuros * 12}, 30, ${row.salaryEuros * monthsSinceJune}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      `;
-      const pasValidFrom = new Date(2020, 0, 1);
-      await tx.$executeRaw`
-        DELETE FROM "employee_withholding_tax_profiles"
-        WHERE "organizationId" = ${organizationId} AND "employeeId" = ${employee.id} AND "validFrom" = ${pasValidFrom}
-      `;
-      await tx.$executeRaw`
-        INSERT INTO "employee_withholding_tax_profiles"
-          ("id", "organizationId", "employeeId", "rate", "validFrom", "validUntil", "source", "sourceReference", "createdAt", "updatedAt")
-        VALUES
-          (${randomUUID()}, ${organizationId}, ${employee.id}, ${row.pasRate}, ${pasValidFrom}, NULL, 'DEMO', 'RH-PILOT-DEMO', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      `;
-    }
-
-    for (const [firstName, alternance] of Object.entries(ALTERNANCE_DATA)) {
-      const employee = employeeByFirstName.get(firstName);
-      if (!employee) continue;
-      const validFrom = new Date(2020, 0, 1);
-      await tx.$executeRaw`
-        DELETE FROM "employee_alternance_profiles"
-        WHERE "organizationId" = ${organizationId} AND "employeeId" = ${employee.id} AND "validFrom" = ${validFrom}
-      `;
-      await tx.$executeRaw`
-        INSERT INTO "employee_alternance_profiles"
-          ("id", "organizationId", "employeeId", "birthDate", "contractYear", "hasBaccalaureateOrHigher", "validFrom", "validUntil", "source", "sourceReference", "createdAt", "updatedAt")
-        VALUES
-          (${randomUUID()}, ${organizationId}, ${employee.id}, ${new Date(`${alternance.birthDate}T00:00:00.000Z`)}, ${alternance.contractYear}, ${alternance.hasBaccalaureateOrHigher}, ${validFrom}, NULL, 'DEMO', 'RH-PILOT-DEMO', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-      `;
-    }
-
-    const period = await tx.payrollPeriod.upsert({
-      where: { organizationId_year_month: { organizationId, year: periodStart.getFullYear(), month: periodStart.getMonth() + 1 } },
-      create: { id: randomUUID(), organizationId, year: periodStart.getFullYear(), month: periodStart.getMonth() + 1, status: "DRAFT" },
-      update: {},
-      select: { id: true },
-    });
-    await tx.payrollVariable.deleteMany({ where: { organizationId, payrollPeriodId: period.id } });
-  }, { timeout: 30000, maxWait: 10000 });
-
-  // Versement mobilité : barème Urssaf de la commune. Hors ligne, un taux nul provisoire évite de bloquer la
-  // démonstration ; le calcul réinterroge l'Urssaf et le remplace dès qu'elle répond.
-  const [place] = await prisma.$queryRaw<Array<{ payrollCommuneCode: string | null }>>`SELECT "payrollCommuneCode" FROM "organizations" WHERE "id" = ${organizationId} LIMIT 1`;
-  const refreshed = place?.payrollCommuneCode ? await refreshMobilityRateFromUrssaf(organizationId, place.payrollCommuneCode, new Date().toISOString().slice(0, 10)).catch(() => null) : null;
-  if (!refreshed) {
-    await prisma.$executeRaw`UPDATE "organizations" SET "mobilityRate" = 0, "mobilityRateSource" = 'DEMO', "mobilityRateCheckedAt" = NULL, "mobilityRateDetail" = 'Taux provisoire de démonstration : le barème Urssaf n''a pas pu être consulté.' WHERE "id" = ${organizationId}`;
-  }
-
   revalidatePath("/dashboard/payroll");
-  if (existingPeriod) revalidatePath(`/dashboard/payroll/${existingPeriod.id}`);
-}
-
-export async function prepareDemoPayrollData() {
-  const { memberships } = await getPayrollMemberships();
-  const membership = memberships[0];
-  if (!membership) throw new Error("Organisation introuvable.");
-  if (!["OWNER", "ADMIN"].includes(membership.accessRole)) {
-    throw new Error("Seuls les administrateurs peuvent préparer le jeu de paie de démonstration.");
-  }
-  await prepareDemoPayrollDataForOrganization(membership.organizationId);
+  revalidatePath("/dashboard/payroll/dsn");
+  redirect(`/dashboard/payroll/${periodId}`);
 }

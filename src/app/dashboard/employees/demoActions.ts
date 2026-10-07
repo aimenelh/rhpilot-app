@@ -29,25 +29,7 @@ async function mapWithConcurrencyLimit<T, R>(items: T[], limit: number, fn: (ite
 
 const DB_CONCURRENCY_LIMIT = 5;
 
-const DEMO_EMPLOYEES = [
-  { firstName: "Antoine", lastName: "Perrot", civility: "M" as const, position: "Technicien de maintenance", hireOffset: -5, contractType: "CDI" as const, probationDuration: 2, probationDurationUnit: "MONTHS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
-  { firstName: "Emma", lastName: "Roussel", civility: "MME" as const, position: "Responsable marketing", hireOffset: -900, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: false },
-  { firstName: "Manon", lastName: "Dubreuil", civility: "MME" as const, position: "Responsable RH", hireOffset: -700, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: false },
-  { firstName: "Karim", lastName: "Belhaj", civility: "M" as const, position: "Apprenti technicien", hireOffset: -20, contractType: "APPRENTISSAGE" as const, probationDuration: 45, probationDurationUnit: "DAYS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
-  { firstName: "Nicolas", lastName: "Fabre", civility: "M" as const, position: "Analyste financier", hireOffset: -80, contractType: "CDI" as const, probationDuration: 3, probationDurationUnit: "MONTHS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
-  { firstName: "Julien", lastName: "Marchand", civility: "M" as const, position: "Développeur", hireOffset: -25, contractType: null as "CDI" | "CDD" | "APPRENTISSAGE" | "PROFESSIONNALISATION" | null, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: false },
-  { firstName: "Léa", lastName: "Fontaine", civility: "MME" as const, position: "Secrétaire médicale", hireOffset: -400, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: false },
-  { firstName: "Sarah", lastName: "Benali", civility: "AUTRE" as const, position: "Comptable", hireOffset: -1000, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
-  { firstName: "Sophie", lastName: "Lemoine", civility: "MME" as const, position: "Assistante comptable", hireOffset: -60, contractType: "CDD" as const, probationDuration: 4, probationDurationUnit: "MONTHS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
-  { firstName: "Thomas", lastName: "Girard", civility: "M" as const, position: "Chargé de projet", hireOffset: -60, contractType: "PROFESSIONNALISATION" as const, probationDuration: 4, probationDurationUnit: "MONTHS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
-  { firstName: "Hugo", lastName: "Lacroix", civility: "M" as const, position: "Commercial", hireOffset: -200, contractType: "CDD" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
-  { firstName: "Chloé", lastName: "Bertin", civility: "MME" as const, position: "Apprentie assistante RH", hireOffset: -5, contractType: "APPRENTISSAGE" as const, probationDuration: 45, probationDurationUnit: "DAYS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
-  { firstName: "Inès", lastName: "Chevalier", civility: "MME" as const, position: "Chargée de recrutement", hireOffset: -300, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: null as number | null, hasManager: true },
-  { firstName: "Maxime", lastName: "Renard", civility: "M" as const, position: "Magasinier", hireOffset: -45, contractType: "CDD" as const, probationDuration: 3, probationDurationUnit: "MONTHS" as const, nextMedicalVisitOffset: null as number | null, hasManager: true },
-  { firstName: "Camille", lastName: "Vidal", civility: "AUTRE" as const, position: "Chargée de clientèle", hireOffset: -540, contractType: "CDI" as const, probationDuration: null as number | null, probationDurationUnit: null as "DAYS" | "WEEKS" | "MONTHS" | null, nextMedicalVisitOffset: 45, hasManager: true },
-];
-
-const DEMO_EMPLOYEE_NAMES = new Set(DEMO_EMPLOYEES.map((employee) => employee.firstName));
+import { DEMO_EMPLOYEES, DEMO_EMPLOYEE_NAMES } from "@/lib/demo-employees";
 
 function redirectWithFlash(message: string): never {
   revalidatePath("/dashboard");
@@ -123,8 +105,9 @@ export async function generateDemoOrganization() {
   const demoOnlyOrganization = allEmployees.length > 0;
 
   const employeesByName = new Map<string, (typeof allEmployees)[number]>();
+  // Seuls les salariés fictifs peuvent être réactivés : un salarié réel archivé qui porte le même prénom reste archivé.
   for (const employee of allEmployees) {
-    if (!employeesByName.has(employee.firstName) && DEMO_EMPLOYEE_NAMES.has(employee.firstName)) employeesByName.set(employee.firstName, employee);
+    if (employee.isDemoData && !employeesByName.has(employee.firstName) && DEMO_EMPLOYEE_NAMES.has(employee.firstName)) employeesByName.set(employee.firstName, employee);
   }
 
   const activeDemoEmployees: Array<{ id: string; firstName: string; hireDate: Date }> = [];

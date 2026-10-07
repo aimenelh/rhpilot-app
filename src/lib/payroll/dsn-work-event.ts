@@ -64,7 +64,7 @@ export function assertDsnWorkEvent(input: DsnWorkEventInput): void {
 /** Usages P26V01 : aucune rubrique mensuelle de paie ou de cotisation dans un 04/05. */
 export function buildDsnP26WorkEvent(input: DsnWorkEventInput): string {
   assertDsnWorkEvent(input);
-  const { add, text, assertCode, dsnDate, siretParts, serialize } = dsnP26Format;
+  const { add, text, locality, assertCode, dsnDate, siretParts, serialize } = dsnP26Format;
   const { siren, nic } = siretParts(input.emitter.siret);
   const lines: DsnLine[] = [];
   add(lines, "S10.G00.00.001", "RH Pilot");
@@ -79,7 +79,7 @@ export function buildDsnP26WorkEvent(input: DsnWorkEventInput): string {
   add(lines, "S10.G00.01.003", text(input.emitter.name, "la raison sociale"));
   add(lines, "S10.G00.01.004", text(input.emitter.address, "l'adresse de l'émetteur"));
   add(lines, "S10.G00.01.005", text(input.emitter.postalCode, "le code postal"));
-  add(lines, "S10.G00.01.006", text(input.emitter.city, "la ville"));
+  add(lines, "S10.G00.01.006", locality(input.emitter.city, "la ville"));
   add(lines, "S10.G00.02.002", text(input.emitter.contactName, "le contact DSN"));
   add(lines, "S10.G00.02.004", text(input.emitter.contactEmail, "l'e-mail DSN"));
   add(lines, "S10.G00.02.005", text(input.emitter.contactPhone, "le téléphone DSN"));
@@ -97,7 +97,7 @@ export function buildDsnP26WorkEvent(input: DsnWorkEventInput): string {
   add(lines, "S21.G00.11.001", nic);
   add(lines, "S21.G00.11.003", text(input.emitter.address, "l'adresse de l'établissement"));
   add(lines, "S21.G00.11.004", text(input.emitter.postalCode, "le code postal de l'établissement"));
-  add(lines, "S21.G00.11.005", text(input.emitter.city, "la ville de l'établissement"));
+  add(lines, "S21.G00.11.005", locality(input.emitter.city, "la ville de l'établissement"));
   add(lines, "S21.G00.30.001", assertNirFormat(input.employee.nir));
   add(lines, "S21.G00.30.002", text(input.employee.lastName, "le nom du salarié"));
   add(lines, "S21.G00.30.004", text(input.employee.firstName, "le prénom du salarié"));

@@ -3,6 +3,7 @@ import type { DsnOpsPayment } from "./dsn-p26v01-complete";
 import { Prisma } from "@prisma/client";
 import { assertDsnRetirementScope, assertDsnStableContract } from "./dsn-contract-scope";
 import { dsnContractEnd } from "./dsn-termination";
+import { dsnExpectedPublicPolicies } from "./dsn-fixed-term";
 import { prisma } from "@/lib/prisma";
 import type { DsnP26MonthlyInput } from "./dsn-p26v01";
 import { buildDsnP26V01Complete } from "./dsn-p26v01-complete";
@@ -224,15 +225,18 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
 
     if (dsnProfile.workUnitCode !== "10") throw new Error("DSN bloquée : seuls les contrats horaires sont raccordés au moteur actuel.");
     const lockedContract = locked.inputs.employee.contract;
-    if (lockedContract === "APPRENTISSAGE") {
-      // Contrat d'apprentissage : CDD (02) à terme fixé, ou CDI (01) dont l'apprentissage ouvre la relation.
+    if (lockedContract === "APPRENTISSAGE" || lockedContract === "PROFESSIONNALISATION") {
+      // Alternance : CDD (02) à terme fixé, ou CDI (01) dont l'apprentissage ou la professionnalisation ouvre la relation.
       const expected = locked.inputs.employee.contractEndDate ? "02" : "01";
-      if (dsnProfile.contractNatureCode !== expected || !["64", "65"].includes(dsnProfile.publicPolicyCode)) {
-        throw new Error(`DSN bloquée pour ${employee.firstName} ${employee.lastName} : le profil DSN de l'apprenti doit indiquer la nature ${expected === "02" ? "02 (CDD)" : "01 (CDI)"} et le dispositif 64 ou 65.`);
+      const policies = dsnExpectedPublicPolicies(lockedContract);
+      if (dsnProfile.contractNatureCode !== expected || !policies.includes(dsnProfile.publicPolicyCode)) {
+        throw new Error(`DSN bloquée pour ${employee.firstName} ${employee.lastName} : le profil DSN ${lockedContract === "APPRENTISSAGE" ? "de l'apprenti" : "du contrat de professionnalisation"} doit indiquer la nature ${expected === "02" ? "02 (CDD)" : "01 (CDI)"} et le dispositif ${policies.join(" ou ")}.`);
       }
     } else {
       const expectedNature = lockedContract === "CDI" ? "01" : lockedContract === "CDD" ? "02" : null;
-      if (!expectedNature || dsnProfile.contractNatureCode !== expectedNature || dsnProfile.publicPolicyCode !== "99") throw new Error("DSN bloquée : la nature déclarative du contrat ne correspond pas au contrat ordinaire du bulletin verrouillé.");
+      if (!expectedNature || dsnProfile.contractNatureCode !== expectedNature || dsnProfile.publicPolicyCode !== "99") throw new Error(`DSN bloquée pour ${employee.firstName} ${employee.lastName} : la nature du contrat du profil DSN ne correspond pas au contrat ${lockedContract} du bulletin verrouillé.`);
+      // Dsn-Val S21.G00.40.010/CCH-12 : un CDD porte toujours sa date de fin prévisionnelle, même à terme imprécis.
+      if (lockedContract === "CDD" && !locked.inputs.employee.contractEndDate) throw new Error(`DSN bloquée pour ${employee.firstName} ${employee.lastName} : la date de fin prévisionnelle du CDD est obligatoire. Renseignez-la dans la fiche salarié (date minimale pour un CDD à terme imprécis), puis recalculez le mois.`);
     }
     const referenceWorkQuota = requiredNumber(dsnProfile.referenceWorkQuota, `la quotité de référence du salarié ${employee.id}`);
     const contractWorkQuota = requiredNumber(dsnProfile.contractWorkQuota, `la quotité contractuelle du salarié ${employee.id}`);

@@ -73,9 +73,13 @@ describe("apprentis en DSN (CTP 726, 423 et exonération Agirc-Arrco)", () => {
     expect(() => buildDsnP26V01Complete(data)).toThrow(/diplôme préparé/);
   });
 
-  it("n'admet que le motif de recours 11 pour un apprenti", () => {
+  it("ne déclare aucun motif de recours pour un contrat d'alternance", () => {
     expect(dsnFixedTermReason("02", "64", null)).toBeNull();
-    expect(dsnFixedTermReason("02", "65", "11")).toBe("11");
-    expect(() => dsnFixedTermReason("02", "64", "02")).toThrow(/motif 11/);
+    // Le motif 11, facultatif, n'apporte rien au dispositif 64/65 et n'est pas conservé.
+    expect(dsnFixedTermReason("02", "65", "11")).toBeNull();
+    expect(() => dsnFixedTermReason("02", "64", "02")).toThrow(/alternance/);
+    expect(dsnFixedTermReason("02", "61", null)).toBeNull();
+    expect(dsnFixedTermReason("01", "61", null)).toBeNull();
+    expect(() => dsnFixedTermReason("02", "61", "11")).toThrow(/alternance/);
   });
 });

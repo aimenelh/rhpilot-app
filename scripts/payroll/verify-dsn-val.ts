@@ -1,5 +1,5 @@
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { buildDsnP26V01Complete } from "../../src/lib/payroll/dsn-p26v01-complete";
@@ -165,6 +165,14 @@ accept("bulletin-primes-026-028", buildDsnP26V01Complete(computedDsnFixture(2500
     { code: "VACATION_BONUS", label: "Prime de naissance", amount: 150, excludedFromPaidLeaveBase: true, dsn: { type: "028", attachmentStart: null, attachmentEnd: null } },
   ],
 })));
+
+// Paie de démonstration produite de bout en bout sur PostgreSQL (scripts/payroll/demo-dsn-e2e.ts).
+const demoDirectory = process.env.DEMO_DSN_DIR;
+if (demoDirectory) {
+  const files = readdirSync(demoDirectory).filter((file) => file.endsWith(".txt")).sort();
+  if (files.length === 0) throw new Error(`Aucune DSN de démonstration dans ${demoDirectory}.`);
+  for (const file of files) accept(file.replace(/\.txt$/, ""), readFileSync(join(demoDirectory, file), "utf8"));
+}
 
 // Témoin négatif : l'outil doit réellement détecter un bloc obligatoire supprimé.
 const rejected = validate("temoin-invalide", content.replace(/^S21\.G00\.71\.002,.*\r\n/m, ""));

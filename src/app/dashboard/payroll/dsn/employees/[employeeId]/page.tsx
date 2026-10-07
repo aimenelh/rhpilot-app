@@ -44,8 +44,8 @@ export default async function DsnEmployeeSetupPage({ params }: { params: { emplo
   ]);
   const row = rows[0];
   const complementary = normalizeDsnComplementaryAffiliations(row?.complementaryAffiliations);
-  const safeContractNature = employee.contractType === "CDI" ? "01" : employee.contractType === "CDD" || employee.contractType === "APPRENTISSAGE" ? "02" : "";
-  const safePublicPolicy = employee.contractType === "CDI" || employee.contractType === "CDD" ? "99" : "";
+  const safeContractNature = employee.contractType === "CDI" ? "01" : employee.contractType ? "02" : "";
+  const safePublicPolicy = employee.contractType === "CDI" || employee.contractType === "CDD" ? "99" : employee.contractType === "PROFESSIONNALISATION" ? "61" : "";
   const monthlyHours = payrollProfile?.monthlyHours ? String(payrollProfile.monthlyHours) : "";
   const initial: DsnEmployeeFormInitial = {
     hasNir: Boolean(row?.nirCiphertext), birthDate: dateInput(row?.birthDate), birthPlace: row?.birthPlace ?? "", birthDepartment: row?.birthDepartment ?? "",
