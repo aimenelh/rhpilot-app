@@ -14,7 +14,7 @@ import c from "./CreatingAccount.module.css";
 const STEPS = [
   "Votre compte est créé",
   "Les parcours RH sont prêts : embauche, fin d’essai, visite médicale",
-  "Le calendrier des échéances vous attend",
+  "Le calendrier des échéances est disponible",
   "Il reste à nommer votre entreprise et à ajouter un premier salarié",
 ];
 const STEP_MS = 330;
@@ -67,7 +67,7 @@ export function CreatingAccountAnimation() {
             ))}
           </ol>
           <p className={c.status} role="status">
-            {ready ? "C’est prêt." : "Préparation de votre espace…"}
+            {ready ? "Votre espace est prêt." : "Préparation de votre espace…"}
           </p>
         </div>
       </main>

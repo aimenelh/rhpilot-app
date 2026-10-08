@@ -24,7 +24,7 @@ export function employeeInvitationEmail(input: { firstName: string; organization
     html: layout(
       `<p style="font-size: 15px; margin: 0;">Bonjour ${escapeHtml(input.firstName)},</p>
        ${p(`<strong>${org}</strong> vous ouvre un espace personnel sur RH Pilot. Vous y retrouverez vos bulletins de salaire, vos compteurs de congés, vos demandes d'absence et vos documents.`)}
-       ${p("Créez votre accès avec cette adresse e-mail, depuis votre téléphone comme depuis un ordinateur. Cela prend une minute.")}
+       ${p("Créez votre accès avec cette adresse e-mail, depuis un téléphone ou un ordinateur.")}
        ${p(`Vos bulletins de paie vous seront remis sous forme électronique dans cet espace. Vous pouvez vous y opposer à tout moment et les recevoir sur papier, depuis votre espace ou en le demandant à ${org} (article L3243-2 du Code du travail).`)}`,
       { label: "Créer mon accès", url: input.joinUrl },
       `Ce lien est personnel et valable ${input.validDays} jours. Si vous ne travaillez pas chez ${org}, ignorez ce message.`,

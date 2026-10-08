@@ -83,7 +83,7 @@ function getLegalProbationSuggestion(
     return {
       duration: String(months),
       unit: "MONTHS",
-      hint: `Délai légal maximum selon le Code du travail (art. L1221-19) pour un ${CATEGORY_LABELS[professionalCategory]} en CDI : ${months} mois. Votre convention collective peut prévoir une durée plus courte, jamais plus longue : modifiez librement ce champ si besoin.`,
+      hint: `Délai légal maximum selon le Code du travail (art. L1221-19) pour un ${CATEGORY_LABELS[professionalCategory]} en CDI : ${months} mois. Votre convention collective peut prévoir une durée plus courte, jamais plus longue. Vous pouvez modifier ce champ si besoin.`,
     };
   }
   if (contractType === "CDD") {
@@ -92,7 +92,7 @@ function getLegalProbationSuggestion(
     return {
       duration: String(days),
       unit: "DAYS",
-      hint: `Délai légal maximum selon le Code du travail (art. L1242-10) pour un CDD de cette durée : ${days} jour${days > 1 ? "s" : ""}. Votre convention collective peut prévoir une durée plus courte, jamais plus longue : modifiez librement ce champ si besoin.`,
+      hint: `Délai légal maximum selon le Code du travail (art. L1242-10) pour un CDD de cette durée : ${days} jour${days > 1 ? "s" : ""}. Votre convention collective peut prévoir une durée plus courte, jamais plus longue. Vous pouvez modifier ce champ si besoin.`,
     };
   }
   if (contractType === "APPRENTISSAGE") {
@@ -306,7 +306,7 @@ export function EmployeeForm({
     ? monthlyHoursFromWeekly(parsedWeeklyHours)
     : null;
   const workTimeHint = monthlyHoursPreview === null
-    ? "Renseignez la durée prévue au contrat : elle alimentera les absences, congés et la paie."
+    ? "Renseignez la durée prévue au contrat. Elle sert au calcul des absences, des congés et de la paie."
     : parsedWeeklyHours < 35
       ? `Temps partiel sur la base légale de 35 h · ${monthlyHoursPreview.toLocaleString("fr-FR")} h mensualisées.`
       : Math.abs(parsedWeeklyHours - 35) < 0.01
@@ -437,8 +437,8 @@ export function EmployeeForm({
               </FieldHint>
             )}
             <FieldHint>
-              RH Pilot vous préviendra simplement quand cette date approche, sans rien
-              déclencher automatiquement.
+              Vous serez prévenu à l’approche de cette date. Aucune action n’est déclenchée
+              automatiquement.
             </FieldHint>
             {contractType === "CDD" && !contractEndDate && (
               <FieldHint>
@@ -453,7 +453,7 @@ export function EmployeeForm({
           <div className="mb-4">
             <h2 className="text-sm font-semibold text-ink">Temps de travail contractuel</h2>
             <p className="mt-1 text-xs leading-5 text-ink-faint">
-              Une seule donnée pour les congés, les absences et la paie. La répartition proposée peut être adaptée au planning réel du salarié.
+              Cette durée sert au calcul des congés, des absences et de la paie. La répartition proposée peut être adaptée au planning réel du salarié.
             </p>
           </div>
 
@@ -498,7 +498,7 @@ export function EmployeeForm({
                 required
               />
               <FieldHint>
-                À la création, il s&apos;agit en général de la date d&apos;embauche. En cas de changement d&apos;horaire, RH Pilot conserve les versions précédentes.
+                À la création, il s&apos;agit en général de la date d&apos;embauche. En cas de changement d’horaire, les versions précédentes sont conservées.
               </FieldHint>
             </div>
           </div>
@@ -604,7 +604,7 @@ export function EmployeeForm({
           {rawLegalSuggestion && !probationSuggestionRelevant ? (
             <FieldHint>
               La date d&apos;embauche place la période d&apos;essai théorique dans le passé.
-              RH Pilot ne la pré-remplit pas et ne la remontera pas comme une alerte active.
+              Elle n’est donc pas pré-remplie et n’apparaîtra pas comme une alerte active.
               Vous pouvez toutefois renseigner une durée manuellement si vous souhaitez la
               conserver dans le dossier du salarié.
             </FieldHint>
@@ -613,13 +613,12 @@ export function EmployeeForm({
           ) : contractType === "PROFESSIONNALISATION" ? (
             <FieldHint>
               Ce contrat suit un régime différent du CDI et du CDD pour la période
-              d&apos;essai, RH Pilot ne le pré-calcule pas : renseignez la durée
-              vous-même.
+              d’essai. La durée n’est pas pré-calculée : renseignez-la vous-même.
             </FieldHint>
           ) : (
             <FieldHint>
-              Sert uniquement à pré-remplir (jamais imposer) la date suggérée lors du
-              déclenchement de l&apos;événement correspondant.
+              Sert uniquement à pré-remplir la date proposée lors du déclenchement de
+              l’événement correspondant. Elle reste modifiable.
             </FieldHint>
           )}
         </div>

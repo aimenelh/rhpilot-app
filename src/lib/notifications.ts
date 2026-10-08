@@ -172,8 +172,8 @@ async function sendDigestToMembership(
   const html = renderNotificationEmail({
     greeting: `Bonjour ${getUserDisplayName(membership.user)},`,
     intro: organizationWide
-      ? `Voici votre résumé ${frequencyLabel} des actions de l'organisation qui méritent votre attention :`
-      : `Voici votre résumé ${frequencyLabel} des actions de votre périmètre qui méritent votre attention :`,
+      ? `Voici votre résumé ${frequencyLabel} des actions de l’organisation en retard ou à échéance proche :`
+      : `Voici votre résumé ${frequencyLabel} des actions de votre périmètre en retard ou à échéance proche :`,
     summary: {
       overdueCount: overdue.length,
       todayCount: today.length,

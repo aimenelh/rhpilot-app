@@ -68,7 +68,7 @@ export default function PublishPayslipsPanel({ data }: { data: PublishPanelData 
           <li>
             Sans espace activé : {data.withoutSpace.map((employee, index) => (
               <span key={employee.id}>{index > 0 ? ", " : ""}<Link href={`/dashboard/employees/${employee.id}?onglet=espace`} className="font-medium text-ink hover:underline">{employee.name}</Link>{employee.invited ? " (invité)" : ""}</span>
-            ))}. Leurs bulletins les attendront dans leur espace ; d&apos;ici là, remettez-les autrement.
+            ))}. Leurs bulletins seront consultables dans leur espace une fois celui-ci activé. D’ici là, remettez-les par un autre moyen.
           </li>
         ) : null}
         {data.notInformed.length > 0 ? (

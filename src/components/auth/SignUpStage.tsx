@@ -70,16 +70,16 @@ export function SignUpStage({ children }: { children: ReactNode }) {
   const steps = [Boolean(name), isEmail(email), password || verifying, verifying];
   const progress = steps.filter(Boolean).length;
   const status = verifying
-    ? `Un code vient de partir vers ${email || "votre adresse"}. Saisissez-le pour ouvrir votre espace.`
+    ? `Un code a été envoyé à ${email || "votre adresse"}. Saisissez-le pour ouvrir votre espace.`
     : progress === 0
-      ? "Commencez par votre prénom : l’espace se construit à mesure."
+      ? "Commencez par votre prénom."
       : !isEmail(email)
         ? `Bonjour ${name}. Votre adresse e-mail servira à vous connecter.`
         : !password
           ? company
-            ? `${company} : l’espace prendra ce nom, vous pourrez le changer ensuite.`
-            : "Il ne reste qu’un mot de passe d’au moins 8 caractères."
-          : "Tout est prêt. Validez pour recevoir votre code.";
+            ? `Nom proposé pour l’espace : ${company}. Vous pourrez le modifier ensuite.`
+            : "Choisissez un mot de passe d’au moins 8 caractères."
+          : "Validez pour recevoir votre code de vérification.";
 
   return (
     <div className={s.page}>
@@ -95,10 +95,9 @@ export function SignUpStage({ children }: { children: ReactNode }) {
             </span>
           </Link>
           <h1 className={s.title}>
-            Votre espace RH
-            <em> se prépare déjà.</em>
+            Créez l’espace RH de votre entreprise.
           </h1>
-          <p className={s.lead}>Remplissez le formulaire : votre espace prend forme à mesure que vous écrivez.</p>
+          <p className={s.lead}>L’aperçu se complète à mesure que vous remplissez le formulaire.</p>
 
           <div className={s.window} data-progress={progress} data-verifying={verifying}>
             <div className={s.bar}>

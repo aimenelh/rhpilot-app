@@ -76,8 +76,8 @@ export function TriggerEventForm({
         <h2 className="text-base font-semibold text-ink">Déclencher un événement RH</h2>
       </div>
       <p className="mt-1.5 text-sm text-ink-soft">
-        Génère automatiquement le plan d&apos;action complet : tâches, échéances et
-        responsables affectés automatiquement.
+        Génère le plan d’action complet : tâches, échéances et responsables affectés
+        automatiquement.
       </p>
 
       <form action={formAction} className="mt-4 flex flex-col gap-4" noValidate>
@@ -113,8 +113,8 @@ export function TriggerEventForm({
             </Select>
             {!probationTrackable && (
               <p className="mt-1 text-xs text-ink-faint">
-                La période d&apos;essai calculée est déjà terminée : RH Pilot ne propose plus
-                ce parcours comme action active pour ce salarié.
+                La période d’essai calculée est déjà terminée. Ce parcours n’est plus proposé
+                comme action active pour ce salarié.
               </p>
             )}
           </div>

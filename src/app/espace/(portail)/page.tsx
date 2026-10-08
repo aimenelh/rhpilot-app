@@ -75,7 +75,7 @@ export default async function EspacePayslipsPage({ searchParams }: { searchParam
 
       {otherCount > 0 ? (
         <Link href="/espace/documents" className="block rounded-2xl border border-surface-border bg-white px-4 py-3.5 text-sm font-semibold text-ink hover:bg-surface-subtle/60">
-          {otherCount === 1 ? "1 autre document vous attend" : `${otherCount} autres documents vous attendent`} dans Documents
+          {otherCount === 1 ? "1 autre document disponible" : `${otherCount} autres documents disponibles`} dans Documents
         </Link>
       ) : null}
     </div>

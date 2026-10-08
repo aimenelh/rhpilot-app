@@ -198,7 +198,7 @@ export async function saveAlternanceProfile(
   const contractYearRaw = String(formData.get("contractYear") ?? "");
   const baccalaureateRaw = String(formData.get("hasBaccalaureateOrHigher") ?? "");
   const sourceReference = String(formData.get("sourceReference") ?? "").trim();
-  if (!birthDateRaw) return { error: "La date de naissance est obligatoire pour sécuriser le minimum alternance." };
+  if (!birthDateRaw) return { error: "La date de naissance est obligatoire pour déterminer le minimum légal." };
   if (!validFromRaw) return { error: "La date de prise d'effet du profil alternance est obligatoire." };
 
   let birthDate: Date;

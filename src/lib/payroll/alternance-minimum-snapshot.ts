@@ -41,13 +41,13 @@ export function buildAlternanceMinimumSnapshot(input: {
   profileSourceReference: string | null;
   legalMinimumCents?: number | null;
 }): AlternanceMinimumSnapshot {
-  if (!Number.isInteger(input.age) || input.age < 0 || input.age > 100) throw new Error("L'âge du snapshot alternance est invalide.");
-  if (!Number.isInteger(input.baseSalaryCents) || input.baseSalaryCents < 0) throw new Error("Le salaire brut du snapshot alternance est invalide.");
-  if (!Number.isFinite(input.smicMonthlyCents) || input.smicMonthlyCents <= 0) throw new Error("Le SMIC du snapshot alternance est invalide.");
-  if (!Number.isFinite(input.collectiveMinimumCents ?? 0) || (input.collectiveMinimumCents ?? 0) < 0) throw new Error("Le minimum conventionnel du snapshot alternance est invalide.");
+  if (!Number.isInteger(input.age) || input.age < 0 || input.age > 100) throw new Error("L’âge enregistré pour le contrôle alternance est invalide.");
+  if (!Number.isInteger(input.baseSalaryCents) || input.baseSalaryCents < 0) throw new Error("Le salaire brut enregistré pour le contrôle alternance est invalide.");
+  if (!Number.isFinite(input.smicMonthlyCents) || input.smicMonthlyCents <= 0) throw new Error("Le SMIC enregistré pour le contrôle alternance est invalide.");
+  if (!Number.isFinite(input.collectiveMinimumCents ?? 0) || (input.collectiveMinimumCents ?? 0) < 0) throw new Error("Le minimum conventionnel enregistré pour le contrôle alternance est invalide.");
 
   const legalMinimumCents = input.legalMinimumCents ?? null;
-  if (legalMinimumCents !== null && (!Number.isFinite(legalMinimumCents) || legalMinimumCents < 0)) throw new Error("Le minimum légal du snapshot alternance est invalide.");
+  if (legalMinimumCents !== null && (!Number.isFinite(legalMinimumCents) || legalMinimumCents < 0)) throw new Error("Le minimum légal enregistré pour le contrôle alternance est invalide.");
   if (!Number.isFinite(input.profileValidFrom.getTime())) throw new Error("La date de début du profil alternance est invalide.");
   if (input.profileValidUntil && !Number.isFinite(input.profileValidUntil.getTime())) throw new Error("La date de fin du profil alternance est invalide.");
 

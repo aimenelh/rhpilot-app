@@ -44,7 +44,7 @@ export function PayrollSettingsFields({ values }: { values: PayrollSettingsValue
           <Label htmlFor="payrollHeadcount">Effectif pour les seuils de cotisations</Label>
           <p className="mt-1 text-sm text-ink">Calculé automatiquement : {values.automaticHeadcount} salarié{values.automaticHeadcount === "0" || values.automaticHeadcount === "1" ? "" : "s"} ce mois-ci</p>
           <Input id="payrollHeadcount" name="payrollHeadcount" type="number" min="0" step="0.01" defaultValue={values.payrollHeadcount} placeholder="Laisser vide" className="mt-2" />
-          <FieldHint>RH Pilot compte chaque mois vos salariés, hors apprentis et contrats de professionnalisation, temps partiels au prorata. Ne saisissez un effectif que si l&apos;Urssaf en retient un autre, par exemple si vous avez franchi le seuil de 11 ou de 50 salariés depuis moins de 5 ans (règle de la loi Pacte).</FieldHint>
+          <FieldHint>L’effectif est calculé chaque mois, hors apprentis et contrats de professionnalisation, temps partiels au prorata. Ne saisissez un effectif que si l&apos;Urssaf en retient un autre, par exemple si vous avez franchi le seuil de 11 ou de 50 salariés depuis moins de 5 ans (règle de la loi Pacte).</FieldHint>
         </div>
         <div>
           <Label htmlFor="mobilityRate">Versement mobilité</Label>

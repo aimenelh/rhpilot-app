@@ -7,12 +7,12 @@ import { Card } from "@/components/ui/Card";
 // Astuces sur des fonctionnalités qui existent vraiment — jamais rien
 // d'inventé ni de futur.
 const DID_YOU_KNOW_TIPS = [
-  "Vous pouvez personnaliser vos modèles de parcours directement depuis un parcours déjà généré, sans jamais toucher à ce que voient les autres organisations.",
-  "Un salarié archivé n'est jamais perdu : retrouvez-le à tout moment depuis l'onglet Archivés, sur la page Salariés.",
-  "RH Pilot n'interprète jamais votre convention collective : il vous oriente simplement vers la bonne source officielle, au bon moment.",
+  "Vous pouvez personnaliser vos modèles de parcours depuis un parcours déjà généré. Les modifications ne concernent que votre organisation.",
+  "Les salariés archivés restent consultables dans l’onglet Archivés de la page Salariés.",
+  "Les rappels liés à la convention collective renvoient vers la source officielle. Le texte de la convention n’est pas interprété.",
   "Le Calendrier vous permet de basculer entre vos propres tâches et celles de toute l'organisation.",
   "Vous pouvez exporter l'ensemble de vos données à tout moment, conformément au RGPD, depuis Configuration.",
-  "Une étape que vous ne faites jamais chez vous peut être supprimée définitivement de vos futurs parcours, pas seulement annulée à chaque fois.",
+  "Une étape qui ne s’applique pas dans votre organisation peut être retirée définitivement de vos futurs parcours, au lieu d’être annulée à chaque fois.",
 ];
 
 const ROTATION_MS = 12000;
@@ -49,7 +49,7 @@ export function DidYouKnowCard() {
     <Card className="mt-5 flex items-start gap-2.5 bg-surface-subtle">
       <Lightbulb size={16} className="mt-0.5 shrink-0 text-accent-amber" />
       <div className="min-h-[40px]">
-        <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Le saviez-vous ?</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-faint">Astuce</p>
         <p
           className={`mt-1 text-sm text-ink-soft transition-opacity duration-300 ${
             visible ? "opacity-100" : "opacity-0"

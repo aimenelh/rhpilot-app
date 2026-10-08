@@ -23,7 +23,7 @@ async function NoSpace({ email }: { email: string }) {
     <EspaceAuthFrame>
       {pending.length > 0 ? (
         <>
-          <h1 className="text-xl font-semibold text-ink">Une invitation vous attend</h1>
+          <h1 className="text-xl font-semibold text-ink">Invitation en attente</h1>
           <p className="mt-2 text-[15px] leading-6 text-ink-soft">Activez l&apos;espace salarié que votre employeur a ouvert pour {email}.</p>
           <div className="mt-5 space-y-3">
             {pending.map((invitation) => (
@@ -39,7 +39,7 @@ async function NoSpace({ email }: { email: string }) {
         <>
           <h1 className="text-xl font-semibold text-ink">Aucun espace salarié</h1>
           <p className="mt-2 text-[15px] leading-6 text-ink-soft">
-            Aucun espace salarié n&apos;est ouvert pour <strong className="font-semibold text-ink">{email}</strong>. Votre employeur vous l&apos;ouvre depuis RH Pilot : l&apos;invitation arrive par e-mail, sur votre adresse personnelle.
+            Aucun espace salarié n&apos;est ouvert pour <strong className="font-semibold text-ink">{email}</strong>. C’est votre employeur qui ouvre l’espace depuis RH Pilot. L’invitation est envoyée par e-mail à votre adresse personnelle.
           </p>
         </>
       )}

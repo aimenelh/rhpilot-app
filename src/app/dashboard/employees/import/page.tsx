@@ -27,9 +27,8 @@ export default function ImportEmployeesPage() {
     <div className="max-w-2xl">
       <h1 className="text-2xl font-semibold text-ink">Importer des salariés</h1>
       <p className="mt-1 text-sm text-ink-soft">
-        Collez le contenu d&apos;un fichier CSV au format RH Pilot, pratique pour démarrer
-        avec plusieurs salariés d&apos;un coup plutôt que de créer chaque fiche
-        individuellement.
+        Collez le contenu d’un fichier CSV au format RH Pilot pour créer plusieurs fiches
+        salariés en une seule fois.
       </p>
 
       <Card className="mt-6">
@@ -49,8 +48,8 @@ export default function ImportEmployeesPage() {
           EMPLOYE, OUVRIER ou AUTRE · type_contrat : CDI, CDD, APPRENTISSAGE ou
           PROFESSIONNALISATION · heures_hebdomadaires : ex. 35, 39 ou 24 · lundi à dimanche :
           heures prévues chaque jour · salaire_brut_mensuel : facultatif · unite_duree : DAYS,
-          WEEKS ou MONTHS. Si le temps de travail manque, le salarié est importé mais RH Pilot le
-          signale comme à compléter ; aucune hypothèse de 35 h n&apos;est créée silencieusement.
+          WEEKS ou MONTHS. Si le temps de travail manque, le salarié est importé et signalé comme à
+          compléter. Aucune durée de 35 h n’est appliquée par défaut.
         </p>
       </Card>
 

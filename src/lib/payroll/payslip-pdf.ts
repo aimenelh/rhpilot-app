@@ -241,7 +241,7 @@ function drawRemuneration(l: Layout, input: PayslipPdfInput): void {
   rows.forEach((row, index) => {
     const rowHeight = 12;
     if (ensureSpace(l, rowHeight + 22)) {
-      drawSectionTitle(l, "1. RÉMUNÉRATION — SUITE");
+      drawSectionTitle(l, "1. RÉMUNÉRATION (SUITE)");
       drawTableHeader(l, REMUNERATION_COLUMNS);
     }
     if (index % 2 === 1) l.doc.rect(PAGE_MARGIN, l.y - 1, CONTENT_WIDTH, rowHeight).fill(ROW_ALT);
@@ -293,7 +293,7 @@ function drawContributions(l: Layout, input: PayslipPdfInput): void {
   drawTableHeader(l, CONTRIBUTION_COLUMNS);
   groupContributions(input.contributions).forEach((group, index) => {
     if (ensureSpace(l, 36)) {
-      drawSectionTitle(l, "2. COTISATIONS ET CONTRIBUTIONS — SUITE");
+      drawSectionTitle(l, "2. COTISATIONS ET CONTRIBUTIONS (SUITE)");
       drawTableHeader(l, CONTRIBUTION_COLUMNS);
     }
     drawContributionRow(l, group, index);
@@ -315,7 +315,7 @@ function drawNetAdjustments(l: Layout, input: PayslipPdfInput): void {
   rows.forEach((row, index) => {
     const rowHeight = 12;
     if (ensureSpace(l, rowHeight + 22)) {
-      drawSectionTitle(l, "AJUSTEMENTS DU NET — SUITE");
+      drawSectionTitle(l, "AJUSTEMENTS DU NET (SUITE)");
       drawTableHeader(l, REMUNERATION_COLUMNS);
     }
     if (index % 2 === 1) l.doc.rect(PAGE_MARGIN, l.y - 1, CONTENT_WIDTH, rowHeight).fill(ROW_ALT);

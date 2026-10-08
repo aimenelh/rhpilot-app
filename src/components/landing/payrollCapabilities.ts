@@ -29,8 +29,8 @@ export const PAYROLL_CAPABILITIES: Record<string, PayrollCapability> = {
     variant: "agreement",
     moments: [
       { heading: "La convention du salarié d’abord", body: "Quand une convention collective est renseignée sur le profil du salarié, **elle est retenue en priorité** pour préparer sa paie." },
-      { heading: "La bonne version au bon moment", body: "Une convention peut évoluer. RH Pilot conserve **les différentes versions avec leurs dates** et utilise celle qui correspond à la période de paie." },
-      { heading: "Un impact concret sur la paie", body: "Cette vérification peut notamment changer **la façon dont certaines absences sont traitées** selon la convention applicable." },
+      { heading: "La version applicable à la période", body: "Une convention peut évoluer. RH Pilot conserve **les différentes versions avec leurs dates** et utilise celle qui correspond à la période de paie." },
+      { heading: "L’effet sur la paie", body: "Cette vérification peut notamment changer **la façon dont certaines absences sont traitées** selon la convention applicable." },
     ],
     sources: SOURCES,
   },
@@ -43,8 +43,8 @@ export const PAYROLL_CAPABILITIES: Record<string, PayrollCapability> = {
     variant: "contributions",
     moments: [
       { heading: "Ce qui est payé par le salarié", body: "Le calcul distingue **les cotisations payées par le salarié**, qui diminuent le montant versé, et celles payées par l’employeur." },
-      { heading: "Un détail facile à relire", body: "Les principales lignes sont présentées séparément : maladie, retraite, chômage, CSG/CRDS, prévoyance et autres cotisations concernées." },
-      { heading: "Des règles identifiables", body: "Chaque montant est relié à **la règle qui a servi à le calculer**, afin de pouvoir comprendre le résultat." },
+      { heading: "Le détail par cotisation", body: "Les principales lignes sont présentées séparément : maladie, retraite, chômage, CSG/CRDS, prévoyance et autres cotisations concernées." },
+      { heading: "La règle de chaque montant", body: "Chaque montant est relié à **la règle qui a servi à le calculer**, afin de pouvoir comprendre le résultat." },
     ],
     sources: SOURCES,
   },

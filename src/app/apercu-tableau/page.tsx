@@ -26,6 +26,6 @@ export default function DashboardPreviewPage() {
     <DashboardWorkspace organizationName="Atelier & Co" teamNames={["Léa Martin", "Karim Benali", "Julie Dubois"]} nextArrival={{ name: "Léa Martin", date: "2026-10-05T10:00:00.000Z" }} firstName="Aïmen" today="2026-09-30T09:00:00.000Z" admin employeeCount={12} tasks={tasks} requests={[
       { id: "preview-absence-1", employeeName: "Julie Dubois", startDate: "2026-10-12T00:00:00.000Z", endDate: "2026-10-16T00:00:00.000Z", justification: false },
       { id: "preview-absence-2", employeeName: "Hugo Petit", startDate: "2026-09-29T00:00:00.000Z", endDate: "2026-09-29T00:00:00.000Z", justification: true },
-    ]} overdueCount={2} soonCount={4} activity={[{ id: "preview-activity", label: "Sophie a préparé le contrat de Léa Martin.", actor: null, date: "2026-09-30T07:12:00.000Z" }]} copilot={<div className="fil-preview-copilot"><div><h2>Votre Copilote RH</h2><p>Un peu de clarté pour la suite.</p></div><p>Le Copilote répond à partir de vos données dans l’espace connecté.</p><a href="/dashboard">Ouvrir mon espace</a></div>} preview/>
+    ]} overdueCount={2} soonCount={4} activity={[{ id: "preview-activity", label: "Sophie a préparé le contrat de Léa Martin.", actor: null, date: "2026-09-30T07:12:00.000Z" }]} copilot={<div className="fil-preview-copilot"><div><h2>Votre Copilote RH</h2><p>Questions sur vos salariés et vos échéances.</p></div><p>Le Copilote répond à partir de vos données dans l’espace connecté.</p><a href="/dashboard">Ouvrir mon espace</a></div>} preview/>
   </AppShell>;
 }

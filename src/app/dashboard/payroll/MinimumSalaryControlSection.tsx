@@ -89,7 +89,7 @@ export default function MinimumSalaryControlSection({
             <p className="text-xs font-semibold uppercase tracking-wider text-brand-primary">Contrôle réglementaire</p>
             <h2 className="mt-1 text-lg font-semibold tracking-tight text-ink">Salaire minimum applicable</h2>
             <p className="mt-1 max-w-3xl text-sm leading-6 text-ink-soft">
-              RH Pilot vérifie le minimum applicable sans modifier automatiquement le salaire de référence.
+              Le salaire de référence est comparé au minimum applicable, sans être modifié.
             </p>
           </div>
           {!loading && rows.length > 0 ? (
@@ -127,7 +127,7 @@ export default function MinimumSalaryControlSection({
                   <div>
                     <p className="text-sm font-semibold text-ink">Minimum conventionnel à compléter</p>
                     <p className="mt-1 text-sm leading-6 text-ink-soft">
-                      Le contrôle ne peut pas déterminer le minimum conventionnel pour {unresolvedRows.length} salarié{unresolvedRows.length > 1 ? "s" : ""}. Le calcul n’invente pas de valeur en l’absence d’une règle conventionnelle validée.
+                      Le contrôle ne peut pas déterminer le minimum conventionnel pour {unresolvedRows.length} salarié{unresolvedRows.length > 1 ? "s" : ""}. Sans règle conventionnelle validée, aucun minimum conventionnel n’est appliqué.
                     </p>
                   </div>
                   <span className="shrink-0 rounded-full bg-accent-amber/10 px-2.5 py-1 text-xs font-semibold text-accent-amber">

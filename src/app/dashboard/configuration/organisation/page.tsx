@@ -182,7 +182,7 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
     <div className="max-w-3xl">
       <Link href="/dashboard/configuration" className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-faint hover:text-ink"><ArrowLeft size={14} /> Configuration</Link>
       <h1 className="mt-3 text-2xl font-semibold text-ink">Organisation</h1>
-      <p className="mt-1 text-sm text-ink-soft">{canEditOrganization ? "L’identité de l’entreprise est reprise de son SIRET. Il ne vous reste que ce que RH Pilot ne peut pas savoir." : "Votre rôle dans l’organisation."}</p>
+      <p className="mt-1 text-sm text-ink-soft">{canEditOrganization ? "L’identité de l’entreprise est reprise à partir de son SIRET. Complétez les informations qui ne figurent pas dans les registres publics." : "Votre rôle dans l’organisation."}</p>
       {saved && <div role="status" className="mt-4 rounded-lg border border-accent-teal/30 bg-accent-teal/10 px-4 py-3 text-sm font-medium text-accent-teal">✓ Modifications enregistrées.</div>}
       {registryFlash && <div role="status" className={`mt-4 rounded-lg border px-4 py-3 text-sm ${registryFlash.ok ? "border-accent-teal/30 bg-accent-teal/10 text-accent-teal" : "border-amber-200 bg-amber-50 text-amber-900"}`}>{registryFlash.message}</div>}
 
@@ -216,7 +216,7 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
       <form action={updateOrganizationSettings}>
         <Card className="mt-4">
           <h2 className="text-sm font-semibold text-ink">Votre rôle dans l&apos;organisation</h2>
-          <p className="mt-1 text-sm text-ink-soft">Certaines tâches des parcours RH sont conçues pour être assignées automatiquement à &laquo;&nbsp;la personne RH&nbsp;&raquo; de l&apos;organisation. RH Pilot ne devine jamais qui occupe ce rôle.</p>
+          <p className="mt-1 text-sm text-ink-soft">Certaines tâches des parcours RH sont conçues pour être assignées automatiquement à &laquo;&nbsp;la personne RH&nbsp;&raquo; de l&apos;organisation. Indiquez ci-dessous votre rôle dans l’organisation.</p>
           <div className="mt-4"><Label htmlFor="functionalRole">Mon rôle</Label><Select id="functionalRole" name="functionalRole" defaultValue={membership.functionalRole ?? ""}><option value="">Non renseigné</option><option value="RH">RH</option><option value="DIRIGEANT">Dirigeant</option></Select><FieldHint>Si plusieurs personnes sont marquées &laquo;&nbsp;RH&nbsp;&raquo;, l&apos;assignation automatique reste désactivée.</FieldHint></div>
         </Card>
         {canEditOrganization && (<>
@@ -226,7 +226,7 @@ export default async function OrganisationConfigPage({ searchParams }: Organisat
             <div className="mt-4">
               <Label htmlFor="atmpRate">Taux AT/MP de l&apos;établissement (%)</Label>
               <Input id="atmpRate" name="atmpRate" type="number" min="0" max="100" step="0.01" defaultValue={atmpRate} placeholder="Ex. 0,90" />
-              <FieldHint>Il figure sur la notification annuelle de taux AT/MP, consultable dans le compte AT/MP de votre espace <Link href="https://www.net-entreprises.fr/" target="_blank" rel="noreferrer" className="font-medium text-brand-primary hover:underline">net-entreprises.fr</Link>. Il est propre à chaque entreprise, RH Pilot ne l&apos;estime pas.</FieldHint>
+              <FieldHint>Il figure sur la notification annuelle de taux AT/MP, consultable dans le compte AT/MP de votre espace <Link href="https://www.net-entreprises.fr/" target="_blank" rel="noreferrer" className="font-medium text-brand-primary hover:underline">net-entreprises.fr</Link>. Il est propre à chaque entreprise et n’est pas estimé par le logiciel.</FieldHint>
             </div>
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
               <div>

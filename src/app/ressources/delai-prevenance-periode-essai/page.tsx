@@ -69,8 +69,8 @@ export default function Article() {
 
       <H2>Suivre la date de fin d’essai</H2>
       <P>
-        La règle elle-même est simple. La difficulté consiste à connaître, au bon moment, la
-        date réelle de fin de la période d’essai et la durée de présence du salarié. Lorsque
+        La règle elle-même est simple. La difficulté consiste à connaître à temps la date
+        réelle de fin de la période d’essai et la durée de présence du salarié. Lorsque
         plusieurs embauches sont gérées en parallèle, ce calcul est difficile à tenir à la
         main de façon fiable.
       </P>

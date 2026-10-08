@@ -32,8 +32,8 @@ export function MobileAppNotice({ mode }: { mode: "sign-in" | "sign-up" }) {
           {mode === "sign-up" ? "Créer l'espace de votre entreprise" : "Espace employeur"}
         </h1>
         <p className="mt-2 text-sm leading-6 text-ink-soft">
-          Le suivi RH et la paie se pilotent depuis un ordinateur, où tout tient sur un écran. Envoyez-vous le lien pour
-          le retrouver plus tard.
+          Le suivi RH et la paie s’utilisent sur ordinateur. Envoyez-vous le lien pour l’ouvrir
+          plus tard.
         </p>
         <a href={mailto} className="mt-4 inline-flex items-center gap-2 rounded-lg border border-surface-border px-4 py-2.5 text-sm font-semibold text-ink">
           <Mail size={16} /> M&apos;envoyer le lien par e-mail

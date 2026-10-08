@@ -41,7 +41,7 @@ export const metadata = { title: "Abonnement" };
 // fonctionnalité présentée comme incluse si elle ne l'est pas.
 const INCLUDED_FEATURES = [
   "Parcours RH automatisés (embauche, période d'essai, visite médicale...)",
-  "Détection proactive des anomalies et échéances",
+  "Détection des anomalies et des échéances",
   "Rappels automatiques par e-mail",
   "Assistant RH intégré",
 ];
@@ -77,7 +77,7 @@ export default async function BillingPage({
       {searchParams.success && (
         <p className="mt-4 flex items-center gap-2 rounded-lg border border-accent-teal/30 bg-accent-teal/5 px-3.5 py-2.5 text-sm text-accent-teal">
           <CircleCheck size={15} className="shrink-0" />
-          Abonnement activé, merci !
+          Votre abonnement est activé.
         </p>
       )}
       {searchParams.canceled && (

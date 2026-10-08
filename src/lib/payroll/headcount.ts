@@ -153,7 +153,7 @@ export function resolveThresholdHeadcount(
     const createdBefore = companyCreationDate !== null && companyCreationDate.getUTCFullYear() < year;
     const current = countThresholdHeadcount(employees, firstHireEnd ?? lastDayOfMonth);
     const warnings = current >= 11 && (createdBefore || companyCreationDate === null)
-      ? [`Effectif estimé à ${current} : RH Pilot n'a aucun salarié enregistré pour ${year - 1}. Si l'entreprise employait déjà du personnel cette année-là, l'Urssaf retient sa moyenne : indiquez cet effectif dans Configuration > Organisation.`]
+      ? [`Effectif estimé à ${current} : aucun salarié n’est enregistré dans RH Pilot pour ${year - 1}. Si l’entreprise employait déjà du personnel cette année-là, l’Urssaf retient sa moyenne : indiquez cet effectif dans Configuration > Organisation.`]
       : [];
     return { headcount: current, basis: firstHireEnd ? "FIRST_HIRE_MONTH" : "CURRENT_MONTH", warnings };
   }
@@ -177,7 +177,7 @@ export function resolveThresholdHeadcount(
     }
     const unknownYears = history.filter((entry) => entry.unknown).map((entry) => entry.year).sort();
     if (unknownYears.length > 0) {
-      warnings.push(`Le seuil de ${threshold} salariés est appliqué, mais RH Pilot n'a aucun salarié enregistré pour ${unknownYears.join(", ")}. Si l'entreprise était sous ce seuil l'une de ces années, ses effets sont différés (loi Pacte) : indiquez alors l'effectif à retenir dans Configuration > Organisation.`);
+      warnings.push(`Le seuil de ${threshold} salariés est appliqué, mais aucun salarié n’est enregistré dans RH Pilot pour ${unknownYears.join(", ")}. Si l’entreprise était sous ce seuil l’une de ces années, ses effets sont différés (loi Pacte) : indiquez alors l’effectif à retenir dans Configuration > Organisation.`);
     }
   }
   return { headcount, basis: "PREVIOUS_YEAR_AVERAGE", warnings };

@@ -22,7 +22,7 @@ export function valueAt<T>(list: readonly Dated<T>[], date: Date, label: string)
   const day = isoDay(date);
   let found: Dated<T> | undefined;
   for (const entry of list) if (entry.from <= day && (!found || entry.from > found.from)) found = entry;
-  if (!found || (found.until && day > found.until)) throw new MissingParameterError(`Paramètre « ${label} » inconnu au ${day.split("-").reverse().join("/")} : le calcul est bloqué plutôt que d'utiliser une valeur non vérifiée.`);
+  if (!found || (found.until && day > found.until)) throw new MissingParameterError(`Paramètre « ${label} » non disponible au ${day.split("-").reverse().join("/")} : le calcul ne peut pas être effectué.`);
   return { value: found.value, source: found.source, from: found.from };
 }
 

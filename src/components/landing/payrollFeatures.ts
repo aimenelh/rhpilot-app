@@ -38,7 +38,7 @@ const COMMON_DETAILS = [
 export const PAYROLL_FEATURES: Record<string, PayrollFeature> = {
   production: {
     eyebrow: "Production de la paie",
-    title: "Préparer une paie, c’est d’abord savoir ce qui doit être contrôlé.",
+    title: "Chaque période de paie est contrôlée avant le calcul.",
     intro: "RH Pilot rassemble les informations du mois, calcule la paie et garde une trace des données utilisées pour obtenir le résultat.",
     image: "https://images.unsplash.com/photo-1758876201660-103984519266?auto=format&fit=crop&fm=jpg&q=82&w=2400",
     imageAlt: "Professionnelle consultant un document dans un bureau",
@@ -65,7 +65,7 @@ export const PAYROLL_FEATURES: Record<string, PayrollFeature> = {
   },
   variables: {
     eyebrow: "Variables de paie",
-    title: "Les éléments du mois doivent être rattachés à la bonne période.",
+    title: "Les variables sont saisies par salarié et par mois.",
     intro: "Heures, primes, absences et autres éléments du mois sont rattachés au bon salarié avant d’être pris en compte dans la paie.",
     image: "https://images.unsplash.com/photo-1758876020300-76a782ca51c6?auto=format&fit=crop&fm=jpg&q=82&w=2400",
     imageAlt: "Professionnel vérifiant des documents et des graphiques",
@@ -92,7 +92,7 @@ export const PAYROLL_FEATURES: Record<string, PayrollFeature> = {
   },
   absences: {
     eyebrow: "Congés & absences",
-    title: "Une absence doit être prise en compte sur la période concernée.",
+    title: "Chaque absence est rattachée à la période de paie concernée.",
     intro: "Les congés et absences sont enregistrés avec leurs dates. Lorsqu’ils ont un effet sur la paie, RH Pilot vérifie le traitement à appliquer.",
     image: "https://images.unsplash.com/photo-1762341116197-fb94a4f37173?auto=format&fit=crop&fm=jpg&q=82&w=2400",
     imageAlt: "Professionnelle consultant un planning dans un bureau",
@@ -118,7 +118,7 @@ export const PAYROLL_FEATURES: Record<string, PayrollFeature> = {
   },
   arrets: {
     eyebrow: "Arrêts de travail",
-    title: "Un arrêt de travail doit être enregistré avant d’être traité en paie.",
+    title: "Un arrêt de travail est enregistré avant d’être traité en paie.",
     intro: "L’arrêt est rattaché au salarié et à la période concernée. RH Pilot réunit les informations nécessaires avant de calculer la paie.",
     image: "https://images.unsplash.com/photo-1770048532712-4fde5ef7eb90?auto=format&fit=crop&fm=jpg&q=82&w=2400",
     imageAlt: "Professionnel travaillant dans un bureau contemporain",

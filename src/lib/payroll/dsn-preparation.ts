@@ -38,7 +38,7 @@ type DsnEmployeeProfileRow = {
 };
 
 function asSnapshot(value: Prisma.JsonValue): CalculationSnapshot {
-  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("DSN bloquée : le snapshot de calcul verrouillé est invalide.");
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("DSN bloquée : le détail du calcul verrouillé est invalide.");
   return value as unknown as CalculationSnapshot;
 }
 function requiredString(value: string | null | undefined, label: string): string { const normalized = value?.trim() ?? ""; if (!normalized) throw new Error(`DSN bloquée : ${label} est absent.`); return normalized; }
@@ -46,7 +46,7 @@ function requiredNumber(value: unknown, label: string): number { const number = 
 
 function snapshotWithholdingTax(snapshot: CalculationSnapshot, employeeId: string): WithholdingTaxProfile {
   const withholding = snapshot.withholdingTax;
-  if (!withholding) throw new Error(`DSN bloquée : le snapshot PAS du salarié ${employeeId} est absent.`);
+  if (!withholding) throw new Error(`DSN bloquée : le détail du PAS verrouillé du salarié ${employeeId} est absent.`);
   const rate = Number(withholding.rate);
   if (!Number.isFinite(rate) || rate < 0 || rate > 1) throw new Error(`DSN bloquée : le taux PAS verrouillé du salarié ${employeeId} est invalide.`);
   const validFrom = new Date(requiredString(withholding.validFrom, `la date de début du taux PAS du salarié ${employeeId}`));
@@ -84,7 +84,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
   if (!period) throw new Error("DSN bloquée : période de paie introuvable.");
   if (period.status !== "LOCKED") throw new Error("DSN bloquée : la période de paie doit être validée et verrouillée avant préparation de la DSN.");
   if (!period.paymentDate) throw new Error("DSN bloquée : la date de paiement de la période est absente.");
-  if (period.year !== 2026) throw new Error(`DSN bloquée : le générateur actuel implémente P26V01 pour 2026, pas l'exercice ${period.year}.`);
+  if (period.year !== 2026) throw new Error(`DSN bloquée : seule la norme P26V01 de l’exercice 2026 est prise en charge, pas l’exercice ${period.year}.`);
 
   const organizationRows = await prisma.$queryRaw<OrganizationDsnRow[]>`
     SELECT o."id", o."name", o."siret", o."payrollAddress", o."payrollPostalCode", o."payrollCity", o."payrollNafCode", o."payrollDepartment", o."atmpRate",
@@ -116,7 +116,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
   const subrogationBic = organization.subrogationBic ? dsnPaymentBic(organization.subrogationBic) : null;
   if (!organization.sepaMandatesConfirmed) throw new Error("DSN bloquée : confirmez les mandats SEPA enregistrés auprès des organismes et de la DGFiP.");
   const testMode = input.testMode ?? organization.defaultTestMode ?? true;
-  if (!testMode) throw new Error("DSN réelle bloquée : le raccordement des cotisations est en recette. Les affiliations complémentaires, événements et retours métier doivent être validés avant ouverture.");
+  if (!testMode) throw new Error("DSN réelle bloquée : le raccordement des cotisations est en cours de validation. Les affiliations complémentaires, événements et retours métier doivent être validés avant l’ouverture du dépôt réel.");
   if (period.month === 4) throw new Error("DSN bloquée : la DSN d'avril nécessite également les contributions annuelles de l'établissement au titre de l'exercice précédent.");
 
 
@@ -150,7 +150,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
     return [`${employee ? `${employee.firstName} ${employee.lastName}` : calculation.employeeId} : ${issues.join(", ")}`];
   });
   if (outOfScope.length > 0) {
-    throw new Error(`DSN préparatoire impossible ce mois-ci. RH Pilot ne déclare pas encore : ${outOfScope.join(" ; ")}. Déposez la DSN de ce mois avec votre expert-comptable ou sur net-entreprises.`);
+    throw new Error(`DSN préparatoire impossible ce mois-ci. Situations non encore prises en charge : ${outOfScope.join(" ; ")}. Déposez la DSN de ce mois avec votre expert-comptable ou sur net-entreprises.`);
   }
 
   const previousCalculations = period.month > 1 ? await prisma.payrollCalculation.findMany({
@@ -183,7 +183,7 @@ export async function prepareDsnP26V01(input: { organizationId: string; periodId
     const baseSalaryCents = requiredNumber(profileSnapshot.baseSalaryCents, `le salaire de base verrouillé du salarié ${employee.id}`);
     const collectiveAgreementId = requiredString(profileSnapshot.collectiveAgreementId, `la convention collective verrouillée du salarié ${employee.id}`);
     const collectiveAgreement = await prisma.collectiveAgreement.findUnique({ where: { id: collectiveAgreementId }, select: { idcc: true } });
-    if (!collectiveAgreement?.idcc) throw new Error(`DSN bloquée : l'IDCC du salarié ${employee.id} ne peut pas être résolu depuis le snapshot verrouillé.`);
+    if (!collectiveAgreement?.idcc) throw new Error(`DSN bloquée : l'IDCC du salarié ${employee.id} ne peut pas être déterminé à partir du calcul verrouillé.`);
 
     const netTaxableAmount = requiredNumber(calculation.netTaxableAmount, `le net imposable du salarié ${employee.id}`);
     const netSocialAmount = requiredNumber(calculation.netSocialAmount, `le montant net social du salarié ${employee.id}`);

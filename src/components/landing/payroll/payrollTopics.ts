@@ -20,7 +20,7 @@ export const PAYROLL_TOPIC_GROUPS: PayrollTopicGroup[] = [
     topics: [
       { href: "/gestion-paie/cotisations-sociales", label: "Cotisations sociales", text: "Chaque ligne, sa base, son taux, son montant." },
       { href: "/gestion-paie/referentiel-conventionnel", label: "Convention collective", text: "Minimum conventionnel comparé au Smic." },
-      { href: "/gestion-paie/bulletin-de-paie", label: "Bulletin de paie", text: "Généré seulement quand tout est prêt." },
+      { href: "/gestion-paie/bulletin-de-paie", label: "Bulletin de paie", text: "Généré une fois les prérequis réunis." },
     ],
   },
 ];

@@ -126,7 +126,7 @@ export async function saveDsnOrganizationSettings(
     });
 
     revalidatePath("/dashboard/payroll/dsn");
-    return { success: "Configuration DSN enregistrée. Le mode dépôt réel reste volontairement désactivé." };
+    return { success: "Configuration DSN enregistrée. Pendant la phase pilote, seuls des fichiers d’essai peuvent être produits." };
   } catch (error) {
     return { error: userFacingError(error, "Impossible d'enregistrer la configuration DSN.") };
   }
@@ -172,7 +172,7 @@ export async function saveDsnEmployeeProfile(
     if (!/^\d{5}$/.test(postalCode)) throw new Error("Le périmètre DSN actuel accepte uniquement un code postal du système postal français sur 5 chiffres.");
     const city = required(formData, "city", "La ville du salarié");
     const countryCode = value(formData, "countryCode").toUpperCase() || null;
-    if (countryCode) throw new Error("Les adresses hors système postal français nécessitent le code de distribution à l'étranger, non encore modélisé. L'export DSN est bloqué plutôt que de produire une adresse incomplète.");
+    if (countryCode) throw new Error("Les adresses hors système postal français nécessitent le code de distribution à l’étranger, qui n’est pas encore pris en charge. Le profil DSN ne peut pas être enregistré avec cette adresse.");
 
     const contractNumber = code(formData, "contractNumber", "Le numéro de contrat", 20);
     if (contractNumber.length < 5) throw new Error("Le numéro de contrat DSN doit comporter au moins 5 caractères.");

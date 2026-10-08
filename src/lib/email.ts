@@ -159,7 +159,7 @@ export function renderNotificationEmail({
         ? `<a href="${ctaUrl}" style="display: inline-block; margin-top: 24px; background: #E8432E; color: white; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600;">${escapeHtml(ctaLabel)}</a>`
         : ""
     }
-    <p style="color: #8C8C90; font-size: 12px; margin-top: 32px;">RH Pilot, votre copilote d'organisation RH</p>
+    <p style="color: #8C8C90; font-size: 12px; margin-top: 32px;">RH Pilot, logiciel de gestion RH</p>
   </div>`;
 }
 

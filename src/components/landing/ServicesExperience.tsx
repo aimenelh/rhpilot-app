@@ -47,7 +47,7 @@ const DEFAULT_STEPS = ["Documents", "Visite médicale", "Intégration", "Suivi �
 const QUESTIONS = [
   {
     q: "Que dois-je anticiper cette semaine ?",
-    a: "La période d'essai de Mathis se termine dans 5 jours et aucune décision n'a encore été formalisée. C'est le seul point qui mérite votre attention immédiate.",
+    a: "La période d’essai de Mathis se termine dans 5 jours et aucune décision n’a encore été formalisée. C’est le seul point urgent cette semaine.",
   },
   {
     q: "Résume mon activité RH.",
@@ -257,7 +257,7 @@ export function ServicesExperience() {
       </Link>
       <Link
         href="/"
-        aria-label="Quitter l'expérience"
+        aria-label="Quitter la démonstration"
         className="absolute right-6 top-6 flex h-9 w-9 items-center justify-center rounded-full border border-surface-border text-ink-faint transition-colors hover:border-ink-faint hover:text-ink"
       >
         <X size={16} />
@@ -276,14 +276,14 @@ export function ServicesExperience() {
           {step === 0 && (
             <div className="text-center">
               <h2 className="font-display text-2xl font-semibold text-ink sm:text-3xl">
-                Sauriez-vous retrouver toutes les échéances RH d&apos;un bureau ?
+                Les échéances RH d’un bureau
               </h2>
               <p className="mx-auto mt-3 max-w-md text-base text-ink-soft">
-                Vivez en direct comment RH Pilot remet de l&apos;ordre dans une journée chargée.
+                Retrouvez les échéances notées sur un bureau, puis voyez comment RH Pilot les organise.
               </p>
               <Button className="press-fx mt-8 px-6 py-3 text-base" onClick={() => setStep(1)}>
                 <span className="inline-flex items-center gap-2">
-                  Commencer l&apos;expérience <ArrowRight size={16} />
+                  Commencer la démonstration <ArrowRight size={16} />
                 </span>
               </Button>
               <p className="mt-4 text-xs text-ink-faint">Échap pour quitter à tout moment</p>
@@ -403,22 +403,23 @@ export function ServicesExperience() {
 
               {lostTextShown && (
                 <div className="scene-in mt-8">
-                  <p className="text-3xl font-bold text-accent-rose">Perdu…</p>
+                  <p className="text-3xl font-bold text-accent-rose">Une échéance manquait</p>
                   <p className="mx-auto mt-3 max-w-sm text-base text-ink">
-                    Vous avez oublié la fin de période d&apos;essai de <strong>Mathis</strong>.
+                    La fin de période d’essai de <strong>Mathis</strong> n’a pas été relevée.
                   </p>
                   <p className="mx-auto mt-2 max-w-sm text-sm text-ink-faint">
-                    Elle était juste là, sous la liste de courses.
+                    Le post-it était sous la liste de courses.
                   </p>
                   <div className="mx-auto mt-8 max-w-md border-t border-surface-border pt-6">
-                    <p className="text-sm text-ink-soft">Mais ce n&apos;est pas grave, car :</p>
+                    <p className="text-sm text-ink-soft">Dans RH Pilot</p>
                     <p className="mt-2 text-lg font-semibold text-ink">
-                      « La mémoire ne devrait jamais être le principal outil d&apos;une équipe RH. »
+                      Chaque échéance est enregistrée avec sa date et reprise dans le tableau de bord et les rappels par
+                      e-mail.
                     </p>
                   </div>
                   <Button className="press-fx mt-8 px-6 py-3 text-base" onClick={() => setStep(2)}>
                     <span className="inline-flex items-center gap-2">
-                      Voir comment RH Pilot change ça <ArrowRight size={16} />
+                      Voir l’échéance dans RH Pilot <ArrowRight size={16} />
                     </span>
                   </Button>
                 </div>
@@ -428,7 +429,7 @@ export function ServicesExperience() {
 
           {step === 2 && (
             <div className="text-center">
-              <p className="text-sm font-semibold text-ink-faint">RH Pilot a identifié 1 priorité.</p>
+              <p className="text-sm font-semibold text-ink-faint">1 échéance à traiter en priorité</p>
               <Card className="mx-auto mt-6 max-w-sm text-left shadow-lg">
                 <div className="flex items-center gap-2">
                   <TriangleAlert size={16} className="text-accent-rose" />
@@ -447,7 +448,7 @@ export function ServicesExperience() {
 
           {step === 3 && (
             <div className="text-center">
-              <p className="text-sm font-semibold text-ink-faint">Votre parcours. Vos règles.</p>
+              <p className="text-sm font-semibold text-ink-faint">Modifiez les étapes du parcours.</p>
               <Card className="mx-auto mt-6 max-w-sm text-left shadow-lg">
                 <ul className="flex flex-col divide-y divide-surface-border">
                   {parcoursSteps.map((label, i) => (
@@ -481,7 +482,7 @@ export function ServicesExperience() {
 
           {step === 4 && (
             <div className="text-center">
-              <p className="text-sm font-semibold text-ink-faint">Une question ? Votre assistant est déjà là.</p>
+              <p className="text-sm font-semibold text-ink-faint">Posez une question à l’assistant.</p>
               <Card className="mx-auto mt-6 max-w-md text-left shadow-lg">
                 <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
                   <Sparkles size={14} className="text-brand-primary-dark" /> Assistant RH Pilot
@@ -516,7 +517,7 @@ export function ServicesExperience() {
 
           {step === 5 && (
             <div className="text-center">
-              <p className="text-sm font-semibold text-ink-faint">Votre journée est organisée.</p>
+              <p className="text-sm font-semibold text-ink-faint">Le tableau de bord du mois</p>
               <div className="mx-auto mt-6 grid max-w-sm grid-cols-3 gap-3">
                 <Card compact>
                   <p className="text-xl font-semibold text-accent-rose">2</p>
@@ -538,16 +539,15 @@ export function ServicesExperience() {
                 </button>
                 {summaryShown && (
                   <p className="scene-in mt-2.5 text-sm leading-relaxed text-ink">
-                    Ce mois-ci, 8 parcours ont avancé et 3 échéances ont été traitées sans
-                    intervention de votre part. La semaine du 18 reste la plus chargée : à
-                    surveiller.
+                    Ce mois-ci, 8 parcours ont avancé et 3 échéances ont été traitées. La
+                    semaine du 18 est la plus chargée.
                   </p>
                 )}
               </Card>
 
               <Button className="press-fx mt-8 px-6 py-3 text-base disabled:opacity-40" disabled={!summaryShown} onClick={() => setStep(6)}>
                 <span className="inline-flex items-center gap-2">
-                  Voir ce que vous venez de découvrir <ArrowRight size={16} />
+                  Voir le récapitulatif <ArrowRight size={16} />
                 </span>
               </Button>
             </div>
@@ -556,9 +556,9 @@ export function ServicesExperience() {
           {step === 6 && (
             <div className="text-center">
               <CircleCheck size={28} className="mx-auto text-accent-teal" />
-              <h2 className="font-display mt-3 text-2xl font-semibold text-ink">Vous venez de découvrir RH Pilot.</h2>
+              <h2 className="font-display mt-3 text-2xl font-semibold text-ink">Fin de la démonstration</h2>
               <p className="mx-auto mt-2 max-w-md text-sm text-ink-soft">
-                Tout ce que vous venez de faire existe réellement, pour votre organisation.
+                Ces fonctions sont disponibles dans RH Pilot, avec les données de votre entreprise.
               </p>
 
               <div className="mx-auto mt-8 grid max-w-lg grid-cols-1 gap-3 sm:grid-cols-2">
@@ -577,7 +577,7 @@ export function ServicesExperience() {
                   <Button className="press-fx px-6 py-3 text-base">Créer mon espace RH Pilot</Button>
                 </Link>
                 <button type="button" onClick={restart} className="flex items-center gap-1.5 text-xs font-medium text-ink-faint hover:text-ink">
-                  <RotateCcw size={12} /> Revoir l&apos;expérience
+                  <RotateCcw size={12} /> Recommencer la démonstration
                 </button>
               </div>
             </div>

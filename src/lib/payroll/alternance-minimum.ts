@@ -58,7 +58,7 @@ export function resolveApprenticeshipMinimum(input: ApprenticeshipMinimumInput):
     return { status: "UNRESOLVED", code: "INVALID_AGE", source: "APPRENTISSAGE_LEGAL", explanation: "L'âge de l'apprenti est nécessaire pour déterminer le minimum légal." };
   }
   if (input.age < 16 && input.under16EligibilityConfirmed !== true) {
-    return { status: "UNRESOLVED", code: "UNDER_16_ELIGIBILITY_REQUIRED", source: "APPRENTISSAGE_LEGAL", explanation: "Un apprentissage avant 16 ans nécessite une condition d'éligibilité spécifique. RH Pilot exige sa confirmation explicite avant de calculer la rémunération minimale." };
+    return { status: "UNRESOLVED", code: "UNDER_16_ELIGIBILITY_REQUIRED", source: "APPRENTISSAGE_LEGAL", explanation: "Un apprentissage avant 16 ans nécessite une condition d’éligibilité spécifique, à confirmer avant le calcul de la rémunération minimale." };
   }
   if (!Number.isFinite(input.smicMonthlyCents) || input.smicMonthlyCents <= 0) {
     return { status: "UNRESOLVED", code: "INVALID_SMIC", source: "APPRENTISSAGE_LEGAL", explanation: "Le montant du SMIC mensuel validé est nécessaire pour déterminer le minimum légal." };

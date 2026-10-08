@@ -55,7 +55,7 @@ export function readLockedContributionSnapshot(value: unknown): LockedSnapshot {
       !object(value.bulletin.yearToDate) || !object(value.bulletin.period) ||
       !object(value.bulletin.employee) || !object(value.inputs.organization) ||
       !object(value.inputs.employee) || !object(value.inputs.period) || !object(value.inputs.pay)) {
-    throw new Error("DSN bloquée : le bulletin détaillé et ses entrées verrouillées sont nécessaires au mapping des cotisations.");
+    throw new Error("DSN bloquée : le bulletin détaillé et ses entrées verrouillées sont nécessaires pour ventiler les cotisations.");
   }
   const result = value as unknown as LockedSnapshot;
   if (result.bulletin.period.year !== 2026 || result.inputs.period.year !== 2026 ||
@@ -157,7 +157,7 @@ function isoDateOnly(value: unknown, label: string, required = true): string | n
 }
 
 function readLockedAbsenceDsnMetadata(value: unknown): LockedAbsenceDsnMetadata[] {
-  if (!object(value)) throw new Error("DSN bloquée : le snapshot verrouillé est invalide.");
+  if (!object(value)) throw new Error("DSN bloquée : le détail du calcul verrouillé est invalide.");
   const rows = value.dsnWorkStoppages ?? value.validatedAbsences;
   if (!Array.isArray(rows)) return [];
   const seen = new Set<string>();
@@ -209,7 +209,7 @@ export function readLockedWorkStoppageDeclaration(value: unknown, previousValue?
 
   for (const absence of absences) {
     const meta = metadataById.get(absence.id);
-    if (!meta) throw new Error(`DSN bloquée : les données déclaratives de l'arrêt ${absence.id} ne sont pas figées dans le snapshot.`);
+    if (!meta) throw new Error(`DSN bloquée : les données déclaratives de l'arrêt ${absence.id} ne sont pas figées dans le calcul verrouillé.`);
     if (meta.type !== absence.kind || meta.startDate !== absence.start || meta.endDate !== absence.end) {
       throw new Error(`DSN bloquée : l'arrêt ${absence.id} diverge entre les entrées du bulletin et ses métadonnées déclaratives.`);
     }
@@ -411,7 +411,7 @@ export function mapLockedContributions(input: {
   if (apprentice && (!bulletin.apprenticeExemption || !Number.isFinite(bulletin.apprenticeExemption.exemptBase) || bulletin.apprenticeExemption.exemptBase < 0)) {
     throw new Error("DSN bloquée : l'exonération salariale de l'apprenti n'est pas détaillée dans ce calcul. Rouvrez la saisie du mois et recalculez la période.");
   }
-  if (inputs.organization.territory !== "METROPOLE" || inputs.organization.alsaceMoselle) throw new Error("DSN bloquée : le mapping social actuel couvre la métropole hors régime local Alsace-Moselle.");
+  if (inputs.organization.territory !== "METROPOLE" || inputs.organization.alsaceMoselle) throw new Error("DSN bloquée : la ventilation des cotisations couvre actuellement la métropole, hors régime local Alsace-Moselle.");
   const supportedAbsenceKinds = new Set(["PAID_LEAVE", "UNPAID_LEAVE", "RTT", "FAMILY_EVENT", "SICK_LEAVE", "WORK_ACCIDENT", "MATERNITY", "PATERNITY"]);
   if ((inputs.absences ?? []).some((absence) => !supportedAbsenceKinds.has(absence.kind))) {
     throw new Error("DSN bloquée : cette absence nécessite encore son bloc déclaratif spécifique (congé payé ou autre suspension).");
@@ -516,7 +516,7 @@ export function mapLockedContributions(input: {
     const b = base(source);
     if (cents(b) !== cents(g)) throw new Error(`DSN bloquée : l'assiette ${source} diverge du brut soumis.`);
     const fullRate = numeric(line(source).employerRate, source);
-    if (Math.abs(fullRate - (source === "MALADIE" ? 0.13 : 0.0525)) > 1e-8) throw new Error("DSN bloquée : un taux maladie/famille spécifique nécessite un mapping distinct.");
+    if (Math.abs(fullRate - (source === "MALADIE" ? 0.13 : 0.0525)) > 1e-8) throw new Error("DSN bloquée : un taux maladie ou famille spécifique nécessite une correspondance distincte.");
     const regular = round(b * normalRate);
     const extra = round(amount(source) - regular);
     addIndividual(normalCode, "03", input.urssafSiret, regular, [source], normalRate * 100, b);
@@ -699,7 +699,7 @@ export function mapLockedContributions(input: {
   // Une rubrique explicitement nulle ne nécessite pas d'affiliation, mais une rubrique inconnue reste bloquante.
   for (const code of ["PREVOYANCE", "PREVOYANCE_T2", "SANTE", "VERSEMENT_MOBILITE", "FORFAIT_SOCIAL"]) if (byCode.has(code) && amount(code) === 0) mapped.add(code);
   const missing = journal.filter((item) => !mapped.has(item.code)).map((item) => item.code);
-  if (missing.length) throw new Error(`DSN bloquée : cotisations non mappées ou affiliations complémentaires à compléter : ${missing.join(", ")}.`);
+  if (missing.length) throw new Error(`DSN bloquée : cotisations sans correspondance DSN ou affiliations complémentaires à compléter : ${missing.join(", ")}.`);
   const liabilityTotal = [...liabilities.values()].reduce((total, value) => total + cents(value), 0);
   const deferredTotal = deferred.reduce((total, item) => total + cents(item.amount), 0);
   if (liabilityTotal + deferredTotal !== cents(bulletin.totals.employeeContributions) + cents(bulletin.totals.employerContributions)) throw new Error("DSN bloquée : la ventilation par organisme ne couvre pas exactement les cotisations du bulletin.");

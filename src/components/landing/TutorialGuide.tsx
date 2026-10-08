@@ -233,11 +233,11 @@ export function TutorialGuide() {
                   {phase === "outro" ? <><Check size={15} /> Vidéo terminée</> : `Vidéo ${activeIndex + 1} sur ${steps.length}`}
                 </p>
                 <h2 className={styles.coverTitle}>
-                  {phase === "outro" ? (activeIndex === steps.length - 1 ? "À vous de jouer." : "On continue ?") : active.title}
+                  {phase === "outro" ? (activeIndex === steps.length - 1 ? "Dernière vidéo de la série" : "À suivre") : active.title}
                 </h2>
                 <p className={styles.coverDescription}>
                   {phase === "outro"
-                    ? (activeIndex < steps.length - 1 ? `À suivre : ${steps[activeIndex + 1].title.toLocaleLowerCase("fr")}.` : "Vous pouvez retrouver ces vidéos à tout moment.")
+                    ? (activeIndex < steps.length - 1 ? `${steps[activeIndex + 1].title} (${steps[activeIndex + 1].duration}).` : "Vous pouvez retrouver ces vidéos à tout moment.")
                     : active.description}
                 </p>
                 <div className={styles.coverActions}>
@@ -312,7 +312,7 @@ export function TutorialGuide() {
         <nav aria-label="Vidéos du tutoriel">
           {steps.map((step, index) => (
             <button key={step.id} type="button" onClick={() => choose(index)} aria-current={index === activeIndex ? "step" : undefined} className={styles.chapter}>
-              <span className={styles.chapterIndex}>{watched.includes(step.id) ? <Check size={16} aria-label="Vue" /> : String(index + 1).padStart(2, "0")}</span>
+              <span className={styles.chapterIndex}>{watched.includes(step.id) ? <Check size={16} aria-label="Vue" /> : String(index + 1)}</span>
               <span><span className={styles.chapterTitle}>{step.title}</span><span className={styles.chapterDuration}>{step.duration}</span></span>
               {index === activeIndex && <Play size={13} fill="currentColor" className={styles.chapterPlay} />}
             </button>

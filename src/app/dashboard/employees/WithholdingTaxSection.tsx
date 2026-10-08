@@ -41,9 +41,9 @@ export function WithholdingTaxSection({ employeeId, canEdit }: { employeeId: str
     <div className="mt-6 border-t border-line pt-6" id="prelevement-source">
       <h3 className="text-sm font-semibold text-ink">Prélèvement à la source</h3>
       <p className="mt-1 text-sm text-ink-soft">
-        Rien à saisir à l&apos;embauche : tant que la DGFiP n&apos;a pas transmis de taux pour ce salarié,
-        RH Pilot applique d&apos;elle-même la grille de taux non personnalisé, selon le salaire du mois et le
-        territoire. Le taux personnel arrive ensuite dans le compte rendu de la DSN ; reportez-le ici.
+        Aucune saisie n’est nécessaire à l’embauche. Tant que la DGFiP n’a pas transmis de taux pour ce salarié,
+        la grille de taux non personnalisé est appliquée automatiquement, selon le salaire du mois et le
+        territoire. Le taux personnalisé figure ensuite dans le compte rendu de la DSN : reportez-le ici.
       </p>
       <p className="mt-3 text-sm text-ink">
         {personalized
@@ -86,7 +86,7 @@ export function WithholdingTaxSection({ employeeId, canEdit }: { employeeId: str
               <input type="hidden" name="source" value="NON_PERSONNALISE" />
               <input type="hidden" name="ratePercent" value="0" />
               <input type="hidden" name="validFrom" value={todayIso()} />
-              <p className="text-xs text-ink-faint">La DGFiP ne transmet plus de taux pour ce salarié, ou il a opté pour le taux non personnalisé ?</p>
+              <p className="text-xs text-ink-faint">Si la DGFiP ne transmet plus de taux pour ce salarié ou s’il a opté pour le taux non personnalisé, revenez à la grille par défaut.</p>
               <Button type="submit" variant="secondary">Revenir à la grille par défaut</Button>
             </form>
           ) : null}

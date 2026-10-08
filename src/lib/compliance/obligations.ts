@@ -112,7 +112,7 @@ export const LEGAL_RULES: LegalRuleReference[] = [
     scope: "EMPLOYEE",
     effectiveFrom: "2025-10-26",
     description:
-      "Le salarié est informé à l'embauche et bénéficie d'un entretien de parcours professionnel au cours de la première année, puis tous les quatre ans. RH Pilot ne déduit jamais qu'un entretien a été réalisé sans trace connue.",
+      "Le salarié est informé à l'embauche et bénéficie d'un entretien de parcours professionnel au cours de la première année, puis tous les quatre ans. Un entretien n’est considéré comme réalisé que si sa date est enregistrée.",
     source: SOURCES.careerInterview,
   },
   {
@@ -247,7 +247,7 @@ function careerInterviewItem(
         dueDate: null,
         summary: "Dernier entretien enregistré avant le régime actuel",
         why:
-          "Une date d'entretien est enregistrée, mais elle est antérieure à l'entrée en vigueur du rythme actuel. RH Pilot conserve l'information sans calculer automatiquement une échéance transitoire qui pourrait être inexacte.",
+          "Une date d'entretien est enregistrée, mais elle est antérieure à l'entrée en vigueur du rythme actuel. Elle est conservée, mais aucune échéance transitoire n’est calculée automatiquement, car elle pourrait être inexacte.",
         missingData: ["Vérifier s'il existe un entretien plus récent"],
         source: SOURCES.careerInterview,
       };
@@ -319,7 +319,7 @@ function careerInterviewItem(
       dueDate: toDateOnly(due),
       summary: "Échéance théorique atteinte, réalisation à confirmer",
       why:
-        "La première échéance calculée à partir de la date d'embauche est atteinte. RH Pilot ne la classe pas comme manquement tant que la date d'un éventuel entretien déjà réalisé n'est pas renseignée.",
+        "La première échéance calculée à partir de la date d'embauche est atteinte. Elle n’est pas classée comme manquement tant que la date d’un éventuel entretien déjà réalisé n’est pas renseignée.",
       missingData: ["Date du dernier entretien si déjà réalisé"],
       source: SOURCES.careerInterview,
     };
@@ -378,7 +378,7 @@ function duerpItem(
       why:
         thresholdAtLeast11Declared && employeeCount < 11
           ? "Le suivi d'effectif renseigne un seuil d'au moins 11 salariés atteint sans interruption, même si tous les salariés ne sont pas encore enregistrés dans RH Pilot. L'échéance annuelle du DUERP est donc suivie à partir de la date renseignée."
-          : `RH Pilot compte actuellement ${employeeCount} salariés actifs. À partir de 11 salariés, la date renseignée permet de suivre l'échéance annuelle, sans exclure les mises à jour qui peuvent être déclenchées plus tôt par un changement important ou une nouvelle information sur les risques.`,
+          : `Effectif actif enregistré : ${employeeCount} salariés. À partir de 11 salariés, la date renseignée permet de suivre l'échéance annuelle, sans exclure les mises à jour qui peuvent être déclenchées plus tôt par un changement important ou une nouvelle information sur les risques.`,
       missingData: [],
       source: SOURCES.duerp,
     };
@@ -400,7 +400,7 @@ function duerpItem(
       why:
         thresholdAtLeast11Declared && employeeCount < 11
           ? "Le suivi d'effectif renseigne un seuil d'au moins 11 salariés atteint sans interruption. La date de la dernière mise à jour du DUERP est nécessaire pour suivre l'échéance annuelle."
-          : `RH Pilot compte actuellement ${employeeCount} salariés actifs. À partir de 11 salariés, une mise à jour au moins annuelle s'ajoute aux mises à jour déclenchées par certains changements ou nouvelles informations sur les risques.`,
+          : `Effectif actif enregistré : ${employeeCount} salariés. À partir de 11 salariés, une mise à jour au moins annuelle s'ajoute aux mises à jour déclenchées par certains changements ou nouvelles informations sur les risques.`,
       missingData: ["Date de la dernière mise à jour du DUERP"],
       source: SOURCES.duerp,
     };
@@ -419,7 +419,7 @@ function duerpItem(
     dueDate: null,
     summary: lastUpdate ? `Dernière mise à jour enregistrée : ${toDateOnly(lastUpdate)}` : "Suivi continu",
     why:
-      `RH Pilot compte actuellement ${employeeCount} salarié${employeeCount > 1 ? "s" : ""} actif${employeeCount > 1 ? "s" : ""}. L'actualisation annuelle n'est pas déclenchée par ce seul effectif, mais certains changements importants ou nouvelles informations sur les risques peuvent imposer une mise à jour.`,
+      `Effectif actif enregistré : ${employeeCount} salarié${employeeCount > 1 ? "s" : ""}. L'actualisation annuelle n'est pas déclenchée par ce seul effectif, mais certains changements importants ou nouvelles informations sur les risques peuvent imposer une mise à jour.`,
     missingData: [],
     source: SOURCES.duerp,
   };
@@ -448,7 +448,7 @@ function cseItem(
       dueDate: null,
       summary: tracking.cseStatus === "IN_PLACE" ? "CSE déclaré en place, seuil actuel inférieur à 11" : "Seuil actuel inférieur à 11 salariés",
       why:
-        "Le seuil de 11 salariés n'est pas atteint dans les données actives enregistrées et aucune date de seuil continu n'est renseignée. RH Pilot conserve cette obligation en surveillance.",
+        "Le seuil de 11 salariés n'est pas atteint dans les données actives enregistrées et aucune date de seuil continu n'est renseignée. Cette obligation reste en surveillance.",
       missingData: [],
       source: SOURCES.cse,
     };
@@ -469,7 +469,7 @@ function cseItem(
         dueDate: null,
         summary: "Date de la dernière élection à renseigner",
         why:
-          "Le CSE est déclaré en place. La date de la dernière élection est nécessaire pour suivre le renouvellement périodique sans inventer une échéance.",
+          "Le CSE est déclaré en place. La date de la dernière élection est nécessaire pour calculer l’échéance du renouvellement périodique.",
         missingData: ["Date de la dernière élection CSE"],
         source: SOURCES.cse,
       };
@@ -534,8 +534,8 @@ function cseItem(
       summary: "Seuil de 11 salariés en cours de suivi",
       why:
         employeeCount < 11
-          ? "La date renseignée indique que le seuil d'au moins 11 salariés est atteint sans interruption depuis cette date. RH Pilot utilise cette déclaration même si tous les salariés ne sont pas encore enregistrés dans le module Salariés."
-          : "La date de franchissement du seuil est renseignée. RH Pilot suit l'atteinte des 12 mois consécutifs avant de conclure qu'une action de mise en place doit être engagée.",
+          ? "La date renseignée indique que le seuil d'au moins 11 salariés est atteint sans interruption depuis cette date. Cette déclaration est retenue même si tous les salariés ne sont pas encore enregistrés dans le module Salariés."
+          : "La date de franchissement du seuil est renseignée. Une action de mise en place n’est proposée qu’une fois les 12 mois consécutifs atteints.",
       missingData: [],
       source: SOURCES.cse,
     };
@@ -556,8 +556,8 @@ function cseItem(
       summary: "Seuil de 12 mois atteint, CSE déclaré non mis en place",
       why:
         employeeCount < 11
-          ? "La date saisie déclare un effectif d'au moins 11 salariés atteint sans interruption depuis au moins 12 mois, tandis que le CSE est déclaré non mis en place. RH Pilot traite cette déclaration comme la donnée de référence même si tous les salariés ne sont pas encore enregistrés dans le logiciel."
-          : "La date de franchissement renseignée indique que le seuil de 11 salariés est atteint depuis au moins 12 mois consécutifs et le CSE est déclaré non mis en place dans RH Pilot.",
+          ? "La date saisie déclare un effectif d'au moins 11 salariés atteint sans interruption depuis au moins 12 mois, tandis que le CSE est déclaré non mis en place. Cette déclaration sert de donnée de référence même si tous les salariés ne sont pas encore enregistrés dans le logiciel."
+          : "La date de franchissement renseignée indique que le seuil de 11 salariés est atteint depuis au moins 12 mois consécutifs et le CSE est déclaré non mis en place.",
       missingData: [],
       source: SOURCES.cse,
     };
@@ -576,7 +576,7 @@ function cseItem(
     dueDate: toDateOnly(thresholdDue),
     summary: "Le seuil de 12 mois est atteint",
     why:
-      "La durée de franchissement du seuil est maintenant calculable, mais RH Pilot ne sait pas encore si un CSE est déjà en place. Cette information est nécessaire avant d'afficher une action ou une conformité.",
+      "La durée de franchissement du seuil est maintenant calculable, mais la situation du CSE n’est pas renseignée. Cette information est nécessaire avant d'afficher une action ou une conformité.",
     missingData: ["Situation actuelle du CSE"],
     source: SOURCES.cse,
   };

@@ -94,7 +94,7 @@ function Explanation({ row, input }: { row: DemoRow; input: DemoInput }) {
         ))}
       </ul>
       <p className={s.rule}>
-        Règle du moteur : <code>{row.sourceRule}</code>
+        Règle appliquée : <code>{row.sourceRule}</code>
       </p>
       {row.references.length ? (
         <p className={s.refs}>
@@ -145,7 +145,7 @@ export function LivePayslip({ initial, focus = "contributions" }: { initial: Dem
         created.postMessage({ id: request.current, input: waiting });
       } else setPending(false);
       if (event.data.error || !event.data.result) {
-        setError("Ce cas sort de la simulation. Essayez un autre salaire.");
+        setError("Ce cas n’est pas couvert par la simulation. Essayez un autre salaire.");
         return;
       }
       setError(null);
@@ -285,7 +285,7 @@ export function LivePayslip({ initial, focus = "contributions" }: { initial: Dem
         {focus === "employer" ? (
           <div className={s.extra}>
             <label htmlFor={`${uid}-atmp`}>
-              Taux accidents du travail de l’établissement <b>{percent(input.atmpRate / 100)}</b>
+              Taux AT/MP de l’établissement <b>{percent(input.atmpRate / 100)}</b>
             </label>
             <input id={`${uid}-atmp`} className={s.range} type="range" min={DEMO_LIMITS.atmpMin} max={DEMO_LIMITS.atmpMax} step={0.01} value={input.atmpRate} onChange={(event) => update({ atmpRate: Number(event.target.value) })} style={{ ["--p" as string]: `${((input.atmpRate - DEMO_LIMITS.atmpMin) / (DEMO_LIMITS.atmpMax - DEMO_LIMITS.atmpMin)) * 100}%` }} />
           </div>
@@ -394,9 +394,9 @@ export function LivePayslip({ initial, focus = "contributions" }: { initial: Dem
         </table>
         {error ? <p className={s.error}>{error}</p> : <p className={s.tip}>Ouvrez une ligne pour voir son calcul et sa source.</p>}
         <p className={s.fine}>
-          Calcul réel, par le même moteur que le logiciel : modèle social de l’URSSAF (version {result.modelVersion}) et
-          règles RH Pilot. Tout se calcule dans votre navigateur, rien n’est envoyé. Simulation hors convention
-          collective, sans heures supplémentaires ni absences.
+          Calcul effectué avec le même moteur que le logiciel : modèle social de l’URSSAF (version {result.modelVersion}) et
+          règles RH Pilot. Le calcul se fait dans votre navigateur, aucune donnée n’est envoyée. Simulation hors
+          convention collective, sans heures supplémentaires ni absences.
         </p>
       </div>
       <p className={s.srOnly} aria-live="polite">

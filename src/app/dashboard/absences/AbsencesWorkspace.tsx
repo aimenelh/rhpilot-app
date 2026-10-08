@@ -150,7 +150,7 @@ function formatDate(value: string) {
 
 function formatPlannerRange(start: Date, end: Date) {
   const fmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" });
-  return `${fmt.format(start)} – ${fmt.format(end)}`;
+  return `Du ${fmt.format(start)} au ${fmt.format(end)}`;
 }
 
 function durationInDays(absence: AbsenceWorkspaceItem) {
@@ -676,7 +676,7 @@ function AbsenceDrawer({ mode, absence, employees, isAdmin, isPending, onClose, 
               {isWorkStoppage && (
                 <div className="rounded-xl border border-surface-border bg-surface-subtle/40 p-3">
                   <p className="text-sm font-medium text-ink">Informations DSN de l'arrêt</p>
-                  <p className="mt-1 text-xs leading-relaxed text-ink-faint">Renseignez les données du justificatif ou du signalement réel : RH Pilot ne déduit plus automatiquement le dernier jour travaillé.</p>
+                  <p className="mt-1 text-xs leading-relaxed text-ink-faint">Renseignez les données du justificatif ou du signalement réel. Le dernier jour travaillé n’est pas déduit automatiquement.</p>
                   <div className="mt-3 grid grid-cols-2 gap-3">
                     <label className="block col-span-2 sm:col-span-1"><span className="mb-1.5 block text-xs font-medium text-ink">Dernier jour travaillé</span><input name="lastWorkedDate" type="date" defaultValue={absence?.lastWorkedDate?.slice(0, 10) ?? ""} required disabled={!isAdmin || integrated} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle" /></label>
                     {selectedType === "WORK_ACCIDENT" && <label className="block col-span-2 sm:col-span-1"><span className="mb-1.5 block text-xs font-medium text-ink">Date de l'accident</span><input name="workAccidentDate" type="date" defaultValue={absence?.workAccidentDate?.slice(0, 10) ?? ""} required disabled={!isAdmin || integrated} className="h-11 w-full rounded-lg border border-surface-border bg-white px-3 text-sm text-ink outline-none focus:border-brand-primary disabled:bg-surface-subtle" /></label>}

@@ -15,7 +15,7 @@ export type DsnEmployeeFormInitial = {
   preparedDiplomaLevel: string;
 };
 
-function SubmitButton() { const { pending } = useFormStatus(); return <button type="submit" disabled={pending} className="rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">{pending ? "Enregistrement sécurisé…" : "Enregistrer le profil DSN"}</button>; }
+function SubmitButton() { const { pending } = useFormStatus(); return <button type="submit" disabled={pending} className="rounded-lg bg-brand-primary px-4 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">{pending ? "Enregistrement…" : "Enregistrer le profil DSN"}</button>; }
 
 function Field({ name, label, defaultValue, placeholder, type = "text", required = true, help, onChange }: { name: string; label: string; defaultValue?: string; placeholder?: string; type?: string; required?: boolean; help?: string; onChange?: (event: ChangeEvent<HTMLInputElement>) => void }) {
   return <label className="text-sm text-ink-soft">{label}<input name={name} type={type} required={required} defaultValue={defaultValue} placeholder={placeholder} onChange={onChange} step={type === "number" ? "0.01" : undefined} className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2.5 text-sm text-ink" />{help ? <span className="mt-1 block text-xs leading-5 text-ink-faint">{help}</span> : null}</label>;
@@ -45,17 +45,17 @@ export default function DsnEmployeeForm({ employeeId, initial }: { employeeId: s
           <Field name="addressLine" label="Adresse" defaultValue={initial.addressLine} />
           <Field name="postalCode" label="Code postal" defaultValue={initial.postalCode} placeholder="34000" />
           <Field name="city" label="Ville" defaultValue={initial.city} />
-          <Field name="countryCode" label="Code pays de résidence hors système postal français" defaultValue={initial.countryCode} required={false} help="Laissez vide. Les adresses étrangères restent bloquées tant que le code de distribution n'est pas modélisé." />
+          <Field name="countryCode" label="Code pays de résidence hors système postal français" defaultValue={initial.countryCode} required={false} help="À laisser vide. Les adresses à l’étranger ne sont pas encore prises en charge dans la DSN." />
         </div>
       </section>
 
       <section className="rounded-xl border border-surface-border bg-white p-5">
-        <h2 className="font-semibold text-ink">Contrat : codes NEODeS</h2><p className="mt-1 text-xs leading-5 text-ink-faint">RH Pilot ne devine pas les codes déclaratifs. Ils doivent correspondre à la nomenclature P26V01 et aux notifications de l'entreprise.</p>
+        <h2 className="font-semibold text-ink">Contrat : codes NEODeS</h2><p className="mt-1 text-xs leading-5 text-ink-faint">Les codes déclaratifs doivent correspondre à la nomenclature P26V01 et aux notifications reçues par l’entreprise.</p>
         <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Field name="contractNumber" label="Numéro du contrat" defaultValue={initial.contractNumber} help="Entre 5 et 20 caractères." />
           <SelectField name="contractNatureCode" label="Nature du contrat" defaultValue={initial.contractNatureCode} options={[["01", "CDI de droit privé"], ["02", "CDD de droit privé"]]} help="Un contrat d'apprentissage à durée limitée est un CDD." onChange={(event) => setContractNature(event.target.value)} />
           <SelectField name="publicPolicyCode" label="Dispositif" defaultValue={initial.publicPolicyCode} options={DSN_PUBLIC_POLICIES} onChange={(event) => setPublicPolicy(event.target.value)} />
-          {contractNature === "02" && !apprenticeship && <SelectField name="fixedTermReasonCode" label="Motif de recours au CDD" defaultValue={initial.fixedTermReasonCode} options={DSN_FIXED_TERM_REASONS} help="Reprenez le motif du contrat signé. Aucune valeur n'est choisie automatiquement." />}
+          {contractNature === "02" && !apprenticeship && <SelectField name="fixedTermReasonCode" label="Motif de recours au CDD" defaultValue={initial.fixedTermReasonCode} options={DSN_FIXED_TERM_REASONS} help="Reprenez le motif indiqué sur le contrat signé." />}
           {apprenticeship && <SelectField name="preparedDiplomaLevel" label="Diplôme préparé par l'apprenti" defaultValue={initial.preparedDiplomaLevel} options={DSN_PREPARED_DIPLOMA_LEVELS} help="Niveau du diplôme ou du titre visé par le contrat d'apprentissage." />}
           <Field name="pcsEsecCode" label="PCS-ESE" defaultValue={initial.pcsEsecCode} />
           <Field name="conventionalStatusCode" label="Statut conventionnel" defaultValue={initial.conventionalStatusCode} />

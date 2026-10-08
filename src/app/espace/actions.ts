@@ -171,7 +171,7 @@ export async function setPaperPayslipPreference(paper: boolean): Promise<EspaceA
   await auditEmployee(account.organizationId, user.id, paper ? "employee_space.paper_payslip.requested" : "employee_space.paper_payslip.withdrawn", "Employee", account.employeeId, { by: "EMPLOYEE" });
   revalidatePath("/espace", "layout");
   revalidatePath(`/dashboard/employees/${account.employeeId}`);
-  return { success: paper ? "C'est noté : vos prochains bulletins vous seront remis sur papier." : "C'est noté : vos prochains bulletins arriveront dans votre espace." };
+  return { success: paper ? "Préférence enregistrée. Vos prochains bulletins vous seront remis sur papier." : "Préférence enregistrée. Vos prochains bulletins arriveront dans votre espace." };
 }
 
 /**

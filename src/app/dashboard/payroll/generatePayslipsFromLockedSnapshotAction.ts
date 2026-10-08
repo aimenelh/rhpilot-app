@@ -243,7 +243,7 @@ function buildNetAdjustmentRows(snapshot: Snapshot): Array<{ label: string; amou
   const expected = asNumber(snapshot.payable?.postSocialAdjustment);
   const actual = roundMoney(rows.reduce((sum, row) => sum + row.amount, 0));
   if (!Number.isFinite(expected)) {
-    throw new Error("Génération bloquée : l’ajustement net total n’est pas historisé dans le snapshot.");
+    throw new Error("Génération bloquée : l’ajustement net total n’est pas enregistré dans le calcul verrouillé.");
   }
   assertClose("le total des ajustements nets", expected, actual);
   return rows;
@@ -252,7 +252,7 @@ function buildNetAdjustmentRows(snapshot: Snapshot): Array<{ label: string; amou
 function normalizeLockedContributions(snapshot: Snapshot): LockedContribution[] {
   const details = snapshot.socialEngine?.contributionDetails;
   if (!Array.isArray(details)) {
-    throw new Error("Génération bloquée : le snapshot verrouillé ne contient pas le détail des cotisations.");
+    throw new Error("Génération bloquée : le calcul verrouillé ne contient pas le détail des cotisations.");
   }
 
   return details.flatMap((detail): LockedContribution[] => {
@@ -264,7 +264,7 @@ function normalizeLockedContributions(snapshot: Snapshot): LockedContribution[] 
     const rate = detail.rate === null ? null : asNumber(detail.rate);
 
     if (!code || !label || !side || !Number.isFinite(amount)) {
-      throw new Error("Génération bloquée : une ligne de cotisation du snapshot est incomplète.");
+      throw new Error("Génération bloquée : une ligne de cotisation du calcul verrouillé est incomplète.");
     }
     if (detail.baseAmount === undefined || detail.rate === undefined) {
       throw new Error(`Génération bloquée : assiette ou taux absent pour la cotisation ${label}.`);
@@ -328,15 +328,15 @@ function reconcileLockedSnapshot(input: {
     netPaid,
   });
 
-  assertClose("le brut du snapshot", gross, asNumber(snapshot.socialEngine?.grossAmount));
-  assertClose("les cotisations salariales du snapshot", employeeContributions, asNumber(snapshot.socialEngine?.employeeContributions));
-  assertClose("les cotisations patronales du snapshot", employerContributions, asNumber(snapshot.socialEngine?.employerContributions));
-  assertClose("le net imposable du snapshot", netTaxable, asNumber(snapshot.socialEngine?.netTaxableAmount));
-  assertClose("le montant net social du snapshot", netSocial, asNumber(snapshot.socialEngine?.netSocialAmount));
-  assertClose("le net avant impôt du snapshot", netBeforeTax, asNumber(snapshot.payable?.netBeforeTax));
-  assertClose("le PAS du snapshot", withholdingTax, asNumber(snapshot.payable?.withholdingTax));
+  assertClose("le brut du détail figé", gross, asNumber(snapshot.socialEngine?.grossAmount));
+  assertClose("les cotisations salariales du détail figé", employeeContributions, asNumber(snapshot.socialEngine?.employeeContributions));
+  assertClose("les cotisations patronales du détail figé", employerContributions, asNumber(snapshot.socialEngine?.employerContributions));
+  assertClose("le net imposable du détail figé", netTaxable, asNumber(snapshot.socialEngine?.netTaxableAmount));
+  assertClose("le montant net social du détail figé", netSocial, asNumber(snapshot.socialEngine?.netSocialAmount));
+  assertClose("le net avant impôt du détail figé", netBeforeTax, asNumber(snapshot.payable?.netBeforeTax));
+  assertClose("le PAS du détail figé", withholdingTax, asNumber(snapshot.payable?.withholdingTax));
   assertClose("le PAS historisé", withholdingTax, asNumber(snapshot.withholdingTax?.amount));
-  assertClose("le net payé du snapshot", netPaid, asNumber(snapshot.payable?.netPaid));
+  assertClose("le net payé du détail figé", netPaid, asNumber(snapshot.payable?.netPaid));
 
   const socialNetBeforeTax = asNumber(snapshot.payable?.socialNetBeforeTax);
   const postSocialAdjustment = asNumber(snapshot.payable?.postSocialAdjustment);
@@ -358,12 +358,12 @@ function reconcileLockedSnapshot(input: {
 
   const withholdingTaxRate = asNumber(snapshot.withholdingTax?.rate);
   if (!Number.isFinite(withholdingTaxRate) || withholdingTaxRate < 0 || withholdingTaxRate > 1) {
-    throw new Error("Génération bloquée : le taux de prélèvement à la source du snapshot est invalide.");
+    throw new Error("Génération bloquée : le taux de prélèvement à la source du calcul verrouillé est invalide.");
   }
 
   const modelVersion = asString(snapshot.socialEngine?.modelVersion).trim();
   if (!modelVersion) {
-    throw new Error("Génération bloquée : la version du moteur social n'est pas historisée dans le snapshot.");
+    throw new Error("Génération bloquée : la version du moteur social n’est pas enregistrée dans le calcul verrouillé.");
   }
 
   const lockedEmployerCost = asNumber(snapshot.socialEngine?.employerCost);
@@ -371,7 +371,7 @@ function reconcileLockedSnapshot(input: {
     ? lockedEmployerCost
     : roundMoney(gross + employerContributions);
   if (!Number.isFinite(employerCost) || employerCost < gross) {
-    throw new Error("Génération bloquée : le coût employeur du snapshot est invalide.");
+    throw new Error("Génération bloquée : le coût employeur du calcul verrouillé est invalide.");
   }
 
   return { contributionDetails, withholdingTaxRate, modelVersion, employerCost };
@@ -441,7 +441,7 @@ export async function generatePayslipsFromLockedSnapshotAction(
   });
   if (calculations.length === 0) return { error: "Aucun calcul verrouillé n'est disponible pour cette période." };
   if (calculations.some((calculation) => calculation.calculationSnapshot === null)) {
-    return { error: "Génération impossible : un calcul verrouillé ne possède pas de snapshot." };
+    return { error: "Génération impossible : le détail d’un calcul verrouillé est manquant." };
   }
 
   const employeeIds = calculations.map((calculation) => calculation.employeeId);

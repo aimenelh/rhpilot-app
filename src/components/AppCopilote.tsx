@@ -6,16 +6,18 @@ import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import { Input } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
-import { Logomark } from "@/components/Brand";
+import { CopilotAvatar, CopilotHead } from "@/components/copilote/CopilotAvatar";
+import { CopilotGreeting } from "@/components/copilote/CopilotGreeting";
+import { ASSISTANT_NAME } from "@/components/copilote/assistant";
 import { askAboutOrganizationAction, type AskAboutOrganizationState } from "@/app/dashboard/aiActions";
 
 // Un exemple de question sur les données, un sur le fonctionnement du
 // site : ça montre tout de suite que le Copilote répond aux deux
 // registres, pas seulement aux données de l'organisation.
 const SUGGESTION_QUESTIONS = [
-  "Qui est en retard ?",
-  "Quels sont les parcours à risque ?",
-  "RH Pilot remplace-t-il mon logiciel de paie ?",
+  "Quelles tâches sont en retard ?",
+  "Qui termine sa période d’essai ce mois-ci ?",
+  "Quelles visites médicales sont à prévoir ?",
 ];
 
 // La page /dashboard affiche déjà une version complète du Copilote en
@@ -53,6 +55,12 @@ function buildGreeting(summary: Summary): string {
     parts.push(`${summary.suggestionsCount} suggestion${summary.suggestionsCount > 1 ? "s" : ""}`);
   }
   return `${hello} Vous avez actuellement ${parts.join(" et ")}.`;
+}
+
+// Présentation de l'assistante, affichée une seule fois dans l'application.
+function greetingIntro(summary: Summary): string {
+  const firstName = summary.userDisplayName.includes("@") ? "" : summary.userDisplayName.split(" ")[0];
+  return `${firstName ? `Bonjour ${firstName}` : "Bonjour"}, je suis ${ASSISTANT_NAME}, votre assistante RH. Posez-moi vos questions sur vos salariés, vos parcours et vos échéances : je réponds à partir des données de votre espace.`;
 }
 
 function renderGreeting(text: string) {
@@ -98,7 +106,7 @@ function TypingIndicator() {
   return (
     <div className="flex items-end gap-2">
       <span className="mb-1 shrink-0">
-        <Logomark size={18} />
+        <CopilotHead size={22} />
       </span>
       <div className="flex items-center gap-1 rounded-2xl rounded-tl-sm bg-surface-subtle px-3.5 py-2.5">
         <span className="motion-reduce:animate-none h-1.5 w-1.5 animate-bounce rounded-full bg-ink-faint [animation-delay:-0.3s]" />
@@ -112,6 +120,7 @@ function TypingIndicator() {
 export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; aiEnabled?: boolean }) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [talking, setTalking] = useState(false);
   const [state, formAction] = useFormState<AskAboutOrganizationState, FormData>(
     askAboutOrganizationAction,
     undefined
@@ -146,29 +155,17 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
   if (HIDDEN_ON_PATHS.includes(pathname ?? "")) return null;
 
   return (
-    <div className="fixed bottom-6 right-6 z-40">
-      <style>{`
-        @keyframes copiloteBreathe {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.045); }
-        }
-        .copilote-fab { animation: copiloteBreathe 3.5s ease-in-out infinite; }
-        @media (prefers-reduced-motion: reduce) {
-          .copilote-fab { animation: none !important; }
-        }
-      `}</style>
+    <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end sm:bottom-6 sm:right-6">
 
       {isOpen && (
         <div className="mb-3 flex h-[32rem] w-[23rem] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-surface-border bg-white shadow-elevated">
           <div className="flex items-center justify-between border-b border-surface-border bg-gradient-to-br from-brand-primary-dark/[0.04] to-brand-primary/[0.04] px-4 py-3">
             <div className="flex items-center gap-2.5">
-              <div className="relative shrink-0">
-                <Logomark size={26} />
-              </div>
+              <CopilotHead size={34} />
               <div>
-                <p className="text-sm font-semibold text-ink">Copilote RH Pilot</p>
+                <p className="text-sm font-semibold text-ink">{ASSISTANT_NAME}, votre assistante RH</p>
                 <span className="text-xs text-ink-faint">
-                  {aiEnabled ? "Répond à partir de vos données" : "Momentanément indisponible"}
+                  {aiEnabled ? "Répond à partir des données de votre espace" : "Momentanément indisponible"}
                 </span>
               </div>
             </div>
@@ -187,7 +184,7 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
                 {messages.length === 0 && (
                   <div className="flex items-end gap-2">
                     <span className="mb-1 shrink-0">
-                      <Logomark size={18} />
+                      <CopilotHead size={22} />
                     </span>
                     <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-surface-subtle px-3.5 py-2 text-sm text-ink">
                       {renderGreeting(buildGreeting(summary))}
@@ -207,7 +204,7 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
                   ) : (
                     <div key={i} className="flex items-end gap-2">
                       <span className="mb-4 shrink-0">
-                        <Logomark size={18} />
+                        <CopilotHead size={22} />
                       </span>
                       <div className="flex max-w-[85%] flex-col gap-1">
                         <div className="whitespace-pre-wrap rounded-2xl rounded-tl-sm bg-surface-subtle px-3.5 py-2 text-sm text-ink">
@@ -260,28 +257,33 @@ export function AppCopilote({ summary, aiEnabled = true }: { summary: Summary; a
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={() => setIsOpen((o) => !o)}
-        aria-label={isOpen ? "Fermer le Copilote" : "Ouvrir le Copilote RH Pilot"}
-        aria-expanded={isOpen}
-        className={`motion-reduce:transition-none relative flex h-14 w-14 items-center justify-center rounded-full border border-surface-border bg-white shadow-card transition-transform hover:scale-105 hover:[animation-play-state:paused] active:scale-95 ${
-          isOpen ? "" : "copilote-fab"
-        }`}
-      >
-        {isOpen ? (
-          <X size={22} className="text-ink-soft" />
-        ) : (
-          <span className="relative inline-flex">
-            <Logomark size={30} />
-          </span>
+      <div className="relative">
+        {!isOpen && (
+          <CopilotGreeting
+            storageKey="rhpilot.assistante.bonjour.app.v1"
+            message={greetingIntro(summary)}
+            onShow={() => {
+              setTalking(true);
+              window.setTimeout(() => setTalking(false), 2400);
+            }}
+            onOpen={() => setIsOpen(true)}
+          />
         )}
-        {!isOpen && summary.overdueCount > 0 && (
-          <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent-rose text-[10px] font-bold text-white ring-2 ring-white">
-            {summary.overdueCount > 9 ? "9+" : summary.overdueCount}
-          </span>
-        )}
-      </button>
+        <button
+          type="button"
+          onClick={() => setIsOpen((o) => !o)}
+          aria-label={isOpen ? `Fermer la fenêtre de ${ASSISTANT_NAME}` : `Poser une question à ${ASSISTANT_NAME}, votre assistante RH`}
+          aria-expanded={isOpen}
+          className="relative block rounded-2xl focus-visible:outline-offset-4"
+        >
+          <CopilotAvatar width={80} talking={talking} />
+          {!isOpen && summary.overdueCount > 0 && (
+            <span className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-accent-rose text-[10px] font-bold text-white ring-2 ring-white">
+              {summary.overdueCount > 9 ? "9+" : summary.overdueCount}
+            </span>
+          )}
+        </button>
+      </div>
     </div>
   );
 }

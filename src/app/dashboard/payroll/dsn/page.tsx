@@ -73,19 +73,19 @@ export default async function DsnPreparationPage() {
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-ink-faint">Paie</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink">DSN du mois</h1>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-soft">RH Pilot construit la DSN à partir des paies clôturées. Une donnée manquante bloque le fichier : rien n&apos;est deviné.</p>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-soft">La DSN est établie à partir des paies clôturées. Tant qu’une information obligatoire manque, le fichier n’est pas généré.</p>
         </div>
         <Link href="/dashboard/payroll" className="text-sm font-medium text-brand-primary hover:underline">Retour à la paie</Link>
       </div>
 
       <div className="mt-6 border-l-2 border-ink pl-4">
-        <p className="text-sm font-semibold text-ink">Phase pilote : vous déposez des DSN d&apos;essai</p>
-        <p className="mt-1 max-w-3xl text-sm leading-6 text-ink-soft">Votre déclaration réelle continue de partir de votre outil actuel. Le fichier d&apos;essai de RH Pilot passe tous les contrôles officiels de net-entreprises sans être transmis aux organismes : c&apos;est ce qui permet de comparer les deux, mois après mois, avant de basculer.</p>
+        <p className="text-sm font-semibold text-ink">Phase pilote : DSN en mode test</p>
+        <p className="mt-1 max-w-3xl text-sm leading-6 text-ink-soft">Vous continuez à transmettre votre DSN avec votre outil habituel. En parallèle, déposez le fichier de RH Pilot en mode test sur net-entreprises : il est contrôlé sans être transmis aux organismes, ce qui permet de comparer les deux déclarations chaque mois avant de changer d’outil.</p>
       </div>
       {demoOnly ? (
         <div className="mt-4 rounded-lg border border-accent-amber/30 bg-accent-amber/5 px-4 py-3">
           <p className="text-sm font-semibold text-ink">Entreprise de démonstration</p>
-          <p className="mt-1 max-w-3xl text-sm leading-6 text-ink-soft">SIRET, salariés, NIR, organismes et comptes sont fictifs et déjà renseignés : vous pouvez générer la DSN d&apos;un mois clôturé pour voir le fichier, mais pas la déposer sur net-entreprises. Pour un vrai dépôt d&apos;essai, utilisez une organisation avec votre SIRET et vos salariés.</p>
+          <p className="mt-1 max-w-3xl text-sm leading-6 text-ink-soft">SIRET, salariés, NIR, organismes et comptes sont fictifs et déjà renseignés : vous pouvez générer la DSN d&apos;un mois clôturé pour voir le fichier, mais pas la déposer sur net-entreprises. Pour un dépôt en mode test, utilisez une organisation avec votre SIRET et vos salariés.</p>
         </div>
       ) : null}
 
@@ -122,7 +122,7 @@ export default async function DsnPreparationPage() {
 
       <section id="mois" className="mt-8 scroll-mt-24 border-t border-surface-border pt-6">
         <h2 className="text-lg font-semibold text-ink">Les mois clôturés</h2>
-        <p className="mt-1 text-xs leading-5 text-ink-faint">Le fichier reprend les montants figés à la clôture, pas les données actuelles du salarié. S&apos;il est bloqué, le message indique quoi corriger et où.</p>
+        <p className="mt-1 text-xs leading-5 text-ink-faint">Le fichier reprend les montants figés à la clôture, et non les données actuelles du salarié. En cas de blocage, le message indique l’information à corriger et l’écran concerné.</p>
         <div className="mt-3 divide-y divide-surface-border rounded-xl border border-surface-border bg-white">
           {lockedPeriods.length === 0 ? <p className="px-4 py-6 text-sm text-ink-soft">Aucun mois de 2026 n&apos;est encore clôturé. Calculez, validez puis clôturez un mois dans la paie pour préparer sa DSN.</p> : null}
           {lockedPeriods.map((period) => {
@@ -145,7 +145,7 @@ export default async function DsnPreparationPage() {
         <ol className="mt-3 max-w-3xl list-decimal space-y-2 pl-5 text-sm leading-6 text-ink-soft marker:text-ink-faint">
           <li>Connectez-vous à net-entreprises.fr avec le compte qui sert déjà aux déclarations de l&apos;entreprise.</li>
           <li>Dans votre espace DSN, choisissez le dépôt d&apos;un fichier et sélectionnez le fichier téléchargé ici, sans l&apos;ouvrir ni le modifier.</li>
-          <li>Le fichier est marqué « essai » : il est contrôlé comme une vraie déclaration, mais n&apos;est transmis à aucun organisme. Votre DSN réelle reste à déposer comme d&apos;habitude.</li>
+          <li>Le fichier est marqué « essai » : il est contrôlé comme une déclaration réelle, sans être transmis aux organismes. Votre DSN mensuelle reste à transmettre avec votre outil habituel.</li>
           <li>Consultez le bilan du dépôt dans votre tableau de bord DSN. S&apos;il signale une anomalie, transmettez-le à RH Pilot avec le mois concerné.</li>
           <li>Comparez enfin les montants avec la DSN produite par votre outil actuel pour le même mois : bruts, cotisations par organisme et prélèvement à la source.</li>
         </ol>

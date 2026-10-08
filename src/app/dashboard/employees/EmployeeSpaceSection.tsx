@@ -165,7 +165,7 @@ export function EmployeeDocumentsTable({ documents }: { documents: AdminDocument
               <td className="border-b border-surface-border px-5 py-2.5"><p className={`font-medium ${document.replaced ? "text-ink-faint line-through" : "text-ink"}`}>{document.title}</p>{document.title !== document.kindLabel ? <p className="text-xs text-ink-faint">{document.kindLabel}</p> : null}</td>
               <td className="whitespace-nowrap border-b border-surface-border px-3 py-2.5 text-ink-soft">{date(document.publishedAt)}</td>
               <td className="border-b border-surface-border px-3 py-2.5 text-ink-soft">
-                {document.replaced ? "Remplacé par une version corrigée" : document.employeeOpenedAt ? `Ouvert par le salarié le ${date(document.employeeOpenedAt)}` : document.notified === "FAILED" ? "E-mail non parti, pas encore ouvert" : document.notified === "NOTIFIED" ? "Salarié prévenu, pas encore ouvert" : "Pas encore ouvert"}
+                {document.replaced ? "Remplacé par une version corrigée" : document.employeeOpenedAt ? `Ouvert par le salarié le ${date(document.employeeOpenedAt)}` : document.notified === "FAILED" ? "E-mail non envoyé, pas encore ouvert" : document.notified === "NOTIFIED" ? "Salarié prévenu, pas encore ouvert" : "Pas encore ouvert"}
               </td>
               <td className="border-b border-surface-border px-5 py-2.5 text-right"><a href={`/api/employee-documents/${document.id}`} target="_blank" rel="noopener" className="font-semibold text-brand-primary hover:underline">Ouvrir</a></td>
             </tr>
@@ -208,8 +208,8 @@ export function UploadEmployeeDocumentForm({ employeeId, defaultKind = "FRANCE_T
         </label>
         <Submit>Publier</Submit>
       </div>
-      {kind === "PAYSLIP" && <div className="mt-3 space-y-2 text-sm text-ink-soft"><p>Déposez le PDF établi par votre comptable ou votre logiciel de paie (4 Mo maximum). Aucun recalcul : il sera remis au salarié avec son mois de référence, après vérification de l’information préalable et du choix papier.</p><label className="flex items-start gap-2"><input type="checkbox" name="confirmReplacement" className="mt-1" /><span>Si un bulletin existe pour ce mois, je confirme son remplacement. La version précédente restera conservée.</span></label></div>}
-      {kind === "FRANCE_TRAVAIL" ? <p className="mt-2 text-xs leading-5 text-ink-faint">L&apos;attestation part à France Travail avec la DSN de fin de contrat : déposez ici l&apos;exemplaire salarié téléchargé sur net-entreprises.</p> : null}
+      {kind === "PAYSLIP" && <div className="mt-3 space-y-2 text-sm text-ink-soft"><p>Déposez le PDF établi par votre comptable ou votre logiciel de paie (4 Mo maximum). Le PDF n’est pas recalculé. Il est remis au salarié avec son mois de référence, après vérification de l’information préalable et du choix papier.</p><label className="flex items-start gap-2"><input type="checkbox" name="confirmReplacement" className="mt-1" /><span>Si un bulletin existe pour ce mois, je confirme son remplacement. La version précédente restera conservée.</span></label></div>}
+      {kind === "FRANCE_TRAVAIL" ? <p className="mt-2 text-xs leading-5 text-ink-faint">L’attestation est transmise à France Travail avec la DSN de fin de contrat. Déposez ici l’exemplaire salarié téléchargé sur net-entreprises.</p> : null}
       <Message state={state} />
     </form>
   );

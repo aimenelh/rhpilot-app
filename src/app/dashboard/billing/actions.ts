@@ -78,7 +78,7 @@ export async function createCheckoutSession(
     console.error("Stripe checkout.sessions.create a échoué :", error);
     return {
       error:
-        "Impossible de démarrer le paiement pour le moment. Réessayez dans un instant, ou contactez-nous si ça persiste.",
+        "Impossible de démarrer le paiement pour le moment. Réessayez dans un instant ou contactez-nous si le problème persiste.",
     };
   }
 
@@ -122,7 +122,7 @@ export async function createPortalSession(
     console.error("Stripe billingPortal.sessions.create a échoué :", error);
     return {
       error:
-        "Impossible d'ouvrir votre espace de facturation pour le moment. Réessayez dans un instant, ou contactez-nous si ça persiste.",
+        "Impossible d'ouvrir votre espace de facturation pour le moment. Réessayez dans un instant ou contactez-nous si le problème persiste.",
     };
   }
 

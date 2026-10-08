@@ -99,8 +99,8 @@ export default function HelpPage({
 
       <div className="mt-8 flex items-center justify-between gap-4 border-t border-surface-border pt-6">
         <div>
-          <h2 className="text-sm font-semibold text-ink">Vous ne trouvez pas ?</h2>
-          <p className="mt-0.5 text-sm text-ink-soft">On vous répond directement.</p>
+          <h2 className="text-sm font-semibold text-ink">Autre question</h2>
+          <p className="mt-0.5 text-sm text-ink-soft">Écrivez à l’équipe RH Pilot par e-mail.</p>
         </div>
         <a
           href="mailto:contact@rhpilot.fr?subject=Question%20RH%20Pilot"

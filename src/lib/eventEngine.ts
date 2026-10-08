@@ -59,7 +59,7 @@ export async function triggerEmployeeEvent({
       !shouldOfferProbationWorkflow(employee)
     ) {
       throw new Error(
-        "La période d'essai calculée est déjà terminée. RH Pilot ne crée pas de nouveau parcours actif pour une échéance historique."
+        "La période d'essai calculée est déjà terminée. Aucun nouveau parcours actif n’est créé pour une échéance passée."
       );
     }
 

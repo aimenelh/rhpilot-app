@@ -44,8 +44,8 @@ const CHAPTERS: Chapter[] = [
   {
     key: "bienvenue",
     eyebrow: "Bienvenue",
-    title: "Tout votre suivi RH, *au même endroit.*",
-    text: "En deux minutes, voici ce que RH Pilot fait pour vous. Rien à configurer pendant la visite : regardez, on s'occupe du reste.",
+    title: "Bienvenue dans *RH Pilot.*",
+    text: "Cette visite présente les principales fonctions du logiciel en deux minutes. Aucun réglage n’est demandé pendant la visite.",
     points: [],
     Visual: WelcomeVisual,
     audience: "all",
@@ -53,26 +53,26 @@ const CHAPTERS: Chapter[] = [
   {
     key: "tableau-de-bord",
     eyebrow: "Tableau de bord",
-    title: "Ce qui compte *remonte tout seul.*",
-    text: "Chaque matin, le tableau de bord vous montre ce qui est en retard, ce qui arrive cette semaine et ce qui n'a pas encore de responsable.",
-    points: ["Priorités classées par urgence", "Taux de dossiers à jour", "Rappels par e-mail au bon moment"],
+    title: "Les priorités *du jour.*",
+    text: "Le tableau de bord affiche les actions en retard, les échéances de la semaine et les étapes qui n’ont pas encore de responsable.",
+    points: ["Priorités classées par urgence", "Taux de dossiers à jour", "Rappels par e-mail selon vos réglages"],
     Visual: DashboardVisual,
     audience: "all",
   },
   {
     key: "salaries",
     eyebrow: "Salariés",
-    title: "Une fiche claire *pour chaque salarié.*",
-    text: "Contrat, parcours en cours, congés, paie et espace salarié : tout est rangé en quelques onglets, sans fouiller.",
-    points: ["Ajout manuel ou import depuis un tableur", "Le menu ⋯ pour agir depuis la liste", "Archivage sans rien supprimer"],
+    title: "Une fiche *par salarié.*",
+    text: "Contrat, parcours en cours, congés, paie et espace salarié sont regroupés dans les onglets de la fiche.",
+    points: ["Ajout manuel ou import depuis un tableur", "Le menu ⋯ pour agir depuis la liste", "Archivage sans suppression des données"],
     Visual: EmployeesVisual,
     audience: "all",
   },
   {
     key: "parcours",
     eyebrow: "Parcours",
-    title: "Une phrase, *un plan daté.*",
-    text: "Embauche, période d'essai, visite médicale, départ : RH Pilot transforme l'évènement en étapes datées, chacune avec son responsable et ses pièces à fournir.",
+    title: "Des parcours *datés.*",
+    text: "Pour une embauche, une fin de période d’essai, une visite médicale ou un départ, le parcours liste les étapes datées, avec leur responsable et les pièces à fournir.",
     points: ["Échéances calculées selon le Code du travail", "Responsables assignés automatiquement", "Justificatifs joints à chaque étape"],
     Visual: JourneyVisual,
     audience: "all",
@@ -80,8 +80,8 @@ const CHAPTERS: Chapter[] = [
   {
     key: "absences",
     eyebrow: "Absences et obligations",
-    title: "Absences et échéances, *sous contrôle.*",
-    text: "Demandes, justificatifs et planning d'équipe au même endroit ; DUERP, entretiens professionnels et CSE rappelés avant qu'il soit trop tard.",
+    title: "Absences et *obligations RH.*",
+    text: "Les demandes, les justificatifs et le planning d’équipe sont regroupés. Les échéances du DUERP, des entretiens professionnels et du CSE sont rappelées avant leur date limite.",
     points: ["Validation des demandes depuis le planning", "Justificatifs suivis jusqu'à réception", "Obligations RH listées avec leur date"],
     Visual: AbsencesVisual,
     audience: "admin",
@@ -89,8 +89,8 @@ const CHAPTERS: Chapter[] = [
   {
     key: "paie",
     eyebrow: "Paie · accès anticipé",
-    title: "La paie, *sans tableur ni surprise.*",
-    text: "Saisissez les variables du mois dans un seul tableau : RH Pilot calcule chaque bulletin, le contrôle et vous explique chaque ligne.",
+    title: "La paie *du mois.*",
+    text: "Vous saisissez les variables du mois dans un tableau unique. Chaque bulletin est calculé et contrôlé, et chaque ligne est expliquée.",
     points: ["Cotisations et réduction générale à jour", "Contrôles avant la clôture", "Bulletins prêts à publier"],
     Visual: PayrollVisual,
     audience: "payroll",
@@ -98,8 +98,8 @@ const CHAPTERS: Chapter[] = [
   {
     key: "espace-salarie",
     eyebrow: "Espace salarié",
-    title: "Le bulletin arrive *dans sa poche.*",
-    text: "Chaque salarié a son espace sécurisé : bulletins dans un coffre-fort, solde de congés, demandes d'absence. Accessible même après son départ.",
+    title: "Un espace *pour chaque salarié.*",
+    text: "Chaque salarié dispose d’un espace sécurisé : bulletins dans un coffre-fort numérique, solde de congés, demandes d’absence. L’accès reste ouvert après son départ.",
     points: ["Invitation depuis la fiche salarié", "Chaque consultation est journalisée", "Aucune pièce jointe par e-mail"],
     Visual: EmployeeSpaceVisual,
     audience: "admin",
@@ -107,9 +107,9 @@ const CHAPTERS: Chapter[] = [
   {
     key: "copilote",
     eyebrow: "Copilote",
-    title: "Une question ? *Le contexte sous les yeux.*",
-    text: "Le Copilote répond à partir de vos salariés, de vos parcours et de ce qui est déjà fait. Il vous dit quoi faire, et pour quand.",
-    points: ["Sur le tableau de bord, et en bas à droite des autres pages", "Répond avec vos données, pas des généralités"],
+    title: "Questions sur *vos données RH.*",
+    text: "Le Copilote répond à partir de vos salariés, de vos parcours et des étapes déjà réalisées. Il indique les actions à mener et leur échéance.",
+    points: ["Sur le tableau de bord, et en bas à droite des autres pages", "Réponses fondées sur vos données"],
     Visual: CopilotVisual,
     audience: "all",
   },
@@ -309,7 +309,7 @@ export function DiscoveryTour({ accessRole, payrollEnabled, userName, completed 
 
           <div key={`text-${index}`} className="min-h-0 flex-1 overflow-y-auto pt-6 md:pt-9">
             <p className="dz-rise text-[11px] font-semibold uppercase tracking-[0.18em] text-brand-primary" style={{ animationDelay: "0.05s" }}>
-              {chapter ? chapter.eyebrow : "C'est à vous"}
+              {chapter ? chapter.eyebrow : "Démarrer"}
             </p>
             <h2 id="discovery-title" className="dz-rise mt-3 text-[28px] font-semibold leading-[1.12] tracking-tight text-ink sm:text-[34px]" style={{ animationDelay: "0.12s" }}>
               {chapter ? (
@@ -322,13 +322,13 @@ export function DiscoveryTour({ accessRole, payrollEnabled, userName, completed 
                   <Accent text={chapter.title} />
                 )
               ) : (
-                <Accent text="Par où *commencer ?*" />
+                <Accent text="Premières *actions.*" />
               )}
             </h2>
             <p className="dz-rise mt-4 max-w-md text-[15px] leading-relaxed text-ink-soft" style={{ animationDelay: "0.2s" }}>
               {chapter
                 ? chapter.text
-                : "Trois gestes suffisent pour voir RH Pilot travailler pour vous. Vous pourrez revoir cette visite à tout moment depuis la page Aide."}
+                : "Choisissez par quoi commencer. Vous pourrez revoir cette visite à tout moment depuis la page Aide."}
             </p>
             {!chapter ? (
               <div className="mt-5 md:hidden">

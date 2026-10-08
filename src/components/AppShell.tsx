@@ -117,7 +117,7 @@ export function AppShell({
 
   const userInitials = assistantSummary.userDisplayName.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part[0]).join("").toUpperCase();
   const navContent = <>
-    <Link href="/dashboard" className="workspace-brand" aria-label="RH Pilot — Tableau de bord" onClick={() => setMobileNavOpen(false)}><Logomark/><Wordmark/></Link>
+    <Link href="/dashboard" className="workspace-brand" aria-label="RH Pilot, tableau de bord" onClick={() => setMobileNavOpen(false)}><Logomark/><Wordmark/></Link>
     <Link href="/dashboard/configuration/organisation" className="workspace-organization"><span>{organizationName.charAt(0)}</span><div><strong>{organizationName}</strong><small>Votre organisation</small></div><ChevronDown size={14}/></Link>
     <nav aria-label="Navigation principale" className="workspace-nav">
       {NAV_ITEMS.map(item => {
@@ -128,7 +128,7 @@ export function AppShell({
         return <div key={item.href}>{item.section ? <p className="workspace-nav-label">{item.section}</p> : null}<Link href={preview && item.href === "/dashboard#copilote" ? "#copilote" : item.href} aria-current={isActive ? "page" : undefined} onClick={() => setMobileNavOpen(false)}><item.icon size={20} strokeWidth={1.6}/><span>{item.label}</span>{count > 0 ? <span className="workspace-nav-badge">{count}</span> : null}</Link></div>;
       })}
     </nav>
-    <div className="workspace-side-bottom"><div className="workspace-support"><MessageCircle size={17}/><strong>On garde le fil ensemble.</strong><p>Un doute sur votre suivi RH ?</p><Link href="/dashboard/help" onClick={() => setMobileNavOpen(false)}>Parlons-en</Link></div><div className="workspace-profile"><span className="workspace-preview-user">{userInitials}</span><div><strong>{assistantSummary.userDisplayName}</strong><small>{roleLabel}</small></div><Link href="/dashboard/configuration" aria-label="Configurer mon espace"><Settings size={17}/></Link></div></div>
+    <div className="workspace-side-bottom"><div className="workspace-support"><MessageCircle size={17}/><strong>Besoin d’aide ?</strong><p>Une question sur le logiciel ou votre suivi RH : écrivez-nous.</p><Link href="/dashboard/help" onClick={() => setMobileNavOpen(false)}>Contacter l’équipe</Link></div><div className="workspace-profile"><span className="workspace-preview-user">{userInitials}</span><div><strong>{assistantSummary.userDisplayName}</strong><small>{roleLabel}</small></div><Link href="/dashboard/configuration" aria-label="Configurer mon espace"><Settings size={17}/></Link></div></div>
   </>;
 
   return (

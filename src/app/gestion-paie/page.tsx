@@ -34,7 +34,7 @@ export default function GestionPaiePage() {
                 </p>
                 <p className={s.intro}>
                   Le calcul de paie dans l’application est en accès anticipé, sur invitation, et distinct de l’offre Pro.
-                  La DSN est en préparation, sans dépôt.
+                  La DSN est produite en fichier d’essai, à déposer en mode test sur net-entreprises.
                 </p>
               </div>
               <CopilotScene

@@ -163,10 +163,9 @@ export default function ConfidentialitePage() {
 
           <Section title="4. Avec qui ces données sont partagées, et où">
             <p className="mb-2">
-              RH Pilot s&apos;appuie sur un nombre volontairement restreint de
-              prestataires spécialisés, plutôt que de tout construire soi-même.
-              Voici, sans approximation, ce que fait chacun et où les données
-              concernées sont réellement traitées.
+              RH Pilot fait appel aux prestataires spécialisés suivants. Pour
+              chacun sont indiqués son rôle et le lieu de traitement des données
+              concernées.
             </p>
             <div className="mt-2 flex flex-col gap-4">
               {SUBPROCESSORS.map((p) => (

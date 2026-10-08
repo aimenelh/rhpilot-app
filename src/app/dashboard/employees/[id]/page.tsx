@@ -276,8 +276,8 @@ export default async function EmployeeDetailPage({
         <div className="mt-5 space-y-6">
           {searchParams.welcome === "1" && (
             <div className="rounded-2xl border border-brand-primary/25 bg-brand-primary/5 px-5 py-4">
-              <p className="text-sm font-semibold text-ink">Bienvenue à {employee.firstName} !</p>
-              <p className="mt-1 text-sm text-ink-soft">La fiche est créée. Déclenchez son premier parcours RH ci-dessous, puis complétez sa paie dans l&apos;onglet Paie.</p>
+              <p className="text-sm font-semibold text-ink">Fiche de {employee.firstName} créée</p>
+              <p className="mt-1 text-sm text-ink-soft">Déclenchez son premier parcours RH ci-dessous, puis complétez sa paie dans l&apos;onglet Paie.</p>
             </div>
           )}
 

@@ -111,8 +111,8 @@ export function PrerequisitesDemo({ net }: { net: number }) {
           {generated
             ? `3 bulletins générés. Celui de Léa Martin affiche un net à payer avant impôt de ${money(net)}.`
             : blocked
-              ? `${items.filter((item) => !item.ready).length} prérequis manquant${items.filter((item) => !item.ready).length > 1 ? "s" : ""} : la génération reste bloquée.`
-              : "Tout est prêt."}
+              ? `${items.filter((item) => !item.ready).length} prérequis manquant${items.filter((item) => !item.ready).length > 1 ? "s" : ""}. La génération est bloquée.`
+              : "Tous les prérequis sont réunis."}
         </p>
       </div>
     </Frame>
@@ -192,7 +192,7 @@ export function PreflightDemo() {
         >
           Recommencer
         </button>
-        <p aria-live="polite">{launched ? "Dans le logiciel, le calcul des trois salariés démarre ici." : result.ready ? "Prête." : `${result.issues.length} point${result.issues.length > 1 ? "s" : ""} à régler avant le calcul.`}</p>
+        <p aria-live="polite">{launched ? "Dans le logiciel, le calcul des trois salariés démarre ici." : result.ready ? "Période prête pour le calcul." : `${result.issues.length} point${result.issues.length > 1 ? "s" : ""} à régler avant le calcul.`}</p>
       </div>
     </Frame>
   );
@@ -372,9 +372,9 @@ export function MinimumDemo() {
               <Result label="Smic (12,31 € × 151,67 h)" value={money(result.smicMonthlyMinimumCents / 100)} />
               <Result strong label={result.source === "SMIC" ? "Minimum retenu : le Smic" : "Minimum retenu : la convention"} value={money(result.appliedMonthlyMinimumCents / 100)} />
               <p className={s.verdict} data-ok={result.compliant}>
-                {result.compliant ? `Salaire conforme, ${money(result.differenceCents / 100)} au-dessus du minimum.` : `Salaire trop bas de ${money(-result.differenceCents / 100)} : RH Pilot le signale avant le calcul.`}
+                {result.compliant ? `Salaire conforme, ${money(result.differenceCents / 100)} au-dessus du minimum.` : `Salaire inférieur de ${money(-result.differenceCents / 100)} au minimum. L’écart est signalé avant le calcul.`}
               </p>
-              {result.source === "SMIC" ? <p className={s.note}>Ce minimum conventionnel est passé sous le Smic depuis la revalorisation du 1er juin : c’est le Smic qui s’applique.</p> : null}
+              {result.source === "SMIC" ? <p className={s.note}>Ce minimum conventionnel est inférieur au Smic depuis la revalorisation du 1er juin. Le Smic s’applique.</p> : null}
             </>
           ) : (
             <p className={s.note}>{result.message}</p>

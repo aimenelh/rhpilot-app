@@ -341,7 +341,7 @@ function TrackingForm({
               defaultValue={tracking.organization.cseLastElectionAt ?? ""}
             />
             <span className="mt-1.5 block text-[11px] leading-4 text-ink-faint">
-              À renseigner si un CSE est déjà en place. RH Pilot l'utilise pour suivre le renouvellement de principe, sans présumer d'un éventuel accord sur la durée du mandat.
+              À renseigner si un CSE est déjà en place. Cette date sert au suivi du renouvellement de principe, sans présumer d’un éventuel accord sur la durée du mandat.
             </span>
           </label>
           <TrackingSubmit pending={pending} feedback={feedback} />
@@ -455,7 +455,7 @@ function DetailDrawer({
                 ))}
               </div>
               <p className="mt-2 text-xs leading-5 text-ink-faint">
-                RH Pilot préfère demander cette donnée plutôt que conclure automatiquement à une conformité ou à un manquement.
+                Sans cette donnée, aucune conformité ni aucun manquement n’est conclu automatiquement.
               </p>
             </section>
           ) : null}
@@ -806,7 +806,7 @@ export default function ObligationsWorkspace({
       ) : null}
 
       <p className="mt-6 max-w-4xl text-xs leading-5 text-ink-faint">
-        RH Pilot organise les informations et échéances connues à partir des données de l'entreprise et de sources officielles. Une information absente reste signalée comme telle : le module ne remplace pas une analyse juridique adaptée à une situation particulière.
+        Les informations et échéances affichées sont établies à partir des données de l’entreprise et de sources officielles. Une information absente est signalée comme telle. Ce module ne remplace pas une analyse juridique adaptée à une situation particulière.
       </p>
 
       {selectedGroup ? (

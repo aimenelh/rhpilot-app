@@ -54,7 +54,7 @@ export default async function ObligationsPage() {
           <p className="text-xs font-semibold uppercase tracking-wider text-brand-primary">Conformité RH</p>
           <h1 className="mt-1 text-2xl font-semibold text-ink">Obligations RH</h1>
           <p className="mt-1 max-w-3xl text-sm text-ink-soft">
-            Les obligations applicables à l'entreprise, leurs échéances et les informations nécessaires pour les suivre sans transformer une donnée manquante en certitude.
+            Les obligations applicables à l’entreprise, leurs échéances et les informations nécessaires à leur suivi.
           </p>
         </div>
         <p className="text-xs text-ink-faint">

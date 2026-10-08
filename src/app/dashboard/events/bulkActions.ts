@@ -57,7 +57,7 @@ export async function bulkTriggerEvents(
     .filter((l) => l.length > 0);
 
   if (lines.length > 500) {
-    return { error: "Maximum 500 lignes par génération — divisez en plusieurs envois si besoin." };
+    return { error: "Maximum 500 lignes par génération. Répartissez les lignes sur plusieurs envois si besoin." };
   }
 
   const failures: LineResult[] = [];
@@ -72,7 +72,7 @@ export async function bulkTriggerEvents(
       failures.push({
         line: lineNumber,
         input: raw,
-        message: "Format incorrect — attendu : Prénom;Nom;AAAA-MM-JJ",
+        message: "Format incorrect. Format attendu : Prénom;Nom;AAAA-MM-JJ",
       });
       continue;
     }

@@ -9,7 +9,7 @@ const MONTH: { date: string; title: string; text: string; links: { href: string;
   {
     date: "Du 1er au 23 octobre",
     title: "Les éléments du mois arrivent",
-    text: "Huit heures supplémentaires pour Léa, une prime pour Karim, un arrêt de cinq jours pour Tom. Chaque élément est rattaché au bon salarié et au bon mois, au moment où il arrive.",
+    text: "Huit heures supplémentaires pour Léa, une prime pour Karim, un arrêt de cinq jours pour Tom. Chaque élément est rattaché au salarié et au mois concernés dès sa saisie.",
     links: [
       { href: "/gestion-paie/variables", label: "Variables du mois" },
       { href: "/gestion-paie/arrets-travail", label: "Arrêts de travail" },
@@ -17,14 +17,14 @@ const MONTH: { date: string; title: string; text: string; links: { href: string;
   },
   {
     date: "Lundi 26",
-    title: "RH Pilot contrôle avant de calculer",
-    text: "Il manque le taux accidents du travail de l’établissement : la période ne se calcule pas, et l’écran dit pourquoi. Une fois le taux saisi, le contrôle passe.",
+    title: "Le contrôle avant calcul",
+    text: "Le taux AT/MP de l’établissement n’est pas renseigné. La période ne peut pas être calculée et l’écran indique le motif. Une fois le taux saisi, le contrôle est validé.",
     links: [{ href: "/gestion-paie/production", label: "Production de la paie" }],
   },
   {
     date: "Mardi 27",
     title: "Le calcul, ligne par ligne",
-    text: "Chaque cotisation sort avec sa base, son taux et sa règle. Le salaire est comparé au Smic et au minimum de la convention collective.",
+    text: "Chaque cotisation est calculée avec sa base, son taux et la règle appliquée. Le salaire est comparé au Smic et au minimum de la convention collective.",
     links: [
       { href: "/gestion-paie/cotisations-sociales", label: "Cotisations sociales" },
       { href: "/gestion-paie/referentiel-conventionnel", label: "Convention collective" },
@@ -33,7 +33,7 @@ const MONTH: { date: string; title: string; text: string; links: { href: string;
   {
     date: "Mercredi 28",
     title: "La période est verrouillée",
-    text: "Le calcul est figé avec les règles et leurs versions. Il pourra être relu et rejoué à l’identique, même après un changement de taux.",
+    text: "Le calcul est enregistré avec les règles appliquées et leurs versions. Il peut être relu et refait à l’identique, même après un changement de taux.",
     links: [{ href: "/gestion-paie/cotisations-sociales", label: "Le détail de chaque ligne" }],
   },
   {
@@ -73,8 +73,8 @@ export function PayrollMonth() {
           ))}
         </ol>
         <p className={s.promise}>
-          Quand une information manque ou qu’une situation n’est pas encore prise en charge, RH Pilot bloque le calcul
-          plutôt que de produire un bulletin approximatif.
+          Quand une information manque ou qu’une situation n’est pas encore prise en charge, le calcul est bloqué et
+          aucun bulletin n’est produit.
         </p>
       </div>
     </section>
