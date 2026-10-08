@@ -5,11 +5,15 @@ import { getAnomalies } from "@/lib/anomalies";
 
 const RUN_ID = `anotest-${Date.now()}`;
 
+// Dates relatives au jour calendaire de Paris, comme daysUntil : sinon, entre
+// minuit et 2 h à Paris, le jour UTC du serveur et le jour de Paris diffèrent
+// et les cas « juste dans la limite » basculent d'un jour.
 function daysAgo(n: number): Date {
-  const d = new Date();
-  d.setHours(12, 0, 0, 0);
-  d.setDate(d.getDate() - n);
-  return d;
+  const [y, m, d] = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Paris", year: "numeric", month: "2-digit", day: "2-digit" })
+    .format(new Date())
+    .split("-")
+    .map(Number);
+  return new Date(Date.UTC(y, m - 1, d - n, 12));
 }
 function daysFromNow(n: number): Date {
   return daysAgo(-n);
