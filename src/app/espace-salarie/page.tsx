@@ -19,7 +19,7 @@ const SCREENS = [
     image: "/marketing/espace-bulletins.webp",
     alt: "Liste des bulletins de salaire d’une salariée dans son espace RH Pilot, sur téléphone",
     title: "Ses bulletins",
-    text: "Chaque mois, un e-mail le prévient ; il ouvre son bulletin d’un geste et peut tout télécharger en une fois.",
+    text: "Chaque mois, un e-mail le prévient. Il ouvre son bulletin depuis son espace et peut télécharger tous ses documents en une fois.",
   },
   {
     image: "/marketing/espace-conges.webp",
@@ -100,8 +100,8 @@ export default function EmployeeSpaceMarketingPage() {
         <div className={s.wrap}>
           <h2 className={s.title}>Ce que voit le salarié.</h2>
           <p className={s.body} style={{ maxWidth: 620 }}>
-            Pas d’application à installer : il reçoit une invitation sur son adresse personnelle, crée son accès en une
-            minute et s’en sert depuis son téléphone comme depuis un ordinateur.
+            Aucune application à installer. Il reçoit une invitation sur son adresse personnelle, crée son accès et
+            l’utilise depuis son téléphone ou un ordinateur.
           </p>
           <div className={e.screens}>
             {SCREENS.map((screen) => (
@@ -182,7 +182,7 @@ export default function EmployeeSpaceMarketingPage() {
             <details>
               <summary>Combien coûte l’espace salarié ?</summary>
               <p>
-                Rien de plus : il est inclus dans RH Pilot. Votre abonnement dépend du nombre de salariés suivis, pas du
+                Il est inclus dans RH Pilot, sans supplément. Votre abonnement dépend du nombre de salariés suivis, pas du
                 nombre de comptes ouverts.
               </p>
             </details>

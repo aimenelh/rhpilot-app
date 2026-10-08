@@ -44,8 +44,8 @@ const GROUPS = [
       [
         "Le module paie est-il disponible ?",
         <>
-          Le calcul de paie est en accès anticipé, réservé aux organisations invitées. Il n’est pas inclus automatiquement dans Pro.
-          Le périmètre est limité : la DSN produite est un fichier d'essai, que l'entreprise dépose elle-même en mode essai sur net-entreprises pour la comparer à sa déclaration habituelle. Vous pouvez essayer le calcul d’un bulletin sur la page{" "}
+          Le calcul de paie est en accès anticipé, réservé aux organisations invitées. Il n’est pas inclus automatiquement dans l’offre Pro.
+          Le périmètre est limité : la DSN produite est un fichier d’essai, que l’entreprise dépose elle-même en mode test sur net-entreprises pour la comparer à sa déclaration habituelle. Vous pouvez essayer le calcul d’un bulletin sur la page{" "}
           <Link href="/gestion-paie">Gestion de la paie</Link>.
         </>,
       ],

@@ -24,7 +24,7 @@ export function normalizeNir(value: string): string {
 export function assertNirFormat(value: string): string {
   const normalized = normalizeNir(value);
   if (!/^[12][0-9]{12}$/.test(normalized)) {
-    throw new Error("Le NIR doit contenir 13 chiffres et commencer par 1 ou 2. La clé de contrôle n'est pas stockée dans la DSN RH Pilot.");
+    throw new Error("Le NIR doit contenir 13 chiffres, sans la clé de contrôle, et commencer par 1 ou 2.");
   }
   return normalized;
 }

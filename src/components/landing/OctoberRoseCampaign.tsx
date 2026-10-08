@@ -64,7 +64,7 @@ export function OctoberRoseAnnouncement({ fallback }: { fallback: ReactNode }) {
   return (
     <button type="button" className={s.banner} onClick={show} aria-haspopup="dialog">
       <PinkRibbon className={s.bannerRibbon} />
-      <span><strong>Octobre Rose</strong><span className={s.bannerMessage}> · Ensemble, faisons une place à la prévention.</span></span>
+      <span><strong>Octobre Rose</strong><span className={s.bannerMessage}> · Mois de sensibilisation au dépistage du cancer du sein.</span></span>
       <span className={s.bannerAction}>S’informer et agir <ArrowRight size={14} aria-hidden="true" /></span>
     </button>
   );
@@ -164,11 +164,11 @@ export function OctoberRoseProvider({ children }: { children: ReactNode }) {
               <div className={s.visual}>
                 <span className={s.edition}>Octobre Rose <span>2026</span></span>
                 <Image src="/illustrations/mascot/octobre-rose-2026.webp" alt="La mascotte RH Pilot porte un ruban rose sur sa chemise, la main sur le cœur." width={1024} height={1536} sizes="(max-width: 640px) 170px, 280px" className={s.mascot} />
-                <p className={s.visualCaption}>Un petit ruban.<br /><em>Une attention qui compte.</em></p>
+                <p className={s.visualCaption}>Prévention<br /><em>et dépistage.</em></p>
               </div>
               <div className={s.content}>
                 <p className={s.eyebrow}><PinkRibbon /> RH Pilot relaie Octobre Rose</p>
-                <h2 id="october-rose-title" className={s.title}>Ensemble,<br /><em>prenons soin de nous.</em></h2>
+                <h2 id="october-rose-title" className={s.title}>Le dépistage<br /><em>du cancer du sein.</em></h2>
                 <p id="october-rose-description" className={s.description}>Octobre Rose est l’occasion de s’informer sur le cancer du sein et de rappeler l’importance du dépistage.</p>
                 <p className={s.description}>La Ligue contre le cancer soutient la recherche, la prévention et l’accompagnement des personnes malades, contre le cancer du sein et les autres cancers.</p>
                 <div className={s.actions}>

@@ -1,0 +1,54 @@
+/* Bulle de présentation, au-dessus de l'avatar, la pointe vers lui. */
+.bubble {
+  position: absolute;
+  right: 6px;
+  bottom: calc(100% + 10px);
+  width: min(290px, calc(100vw - 48px));
+  padding: 14px 38px 14px 16px;
+  border-radius: 16px 16px 4px 16px;
+  background: #17181c;
+  color: #fff;
+  box-shadow: 0 18px 40px -18px rgba(20, 21, 26, 0.6);
+  transform-origin: 90% 100%;
+  animation: pop 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+.text {
+  display: block;
+  text-align: left;
+  font-size: 14.5px;
+  line-height: 1.45;
+  font-weight: 500;
+  color: inherit;
+  cursor: pointer;
+}
+.text:hover {
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.4);
+  text-underline-offset: 3px;
+}
+.close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.7);
+}
+.close:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.92);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .bubble {
+    animation: none;
+  }
+}

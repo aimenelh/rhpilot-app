@@ -17,7 +17,7 @@ export const FAQ_ENTRIES: FaqEntry[] = [
     category: "Salariés",
     question: "Comment créer un salarié ?",
     answer:
-      "Allez dans « Salariés » dans le menu, puis cliquez sur « Ajouter un salarié ». Prénom, nom et date d'embauche sont obligatoires ; le poste, le manager direct, le type de contrat et la durée de période d'essai sont optionnels mais utiles : ils permettent à RH Pilot de calculer certaines suggestions automatiquement.",
+      "Allez dans « Salariés » dans le menu, puis cliquez sur « Ajouter un salarié ». Prénom, nom et date d'embauche sont obligatoires ; le poste, le manager direct, le type de contrat et la durée de période d'essai sont facultatifs. Ils servent au calcul de certaines suggestions.",
   },
   {
     id: "faq-manager-selection",
@@ -31,28 +31,28 @@ export const FAQ_ENTRIES: FaqEntry[] = [
     category: "Parcours RH",
     question: "Comment fonctionne un parcours ?",
     answer:
-      "Un parcours se déclenche depuis la fiche d'un salarié (« Déclencher un événement RH »). RH Pilot génère alors automatiquement toutes les tâches associées, avec leurs échéances calculées et un responsable assigné automatiquement quand c'est possible.",
+      "Un parcours se déclenche depuis la fiche d'un salarié (« Déclencher un événement RH »). Les tâches associées sont alors créées, avec leur échéance et, quand c’est possible, un responsable assigné.",
   },
   {
     id: "faq-unassigned",
     category: "Parcours RH",
     question: "Que veut dire « À assigner » sur une tâche ?",
     answer:
-      "RH Pilot n'invente jamais un responsable : si aucune personne ne correspond au rôle habituel de la tâche (ou si plusieurs correspondent, ce qui serait ambigu), elle reste « À assigner » plutôt que d'être affectée au hasard. Vous pouvez la réassigner manuellement depuis la fiche du salarié concerné.",
+      "Une tâche reste « À assigner » quand aucune personne ne correspond au rôle habituel de la tâche, ou quand plusieurs personnes correspondent. Elle n’est jamais affectée au hasard. Vous pouvez la réassigner manuellement depuis la fiche du salarié concerné.",
   },
   {
     id: "faq-medical-visit",
     category: "Parcours RH",
     question: "Comment fonctionne le parcours Visite médicale ?",
     answer:
-      "Déclenchable à tout moment depuis la fiche d'un salarié, pas seulement à l'embauche : utile pour un suivi périodique ou une visite de reprise. À la fin du parcours, pensez à renseigner la prochaine échéance sur la fiche du salarié : RH Pilot vous préviendra automatiquement quand elle approchera ou sera dépassée.",
+      "Le parcours peut être déclenché à tout moment depuis la fiche d’un salarié, pas seulement à l’embauche, par exemple pour un suivi périodique ou une visite de reprise. À la fin du parcours, renseignez la prochaine échéance sur la fiche du salarié. Vous serez prévenu quand elle approche ou est dépassée.",
   },
   {
     id: "faq-suggestions",
     category: "Parcours RH",
     question: "Pourquoi une suggestion apparaît sur mon tableau de bord ?",
     answer:
-      "RH Pilot détecte automatiquement certaines situations qui méritent votre attention, par exemple une période d'essai qui approche sans qu'aucun parcours n'ait été déclenché. Chaque suggestion propose une action directe pour la résoudre.",
+      "Certaines situations sont détectées automatiquement, par exemple une période d’essai qui approche sans qu’aucun parcours n’ait été déclenché. Chaque suggestion propose une action pour la traiter.",
   },
   {
     id: "faq-notifications-work",
@@ -66,13 +66,13 @@ export const FAQ_ENTRIES: FaqEntry[] = [
     category: "Notifications",
     question: "Où voir l'historique des notifications envoyées ?",
     answer:
-      "La section « Notifications » du menu liste tout ce qui a été envoyé (destinataire, type, date, et par qui ou automatique), pour savoir facilement si quelqu'un a déjà été relancé.",
+      "La section « Notifications » du menu liste tout ce qui a été envoyé (destinataire, type, date, auteur de l’envoi ou envoi automatique). Vous pouvez ainsi vérifier si une personne a déjà été relancée.",
   },
   {
     id: "faq-why-rigorous",
     category: "Philosophie",
     question: "Pourquoi utiliser RH Pilot si je suis déjà rigoureux ?",
     answer:
-      "La rigueur est une compétence, RH Pilot ne la remplace pas : il la sécurise. Même les meilleurs professionnels utilisent des checklists, pas parce qu'ils ne connaissent pas leur métier, mais parce qu'un oubli reste toujours possible quand les dossiers s'accumulent. RH Pilot vous permet de consacrer moins de temps au suivi des échéances, et davantage à l'accompagnement de vos collaborateurs.",
+      "Le logiciel sert de liste de contrôle. Les échéances sont calculées et rappelées, ce qui limite les oublis quand les dossiers s’accumulent et réduit le temps consacré à leur suivi.",
   },
 ];

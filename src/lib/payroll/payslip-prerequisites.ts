@@ -46,11 +46,11 @@ export function getPayslipPrerequisites(input: PayslipPrerequisiteInput): Paysli
     },
     {
       code: "SNAPSHOTS",
-      label: "Snapshots de calcul",
+      label: "Calculs figés",
       ready: input.snapshotsComplete,
       detail: input.snapshotsComplete
         ? "Les résultats figés peuvent être reproduits."
-        : "Chaque calcul doit conserver son snapshot avant génération.",
+        : "Chaque calcul doit conserver son détail figé avant génération.",
     },
     {
       code: "EMPLOYER_ID",

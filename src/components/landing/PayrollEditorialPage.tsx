@@ -58,12 +58,12 @@ type PageKey =
   | "agreement";
 
 const PAGES: Record<PageKey, { href: string; accent: string; lead: string; payslip?: PayslipFocus }> = {
-  production: { href: "/gestion-paie/production", accent: "ce qui doit être contrôlé", lead: "Trois salariés, deux blocages. Réglez-les pour débloquer le calcul : c’est le contrôle que fait le logiciel avant chaque période." },
+  production: { href: "/gestion-paie/production", accent: "ce qui doit être contrôlé", lead: "Sur trois salariés, deux présentent un point bloquant. Corrigez-les pour lancer le calcul. Le logiciel fait ce contrôle avant chaque période." },
   variables: { href: "/gestion-paie/variables", accent: "bonne période", lead: "Ajoutez des heures supplémentaires : RH Pilot calcule le taux horaire, applique les majorations semaine par semaine et met à jour le brut du mois." },
   absences: { href: "/gestion-paie/conges-absences", accent: "période concernée", lead: "Changez le salaire, les primes ou la durée des congés : les deux méthodes légales sont calculées et la plus favorable est retenue." },
   arrets: { href: "/gestion-paie/arrets-travail", accent: "traité en paie", lead: "Faites varier le salaire et la durée de l’arrêt : carence, plafond et indemnités journalières sont recalculés." },
-  payslip: { href: "/gestion-paie/bulletin-de-paie", accent: "période verrouillée", lead: "Sept prérequis, deux manquants. Tant qu’ils ne sont pas réunis, la génération reste bloquée. Réglez-les." },
-  contributions: { href: "/gestion-paie/cotisations-sociales", accent: "ligne par ligne", lead: "Ouvrez n’importe quelle ligne : base, taux, montant, et la règle officielle qui l’a produite.", payslip: "contributions" },
+  payslip: { href: "/gestion-paie/bulletin-de-paie", accent: "période verrouillée", lead: "Sur les sept prérequis, deux ne sont pas remplis. La génération des bulletins reste bloquée tant qu’ils manquent. Complétez-les pour la débloquer." },
+  contributions: { href: "/gestion-paie/cotisations-sociales", accent: "ligne par ligne", lead: "Ouvrez une ligne pour afficher sa base, son taux, son montant et la règle officielle appliquée.", payslip: "contributions" },
   agreement: { href: "/gestion-paie/referentiel-conventionnel", accent: "convention collective", lead: "Choisissez une classification : RH Pilot compare le minimum de la convention au Smic et retient le plus élevé." },
 };
 

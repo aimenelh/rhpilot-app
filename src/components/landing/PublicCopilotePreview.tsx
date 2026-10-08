@@ -4,31 +4,48 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { X, Lock } from "lucide-react";
-import { Logomark } from "@/components/Brand";
+import { CopilotAvatar, CopilotHead } from "@/components/copilote/CopilotAvatar";
+import { CopilotGreeting } from "@/components/copilote/CopilotGreeting";
+import { ASSISTANT_NAME } from "@/components/copilote/assistant";
 
-// Réponses pré-écrites, reprises mot pour mot de la page /questions —
-// jamais d'appel à l'API pour un visiteur non connecté : ni coût, ni
-// risque d'abus sur une page publique ouverte à tout le monde.
-const PUBLIC_FAQ: { question: string; answer: string }[] = [
+// Réponses pré-écrites, cohérentes avec les pages Tarifs, Sécurité et Questions :
+// jamais d'appel à l'API pour un visiteur non connecté (ni coût, ni risque
+// d'abus sur une page publique).
+const PUBLIC_FAQ: { question: string; answer: string; link?: { href: string; label: string } }[] = [
   {
-    question: "RH Pilot remplace-t-il mon logiciel de paie ?",
+    question: "Que fait RH Pilot ?",
     answer:
-      "Le suivi RH est disponible. Le calcul de paie est en accès anticipé sur invitation, avec un périmètre limité. RH Pilot ne dépose pas de DSN sur net-entreprises.",
+      "RH Pilot centralise le suivi RH des TPE et PME : fiches salariés, parcours d’embauche et de départ, échéances, documents et espace salarié. Pour chaque événement, il prépare les étapes, les dates et les rappels.",
+    link: { href: "/services", label: "Découvrir le logiciel" },
   },
   {
-    question: "Combien ça coûte ?",
+    question: "Combien coûte RH Pilot ?",
     answer:
-      "RH Pilot propose une offre gratuite jusqu’à 3 salariés et une offre Pro. Retrouvez le détail sur la page Tarifs.",
+      "L’offre gratuite couvre jusqu’à 3 salariés. Au-delà, l’offre Pro coûte 15 € HT par mois, plus 3 € HT par salarié suivi. Les comptes salariés ne sont pas facturés.",
+    link: { href: "/tarifs", label: "Voir les tarifs" },
   },
   {
-    question: "Mon équipe va-t-elle devoir apprendre un outil compliqué ?",
+    question: "Le calcul de la paie est-il disponible ?",
     answer:
-      "Non. Si vous savez lire un tableau de bord et cliquer sur un bouton, vous savez utiliser RH Pilot.",
+      "Le calcul de la paie est en accès anticipé, sur invitation. La DSN est produite en fichier d’essai : vous le déposez en mode test sur net-entreprises pour le comparer à votre déclaration habituelle.",
+    link: { href: "/gestion-paie", label: "La gestion de la paie" },
   },
   {
-    question: "Mes données sont-elles en sécurité ?",
+    question: "Mes salariés ont-ils accès à leurs bulletins ?",
     answer:
-      "Les données sont isolées entre organisations. La base RH est hébergée à Francfort ; certains prestataires traitent des données aux États-Unis. Le détail figure dans notre politique de confidentialité.",
+      "Oui. Chaque salarié a son espace, sur téléphone ou ordinateur, avec ses bulletins, ses congés, ses demandes d’absence et ses documents de fin de contrat.",
+    link: { href: "/espace-salarie", label: "L’espace salarié" },
+  },
+  {
+    question: "Où sont hébergées les données ?",
+    answer:
+      "La base de données RH est hébergée à Francfort et chaque organisation est cloisonnée. Certains sous-traitants, comme l’authentification ou l’envoi d’e-mails, traitent des données aux États-Unis, dans le cadre prévu par le RGPD.",
+    link: { href: "/securite", label: "Sécurité et sous-traitants" },
+  },
+  {
+    question: "Puis-je essayer sans créer de compte ?",
+    answer: "Oui. La démonstration du logiciel se parcourt sans compte, sur ordinateur ou sur téléphone.",
+    link: { href: "/services#demo", label: "Ouvrir la démonstration" },
   },
 ];
 
@@ -36,65 +53,67 @@ const PUBLIC_FAQ: { question: string; answer: string }[] = [
 // train de le faire.
 const HIDDEN_ON_PATHS = ["/sign-up", "/sign-in"];
 
-type Turn = { question: string; answer: string };
+type Turn = (typeof PUBLIC_FAQ)[number];
 
 export function PublicCopilotePreview() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [talking, setTalking] = useState(false);
   const [answered, setAnswered] = useState<Turn[]>([]);
 
-  if (HIDDEN_ON_PATHS.includes(pathname ?? "")) return null;
+  if (HIDDEN_ON_PATHS.some((path) => pathname?.startsWith(path))) return null;
 
   const remaining = PUBLIC_FAQ.filter((f) => !answered.some((a) => a.question === f.question));
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
+    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end sm:bottom-6 sm:right-6">
       {isOpen && (
-        <div className="mb-3 flex w-[23rem] max-w-[calc(100vw-3rem)] flex-col overflow-hidden rounded-2xl border border-surface-border bg-white shadow-2xl">
-          <div className="flex items-center justify-between border-b border-surface-border bg-gradient-to-br from-brand-primary-dark/[0.04] to-brand-primary/[0.04] px-4 py-3">
+        <div className="mb-3 flex w-[23rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border border-surface-border bg-white shadow-2xl">
+          <div className="flex items-center justify-between border-b border-surface-border px-4 py-3">
             <div className="flex items-center gap-2.5">
-              <div className="relative shrink-0">
-                <Logomark size={26} />
+              <CopilotHead size={34} />
+              <div>
+                <p className="text-sm font-semibold text-ink">{ASSISTANT_NAME}</p>
+                <p className="text-xs text-ink-faint">Assistante IA de RH Pilot</p>
               </div>
-              <p className="flex items-center gap-1.5 text-sm font-semibold text-ink">
-                Copilote RH Pilot
-                <span className="rounded-full bg-brand-primary-dark/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-brand-primary-dark">
-                  IA
-                </span>
-              </p>
             </div>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              aria-label="Fermer le Copilote"
+              aria-label="Fermer"
               className="flex h-8 w-8 items-center justify-center rounded-full text-ink-faint hover:bg-surface-subtle"
             >
               <X size={16} />
             </button>
           </div>
 
-          <div className="flex max-h-96 flex-col gap-3 overflow-y-auto px-4 py-3">
-            {answered.length === 0 ? (
-              <p className="text-xs text-ink-faint">
-                Un aperçu des questions les plus fréquentes. Connectez-vous pour poser les vôtres.
-              </p>
-            ) : (
-              answered.map((turn) => (
-                <div key={turn.question} className="flex flex-col gap-2">
-                  <div className="self-end max-w-[85%] rounded-2xl rounded-tr-sm bg-brand-primary px-3.5 py-2 text-sm text-white">
-                    {turn.question}
-                  </div>
-                  <div className="flex items-end gap-2">
-                    <span className="mb-1 shrink-0">
-                      <Logomark size={18} />
-                    </span>
-                    <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-surface-subtle px-3.5 py-2 text-sm text-ink">
-                      {turn.answer}
-                    </div>
+          <div className="flex max-h-[26rem] flex-col gap-3 overflow-y-auto px-4 py-3">
+            <div className="flex items-end gap-2">
+              <CopilotHead size={24} className="mb-1 shrink-0" />
+              <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-surface-subtle px-3.5 py-2 text-sm text-ink">
+                Bonjour, je suis {ASSISTANT_NAME}. Choisissez une question ci-dessous. Pour poser les vôtres sur vos
+                propres données, connectez-vous à votre espace.
+              </div>
+            </div>
+
+            {answered.map((turn) => (
+              <div key={turn.question} className="flex flex-col gap-2">
+                <div className="max-w-[85%] self-end rounded-2xl rounded-tr-sm bg-brand-primary px-3.5 py-2 text-sm text-white">
+                  {turn.question}
+                </div>
+                <div className="flex items-end gap-2">
+                  <CopilotHead size={24} className="mb-1 shrink-0" />
+                  <div className="max-w-[85%] rounded-2xl rounded-tl-sm bg-surface-subtle px-3.5 py-2 text-sm text-ink">
+                    {turn.answer}
+                    {turn.link && (
+                      <Link href={turn.link.href} className="mt-1.5 block font-semibold text-brand-primary-dark underline underline-offset-2">
+                        {turn.link.label}
+                      </Link>
+                    )}
                   </div>
                 </div>
-              ))
-            )}
+              </div>
+            ))}
 
             {remaining.length > 0 && (
               <div className="flex flex-col items-start gap-2">
@@ -117,26 +136,34 @@ export function PublicCopilotePreview() {
             className="flex items-center gap-2 border-t border-surface-border px-4 py-3 text-sm text-ink-faint transition-colors hover:bg-surface-subtle hover:text-ink-soft"
           >
             <Lock size={14} />
-            Connectez-vous pour poser vos propres questions
+            Créez votre espace pour poser vos questions
           </Link>
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={() => setIsOpen((o) => !o)}
-        aria-label={isOpen ? "Fermer le Copilote" : "Ouvrir le Copilote RH Pilot"}
-        aria-expanded={isOpen}
-        className="motion-reduce:transition-none flex h-14 w-14 items-center justify-center rounded-full border border-surface-border bg-white shadow-xl transition-transform hover:scale-105 active:scale-95"
-      >
-        {isOpen ? (
-          <X size={22} className="text-ink-soft" />
-        ) : (
-          <span className="relative inline-flex">
-            <Logomark size={30} />
-          </span>
+      <div className="relative">
+        {!isOpen && (
+          <CopilotGreeting
+            storageKey="rhpilot.assistante.bonjour.v1"
+            delayMs={pathname === "/" ? 3400 : 1600}
+            message={`Bonjour, je suis ${ASSISTANT_NAME}, l’assistante IA de RH Pilot. Je réponds à vos questions sur le logiciel, les tarifs et la sécurité de vos données.`}
+            onShow={() => {
+              setTalking(true);
+              window.setTimeout(() => setTalking(false), 2400);
+            }}
+            onOpen={() => setIsOpen(true)}
+          />
         )}
-      </button>
+        <button
+          type="button"
+          onClick={() => setIsOpen((o) => !o)}
+          aria-label={isOpen ? `Fermer la fenêtre de ${ASSISTANT_NAME}` : `Poser une question à ${ASSISTANT_NAME}, l’assistante IA de RH Pilot`}
+          aria-expanded={isOpen}
+          className="block rounded-2xl focus-visible:outline-offset-4"
+        >
+          <CopilotAvatar width={84} talking={talking} />
+        </button>
+      </div>
     </div>
   );
 }

@@ -108,7 +108,7 @@ export async function createInvitation(
         <p style="color: #14151A; font-size: 15px;">Bonjour,</p>
         <p style="color: #4A4A4D; font-size: 14px;">
           Vous avez été invité·e à rejoindre <strong>${organizationName}</strong>
-          sur RH Pilot, le copilote d'organisation RH.
+          sur RH Pilot, logiciel de gestion RH.
         </p>
         <a href="${joinUrl}" style="display: inline-block; margin-top: 20px; background: #E8432E; color: white; padding: 10px 18px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600;">
           Rejoindre l'organisation

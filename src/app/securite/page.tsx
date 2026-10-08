@@ -145,7 +145,7 @@ export default function SecurityPage() {
       </section>
 
       <MarketingCTA
-        title="Une question sur la sécurité ?"
+        title="Vos questions sur la sécurité"
         text="Écrivez-nous à contact@rhpilot.fr, nous vous répondons avec les détails techniques."
         href="mailto:contact@rhpilot.fr"
         action="Nous écrire"

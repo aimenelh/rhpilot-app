@@ -230,7 +230,7 @@ export default async function PayrollPayslipsPage({
         <section className="mt-6 rounded-xl border border-accent-amber/30 bg-accent-amber/10 px-5 py-4">
           <p className="text-xs font-semibold uppercase tracking-wider text-accent-amber">Période non verrouillée</p>
           <p className="mt-1 font-semibold text-ink">Les bulletins ne peuvent pas être préparés avant le verrouillage de la période.</p>
-          <p className="mt-1 text-sm text-ink-soft">Le verrouillage garantit que le document repose sur un calcul figé et traçable.</p>
+          <p className="mt-1 text-sm text-ink-soft">Le bulletin est établi à partir du calcul figé lors du verrouillage.</p>
         </section>
       ) : (
         <section className="mt-6 rounded-xl border border-accent-teal/30 bg-accent-teal/10 px-5 py-4">

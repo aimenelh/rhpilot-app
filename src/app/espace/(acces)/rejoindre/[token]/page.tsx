@@ -45,7 +45,7 @@ export default async function JoinEmployeeSpacePage({ params }: { params: { toke
       <EspaceAuthFrame organizationName={invitation.organizationName} note={<>Vos bulletins vous sont remis sous forme électronique dans cet espace. Vous pouvez à tout moment demander à les recevoir sur papier.</>}>
         <h1 className="text-xl font-semibold text-ink">Bonjour {invitation.firstName},</h1>
         <p className="mt-2 text-[15px] leading-6 text-ink-soft">
-          Votre espace salarié vous attend : bulletins de salaire, congés, demandes d&apos;absence et documents, depuis votre téléphone ou un ordinateur.
+          Votre employeur vous a ouvert un espace salarié : bulletins de paie, congés, demandes d’absence et documents, sur téléphone ou sur ordinateur.
         </p>
         <p className="mt-3 text-sm text-ink-soft">Créez votre accès avec l&apos;adresse <strong className="font-semibold text-ink">{invitation.email}</strong>.</p>
         <Link href={signUp} className="mt-6 inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-brand-primary px-4 text-[15px] font-semibold text-white hover:opacity-90">Créer mon accès</Link>

@@ -71,8 +71,8 @@ export function CopilotCards() {
         <div className={s.head}>
           <h2 id="copilotes-title">Le suivi RH, la paie et l’espace salarié</h2>
           <p>
-            Les trois modules partagent les mêmes fiches salariés : ce qui est saisi une fois sert partout. Pour chaque
-            événement, RH Pilot prépare les étapes, les dates et les responsables.
+            Les trois modules partagent les mêmes fiches salariés : une information saisie une fois est reprise dans
+            chaque module. Pour chaque événement, RH Pilot prépare les étapes, les dates et les responsables.
           </p>
         </div>
         <div className={s.grid} data-grid>

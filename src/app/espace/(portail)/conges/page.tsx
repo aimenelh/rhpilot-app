@@ -120,7 +120,7 @@ export default async function EspaceLeavePage() {
         </>
       ) : (
         <div className="rounded-2xl border border-surface-border bg-white px-5 py-10 text-center">
-          <p className="text-[15px] font-semibold text-ink">Vos compteurs arrivent avec votre premier bulletin</p>
+          <p className="text-[15px] font-semibold text-ink">Vos compteurs s’affichent à partir de votre premier bulletin</p>
           <p className="mx-auto mt-1 max-w-sm text-sm leading-6 text-ink-soft">Ils se mettent à jour chaque mois, quand {account.organizationName} valide la paie.</p>
         </div>
       )}
@@ -143,7 +143,7 @@ export default async function EspaceLeavePage() {
       ) : null}
 
       <Link href="/espace/absences" className="flex min-h-[48px] items-center justify-center rounded-xl bg-brand-primary px-4 text-[15px] font-semibold text-white hover:opacity-90">Poser des congés</Link>
-      <p className="px-1 text-xs leading-5 text-ink-faint">Le décompte des congés à venir utilise l&apos;horaire contractuel enregistré par votre employeur. S&apos;il manque, RH Pilot n&apos;invente pas un planning à 35 h : le décompte reste à confirmer.</p>
+      <p className="px-1 text-xs leading-5 text-ink-faint">Le décompte des congés à venir utilise l&apos;horaire contractuel enregistré par votre employeur. S’il manque, le décompte reste à confirmer. Aucun horaire de 35 h n’est appliqué par défaut.</p>
     </div>
   );
 }

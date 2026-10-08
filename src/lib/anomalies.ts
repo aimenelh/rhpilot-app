@@ -155,7 +155,7 @@ async function detectMissingOnboardingEvent(organizationId: string): Promise<Ano
         `Le seuil de vigilance est fixé à 7 jours après l'embauche.`,
       ],
       consequence:
-        "Le parcours ne se génère jamais automatiquement rétroactivement : sans déclenchement, ces tâches ne seront jamais créées pour cette personne.",
+        "Le parcours n’est pas généré rétroactivement. Sans déclenchement, ces tâches ne seront pas créées pour cette personne.",
       action: {
         label: "Créer le parcours",
         employeeId: employee.id,
@@ -218,7 +218,7 @@ async function detectEmployeeMissingContractInfo(organizationId: string): Promis
           ...missing,
         ],
         consequence:
-          "Tant que ces champs restent vides, RH Pilot ne peut calculer ni alerter sur la fin de période d'essai de cette personne.",
+          "Tant que ces champs restent vides, la fin de période d’essai de cette personne ne peut être ni calculée ni signalée.",
         action: null,
         link: { label: "Compléter la fiche", href: `/dashboard/employees/${employee.id}` },
       };
@@ -253,7 +253,7 @@ async function detectMedicalVisitNeverScheduled(organizationId: string): Promise
         `Aucun parcours actif "Visite médicale" n’est enregistré pour cette personne ; cela ne décrit pas son historique médical.`,
       ],
       consequence:
-        "Sans date renseignée, RH Pilot ne peut jamais vous alerter automatiquement sur cette échéance à l'avenir.",
+        "Sans date renseignée, aucune alerte automatique n’est possible pour cette échéance.",
       action: {
         label: "Générer le parcours",
         employeeId: employee.id,

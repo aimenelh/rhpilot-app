@@ -67,8 +67,8 @@ export default async function ConfigurationPage() {
               <p className="text-sm font-semibold text-ink">Complétez votre organisation</p>
               <p className="mt-0.5 text-sm text-ink-soft">
                 {canManageData
-                  ? "Votre rôle RH et votre convention collective ne sont pas encore renseignés. RH Pilot en a besoin pour bien vous orienter."
-                  : "Votre rôle dans l’organisation n’est pas encore renseigné. RH Pilot en a besoin pour bien vous orienter."}
+                  ? "Votre rôle RH et votre convention collective ne sont pas encore renseignés. Ils servent à assigner les tâches des parcours et à afficher les renvois vers votre convention."
+                  : "Votre rôle dans l’organisation n’est pas encore renseigné. Il sert à assigner les tâches des parcours."}
               </p>
             </div>
             <ChevronRight size={16} className="shrink-0 text-ink-faint" />

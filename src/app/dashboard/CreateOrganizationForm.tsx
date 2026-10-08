@@ -187,7 +187,7 @@ export function CreateOrganizationForm() {
         <>
           <h1 className="mt-6 text-lg font-semibold text-ink">Créez votre espace RH Pilot</h1>
           <p className="mt-1.5 text-sm text-ink-soft">
-            Commencez par le SIRET de votre entreprise : nous retrouvons son nom pour vous. RH Pilot est gratuit jusqu&apos;à 3 salariés.
+            Saisissez le SIRET de votre entreprise. Son nom est repris du répertoire Sirene. RH Pilot est gratuit jusqu&apos;à 3 salariés.
           </p>
 
           <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-5">
@@ -240,7 +240,7 @@ export function CreateOrganizationForm() {
                   ) : null}
                   {!lookupResult.active && <p className="text-accent-rose">Le répertoire Sirene indique que cet établissement est fermé.</p>}
                   <p className="mt-1 text-ink-faint">
-                    Repris du répertoire Sirene de l&apos;Insee. Nous paramétrons la paie avec ces informations, vous n&apos;aurez pas à les saisir.
+                    Repris du répertoire Sirene de l’Insee. Ces informations servent au paramétrage de la paie, vous n’avez pas à les saisir.
                   </p>
                 </div>
               )}

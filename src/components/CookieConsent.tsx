@@ -95,7 +95,7 @@ export function CookieConsent() {
           </div>
 
           <h2 className="mt-5 pr-0 text-[1.55rem] font-bold leading-tight tracking-tight text-ink sm:pr-28 sm:text-[1.7rem]">
-            On vous laisse choisir les cookies <span aria-hidden="true">🍪</span>
+            Gestion des cookies
           </h2>
 
           <p id="rhpilot-cookie-description" className="mt-3 text-[15px] leading-6 text-ink-soft">

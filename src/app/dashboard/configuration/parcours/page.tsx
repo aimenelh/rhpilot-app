@@ -32,9 +32,8 @@ export default async function ParcoursConfigPage() {
       </Link>
       <h1 className="mt-3 text-2xl font-semibold text-ink">Parcours RH</h1>
       <p className="mt-1 text-sm text-ink-soft">
-        RH Pilot propose une base pour chaque type d&apos;événement, jamais imposée : chaque
-        étape peut être adaptée à votre façon de travailler, directement depuis un parcours
-        déjà généré.
+        Chaque type d’événement dispose d’un modèle de parcours par défaut. Vous pouvez adapter
+        chaque étape depuis un parcours déjà généré.
       </p>
       <div className="mt-6 flex flex-col gap-4">
         {eventTemplates.map((eventTemplate) => {

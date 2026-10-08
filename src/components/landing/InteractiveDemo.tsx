@@ -194,7 +194,7 @@ export function InteractiveDemo() {
             <div ref={panelRef} tabIndex={-1} className={s.welcome} role="group" aria-labelledby={titleId}>
               <div className={s.mascot}><img src="/illustrations/mascot/intro-push-wave.png" alt="" width={240} height={240} /></div>
               <p className={s.brand}>RH Pilot</p>
-              <h3 id={titleId}>{phase === "welcome" ? "Découvrez votre espace RH" : "À vous d’essayer."}</h3>
+              <h3 id={titleId}>{phase === "welcome" ? "Découvrez votre espace RH" : "Fin de la visite guidée"}</h3>
               <p>{phase === "welcome" ? "Du tableau de bord au calendrier, découvrez comment suivre vos salariés et leurs échéances." : "Créez votre espace et retrouvez ces fonctions avec les données de votre entreprise."}</p>
               {phase === "welcome" ? (
                 <button type="button" onClick={start} className={s.start}>Démarrer le tour <ArrowRight size={16} /></button>

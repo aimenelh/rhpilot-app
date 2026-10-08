@@ -5,6 +5,8 @@ import Image from "next/image";
 import { useEffect, useRef } from "react";
 import { Bell, CalendarDays, FileText, LayoutGrid, Leaf, Route, Search, Settings, Sparkles, Users } from "lucide-react";
 import { Logomark } from "@/components/Brand";
+import { CopilotHead } from "@/components/copilote/CopilotAvatar";
+import { ASSISTANT_NAME } from "@/components/copilote/assistant";
 import s from "./HeroReveal.module.css";
 
 // Haut de page : un aplat corail, « Gardez le fil. » souligné par le fil blanc,
@@ -320,9 +322,11 @@ export function HeroReveal() {
           <div className={`${s.float} ${s.copilot}`} aria-hidden="true">
             <div className={s.floatIn}>
               <div className={s.copilotHead}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src="/illustrations/copilotes/avatar-suivi.svg" alt="" width={44} height={59} />
-                <strong>Copilote RH</strong>
+                <CopilotHead size={40} />
+                <strong>
+                  {ASSISTANT_NAME}
+                  <span>Assistante IA</span>
+                </strong>
               </div>
               <p className={s.ask}>Qui termine sa période d’essai ce mois-ci ?</p>
               <p className={s.answer}>Karim Belhaj, le 20 octobre. Son entretien de fin d’essai est prévu le 16.</p>

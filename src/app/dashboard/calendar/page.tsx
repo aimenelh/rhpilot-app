@@ -315,7 +315,7 @@ export default async function CalendarPage({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold text-ink">Calendrier</h1>
-          <p className="mt-1 text-sm text-ink-soft">Planifiez et suivez toutes vos échéances RH en un coup d&apos;œil.</p>
+          <p className="mt-1 text-sm text-ink-soft">Les échéances RH de vos parcours, jour par jour.</p>
         </div>
         <div className="flex gap-1 rounded-lg bg-surface-subtle p-1">
           <Link

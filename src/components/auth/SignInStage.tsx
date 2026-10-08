@@ -119,13 +119,13 @@ export function SignInStage({ children }: { children: ReactNode }) {
   const subtitle = !view.subtitle || /^pour continuer vers/i.test(view.subtitle) ? (title === "Se connecter" ? "Accédez à votre espace RH." : "") : view.subtitle;
 
   const status = view.code
-    ? `Un code vient de partir vers ${address || "votre adresse"}. Saisissez-le pour entrer.`
+    ? `Un code a été envoyé à ${address || "votre adresse"}. Saisissez-le pour vous connecter.`
     : loading
       ? "Connexion en cours, vos listes se chargent."
       : view.password
-        ? "Il ne reste que votre mot de passe."
+        ? "Saisissez votre mot de passe."
         : isEmail(email)
-          ? "Continuez : votre mot de passe vient juste après."
+          ? "Cliquez sur Continuer pour saisir votre mot de passe."
           : "À la connexion, le tableau de bord s’ouvre sur ces trois listes.";
 
   return (
@@ -151,7 +151,7 @@ export function SignInStage({ children }: { children: ReactNode }) {
                 </span>
               </>
             ) : null}
-            .<em> On reprend où vous en étiez.</em>
+            .<em> Connexion à votre espace RH.</em>
           </h1>
 
           <div className={s.window} data-loading={loading}>

@@ -93,7 +93,7 @@ export function computePayslip(input: PayslipInput): PayslipResult {
   if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) throw new Error("La période de paie est invalide.");
   const period = monthBounds(year, month);
   if (period.first < ENGINE_FIRST_SUPPORTED_DAY) throw new Error(`Le moteur de bulletin couvre les périodes à compter du ${frDate(ENGINE_FIRST_SUPPORTED_DAY)}.`);
-  if (period.last > ENGINE_LAST_SUPPORTED_DAY) throw new MissingParameterError(`Les paramètres légaux de ${year} (plafond de la sécurité sociale, Smic, taux de cotisations) ne sont pas encore intégrés : le calcul est bloqué plutôt que d'appliquer ceux de l'année précédente.`);
+  if (period.last > ENGINE_LAST_SUPPORTED_DAY) throw new MissingParameterError(`Les paramètres légaux de ${year} (plafond de la sécurité sociale, Smic, taux de cotisations) ne sont pas encore intégrés. Le calcul est bloqué jusqu’à leur intégration.`);
   const paymentDate = input.paymentDate ?? period.last;
   const periodDate = fromIsoDay(period.first);
 

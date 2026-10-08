@@ -76,7 +76,7 @@ export async function summarizeMonthAction(
   ]);
 
   if (tasks.length === 0) {
-    return { summary: "Aucune tâche prévue sur ce mois — rien à signaler.", error: "" };
+    return { summary: "Aucune tâche prévue sur ce mois.", error: "" };
   }
 
   const lines = tasks.map(

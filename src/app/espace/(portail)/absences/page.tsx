@@ -34,7 +34,7 @@ export default async function EspaceAbsencesPage() {
     <div className="space-y-5">
       <div>
         <h1 className="text-[22px] font-semibold text-ink">Mes absences</h1>
-        <p className="mt-1 text-sm text-ink-soft">Posez vos congés ou déclarez un arrêt : {account.organizationName} valide depuis RH Pilot et vous voyez la réponse ici.</p>
+        <p className="mt-1 text-sm text-ink-soft">Posez vos congés ou déclarez un arrêt. La réponse de {account.organizationName} s’affiche ici.</p>
       </div>
 
       {ended ? (

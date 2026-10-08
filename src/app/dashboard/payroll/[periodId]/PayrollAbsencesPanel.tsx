@@ -58,7 +58,7 @@ export default function PayrollAbsencesPanel({ periodId, rows, pendingCount, edi
   return (
     <div>
       <div className="flex flex-col gap-2 border-b border-surface-border px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-xs leading-5 text-ink-faint">Les absences viennent du module Absences, une fois validées. Pour un arrêt, saisissez le montant brut des indemnités journalières figurant sur l&apos;attestation de la CPAM : sans lui, RH Pilot les estime et le signale.</p>
+        <p className="text-xs leading-5 text-ink-faint">Les absences viennent du module Absences, une fois validées. Pour un arrêt, saisissez le montant brut des indemnités journalières figurant sur l&apos;attestation de la CPAM. À défaut, les IJSS sont estimées et une remarque est ajoutée au calcul.</p>
         <Link href="/dashboard/absences" className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-brand-primary hover:underline">Modifier dans Absences <ExternalLink size={13} /></Link>
       </div>
       {pendingCount > 0 ? (

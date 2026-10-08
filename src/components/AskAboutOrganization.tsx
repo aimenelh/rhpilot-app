@@ -1,10 +1,11 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
-import { Info, CheckCheck, Sparkles } from "lucide-react";
+import { Info, CheckCheck } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Field";
-import { Logomark } from "@/components/Brand";
+import { CopilotHead } from "@/components/copilote/CopilotAvatar";
+import { ASSISTANT_NAME } from "@/components/copilote/assistant";
 import { askAboutOrganizationAction, type AskAboutOrganizationState } from "@/app/dashboard/aiActions";
 type Message = { role: "user" | "assistant"; text: string; time: string };
 function nowLabel() {
@@ -71,9 +72,9 @@ export function AskAboutOrganization({ aiEnabled = true, compact = false }: { ai
       <div className={compact ? "fil-ask-heading" : "flex shrink-0 items-center justify-between"}>
         <div className="flex items-center gap-2.5">
           <div className="relative shrink-0">
-            {compact ? <span className="fil-ask-mark"><Sparkles size={23}/></span> : <Logomark size={30} />}
+            <CopilotHead size={compact ? 40 : 32} />
           </div>
-          <div><p className={compact ? "fil-ask-title" : "text-sm font-semibold text-ink"}>{compact ? "Votre Copilote RH" : "Copilote RH Pilot"}</p>{compact ? <p className="fil-ask-subtitle">Un peu de clarté pour la suite.</p> : null}</div>
+          <div><p className={compact ? "fil-ask-title" : "text-sm font-semibold text-ink"}>{ASSISTANT_NAME}, votre assistante RH</p>{compact ? <p className="fil-ask-subtitle">Elle répond à partir des données de votre espace.</p> : null}</div>
         </div>
         <div className={compact ? "fil-ask-availability" : "flex items-center gap-2"}>
           <span className="flex items-center gap-1.5 text-xs font-medium text-ink-faint">
@@ -91,7 +92,7 @@ export function AskAboutOrganization({ aiEnabled = true, compact = false }: { ai
       <div className={compact ? `fil-ask-content ${messages.length ? "has-messages" : ""}` : "mt-2 min-h-0 flex-1"}>
         {messages.length === 0 ? (
           <p className="text-xs text-ink-faint">
-            Posez une question sur votre organisation. Recevez des réponses basées sur vos données RH.
+            Posez une question sur vos salariés, vos parcours ou vos échéances.
           </p>
         ) : (
           <div
@@ -112,7 +113,7 @@ export function AskAboutOrganization({ aiEnabled = true, compact = false }: { ai
               ) : (
                 <div key={i} className="flex items-end gap-2">
                   <span className="mb-4 shrink-0">
-                    <Logomark size={20} />
+                    <CopilotHead size={24} />
                   </span>
                   <div className="flex max-w-[80%] flex-col gap-1">
                     <div className="whitespace-pre-wrap rounded-2xl rounded-tl-sm bg-white px-3.5 py-2 text-sm text-ink shadow-sm">
@@ -135,7 +136,7 @@ export function AskAboutOrganization({ aiEnabled = true, compact = false }: { ai
       <form action={formAction} className={compact ? "fil-ask-form" : "mt-3 flex shrink-0 flex-wrap gap-2 border-t border-surface-border/70 pt-3"}>
         <Input
           id={compact ? "dashboard-copilot-question" : undefined}
-          aria-label="Votre question au Copilote"
+          aria-label={`Votre question à ${ASSISTANT_NAME}`}
           name="question"
           placeholder={compact ? "Que souhaitez-vous vérifier aujourd’hui ?" : "Posez votre question..."}
           required

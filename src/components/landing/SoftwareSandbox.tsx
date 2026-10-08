@@ -68,7 +68,7 @@ export function SoftwareSandbox() {
     if (!result.ok) {
       setFeedback({
         ok: false,
-        text: result.reason === "kind" ? "RH Pilot suit ici une embauche, une fin de période d’essai ou une visite médicale. Essayez : « Sofia commence le 9 novembre »." : "Pour quand ? Ajoutez une date, par exemple « le 9 novembre » ou « dans 3 semaines ».",
+        text: result.reason === "kind" ? "Cette démonstration reconnaît une embauche, une fin de période d’essai ou une visite médicale. Exemple : « Sofia commence le 9 novembre »." : "Date manquante. Ajoutez une date, par exemple « le 9 novembre » ou « dans 3 semaines ».",
       });
       return;
     }
@@ -108,7 +108,7 @@ export function SoftwareSandbox() {
       return `${week.length ? `Cette semaine : ${parts.join(" ; ")}${more}.` : "Rien de prévu cette semaine."}${late.length ? ` Et ${late.length} action${late.length > 1 ? "s" : ""} en retard à rattraper d’abord.` : ""}`;
     }
     if (question === "Qu’est-ce qui est en retard ?") {
-      if (!late.length) return "Rien n’est en retard. Ajoutez une embauche proche, par exemple « Sofia arrive lundi », pour voir ce qui se passe.";
+      if (!late.length) return "Aucune action en retard. Pour tester, ajoutez une embauche proche, par exemple « Sofia arrive lundi ».";
       return `${late.length} action${late.length > 1 ? "s" : ""} en retard : ${late.map((t) => `${lowerFirst(t.label)} pour ${t.person.first} (prévue le ${dayMonth(timeOf(t.day))})`).join(" ; ")}.`;
     }
     if (question === "Qui arrive bientôt ?") {

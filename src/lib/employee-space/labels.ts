@@ -67,8 +67,8 @@ export type EmployeeRequestType = "PAID_LEAVE" | "RTT" | "UNPAID_LEAVE" | "FAMIL
 
 /** Ce qu'un salarié peut demander ou déclarer depuis son espace. */
 export const EMPLOYEE_REQUEST_TYPES: ReadonlyArray<{ value: EmployeeRequestType; label: string; hint: string; justification: "none" | "optional" | "required" }> = [
-  { value: "PAID_LEAVE", label: "Congés payés", hint: "Votre demande part en validation auprès de votre employeur.", justification: "none" },
-  { value: "RTT", label: "RTT", hint: "Votre demande part en validation auprès de votre employeur.", justification: "none" },
+  { value: "PAID_LEAVE", label: "Congés payés", hint: "Votre demande est transmise à votre employeur pour validation.", justification: "none" },
+  { value: "RTT", label: "RTT", hint: "Votre demande est transmise à votre employeur pour validation.", justification: "none" },
   { value: "UNPAID_LEAVE", label: "Congé sans solde", hint: "Il n'est pas rémunéré : votre employeur doit l'accepter.", justification: "none" },
   { value: "FAMILY_EVENT", label: "Événement familial", hint: "Mariage, naissance, décès… Joignez un justificatif si vous l'avez.", justification: "optional" },
   { value: "SICK_LEAVE", label: "Arrêt maladie", hint: "Déclarez votre arrêt et joignez l'avis d'arrêt de travail destiné à l'employeur.", justification: "required" },

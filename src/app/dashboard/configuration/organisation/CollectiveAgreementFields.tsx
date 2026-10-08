@@ -131,7 +131,7 @@ export function CollectiveAgreementFields({
             onChange={(event) => handleNameChange(event.target.value)}
             placeholder="Ex. Syntec"
           />
-          <FieldHint>Vous pouvez aussi saisir « Syntec » : RH Pilot associe automatiquement l'IDCC 1486.</FieldHint>
+          <FieldHint>Vous pouvez aussi saisir « Syntec » : l’IDCC 1486 est alors renseigné automatiquement.</FieldHint>
         </div>
       </div>
     </div>

@@ -101,7 +101,7 @@ export default async function AbsencesPage() {
           <p className="text-xs font-semibold uppercase tracking-wider text-brand-primary">Gestion RH</p>
           <h1 className="mt-1 text-2xl font-semibold text-ink">Absences</h1>
           <p className="mt-1 max-w-3xl text-sm text-ink-soft">
-            Planifiez les absences de l'équipe, traitez les demandes et suivez les justificatifs depuis un espace unique.
+            Planning des absences de l’équipe, demandes à traiter et suivi des justificatifs.
           </p>
         </div>
         <p className="text-xs text-ink-faint">{employees.length} salarié{employees.length > 1 ? "s" : ""} actif{employees.length > 1 ? "s" : ""} · {absences.length} absence{absences.length > 1 ? "s" : ""} enregistrée{absences.length > 1 ? "s" : ""}</p>

@@ -342,7 +342,7 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
               {leaving.filter((employee) => !leavingIsDemo.has(employee.id)).length > 0 && isAdmin ? (
                 <div className="mt-6">
                   <h3 className="text-sm font-semibold text-ink">Documents de sortie</h3>
-                  <p className="mt-1 text-sm text-ink-soft">Publiés dans l&apos;espace du salarié, qui les garde après son départ. Le reçu pour solde de tout compte reprend le bulletin de sortie : il se produit une fois le mois clôturé.</p>
+                  <p className="mt-1 text-sm text-ink-soft">Publiés dans l&apos;espace du salarié, qui les garde après son départ. Le reçu pour solde de tout compte reprend le bulletin de sortie : il est disponible une fois le mois clôturé.</p>
                   <div className="mt-3 space-y-4">
                     {leaving.filter((employee) => !leavingIsDemo.has(employee.id)).map((employee) => {
                       const documents = exitDocuments.filter((document) => document.employeeId === employee.id && !document.replaced);
@@ -483,7 +483,7 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
       {tab === "declaration" ? (
         <section className="mt-5 rounded-2xl border border-surface-border bg-white p-5 md:p-6">
           <h2 className="text-lg font-semibold text-ink">Déclaration sociale nominative</h2>
-          <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-soft">{period.status === "LOCKED" ? "Le mois est clôturé : préparez son fichier DSN d'essai à partir des calculs figés, puis déposez-le en essai sur net-entreprises." : "La DSN se prépare une fois le mois validé et clôturé dans l'onglet Bulletins."}</p>
+          <p className="mt-1 max-w-2xl text-sm leading-6 text-ink-soft">{period.status === "LOCKED" ? "Le mois est clôturé : préparez son fichier DSN d'essai à partir des calculs figés, puis déposez-le en mode test sur net-entreprises." : "La DSN se prépare une fois le mois validé et clôturé dans l'onglet Bulletins."}</p>
           <Link href="/dashboard/payroll/dsn" className="mt-4 inline-flex items-center gap-2 rounded-lg border border-surface-border bg-white px-4 py-2.5 text-sm font-semibold text-ink hover:bg-surface-subtle">Ouvrir l&apos;espace DSN <ExternalLink size={15} /></Link>
         </section>
       ) : null}

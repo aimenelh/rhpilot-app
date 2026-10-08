@@ -111,7 +111,7 @@ function add(rows: ParsedLine[], code: string, value: string | number | null | u
 }
 
 function assertMappingVersion(value: string, payrollCode: string): void {
-  if (!value.trim()) throw new Error(`DSN bloquée : le mapping DSN de ${payrollCode} n'est pas versionné.`);
+  if (!value.trim()) throw new Error(`DSN bloquée : la correspondance DSN de ${payrollCode} n’est pas versionnée.`);
 }
 
 function assertContributionCode(value: string, label: string): string {
@@ -145,9 +145,9 @@ export function buildDsnP26V01Complete(input: DsnP26CompleteInput): string {
   const { start, end } = monthBounds(input.period.year, input.period.month);
   const ops = assertOps(input.contributionBordereau.opsIdentifier);
   if (!Number.isFinite(input.contributionBordereau.totalAmount) || input.contributionBordereau.totalAmount < 0) throw new Error("DSN bloquée : total du bordereau invalide.");
-  if (input.contributionBordereau.aggregatedContributions.length === 0) throw new Error("DSN bloquée : aucun mapping de cotisation agrégée n'est disponible.");
-  if (input.assessedBases.length === 0) throw new Error("DSN bloquée : aucune base assujettie mappée n’est disponible.");
-  if (input.contributionBordereau.individualContributions.length === 0) throw new Error("DSN bloquée : aucun mapping de cotisation individuelle n'est disponible.");
+  if (input.contributionBordereau.aggregatedContributions.length === 0) throw new Error("DSN bloquée : aucune correspondance de cotisation agrégée n’est disponible.");
+  if (input.assessedBases.length === 0) throw new Error("DSN bloquée : aucune base assujettie n’est disponible.");
+  if (input.contributionBordereau.individualContributions.length === 0) throw new Error("DSN bloquée : aucune correspondance de cotisation individuelle n’est disponible.");
   const cents = (amount: number): number => {
     if (!Number.isFinite(amount)) throw new Error("DSN bloquée : montant de rapprochement financier absent ou invalide.");
     return Math.round(amount * 100);
@@ -267,7 +267,7 @@ export function buildDsnP26V01Complete(input: DsnP26CompleteInput): string {
     insertAt += affiliationBlocks.length;
     const individualBlocks: ParsedLine[] = [];
     const contributions = input.contributionBordereau.individualContributions.filter((item) => item.employeeNir.replace(/\s+/g, "") === employeeNir);
-    if (contributions.length === 0) throw new Error("DSN bloquée : aucune cotisation individuelle mappée pour un salarié.");
+    if (contributions.length === 0) throw new Error("DSN bloquée : aucune cotisation individuelle n’est rattachée à un salarié.");
     const bases = input.assessedBases.filter((base) => base.employeeNir.replace(/\s+/g, "") === employeeNir);
     if (bases.length === 0) throw new Error("DSN bloquée : bases assujetties absentes pour un salarié.");
     if (employeeAffiliations.some((affiliation) => !bases.some((base) => base.code === "31" && base.affiliationId === affiliation.id))) throw new Error("DSN bloquée : une affiliation complémentaire n’a pas de base assujettie.");

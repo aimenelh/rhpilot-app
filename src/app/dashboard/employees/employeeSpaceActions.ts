@@ -123,7 +123,7 @@ export async function inviteToEmployeeSpace(employeeId: string): Promise<Employe
     const sent = await sendEmail({ to: email, subject: message.subject, html: message.html });
     await audit(organizationId, userId, "employee_space.invited", employee.id, { email, emailSent: sent.ok, reinvite: Boolean(account) });
     refresh(employee.id);
-    if (!sent.ok) return { error: `Invitation créée, mais l'e-mail n'est pas parti (${sent.error}). Transmettez ce lien au salarié :`, manualUrl: joinUrl };
+    if (!sent.ok) return { error: `Invitation créée, mais l’e-mail n’a pas pu être envoyé (${sent.error}). Transmettez ce lien au salarié :`, manualUrl: joinUrl };
     return { success: `Invitation envoyée à ${email}.` };
   } catch (error) {
     return failure(error);
@@ -195,7 +195,7 @@ export async function uploadEmployeeDocument(_state: EmployeeSpaceActionState, f
     const notified = await notifyEmployeeOfDocuments({ organizationId, organizationName, employeeId: employee.id, documents: [{ documentId: outcome.documentId, label: title, corrected: outcome.status === "REPLACED" }], actorUserId: userId });
     await audit(organizationId, userId, "employee_space.document.uploaded", employee.id, { kind, documentId: outcome.documentId, status: outcome.status, notified, source: "EXTERNAL", periodYear: period?.year, periodMonth: period?.month });
     refresh(employee.id);
-    return { success: notified === "NOTIFIED" ? "Document publié, le salarié est prévenu par e-mail." : notified === "FAILED" ? "Document publié, mais l'e-mail de notification n'est pas parti." : "Document publié. Le salarié le verra dès l'activation de son espace." };
+    return { success: notified === "NOTIFIED" ? "Document publié, le salarié est prévenu par e-mail." : notified === "FAILED" ? "Document publié, mais l’e-mail de notification n’a pas pu être envoyé." : "Document publié. Le salarié le verra dès l'activation de son espace." };
   } catch (error) {
     return failure(error);
   }

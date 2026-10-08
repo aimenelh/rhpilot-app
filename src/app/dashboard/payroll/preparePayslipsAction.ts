@@ -47,7 +47,7 @@ export async function preparePayrollPayslipsAction(
     };
   }
   if (calculations.some((calculation) => calculation.calculationSnapshot === null)) {
-    return { error: "Préparation impossible : un calcul verrouillé ne possède pas de snapshot." };
+    return { error: "Préparation impossible : le détail d’un calcul verrouillé est manquant." };
   }
 
   const employeeIds = new Set(employees.map((employee) => employee.id));

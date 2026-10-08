@@ -66,7 +66,7 @@ export default async function DsnEmployeeSetupPage({ params }: { params: { emplo
     <div className="mx-auto max-w-5xl">
       <Link href="/dashboard/payroll/dsn" className="text-sm font-medium text-brand-primary hover:underline">← Retour à la préparation DSN</Link>
       <div className="mt-5"><p className="text-xs font-semibold uppercase tracking-wider text-brand-primary">Paie · DSN P26V01</p><h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink">{employee.firstName} {employee.lastName}</h1><p className="mt-1 text-sm text-ink-soft">{employee.position || "Poste non renseigné"} · {employee.contractType || "Contrat non renseigné"}</p></div>
-      <div className="mt-6 rounded-xl border border-accent-amber/30 bg-accent-amber/5 px-4 py-3 text-sm leading-6 text-ink-soft">Les codes NEODeS sont des données déclaratives. Les valeurs préremplies correspondent uniquement au périmètre privé/régime général déjà supporté par le moteur social et doivent être confirmées avant export.</div>
+      <div className="mt-6 rounded-xl border border-accent-amber/30 bg-accent-amber/5 px-4 py-3 text-sm leading-6 text-ink-soft">Les codes NEODeS sont des données déclaratives. Les valeurs préremplies correspondent uniquement au régime général du secteur privé, pris en charge par le calcul de paie, et sont à confirmer avant l’export.</div>
       <div className="mt-6"><DsnEmployeeForm employeeId={employee.id} initial={initial} /></div>
       <div className="mt-6">{row ? <DsnComplementaryForm employeeId={employee.id} initial={complementary} /> : <p className="text-sm text-ink-soft">Enregistrez le profil DSN pour configurer les affiliations complémentaires.</p>}</div>
     </div>

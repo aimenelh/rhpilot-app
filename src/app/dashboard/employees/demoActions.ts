@@ -138,7 +138,7 @@ export async function generateDemoOrganization() {
 
   if (allDemoEmployees.length !== DEMO_EMPLOYEES.length) {
     redirectWithFlash(
-      `Erreur pendant la génération : seuls ${allDemoEmployees.length} salariés sur ${DEMO_EMPLOYEES.length} ont pu être créés. Réessayez, ou contactez le support si ça persiste.`
+      `Erreur pendant la génération : seuls ${allDemoEmployees.length} salariés sur ${DEMO_EMPLOYEES.length} ont pu être créés. Réessayez ou contactez le support si le problème persiste.`
     );
   }
 

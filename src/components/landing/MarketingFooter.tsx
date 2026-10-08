@@ -63,8 +63,8 @@ export function MarketingFooter() {
             <Wordmark />
           </Link>
           <p className="mt-3 max-w-xs text-sm text-ink-faint">
-            Salariés, parcours et échéances. Le fil de votre suivi RH, au même
-            endroit.
+            Logiciel de suivi RH pour les TPE et PME : salariés, parcours et
+            échéances au même endroit.
           </p>
           <a
             href="mailto:contact@rhpilot.fr"
