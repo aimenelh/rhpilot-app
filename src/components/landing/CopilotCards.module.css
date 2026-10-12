@@ -52,9 +52,9 @@
   transform: translateY(-4px);
   box-shadow: 0 18px 40px -24px rgba(32, 33, 31, 0.35);
 }
-.card[data-tone="suivi"] { --tone: #fbe9e4; }
-.card[data-tone="paie"] { --tone: #e9efe9; }
-.card[data-tone="espace"] { --tone: #e7edf6; }
+/* Un seul ton papier pour les trois modules (celui de la carte de fin de la pub) :
+   la couleur vient des personnages et du corail, pas d'un fond rose, vert ou bleu par carte. */
+.card[data-tone] { --tone: #f5f2ec; }
 
 /* ------------------------------------------------ scène illustrée */
 .stage {

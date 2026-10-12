@@ -156,3 +156,8 @@
     order: 0;
   }
 }
+
+/* Lignes sans personnage : pas de réserve au-dessus de la capture. */
+.media.mediaPlain {
+  padding-top: 0;
+}

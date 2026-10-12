@@ -596,3 +596,13 @@
 
 .fil-event-person strong,.fil-event-action{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .fil-event-kind>span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Chiffres du haut : la typographie porte l'information, sans pictogramme dans un carré coloré.
+   Le grand chiffre s'aligne sur la ligne de base de son libellé ; le retard est le seul en corail. */
+.fil-stat{gap:14px}
+.fil-stat-value{font-size:38px;line-height:1;letter-spacing:-1.4px;font-weight:500;font-variant-numeric:tabular-nums;margin-right:10px;color:var(--fil-ink)}
+.fil-stat-value.is-late{color:var(--fil-coral)}
+.fil-stat small{margin-top:6px}
+@media (max-width:640px){
+  .fil-stat-value{font-size:30px;margin-right:0}
+}

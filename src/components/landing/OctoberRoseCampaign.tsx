@@ -3,41 +3,19 @@
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Image from "next/image";
-import { usePathname } from "next/navigation";
 import { ArrowRight, ArrowUpRight, X } from "lucide-react";
-import { COOKIE_CONSENT_EVENT, hasCookieConsentDecision } from "@/components/CookieConsent";
 import {
   isOctoberRoseActive,
   OCTOBER_ROSE_START,
   OCTOBER_ROSE_END,
-  OCTOBER_ROSE_SEEN_KEY,
   OCTOBER_ROSE_DONATION_URL,
   OCTOBER_ROSE_INFORMATION_URL,
 } from "@/lib/octoberRose";
 import s from "./OctoberRoseCampaign.module.css";
 
 const CampaignContext = createContext({ active: false, show: () => {} });
-const QUIET_ROUTES = new Set(["/cookies", "/confidentialite", "/mentions-legales", "/cgu"]);
-// Repli pour la navigation côté client si le navigateur bloque le stockage.
-let seenInMemory = false;
-
-function hasSeenCampaign() {
-  if (seenInMemory) return true;
-  try {
-    return localStorage.getItem(OCTOBER_ROSE_SEEN_KEY) === "1";
-  } catch {
-    return false;
-  }
-}
-
-function rememberCampaign() {
-  seenInMemory = true;
-  try {
-    localStorage.setItem(OCTOBER_ROSE_SEEN_KEY, "1");
-  } catch {
-    // Le choix reste mémorisé pendant cette navigation, sans bloquer le site.
-  }
-}
+// La campagne ne s'ouvre plus d'elle-même : le bandeau et le ruban de l'en-tête suffisent,
+// la fenêtre ne s'affiche que si le visiteur la demande.
 
 function PinkRibbon({ className }: { className?: string }) {
   return (
@@ -71,7 +49,6 @@ export function OctoberRoseAnnouncement({ fallback }: { fallback: ReactNode }) {
 }
 
 export function OctoberRoseProvider({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
   // Vérification après hydratation : la date n'est jamais figée au build Next.js.
   const [active, setActive] = useState(false);
   const [open, setOpen] = useState(false);
@@ -104,47 +81,10 @@ export function OctoberRoseProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!active || QUIET_ROUTES.has(pathname) || hasSeenCampaign()) return;
-    let timer: number;
-    let consentDecided = hasCookieConsentDecision();
-    // L'introduction de marque dure 2,7 s. Lui laisser le temps de se terminer.
-    const earliest = Date.now() + 3200;
-    const attempt = () => {
-      if (hasSeenCampaign() || !isOctoberRoseActive()) return;
-      if (!consentDecided || document.hidden) return;
-      const otherDialog = Array.from(document.querySelectorAll<HTMLElement>('dialog[open], [role="dialog"], [aria-modal="true"]'))
-        .some((element) => element.getClientRects().length > 0);
-      if (otherDialog) {
-        timer = window.setTimeout(attempt, 1000);
-        return;
-      }
-      show();
-    };
-    const schedule = () => {
-      window.clearTimeout(timer);
-      timer = window.setTimeout(attempt, Math.max(600, earliest - Date.now()));
-    };
-    const consentChanged = () => {
-      // L'événement fonctionne même lorsque localStorage est indisponible.
-      consentDecided = true;
-      schedule();
-    };
-    schedule();
-    window.addEventListener(COOKIE_CONSENT_EVENT, consentChanged);
-    document.addEventListener("visibilitychange", schedule);
-    return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener(COOKIE_CONSENT_EVENT, consentChanged);
-      document.removeEventListener("visibilitychange", schedule);
-    };
-  }, [active, pathname, show]);
-
-  useEffect(() => {
     const element = dialog.current;
     if (!active || !open || !element) return;
     // Le dialogue natif gère le focus, Échap et l'inertie du reste de la page.
     element.showModal();
-    rememberCampaign();
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {

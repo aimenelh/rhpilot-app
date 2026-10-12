@@ -2,8 +2,9 @@ import Link from "next/link";
 import Image from "next/image";
 import s from "./ProductStory.module.css";
 
-// Trois moments du quotidien, avec les captures de l'application. Un copilote
-// passe la tête au-dessus de chaque capture.
+// Trois moments du quotidien, avec les captures de l'application. Le copilote
+// ne passe la tête qu'au-dessus de la dernière capture, celle du Copilote RH :
+// répété à chaque ligne, le personnage perdait son effet.
 // Volontairement fixe : la seule interaction de la page d'accueil reste le
 // haut de page (« changez l'événement »).
 const chapters = [
@@ -11,14 +12,14 @@ const chapters = [
     label: "parcours",
     title: "Des parcours RH étape par étape",
     text: "Chaque parcours liste ses étapes dans l’ordre, avec la date prévue, la personne qui s’en charge et la pièce attendue. Les étapes se cochent au fur et à mesure.",
-    copilot: "suivi",
+    copilot: null,
     image: { src: "/marketing/parcours-landing.webp", width: 1180, height: 620, alt: "Étapes d’un parcours d’embauche dans RH Pilot, avec dates, responsables et pièces attendues" },
   },
   {
     label: "rappels",
     title: "Des rappels par e-mail",
     text: "Chaque personne reçoit le résumé de ses actions à venir, chaque jour ou chaque semaine. L’historique indique qui a été relancé, et quand.",
-    copilot: "salut",
+    copilot: null,
     image: { src: "/marketing/notifications-landing-v2.webp", width: 1032, height: 713, alt: "Réglage des résumés et historique des rappels envoyés dans RH Pilot" },
   },
   {
@@ -42,13 +43,15 @@ export function ProductStory() {
                 <h3>{chapter.title}</h3>
                 <p>{chapter.text}</p>
               </div>
-              <div className={s.media}>
-                <div className={s.peek} aria-hidden="true">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={`/illustrations/copilotes/${chapter.copilot}.svg`} alt="" width={320} height={400} loading="lazy" />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={`/illustrations/copilotes/${chapter.copilot}-blink.svg`} alt="" width={320} height={400} loading="lazy" className={s.blink} />
-                </div>
+              <div className={`${s.media} ${chapter.copilot ? "" : s.mediaPlain}`}>
+                {chapter.copilot ? (
+                  <div className={s.peek} aria-hidden="true">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`/illustrations/copilotes/${chapter.copilot}.svg`} alt="" width={320} height={400} loading="lazy" />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={`/illustrations/copilotes/${chapter.copilot}-blink.svg`} alt="" width={320} height={400} loading="lazy" className={s.blink} />
+                  </div>
+                ) : null}
                 <figure className={s.frame}>
                   <div className={s.bar}>
                     <span>RH Pilot</span>
