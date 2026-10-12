@@ -10,7 +10,7 @@ import { getRhNews } from "@/lib/rhNews";
 import { isAiEnabled } from "@/lib/ai";
 import { AppShell } from "@/components/AppShell";
 import { canUsePayroll } from "@/lib/payrollAccess";
-import { Logomark, Wordmark } from "@/components/Brand";
+import { Signature } from "@/components/Brand";
 import { InitializingScreen } from "@/components/InitializingScreen";
 import { ACTIVE_TASK_SCOPE } from "@/lib/activeTaskScope";
 import { employeeAccessWhere, isOrganizationAdmin, taskAccessWhere } from "@/lib/accessPolicy";
@@ -51,8 +51,7 @@ export default async function DashboardLayout({
           <UserButton afterSignOutUrl="/sign-in" />
         </div>
         <div className="mb-8 flex items-center gap-2">
-          <Logomark size={32} />
-          <Wordmark />
+          <Signature height={30} />
         </div>
         {children}
       </div>

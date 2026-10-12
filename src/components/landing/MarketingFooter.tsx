@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CookiePreferencesButton } from "@/components/CookiePreferencesButton";
-import { Logomark, Wordmark } from "@/components/Brand";
+import { Signature } from "@/components/Brand";
 
 const PRODUCT_LINKS = [
   { href: "/services", label: "Le logiciel" },
@@ -59,8 +59,7 @@ export function MarketingFooter() {
       <div className="mx-auto grid max-w-6xl grid-cols-2 gap-x-8 gap-y-10 px-6 py-14 lg:grid-cols-6">
         <div className="col-span-2">
           <Link href="/" className="flex items-center gap-2">
-            <Logomark size={24} />
-            <Wordmark />
+            <Signature height={26} />
           </Link>
           <p className="mt-3 max-w-xs text-sm text-ink-faint">
             Logiciel de suivi RH pour les TPE et PME : salariés, parcours et

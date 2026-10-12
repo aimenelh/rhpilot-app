@@ -1,9 +1,9 @@
 /*
   Introduction « le fil » (2,7 s) :
-  60-840 ms     le fil arrive et fait une boucle
-  840-1140 ms   il dessine le contour du logo
-  1100-1460 ms  le logo se remplit, le R apparaît
-  1260-1990 ms  « RH Pilot » monte
+  60-840 ms     le fil arrive, fait une boucle et se pose au pied du R
+  840-1260 ms   il trace le R d'un seul trait
+  1180-1540 ms  puis le fil corail sous « H Pilot », jusqu'au point
+  1260-1900 ms  « H Pilot » apparaît
   1650-1950 ms  le fil se rembobine dans le logo
   1950-2600 ms  logo et nom vont se poser dans l'en-tête
   2150-2550 ms  le fond s'efface, la page d'accueil monte dès 2,3 s (--intro-offset)
@@ -47,10 +47,9 @@
   overflow: visible;
   pointer-events: none;
 }
-.line,
-.outline {
+.line {
   fill: none;
-  stroke-width: 3;
+  stroke-width: 6;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 1 2;
@@ -62,68 +61,47 @@
 .narrow {
   display: none;
 }
-.outline {
-  animation: outline 1400ms linear both;
-}
 
 .lockup {
   position: absolute;
-  left: -153px;
+  left: -174.5px;
   top: -52px;
-  display: flex;
-  align-items: center;
-  gap: 32.5px;
   transform-origin: 0 0;
   will-change: transform;
   animation:
     fly 650ms 1950ms cubic-bezier(0.7, 0, 0.2, 1) both,
     vanish 1ms 2600ms forwards;
 }
-.mark {
-  width: 104px;
+/* La signature de l'en-tête, en 104 px de haut : elle s'y pose exactement. */
+.sig {
   height: 104px;
-  flex: none;
-  border-radius: 26px;
-  animation: markShadow 1400ms 1200ms both;
 }
-.mark svg {
+.sig svg {
   display: block;
   overflow: visible;
 }
-.mark svg rect {
+.sig :global(.sig-r),
+.sig :global(.sig-thread) {
+  stroke-dasharray: 1 2;
+  stroke-dashoffset: 1.01;
+}
+.sig :global(.sig-r) {
+  animation: draw 420ms 840ms cubic-bezier(0.45, 0, 0.25, 1) both;
+}
+.sig :global(.sig-thread) {
+  animation: draw 360ms 1180ms cubic-bezier(0.3, 0, 0.2, 1) both;
+}
+.sig :global(.sig-ring) {
   transform-box: fill-box;
   transform-origin: center;
-  animation: fill 380ms 1100ms cubic-bezier(0.3, 1.5, 0.5, 1) both;
+  animation: ring 320ms 1500ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
 }
-.mark svg path {
+.sig :global(.sig-h),
+.sig :global(.sig-pilot) {
   transform-box: fill-box;
-  transform-origin: center;
-  animation: glyph 420ms 1200ms cubic-bezier(0.3, 1.6, 0.5, 1) both;
+  animation: letters 640ms 1260ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-
-/* Proportions exactes du logo de l'en-tête (x 3,25) pour qu'il s'y pose sans saut. */
-.name {
-  font-family: var(--font-dm-sans), sans-serif;
-  font-size: 48.75px;
-  font-weight: 600;
-  letter-spacing: -0.025em;
-  line-height: 1;
-  white-space: nowrap;
-  color: #14151a;
-}
-.mask {
-  display: inline-block;
-  overflow: hidden;
-  vertical-align: bottom;
-  padding: 0.08em 0 0.12em;
-  margin: -0.08em 0 -0.12em;
-}
-.word {
-  display: inline-block;
-  animation: rise 650ms 1260ms cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-.pilot {
-  color: #e8432e;
+.sig :global(.sig-pilot) {
   animation-delay: 1340ms;
 }
 
@@ -155,64 +133,28 @@
     stroke-dashoffset: -1.01;
   }
 }
-@keyframes outline {
-  0% {
-    stroke-dashoffset: 1.01;
-    opacity: 1;
-  }
-  60% {
-    stroke-dashoffset: 1.01;
-    animation-timing-function: cubic-bezier(0.15, 0.5, 0.35, 1);
-  }
-  81.43% {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
-  100% {
-    stroke-dashoffset: 0;
-    opacity: 0;
-  }
-}
-@keyframes fill {
-  from {
-    opacity: 0;
-    transform: scale(0.82);
-  }
-  60% {
-    opacity: 1;
-  }
+@keyframes draw {
   to {
-    opacity: 1;
-    transform: scale(1);
+    stroke-dashoffset: 0;
   }
 }
-@keyframes glyph {
+@keyframes ring {
   from {
     opacity: 0;
-    transform: scale(0.35) rotate(-10deg);
+    transform: scale(0);
   }
   to {
     opacity: 1;
     transform: none;
   }
 }
-@keyframes markShadow {
-  0% {
-    box-shadow: 0 0 0 rgba(184, 50, 31, 0);
-  }
-  25%,
-  55% {
-    box-shadow: 0 18px 36px -14px rgba(184, 50, 31, 0.45);
-  }
-  100% {
-    box-shadow: 0 0 0 rgba(184, 50, 31, 0);
-  }
-}
-@keyframes rise {
+@keyframes letters {
   from {
-    transform: translateY(108%);
+    opacity: 0;
+    transform: translateY(14px);
   }
   to {
+    opacity: 1;
     transform: none;
   }
 }

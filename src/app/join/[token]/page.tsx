@@ -5,7 +5,7 @@ import { invitationTokenWhere } from "@/lib/invitationToken";
 import { getCurrentUser } from "@/lib/auth";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Logomark, Wordmark } from "@/components/Brand";
+import { Signature } from "@/components/Brand";
 import { switchOrganization } from "../actions";
 import { InitializingScreen } from "@/components/InitializingScreen";
 import Link from "next/link";
@@ -15,8 +15,7 @@ function ErrorScreen({ title, description }: { title: string; description: strin
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-surface-subtle px-6">
       <div className="mb-6 flex items-center gap-2">
-        <Logomark size={24} />
-        <Wordmark />
+        <Signature height={26} />
       </div>
       <Card className="w-full max-w-sm text-center">
         <h1 className="text-base font-semibold text-ink">{title}</h1>
@@ -119,8 +118,7 @@ export default async function JoinPage({ params }: { params: { token: string } }
     return (
       <div className="flex min-h-screen flex-col items-center justify-center bg-surface-subtle px-6">
         <div className="mb-6 flex items-center gap-2">
-          <Logomark size={24} />
-          <Wordmark />
+          <Signature height={26} />
         </div>
         <Card className="w-full max-w-sm text-center">
           <h1 className="text-base font-semibold text-ink">Vous appartenez déjà à une organisation</h1>

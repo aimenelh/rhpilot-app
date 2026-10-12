@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Logomark } from "@/components/Brand";
+import { Logomark, Signature } from "@/components/Brand";
 import { companyFromEmail } from "./emailCompany";
 import s from "./AuthStage.module.css";
 
@@ -89,10 +89,7 @@ export function SignUpStage({ children }: { children: ReactNode }) {
       <div className={s.inner}>
         <div className={s.left}>
           <Link href="/" className={s.logo}>
-            <Logomark size={28} />
-            <span>
-              RH <b>Pilot</b>
-            </span>
+            <Signature height={28} />
           </Link>
           <h1 className={s.title}>
             Créez l’espace RH de votre entreprise.

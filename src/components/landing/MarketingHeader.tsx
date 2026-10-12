@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Menu, X } from "lucide-react";
-import { Logomark, Wordmark } from "@/components/Brand";
+import { Signature } from "@/components/Brand";
 import { AnnouncementBar } from "./AnnouncementBar";
 import { OctoberRoseAnnouncement, OctoberRoseProvider, OctoberRoseRibbonButton } from "./OctoberRoseCampaign";
 import { PublicCopilotePreview } from "./PublicCopilotePreview";
@@ -111,8 +111,7 @@ export function MarketingHeader() {
             className="flex shrink-0 items-center gap-2.5"
             data-header-lockup
           >
-            <Logomark size={32} />
-            <Wordmark />
+            <Signature height={30} />
           </Link>
           <OctoberRoseRibbonButton />
           </div>

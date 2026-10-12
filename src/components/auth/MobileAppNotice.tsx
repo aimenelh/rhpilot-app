@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ArrowRight, Mail, UserRound } from "lucide-react";
-import { Logomark } from "@/components/Brand";
+import { Signature } from "@/components/Brand";
 import { CANONICAL_SITE_URL } from "@/lib/appUrl";
 
 /**
@@ -14,8 +14,7 @@ export function MobileAppNotice({ mode }: { mode: "sign-in" | "sign-up" }) {
   return (
     <div className="flex min-h-screen flex-col justify-center gap-6 px-6 py-10">
       <div className="flex items-center gap-2">
-        <Logomark size={28} />
-        <span className="text-[15px] font-semibold text-ink">RH Pilot</span>
+        <Signature height={28} />
       </div>
 
       <Link href="/espace/connexion" className="flex items-center gap-3 rounded-2xl bg-brand-primary px-5 py-4 text-white shadow-elevated">

@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { Logomark, Wordmark } from "@/components/Brand";
+import { Signature } from "@/components/Brand";
 
 /** Cadre des pages d'accès de l'espace salarié : sobre et lisible sur téléphone. */
 export function EspaceAuthFrame({ children, organizationName, note }: { children: ReactNode; organizationName?: string | null; note?: ReactNode }) {
@@ -9,8 +9,7 @@ export function EspaceAuthFrame({ children, organizationName, note }: { children
     <div className="flex min-h-[100dvh] flex-col bg-surface-subtle">
       <header className="flex items-center gap-2 px-5 pb-2 pt-6 sm:px-8">
         <Link href="/" className="flex items-center gap-2 rounded-md" aria-label="RH Pilot, retour à l’accueil du site">
-          <Logomark size={26} />
-          <Wordmark />
+          <Signature height={26} />
         </Link>
         <span className="ml-1 text-sm text-ink-faint">Espace salarié</span>
         <Link

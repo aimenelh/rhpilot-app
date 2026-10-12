@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { Logomark } from "@/components/Brand";
+import { Signature } from "@/components/Brand";
 import s from "./BrandIntro.module.css";
 
 // Nouvelle clé : chaque visiteur voit une fois la nouvelle introduction.
@@ -18,17 +18,14 @@ const END_AT = 2700;
 const BOOT = `(function(){var el=document.currentScript&&document.currentScript.parentElement;if(!el)return;var play=true;try{if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)play=false;else if(sessionStorage.getItem("${VISIT_KEY}"))play=false;else sessionStorage.setItem("${VISIT_KEY}","1")}catch(e){}el.setAttribute("data-state",play?"play":"off")})();`;
 
 // Le fil arrive depuis la gauche (bureau) ou depuis le bas (mobile), fait une
-// boucle, puis dessine le contour du logo. Coordonnées en pixels réels, centrées
-// sur l'écran : le contour tombe exactement sur le logo quelle que soit la taille.
+// boucle et se pose au pied du R : il trace alors le R, puis le fil corail qui
+// souligne « H Pilot » jusqu'au point. Coordonnées en pixels réels, centrées sur
+// l'écran : la signature (104 px de haut, 349 de large) commence à x = -174,5.
+// Le pied du R est en (5,5 ; 47,5) dans la signature, soit (1334,4 ; 725,2) ici.
 const THREAD_WIDE =
-  "M700 960 C860 990 1010 930 1120 850 C1215 780 1250 680 1190 660 C1130 640 1110 740 1180 780 C1250 820 1330 780 1347 700";
+  "M700 960 C860 990 1010 930 1120 850 C1215 780 1250 680 1190 660 C1130 640 1110 740 1180 780 C1240 815 1334.4 800 1334.4 725.2";
 const THREAD_NARROW =
-  "M1540 1135 C1530 1060 1450 1040 1470 960 C1490 880 1580 900 1560 950 C1540 1000 1450 980 1450 900 C1450 830 1440 752 1399 752";
-const OUTLINE =
-  "M1347 700 V674 A26 26 0 0 1 1373 648 H1425 A26 26 0 0 1 1451 674 V726 A26 26 0 0 1 1425 752 H1373 A26 26 0 0 1 1347 726 Z";
-// Sur mobile, le fil arrive par-dessous : le contour démarre au milieu du bord bas.
-const OUTLINE_NARROW =
-  "M1399 752 H1373 A26 26 0 0 1 1347 726 V674 A26 26 0 0 1 1373 648 H1425 A26 26 0 0 1 1451 674 V726 A26 26 0 0 1 1425 752 Z";
+  "M1540 1135 C1530 1060 1450 1040 1470 960 C1490 880 1580 900 1560 950 C1540 1000 1450 980 1450 900 C1450 830 1334.4 815 1334.4 725.2";
 
 export function BrandIntro() {
   const root = useRef<HTMLDivElement>(null);
@@ -130,20 +127,10 @@ export function BrandIntro() {
           </defs>
           <path className={`${s.line} ${s.wide}`} d={THREAD_WIDE} pathLength={1} stroke="url(#rh-intro-tail-wide)" />
           <path className={`${s.line} ${s.narrow}`} d={THREAD_NARROW} pathLength={1} stroke="url(#rh-intro-tail-narrow)" />
-          <path className={`${s.outline} ${s.wide}`} d={OUTLINE} pathLength={1} stroke="#E8432E" />
-          <path className={`${s.outline} ${s.narrow}`} d={OUTLINE_NARROW} pathLength={1} stroke="#E8432E" />
         </svg>
         <div className={s.lockup} data-intro-logo>
-          <div className={s.mark}>
-            <Logomark size={104} />
-          </div>
-          <div className={s.name}>
-            <span className={s.mask}>
-              <span className={s.word}>RH</span>
-            </span>{" "}
-            <span className={s.mask}>
-              <span className={`${s.word} ${s.pilot}`}>Pilot</span>
-            </span>
+          <div className={s.sig}>
+            <Signature height={104} animated />
           </div>
         </div>
       </div>
