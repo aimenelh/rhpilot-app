@@ -4,8 +4,8 @@ import { useEffect, useRef } from "react";
 import { Signature } from "@/components/Brand";
 import s from "./BrandIntro.module.css";
 
-// Nouvelle clé : chaque visiteur voit une fois la nouvelle introduction.
-const VISIT_KEY = "rhpilot-brand-intro-v3";
+// Nouvelle clé (v4, nouveau logo) : chaque visiteur revoit une fois l’introduction.
+const VISIT_KEY = "rhpilot-brand-intro-v4";
 // Repères de la chorégraphie (ms depuis le premier affichage), alignés sur
 // BrandIntro.module.css. EXIT_AT : le fil se rembobine et la page prend le relais.
 const EXIT_AT = 1650;
