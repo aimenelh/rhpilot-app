@@ -132,7 +132,7 @@
 
 .workspace-preview-user{display:grid;place-items:center;width:33px;height:33px;border-radius:50%;background:#e9dfd1;color:#776047;font-size:12px;font-weight:600;flex-shrink:0}
 
-.dashboard-fil-shell .workspace-header{height:76px;min-height:76px;border-color:#e6e7e0;background:rgba(255,255,255,.6);box-shadow:none;padding:0 38px;justify-content:space-between}
+.dashboard-fil-shell .workspace-header{height:76px;min-height:76px;border-color:#e6e7e0;background:rgba(251,250,247,.94);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:none;padding:0 38px;justify-content:space-between}
 .workspace-crumb{display:flex;align-items:center;gap:12px;color:#62685e;font-size:12px}
 .workspace-crumb span:last-child{color:#252923;font-size:13px}
 .workspace-top-actions{display:flex;align-items:center;gap:19px;margin-left:auto}

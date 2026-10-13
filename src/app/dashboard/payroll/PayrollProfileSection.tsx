@@ -85,6 +85,8 @@ export function PayrollProfileSection({
   classificationGrids = {},
   organizationAgreementId = null,
   canEdit,
+  hireDate,
+  defaultEffectiveFrom,
   paidLeaveOpening = null,
   payrollOpening = null,
 }: {
@@ -97,12 +99,17 @@ export function PayrollProfileSection({
   /** Convention de l'organisation, utilisée quand le profil n'en précise pas. */
   organizationAgreementId?: string | null;
   canEdit: boolean;
+  /** Date d'entrée (AAAA-MM-JJ) : aucun profil ne peut commencer avant. */
+  hireDate?: string;
+  /** Date d'effet proposée quand le salarié n'a pas encore de profil : aujourd'hui, ou son entrée si elle est à venir. */
+  defaultEffectiveFrom?: string;
   paidLeaveOpening?: PaidLeaveOpeningView;
   payrollOpening?: PayrollOpeningView;
 }) {
   const action = saveEmployeePayrollProfile.bind(null, employeeId);
   const [state, formAction] = useFormState<PayrollProfileFormState, FormData>(action, undefined);
-  const effectiveFrom = profile?.effectiveFrom ?? new Date().toISOString().slice(0, 10);
+  const effectiveFrom = profile?.effectiveFrom ?? defaultEffectiveFrom ?? new Date().toISOString().slice(0, 10);
+  const upcoming = profile ? profile.effectiveFrom.slice(0, 10) > new Date().toISOString().slice(0, 10) : false;
   const [selectedAgreementId, setSelectedAgreementId] = useState(profile?.collectiveAgreementId ?? "");
   const effectiveAgreementId = selectedAgreementId || organizationAgreementId || "";
   const grid = classificationGrids[effectiveAgreementId] ?? [];
@@ -115,7 +122,7 @@ export function PayrollProfileSection({
             <h2 className="font-semibold text-ink">Paie et rémunération</h2>
             <p className="mt-1 text-xs text-ink-faint">Les paramètres utiles au calcul de la paie. L&apos;historique est conservé à chaque changement de date d&apos;effet.</p>
           </div>
-          {profile && <span className="text-xs text-ink-faint">Profil actuel · effet le {new Intl.DateTimeFormat("fr-FR").format(new Date(profile.effectiveFrom))}</span>}
+          {profile && <span className="text-xs text-ink-faint">{upcoming ? "Profil à venir" : "Profil actuel"} · effet le {new Intl.DateTimeFormat("fr-FR", { timeZone: "UTC" }).format(new Date(profile.effectiveFrom))}</span>}
         </div>
       </div>
 
@@ -133,7 +140,7 @@ export function PayrollProfileSection({
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block"><span className="text-xs font-medium text-ink-soft">Salaire brut mensuel contractuel</span><input name="salaryEuros" type="number" min="0" step="0.01" required defaultValue={profile?.baseSalaryCents != null ? (profile.baseSalaryCents / 100).toFixed(2) : ""} className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2 text-sm text-ink" /><span className="mt-1 block text-xs text-ink-faint">Pour un alternant, ce montant correspond au brut réellement prévu au contrat. Le minimum légal est contrôlé séparément.</span></label>
             <label className="block"><span className="text-xs font-medium text-ink-soft">Heures mensuelles</span><input name="monthlyHours" type="number" min="1" step="0.01" required defaultValue={profile?.monthlyHours ?? "151.67"} className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2 text-sm text-ink" /></label>
-            <label className="block"><span className="text-xs font-medium text-ink-soft">Date d&apos;effet</span><input name="effectiveFrom" type="date" required defaultValue={effectiveFrom.slice(0, 10)} className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2 text-sm text-ink" /></label>
+            <label className="block"><span className="text-xs font-medium text-ink-soft">Date d&apos;effet</span><input name="effectiveFrom" type="date" required min={hireDate} defaultValue={effectiveFrom.slice(0, 10)} className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2 text-sm text-ink" /></label>
             <label className="block"><span className="text-xs font-medium text-ink-soft">Date d&apos;ancienneté</span><input name="seniorityDate" type="date" defaultValue={profile?.seniorityDate?.slice(0, 10) ?? ""} className="mt-1.5 w-full rounded-lg border border-surface-border px-3 py-2 text-sm text-ink" /></label>
           </div>
 

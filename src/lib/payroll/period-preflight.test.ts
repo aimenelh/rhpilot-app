@@ -125,5 +125,11 @@ describe("contrôle de préparation d'une période de paie", () => {
     expect(checkPayrollPeriodReadiness([employee], {year: 2026, month: 9}).ready).toBe(true);
     expect(checkPayrollPeriodReadiness([{...employee, profileCount: 2}], {year: 2026, month: 9}).issues[0].code).toBe("OVERLAPPING_PROFILES");
   });
+  it("reprend le verdict du moteur sur les profils : deux profils qui se suivent ne bloquent pas", () => {
+    const employee = { employeeId: "emp-1", firstName: "Alice", lastName: "Martin", baseSalaryCents: 200000, monthlyHours: 151.67, hireDate: new Date("2026-09-01"), profileCount: 2, profileError: null };
+    expect(checkPayrollPeriodReadiness([employee], {year: 2026, month: 9}, { bulletinEngine: true }).ready).toBe(true);
+    const blocked = checkPayrollPeriodReadiness([{ ...employee, profileError: "deux profils paie se chevauchent." }], {year: 2026, month: 9}, { bulletinEngine: true });
+    expect(blocked.issues[0]).toMatchObject({ code: "OVERLAPPING_PROFILES", message: "Alice Martin : deux profils paie se chevauchent." });
+  });
 
 });

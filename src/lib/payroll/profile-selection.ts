@@ -94,6 +94,16 @@ export function selectPeriodProfile<T extends ProfileSpan>(profiles: T[], period
   };
 }
 
+/**
+ * Jours du mois où le salarié est sous contrat. Un profil qui ne couvre que des jours
+ * avant l'entrée ou après la sortie ne compte pas pour le mois.
+ */
+export function employmentWindow(periodFirst: Date, periodLast: Date, hireDate: Date | null | undefined, contractEndDate: Date | null | undefined): { first: Date; last: Date } {
+  const first = hireDate && dayIndex(hireDate) > dayIndex(periodFirst) ? new Date(dayIndex(hireDate) * DAY_MS) : periodFirst;
+  const last = contractEndDate && dayIndex(contractEndDate) < dayIndex(periodLast) ? new Date(dayIndex(contractEndDate) * DAY_MS) : periodLast;
+  return { first, last };
+}
+
 /** Veille du jour donné (fin d'un profil remplacé par un autre à cette date). */
 export function dayBefore(date: Date): Date {
   return new Date((dayIndex(date) - 1) * DAY_MS);

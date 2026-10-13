@@ -19,6 +19,8 @@ export interface PayrollPreflightEmployeeInput {
   hireDate?: Date;
   contractEndDate?: Date | null;
   profileCount?: number;
+  /** Profils de la période impossibles à départager (même règle que le moteur de bulletin). */
+  profileError?: string | null;
   hasIncompleteMonthAdjustment?: boolean;
   /** Moteur de bulletin : fiche de sortie (motif et indemnités) saisie pour la période. */
   hasTermination?: boolean;
@@ -75,7 +77,8 @@ export function checkPayrollPeriodReadiness(
       } else if (hire && hire > start && hire <= end && !employee.hasIncompleteMonthAdjustment) issues.push({ code: "PARTIAL_MONTH_ENTRY", severity: "BLOCKING", employeeId: employee.employeeId, message: `${displayName} : entrée en cours de mois. Renseignez un unique prorata INCOMPLETE_MONTH en euros, établi sur l’horaire réel.` });
       if (!options.bulletinEngine && exit && exit >= start && exit < end && !employee.hasIncompleteMonthAdjustment) issues.push({ code: "PARTIAL_MONTH_EXIT", severity: "BLOCKING", employeeId: employee.employeeId, message: `${displayName} : sortie en cours de mois. Renseignez un unique prorata INCOMPLETE_MONTH en euros, établi sur l’horaire réel.` });
     }
-    if ((employee.profileCount ?? 0) > 1) issues.push({ code: "OVERLAPPING_PROFILES", severity: "BLOCKING", employeeId: employee.employeeId, message: `${displayName} : plusieurs profils paie couvrent cette période. Vérifiez leurs dates d’effet.` });
+    if (employee.profileError) issues.push({ code: "OVERLAPPING_PROFILES", severity: "BLOCKING", employeeId: employee.employeeId, message: `${displayName} : ${employee.profileError}` });
+    else if (employee.profileError === undefined && (employee.profileCount ?? 0) > 1) issues.push({ code: "OVERLAPPING_PROFILES", severity: "BLOCKING", employeeId: employee.employeeId, message: `${displayName} : plusieurs profils paie couvrent cette période. Vérifiez leurs dates d’effet.` });
 
     if (employee.baseSalaryCents == null) {
       issues.push({

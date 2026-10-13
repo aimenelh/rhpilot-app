@@ -4,6 +4,7 @@ import { AlertTriangle, ArrowLeft, ArrowRight, CheckCircle2, ExternalLink, FileT
 
 import { prisma } from "@/lib/prisma";
 import { checkPayrollPeriodReadiness } from "@/lib/payroll/period-preflight";
+import { employmentWindow, selectPeriodProfile, type PeriodProfileSelection } from "@/lib/payroll/profile-selection";
 import { loadTerminations } from "@/lib/payroll/bulletin/period-loader";
 import { bulletinFromSnapshot } from "@/lib/payroll/bulletin/prior-state";
 import { cellValues, type EntryTab } from "@/lib/payroll/entry-grid";
@@ -82,7 +83,7 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
     }),
     prisma.payrollProfile.findMany({
       where: { organizationId, effectiveFrom: { lte: periodEnd }, OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: periodStart } }] },
-      select: { employeeId: true, baseSalaryCents: true, monthlyHours: true, effectiveFrom: true },
+      select: { id: true, employeeId: true, baseSalaryCents: true, monthlyHours: true, effectiveFrom: true, effectiveUntil: true },
       orderBy: { effectiveFrom: "desc" },
     }),
     prisma.payrollCalculation.findMany({ where: { organizationId, payrollPeriodId: period.id }, select: { employeeId: true, calculationSnapshot: true } }),
@@ -100,8 +101,13 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
   ]);
 
   const activeIds = new Set(employees.map((employee) => employee.id));
+  // Même choix que le moteur : profils bornés aux jours sous contrat, salaire proratisé s'il change dans le mois.
+  const selectionByEmployee = new Map<string, PeriodProfileSelection<(typeof profiles)[number]>>(employees.map((employee) => {
+    const employment = employmentWindow(periodStart, periodEnd, employee.hireDate, employee.contractEndDate);
+    return [employee.id, selectPeriodProfile(profiles.filter((row) => row.employeeId === employee.id), employment.first, employment.last)] as const;
+  }));
   const profileByEmployee = new Map<string, (typeof profiles)[number]>();
-  for (const profile of profiles) if (!profileByEmployee.has(profile.employeeId)) profileByEmployee.set(profile.employeeId, profile);
+  for (const [employeeId, selection] of selectionByEmployee) if (selection.ok) profileByEmployee.set(employeeId, selection.profile);
   const reviewedIds = new Set(reviewRows.map((row) => row.employeeId).filter((id) => activeIds.has(id)));
   const employeeName = (id: string) => { const employee = employees.find((candidate) => candidate.id === id); return employee ? `${employee.firstName} ${employee.lastName}`.trim() : "Salarié"; };
 
@@ -139,12 +145,14 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
     .sort((left, right) => left.employeeName.localeCompare(right.employeeName, "fr") || left.label.localeCompare(right.label, "fr"));
 
   const readiness = checkPayrollPeriodReadiness(employees.map((employee) => {
-    const profile = profileByEmployee.get(employee.id);
+    const selection = selectionByEmployee.get(employee.id);
+    const profile = selection?.ok ? selection.profile : undefined;
+    const overlap = selection && !selection.ok && selection.error !== "Aucun profil paie applicable." ? selection.error : null;
     return {
       employeeId: employee.id, firstName: employee.firstName, lastName: employee.lastName,
-      baseSalaryCents: profile?.baseSalaryCents, monthlyHours: profile?.monthlyHours == null ? null : Number(profile.monthlyHours),
+      baseSalaryCents: selection?.ok ? selection.baseSalaryCents : null, monthlyHours: profile?.monthlyHours == null ? null : Number(profile.monthlyHours),
       hireDate: employee.hireDate, contractEndDate: employee.contractEndDate,
-      profileCount: profiles.filter((row) => row.employeeId === employee.id).length,
+      profileError: overlap,
       hasTermination: terminations.has(employee.id),
     };
   }), { year: period.year, month: period.month }, { bulletinEngine: true });

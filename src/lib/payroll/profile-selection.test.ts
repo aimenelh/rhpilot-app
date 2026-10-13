@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assertPeriodWorkTimeStable, dayBefore, selectPeriodProfile } from "./profile-selection";
+import { assertPeriodWorkTimeStable, dayBefore, employmentWindow, selectPeriodProfile } from "./profile-selection";
 
 const d = (iso: string) => new Date(`${iso}T00:00:00.000Z`);
 const november = [d("2026-11-01"), new Date("2026-11-30T23:59:59.999Z")] as const;
@@ -51,6 +51,26 @@ describe("profil de paie du mois", () => {
       expect(result.profile.id).toBe("new");
       expect(result.warning).toMatch(/proratisé/);
     }
+  });
+
+  it("ignore un profil qui ne couvre que des jours avant l'entrée", () => {
+    // Entrée le 2 novembre ; un profil saisi par erreur à partir du 13 octobre s'arrête le 1er.
+    const profiles = [
+      { id: "avant", baseSalaryCents: 180000, effectiveFrom: d("2026-10-13"), effectiveUntil: d("2026-11-01"), hours: 0 },
+      { id: "entree", baseSalaryCents: 195000, effectiveFrom: d("2026-11-02"), effectiveUntil: null, hours: 35 },
+    ];
+    const employment = employmentWindow(...november, d("2026-11-02"), null);
+    expect(employment.first.toISOString().slice(0, 10)).toBe("2026-11-02");
+    const result = selectPeriodProfile(profiles, employment.first, employment.last);
+    expect(result).toMatchObject({ ok: true, baseSalaryCents: 195000, warning: null });
+    if (result.ok) expect(result.profile.id).toBe("entree");
+    expect(() => assertPeriodWorkTimeStable(profiles, employment.first, employment.last, profile => String(profile.hours))).not.toThrow();
+  });
+
+  it("borne le mois à la sortie du salarié", () => {
+    const employment = employmentWindow(...november, d("2025-03-01"), d("2026-11-20"));
+    expect(employment.first.toISOString().slice(0, 10)).toBe("2026-11-01");
+    expect(employment.last.toISOString().slice(0, 10)).toBe("2026-11-20");
   });
 
   it("bloque un vrai chevauchement", () => {

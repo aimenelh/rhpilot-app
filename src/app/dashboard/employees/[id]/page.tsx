@@ -79,6 +79,8 @@ export default async function EmployeeDetailPage({
   const canSeePayroll = canUsePayroll(membership);
   const visibleTabs = TABS.filter((item) => item.key !== "paie" || canSeePayroll);
 
+  // Profil paie montré dans l'onglet : celui d'aujourd'hui, ou celui de l'entrée pour un salarié pas encore arrivé.
+  const profileReferenceDate = employee.hireDate > new Date() ? employee.hireDate : new Date();
   const [memberships, eventTemplates, employeeEvents, organization, payrollProfile, workProfile, collectiveAgreements] = await Promise.all([
     prisma.membership.findMany({
       where: {
@@ -121,8 +123,8 @@ export default async function EmployeeDetailPage({
           where: {
             organizationId: membership.organizationId,
             employeeId: employee.id,
-            effectiveFrom: { lte: new Date() },
-            OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: new Date() } }],
+            effectiveFrom: { lte: profileReferenceDate },
+            OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: profileReferenceDate } }],
           },
           orderBy: { effectiveFrom: "desc" },
         })
@@ -382,6 +384,8 @@ export default async function EmployeeDetailPage({
             employeeId={employee.id}
             firstName={employee.firstName}
             canEdit={["OWNER", "ADMIN"].includes(membership.accessRole)}
+            hireDate={employee.hireDate.toISOString().slice(0, 10)}
+            defaultEffectiveFrom={profileReferenceDate.toISOString().slice(0, 10)}
             profile={
               payrollProfile
                 ? {

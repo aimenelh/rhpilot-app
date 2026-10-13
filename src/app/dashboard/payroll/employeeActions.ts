@@ -9,6 +9,14 @@ import { getPayrollMembership } from "@/lib/payrollAccess";
 
 export type PayrollProfileFormState = { error: string } | undefined;
 
+/** « 2026-11-02 » → minuit UTC de ce jour, sans dépendre du fuseau du serveur. */
+function utcDay(raw: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(raw.trim());
+  if (!match) return null;
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  return Number.isNaN(date.getTime()) || date.getUTCDate() !== Number(match[3]) ? null : date;
+}
+
 function parseNullableString(value: FormDataEntryValue | null): string | null {
   if (!value || typeof value !== "string") return null;
   const trimmed = value.trim();
@@ -33,7 +41,7 @@ export async function saveEmployeePayrollProfile(
       organizationId: membership.organizationId,
       deletedAt: null,
     },
-    select: { id: true, firstName: true, lastName: true },
+    select: { id: true, firstName: true, lastName: true, hireDate: true },
   });
   if (!employee) return { error: "Salarié introuvable dans cette organisation." };
 
@@ -53,8 +61,14 @@ export async function saveEmployeePayrollProfile(
   if (!Number.isFinite(monthlyHours) || monthlyHours <= 0) {
     return { error: "Le nombre d'heures mensuelles est invalide." };
   }
-  if (!effectiveFromRaw || Number.isNaN(new Date(effectiveFromRaw).getTime())) {
+  const effectiveFrom = utcDay(effectiveFromRaw);
+  if (!effectiveFrom) {
     return { error: "La date d'effet est invalide." };
+  }
+  const hireDay = new Date(Date.UTC(employee.hireDate.getUTCFullYear(), employee.hireDate.getUTCMonth(), employee.hireDate.getUTCDate()));
+  if (effectiveFrom < hireDay) {
+    const hire = new Intl.DateTimeFormat("fr-FR", { timeZone: "UTC" }).format(hireDay);
+    return { error: `La date d'effet ne peut pas précéder l'entrée de ${employee.firstName} le ${hire}. Indiquez le ${hire} ou une date ultérieure.` };
   }
   if (seniorityDateRaw && Number.isNaN(new Date(seniorityDateRaw).getTime())) {
     return { error: "La date d'ancienneté est invalide." };
@@ -80,8 +94,6 @@ export async function saveEmployeePayrollProfile(
   const structuralOvertimeRate = structuralRateRaw === "" ? null : Number(structuralRateRaw) / 100;
   if (structuralOvertimeRate !== null && (!Number.isFinite(structuralOvertimeRate) || structuralOvertimeRate < 0.1 || structuralOvertimeRate > 1)) return { error: "La majoration des heures supplémentaires structurelles doit être d'au moins 10 %." };
 
-  const effectiveFrom = new Date(effectiveFromRaw);
-  effectiveFrom.setHours(0, 0, 0, 0);
   const seniorityDate = seniorityDateRaw ? new Date(seniorityDateRaw) : null;
   if (seniorityDate) seniorityDate.setHours(0, 0, 0, 0);
 
@@ -97,23 +109,25 @@ export async function saveEmployeePayrollProfile(
   }
 
   await prisma.$transaction(async (tx) => {
-    const existingProfiles = await tx.payrollProfile.findMany({
+    // Les versions antérieures qui couvraient encore cette date s'arrêtent la veille :
+    // aucun jour n'est couvert par deux salaires.
+    await tx.payrollProfile.updateMany({
       where: {
         organizationId: membership.organizationId,
         employeeId: employee.id,
-        effectiveUntil: null,
         effectiveFrom: { lt: effectiveFrom },
+        OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: effectiveFrom } }],
       },
-      select: { id: true, effectiveFrom: true },
+      data: { effectiveUntil: dayBefore(effectiveFrom), updatedAt: new Date() },
     });
 
-    for (const profile of existingProfiles) {
-      await tx.payrollProfile.update({
-        where: { id: profile.id },
-        // L'ancien profil s'arrête la veille : aucun jour n'est couvert par deux salaires.
-        data: { effectiveUntil: dayBefore(effectiveFrom), updatedAt: new Date() },
-      });
-    }
+    // Une version future existe déjà (une augmentation prévue, ou le profil créé à l'embauche) :
+    // la nouvelle version s'arrête la veille au lieu de la recouvrir.
+    const next = await tx.payrollProfile.findFirst({
+      where: { organizationId: membership.organizationId, employeeId: employee.id, effectiveFrom: { gt: effectiveFrom } },
+      orderBy: { effectiveFrom: "asc" },
+      select: { effectiveFrom: true },
+    });
 
     const savedProfile = await tx.payrollProfile.upsert({
       where: {
@@ -138,6 +152,7 @@ export async function saveEmployeePayrollProfile(
         coefficient,
         seniorityDate,
         effectiveFrom,
+        effectiveUntil: next ? dayBefore(next.effectiveFrom) : null,
       },
       update: {
         baseSalaryCents: Math.round(salaryEuros * 100),

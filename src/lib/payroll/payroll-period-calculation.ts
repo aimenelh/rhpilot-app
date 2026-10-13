@@ -1,4 +1,4 @@
-import { assertPeriodWorkTimeStable, selectPeriodProfile } from "./profile-selection";
+import { assertPeriodWorkTimeStable, employmentWindow, selectPeriodProfile } from "./profile-selection";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { resolvePayrollRuleSetFromPrisma } from "./payroll-rule-set-prisma";
@@ -128,9 +128,10 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
   // Profil du mois : le plus récent, avec un salaire de base proratisé si le salaire change en cours de mois.
   const periodProfiles = new Map<string, { profile: (typeof profiles)[number]; baseSalaryCents: number | null; warning: string | null }>();
   for (const [employeeId, employeeProfiles] of profilesByEmployee) {
-    const selection = selectPeriodProfile(employeeProfiles, start, end);
+    const employee = employees.find((item) => item.id === employeeId);
+    const employment = employmentWindow(start, end, employee?.hireDate, employee?.contractEndDate);
+    const selection = selectPeriodProfile(employeeProfiles, employment.first, employment.last);
     if (!selection.ok) {
-      const employee = employees.find((item) => item.id === employeeId);
       const name = employee ? [employee.firstName, employee.lastName].filter(Boolean).join(" ") : employeeId;
       throw new Error(`Calcul bloqué pour ${name} sur ${frMonth(period.year, period.month)} : ${selection.error}`);
     }
@@ -149,8 +150,9 @@ export async function calculatePayrollPeriod(input: { periodId: string; organiza
   const { territory, alsaceMoselle } = territoryFromDepartment(socialContext.payrollDepartment);
   for (const employee of employees) {
     const employeeProfiles = profilesByEmployee.get(employee.id) ?? [];
+    const employment = employmentWindow(start, end, employee.hireDate, employee.contractEndDate);
     try {
-      assertPeriodWorkTimeStable(employeeProfiles, start, end, profile => {
+      assertPeriodWorkTimeStable(employeeProfiles, employment.first, employment.last, profile => {
         const extras = profileExtras.get(profile.id);
         return JSON.stringify([profile.monthlyHours === null ? null : String(profile.monthlyHours), extras?.weeklySchedule ?? null, extras?.structuralOvertimeHours ?? 0, extras?.structuralOvertimeRate ?? null]);
       });
