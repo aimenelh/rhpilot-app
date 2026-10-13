@@ -1,4 +1,5 @@
-// Squelette affiché pendant le chargement d'une page de l'application.
+// Squelette affiché pendant le chargement d'une page de l'application,
+// avec le fil de la marque qui se dessine en tête.
 // Il n'apparaît qu'après un court délai : une page rapide s'affiche
 // directement, sans clignotement.
 
@@ -6,7 +7,11 @@ export function PageSkeleton({ rows = 5 }: { rows?: number }) {
   return (
     <div className="page-skeleton" role="status" aria-live="polite">
       <span className="sr-only">Chargement…</span>
-      <div className="skeleton-block h-4 w-28" />
+      {/* Le fil qui se dessine pendant le chargement, puis repart. */}
+      <svg className="thread-loader" width="120" height="16" viewBox="0 0 120 16" aria-hidden="true">
+        <path d="M2 11 C 18 11 24 4 40 4 S 62 13 80 12 S 104 5 118 6" pathLength={1} />
+      </svg>
+      <div className="skeleton-block mt-4 h-4 w-28" />
       <div className="skeleton-block mt-3 h-8 w-72 max-w-full" />
       <div className="mt-6 grid gap-3 sm:grid-cols-3">
         {[0, 1, 2].map((index) => (

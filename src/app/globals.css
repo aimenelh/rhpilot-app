@@ -136,6 +136,21 @@ h3 {
   to { background-position: -100% 0; }
 }
 .page-skeleton { animation: skeleton-appear 0.25s ease-out 0.18s both; }
+.thread-loader { display: block; overflow: visible; }
+.thread-loader path {
+  fill: none;
+  stroke: theme("colors.brand.primary");
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-dasharray: 1 1;
+  stroke-dashoffset: 1;
+  animation: thread-loader 1.6s cubic-bezier(0.6, 0, 0.3, 1) infinite;
+}
+@keyframes thread-loader {
+  0% { stroke-dashoffset: 1; }
+  55% { stroke-dashoffset: 0; }
+  100% { stroke-dashoffset: -1; }
+}
 .skeleton-block {
   border-radius: 6px;
   background: linear-gradient(90deg, #eef0f4 0%, #f7f8fa 45%, #eef0f4 90%);
@@ -146,6 +161,7 @@ h3 {
 @media (prefers-reduced-motion: reduce) {
   .nav-progress > span { transition: none; }
   .skeleton-block { animation: none; }
+  .thread-loader path { animation: none; stroke-dashoffset: 0; }
 }
 
 /* ------------------------------------------------------------------

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import s from "./CopilotCards.module.css";
 import { ScrollStage } from "./ScrollStage";
+import { SectionThread } from "./SectionThread";
 
 // Les trois modules : un dirigeant formule un événement,
 // le copilote au casque corail en prépare la suite. Trois cartes, une par
@@ -66,10 +67,11 @@ const CARDS: Card[] = [
 export function CopilotCards() {
   return (
     <section className={s.section} aria-labelledby="copilotes-title" id="copilotes" data-no-reveal>
+      <SectionThread from="right" />
       <ScrollStage scopeId="copilotes" watch="[data-grid]" threshold={0.2} />
       <div className={s.inner}>
-        <div className={s.head}>
-          <h2 id="copilotes-title">Le suivi RH, la paie et l’espace salarié</h2>
+        <div className={s.head} data-thread-zone>
+          <h2 id="copilotes-title" data-thread-target>Le suivi RH, la paie et l’espace salarié</h2>
           <p>
             Les trois modules partagent les mêmes fiches salariés : une information saisie une fois est reprise dans
             chaque module. Pour chaque événement, RH Pilot prépare les étapes, les dates et les responsables.

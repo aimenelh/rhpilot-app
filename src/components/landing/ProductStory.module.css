@@ -1,8 +1,12 @@
 .tour {
+  position: relative;
   padding: 96px 0;
   background: #fff;
 }
+/* Le contenu passe au-dessus du fil de la section (SectionThread). */
 .inner {
+  position: relative;
+  z-index: 1;
   width: min(1200px, calc(100% - 64px));
   margin: auto;
 }

@@ -2,10 +2,14 @@
    Tout est visible par défaut. L'animation ne s'applique que si ScrollStage
    a posé data-stage sur la section (JavaScript actif, mouvement non réduit). */
 .section {
+  position: relative;
   padding: 104px 0 72px;
   background: #fff;
 }
+/* Le contenu passe au-dessus du fil de la section (SectionThread). */
 .inner {
+  position: relative;
+  z-index: 1;
   width: min(1200px, calc(100% - 64px));
   margin: auto;
 }

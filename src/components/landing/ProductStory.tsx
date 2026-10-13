@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import s from "./ProductStory.module.css";
+import { SectionThread } from "./SectionThread";
 
 // Trois moments du quotidien, avec les captures de l'application. Le copilote
 // ne passe la tête qu'au-dessus de la dernière capture, celle du Copilote RH :
@@ -34,8 +35,9 @@ const chapters = [
 export function ProductStory() {
   return (
     <section className={s.tour} id="product-story" aria-labelledby="product-story-title">
+      <SectionThread from="right" />
       <div className={s.inner}>
-        <h2 id="product-story-title" className={s.heading}>Le logiciel au quotidien</h2>
+        <h2 id="product-story-title" className={s.heading} data-thread-target>Le logiciel au quotidien</h2>
         <div className={s.rows}>
           {chapters.map((chapter) => (
             <article key={chapter.label} className={s.row}>

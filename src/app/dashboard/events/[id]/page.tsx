@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { CalendarDays, User, CircleCheck, TriangleAlert, Send, ChevronUp, ChevronDown, FileText, Trash2 } from "lucide-react";
+import { CalendarDays, User, Check, CircleCheck, TriangleAlert, Send, ChevronUp, ChevronDown, FileText, Trash2 } from "lucide-react";
 import { getCurrentMembership } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/Card";
@@ -153,32 +153,37 @@ export default async function EventDetailPage({
           {employeeEvent.tasks.map((task: (typeof employeeEvent.tasks)[number], index: number) => {
             const overdue = isOverdue(task.dueDate, task.status);
             const canActOnTask = canManageStructure || task.assignedMembershipId === membership.id || employeeEvent.employee.managerMembershipId === membership.id;
-            const isLast = index === employeeEvent.tasks.length - 1;
+            // Parcours terminé : le fil continue jusqu'au nœud final, sous la dernière étape.
+            const isLast = index === employeeEvent.tasks.length - 1 && !isFullyCompleted;
             return (
               <div
                 key={task.id}
                 id={`task-${task.id}`}
                 className="relative flex gap-4 pb-6 last:pb-0"
               >
+                {/* Le parcours est un fil : plein et corail après une étape faite, en
+                    pointillés tant que l'étape reste à faire. Chaque étape est un nœud. */}
                 {!isLast && (
-                  <span className="absolute left-[9px] top-6 h-full w-px bg-surface-border" />
+                  task.status === "DONE" ? (
+                    <span className="absolute left-[8.5px] top-6 h-full w-[2px] rounded-full bg-brand-primary" />
+                  ) : (
+                    <span className="absolute left-[8.5px] top-6 h-full border-l-2 border-dashed border-[#D7D9DF]" />
+                  )
                 )}
                 <span
-                  className={`relative mt-0.5 flex h-[19px] w-[19px] shrink-0 items-center justify-center rounded-full border-2 bg-white ${
+                  className={`relative mt-0.5 flex h-[19px] w-[19px] shrink-0 items-center justify-center rounded-full border-2 ${
                     task.status === "DONE"
-                      ? "border-accent-teal text-accent-teal"
+                      ? "border-brand-primary bg-brand-primary text-white"
                       : overdue
-                        ? "border-accent-rose text-accent-rose"
-                        : "border-surface-border text-ink-faint"
+                        ? "border-accent-rose bg-white text-accent-rose"
+                        : "border-[#C9CCD3] bg-white"
                   }`}
                 >
                   {task.status === "DONE" ? (
-                    <CircleCheck size={13} />
+                    <Check size={11} strokeWidth={3} aria-label="Étape faite" />
                   ) : overdue ? (
-                    <TriangleAlert size={11} />
-                  ) : (
-                    <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                  )}
+                    <TriangleAlert size={11} aria-label="En retard" />
+                  ) : null}
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-col justify-between gap-3 md:flex-row md:items-start">
@@ -370,6 +375,12 @@ export default async function EventDetailPage({
               </div>
             );
           })}
+          {isFullyCompleted ? (
+            <div className="relative flex items-center gap-4">
+              <span className="relative flex h-[19px] w-[19px] shrink-0 rounded-full bg-brand-primary ring-4 ring-brand-primary/15" aria-hidden="true" />
+              <p className="text-sm font-semibold text-ink">Parcours terminé</p>
+            </div>
+          ) : null}
         </Card>
       </div>
     </div>
