@@ -51,7 +51,7 @@ const CARDS: Card[] = [
   {
     key: "espace",
     module: "L’espace salarié",
-    persona: { name: "Sophie", place: "Agence Lumen", image: "/illustrations/copilotes/persona-sophie.svg" },
+    persona: { name: "Sophie", place: "Salon Lumen", image: "/illustrations/copilotes/persona-sophie.svg" },
     request: "Mes salariés demandent leurs bulletins.",
     actions: [
       { label: "Bulletin d’octobre publié", date: "28 oct." },

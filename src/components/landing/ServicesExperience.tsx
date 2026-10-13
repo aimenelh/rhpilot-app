@@ -27,9 +27,10 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
 const FIND_ITEMS = [
-  { id: "lea", icon: Stethoscope, label: "Visite médicale : Léa", paper: "#fde68a", top: "26%", left: "34%", rotate: -6 },
+  // Deux post-it viennent de la pub « Gardez le fil » : la visite de Kévin, le CDD de Sarah.
+  { id: "kevin", icon: Stethoscope, label: "Visite médicale : Kévin, mardi 9 h", paper: "#fde68a", top: "26%", left: "34%", rotate: -6 },
   { id: "karim", icon: Users, label: "Entretien annuel : Karim", paper: "#bfdbfe", top: "13%", left: "58%", rotate: 4 },
-  { id: "ines", icon: FileText, label: "Contrat CDD : Inès", paper: "#bbf7d0", top: "60%", left: "54%", rotate: -4 },
+  { id: "sarah", icon: FileText, label: "CDD de Sarah : avant le 16", paper: "#bbf7d0", top: "60%", left: "54%", rotate: -4 },
   { id: "yanis", icon: FileWarning, label: "Document manquant : Yanis", paper: "#fed7aa", top: "82%", left: "30%", rotate: 5 },
   { id: "julie", icon: Bell, label: "Rappel équipe : Julie", paper: "#fbcfe8", top: "45%", left: "14%", rotate: 3 },
 ];

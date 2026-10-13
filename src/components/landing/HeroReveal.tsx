@@ -38,8 +38,9 @@ const KPIS = [
 const TASKS = [
   { what: "Déclarer la DPAE", who: "Léa Martin", when: "Aujourd’hui", done: true },
   { what: "Préparer le poste de travail", who: "Léa Martin", when: "4 oct." },
+  // Le CDD de Sarah : celui que la boulangère de la pub notait sur un sac à pain.
+  { what: "Renouveler le CDD", who: "Sarah Leroy", when: "15 oct." },
   { what: "Entretien de fin d’essai", who: "Karim Belhaj", when: "16 oct." },
-  { what: "Visite médicale", who: "Tom Girard", when: "20 oct." },
 ];
 
 const PLAN = [
