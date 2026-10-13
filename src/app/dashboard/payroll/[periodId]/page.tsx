@@ -22,7 +22,7 @@ import PayrollAbsencesPanel, { type PeriodAbsenceRow } from "./PayrollAbsencesPa
 import BonusDsnPanel, { type BonusDsnRow } from "./BonusDsnPanel";
 import { getBulletinVariable } from "@/lib/payroll/bulletin/variables";
 import PayslipReview, { type PayslipReviewRow } from "./PayslipReview";
-import { BackToEntryButton, ClosePeriodButton, RunCalculationButton } from "./PeriodActions";
+import { BackToEntryButton, ClosePeriodButton, RemoveOutOfPeriodEntriesButton, RunCalculationButton } from "./PeriodActions";
 import { getPayrollMembership } from "@/lib/payrollAccess";
 
 export const dynamic = "force-dynamic";
@@ -106,6 +106,27 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
     const employment = employmentWindow(periodStart, periodEnd, employee.hireDate, employee.contractEndDate);
     return [employee.id, selectPeriodProfile(profiles.filter((row) => row.employeeId === employee.id), employment.first, employment.last)] as const;
   }));
+  // Saisies restées sur un salarié qui n'est plus actif ce mois-ci (fiche archivée, entrée ou sortie hors du mois) :
+  // le calcul les refuse, on les montre avec leur raison et un moyen de les retirer.
+  const strayVariables = variables.filter((variable) => !activeIds.has(variable.employeeId));
+  const strayEmployeeRows = strayVariables.length === 0 ? [] : await prisma.employee.findMany({
+    where: { organizationId, id: { in: Array.from(new Set(strayVariables.map((variable) => variable.employeeId))) } },
+    select: { id: true, firstName: true, lastName: true, hireDate: true, contractEndDate: true, deletedAt: true },
+  });
+  const strayIssues = strayEmployeeRows.map((employee) => {
+    const entries = strayVariables.filter((variable) => variable.employeeId === employee.id);
+    const reason = employee.deletedAt ? `fiche archivée le ${frDate(employee.deletedAt)}` : employee.hireDate > periodEnd ? `entrée le ${frDate(employee.hireDate)}, après ce mois` : employee.contractEndDate ? `sortie le ${frDate(employee.contractEndDate)}, avant ce mois` : "hors de ce mois";
+    const detail = entries.map((variable) => `${getBulletinVariable(variable.code)?.label ?? variable.label} : ${String(Number(variable.amount)).replace(".", ",")}`).join(" ; ");
+    const name = `${employee.firstName} ${employee.lastName}`.trim();
+    return {
+      employeeId: employee.id,
+      count: entries.length,
+      message: entries.length > 1
+        ? `${name} : ${reason}, mais ${entries.length} saisies de ce mois lui sont encore rattachées (${detail}). Elles ne peuvent figurer sur aucun bulletin.`
+        : `${name} : ${reason}, mais une saisie de ce mois lui est encore rattachée (${detail}). Elle ne peut figurer sur aucun bulletin.`,
+    };
+  });
+
   const profileByEmployee = new Map<string, (typeof profiles)[number]>();
   for (const [employeeId, selection] of selectionByEmployee) if (selection.ok) profileByEmployee.set(employeeId, selection.profile);
   const reviewedIds = new Set(reviewRows.map((row) => row.employeeId).filter((id) => activeIds.has(id)));
@@ -157,6 +178,7 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
     };
   }), { year: period.year, month: period.month }, { bulletinEngine: true });
 
+  const readyToCalculate = readiness.ready && strayIssues.length === 0;
   const calculationRule = validatedRules.find((rule) => rule.code !== "FR.SMIC.MONTHLY_GROSS") ?? null;
   const isAdmin = membership.accessRole === "OWNER" || membership.accessRole === "ADMIN";
   const editable = isAdmin && period.status === "DRAFT";
@@ -401,13 +423,13 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
                 </p>
               </div>
               {isAdmin && period.status !== "LOCKED" && calculationRule ? (
-                <RunCalculationButton periodId={period.id} ruleCode={calculationRule.code} ruleScope={calculationRule.scope} alreadyCalculated={hasResults} disabled={!readiness.ready || membership.accessRole !== "OWNER"} nextHref={href({ tab: "controle" })} />
+                <RunCalculationButton periodId={period.id} ruleCode={calculationRule.code} ruleScope={calculationRule.scope} alreadyCalculated={hasResults} disabled={!readyToCalculate || membership.accessRole !== "OWNER"} nextHref={href({ tab: "controle" })} />
               ) : null}
             </div>
             {!calculationRule ? <p className="mt-4 rounded-lg border border-accent-amber/30 bg-accent-amber/5 px-3 py-2 text-sm text-ink-soft">Aucune version de règle de paie validée n&apos;est disponible pour ce mois.</p> : null}
           </div>
 
-          {!readiness.ready ? (
+          {!readyToCalculate ? (
             <div className="rounded-2xl border border-accent-amber/30 bg-white">
               <div className="flex items-center gap-2 border-b border-accent-amber/20 px-5 py-3"><AlertTriangle size={16} className="text-accent-amber" /><h3 className="text-sm font-semibold text-ink">À régler avant de calculer</h3></div>
               <ul className="divide-y divide-surface-border">
@@ -415,6 +437,9 @@ export default async function PayrollPeriodPage({ params, searchParams }: { para
                   const link = issue.code === "EXIT_WITHOUT_TERMINATION" ? { href: href({ tab: "saisie", sub: "mouvements" }), label: "Ouvrir la fiche de sortie" } : issue.employeeId ? { href: `/dashboard/employees/${issue.employeeId}?onglet=paie`, label: "Ouvrir la paie du salarié" } : null;
                   return <li key={`${issue.code}-${index}`} className="flex flex-col gap-1 px-5 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"><span className="text-ink-soft">{issue.message}</span>{link ? <Link href={link.href} className="shrink-0 font-semibold text-brand-primary hover:underline">{link.label}</Link> : null}</li>;
                 })}
+                {strayIssues.map((issue) => (
+                  <li key={`stray-${issue.employeeId}`} className="flex flex-col gap-2 px-5 py-3 text-sm sm:flex-row sm:items-start sm:justify-between sm:gap-6"><span className="leading-6 text-ink-soft">{issue.message}</span>{isAdmin && period.status !== "LOCKED" && period.status !== "VALIDATED" ? <RemoveOutOfPeriodEntriesButton periodId={period.id} employeeId={issue.employeeId} count={issue.count} /> : null}</li>
+                ))}
               </ul>
             </div>
           ) : null}

@@ -206,6 +206,32 @@ export async function setEntryReviewed(periodId: string, employeeId: string, rev
   }
 }
 
+/**
+ * Retire les saisies du mois rattachées à des salariés qui n'y sont plus actifs
+ * (fiche archivée, entrée après le mois ou sortie avant). Le calcul les refuse :
+ * elles ne peuvent figurer sur aucun bulletin.
+ */
+export async function removeOutOfPeriodEntries(periodId: string, employeeId?: string): Promise<EntryActionResult> {
+  try {
+    const { organizationId, userId, period } = await context(periodId);
+    if (period.status === "LOCKED" || period.status === "VALIDATED") return { error: "Ce mois est validé : rouvrez-le avant de modifier sa saisie." };
+    const rows = await prisma.payrollVariable.findMany({ where: { organizationId, payrollPeriodId: period.id, ...(employeeId ? { employeeId } : {}) }, select: { id: true, employeeId: true, code: true, amount: true } });
+    const active = await activeEmployeeIds(organizationId, period.year, period.month, Array.from(new Set(rows.map((row) => row.employeeId))));
+    const stray = rows.filter((row) => !active.has(row.employeeId));
+    if (stray.length === 0) return { ok: true, count: 0 };
+    const strayEmployees = Array.from(new Set(stray.map((row) => row.employeeId)));
+    await prisma.$transaction(async (tx) => {
+      await tx.payrollVariable.deleteMany({ where: { organizationId, payrollPeriodId: period.id, id: { in: stray.map((row) => row.id) } } });
+      await tx.$executeRaw`DELETE FROM "payroll_entry_reviews" WHERE "organizationId" = ${organizationId} AND "payrollPeriodId" = ${period.id} AND "employeeId" = ANY(${strayEmployees})`;
+      await tx.auditLog.create({ data: { id: randomUUID(), organizationId, actorUserId: userId, action: "payroll.entries.out_of_period_removed", entityType: "PayrollPeriod", entityId: period.id, metadata: { removed: stray.map((row) => ({ employeeId: row.employeeId, code: row.code, amount: String(row.amount) })) } } });
+    });
+    refresh(period.id);
+    return { ok: true, count: stray.length };
+  } catch (error) {
+    return failure(error);
+  }
+}
+
 async function assertNoPayslips(organizationId: string, periodId: string) {
   const count = await prisma.payslip.count({ where: { organizationId, payrollPeriodId: periodId } });
   if (count > 0) throw new Error("Des bulletins ont déjà été produits pour ce mois : il ne peut plus revenir à la saisie.");

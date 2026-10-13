@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Calculator, LockKeyhole, Undo2 } from "lucide-react";
-import { backToEntryAction, closePayrollPeriodAction, runPayrollCalculation } from "../entryActions";
+import { backToEntryAction, closePayrollPeriodAction, removeOutOfPeriodEntries, runPayrollCalculation } from "../entryActions";
 
 function ErrorBox({ message }: { message: string | null }) {
   if (!message) return null;
@@ -27,6 +27,29 @@ export function RunCalculationButton({ periodId, ruleCode, ruleScope, alreadyCal
         className="inline-flex min-h-[44px] items-center gap-2 rounded-lg bg-brand-primary px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:opacity-95 disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Calculator size={17} /> {pending ? "Calcul en cours…" : alreadyCalculated ? "Recalculer la paie" : "Calculer la paie"}
+      </button>
+      <ErrorBox message={error} />
+    </div>
+  );
+}
+
+export function RemoveOutOfPeriodEntriesButton({ periodId, employeeId, count }: { periodId: string; employeeId: string; count: number }) {
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const router = useRouter();
+  return (
+    <div className="shrink-0 sm:text-right">
+      <button
+        type="button"
+        disabled={pending}
+        onClick={() => startTransition(async () => {
+          const result = await removeOutOfPeriodEntries(periodId, employeeId);
+          if ("error" in result) setError(result.error);
+          else { setError(null); router.refresh(); }
+        })}
+        className="font-semibold text-brand-primary hover:underline disabled:cursor-wait disabled:opacity-60"
+      >
+        {pending ? "Retrait…" : count > 1 ? `Retirer ces ${count} saisies` : "Retirer cette saisie"}
       </button>
       <ErrorBox message={error} />
     </div>
