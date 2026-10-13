@@ -64,11 +64,11 @@
 }
 .title {
   margin: 0;
-  font-family: var(--font-dm-sans), system-ui, sans-serif;
-  font-weight: 700;
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-weight: 500;
   font-size: clamp(48px, 7.6vw, 114px);
-  line-height: 0.94;
-  letter-spacing: -0.058em;
+  line-height: 0.96;
+  letter-spacing: -0.03em;
   color: #fff;
 }
 .line {

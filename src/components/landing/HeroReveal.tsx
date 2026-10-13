@@ -87,8 +87,14 @@ export function HeroReveal() {
       const fs = parseFloat(getComputedStyle(word).fontSize) || 100;
       const o = offsetIn(word);
       const titleLeft = offsetIn(word.parentElement as HTMLElement).x;
-      // ligne de base du titre, puis le point final, que le fil entoure
-      const yB = o.y + fs * 0.97;
+      // Ligne de base du titre, mesurée par un repère posé sur elle (juste pour
+      // toute police : Newsreader n'a pas les proportions de DM Sans), puis le
+      // point final, que le fil entoure.
+      const probe = document.createElement("span");
+      probe.style.cssText = "display:inline-block;width:0;height:0;vertical-align:baseline";
+      word.appendChild(probe);
+      const yB = offsetIn(probe).y;
+      probe.remove();
       const yU = yB + fs * 0.1;
       // boucle juste après le point final, comme à la fin de la vidéo
       const px = o.x + word.offsetWidth + fs * 0.2;

@@ -65,11 +65,11 @@
 .title {
   max-width: 980px;
   margin: 0;
-  font-family: var(--font-dm-sans), system-ui, sans-serif;
-  font-weight: 700;
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-weight: 500;
   font-size: clamp(40px, 5.6vw, 84px);
   line-height: 0.98;
-  letter-spacing: -0.052em;
+  letter-spacing: -0.026em;
 }
 .title em {
   font-style: normal;

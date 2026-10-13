@@ -32,8 +32,8 @@
   color: #fff;
 }
 .band h1 {
-  font-family: var(--font-dm-sans), system-ui, sans-serif;
-  font-weight: 700;
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-weight: 500;
   color: #fff;
 }
 .band .lead {
@@ -71,11 +71,11 @@
 }
 .hero h1,
 .pageHero h1 {
-  font-family: var(--font-dm-sans), system-ui, sans-serif;
-  font-weight: 700;
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-weight: 500;
   font-size: clamp(44px, 4.5vw, 66px);
   line-height: 1.04;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.022em;
   margin: 0 0 26px;
 }
 .hero h1 em {
@@ -197,11 +197,11 @@
   margin-bottom: 36px;
 }
 .title {
-  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-family: var(--font-newsreader), Georgia, serif;
   font-size: clamp(32px, 3.3vw, 46px);
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.04;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.022em;
   max-width: 660px;
 }
 .copy {

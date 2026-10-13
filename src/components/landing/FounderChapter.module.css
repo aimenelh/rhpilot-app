@@ -25,11 +25,11 @@
   margin: 0 0 20px;
 }
 .head h2 {
-  font-family: var(--font-dm-sans), system-ui, sans-serif;
+  font-family: var(--font-newsreader), Georgia, serif;
   font-size: clamp(40px, 4.6vw, 68px);
-  font-weight: 700;
+  font-weight: 500;
   line-height: 1.02;
-  letter-spacing: -0.045em;
+  letter-spacing: -0.022em;
   color: #fff;
   margin: 0;
 }

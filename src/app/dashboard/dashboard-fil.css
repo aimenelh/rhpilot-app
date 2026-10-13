@@ -606,3 +606,7 @@
 @media (max-width:640px){
   .fil-stat-value{font-size:30px;margin-right:0}
 }
+
+/* « Bonjour Aïmen. » en Newsreader, comme les grands titres du site ; le reste de
+   l'application reste en DM Sans. */
+.dashboard-fil .fil-greeting h1{font-family:var(--font-newsreader), Georgia, serif;font-weight:500;letter-spacing:-0.02em}

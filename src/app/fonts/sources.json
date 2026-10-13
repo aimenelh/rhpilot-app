@@ -14,5 +14,21 @@
     "sha256": "7a0049db01fdd8fc7af7ef36675862a72a5c76d0cb45ae63c9f5b6f1b769dac7",
     "bytes": 74572,
     "version": "Version 2.000"
+  },
+  {
+    "file": "newsreader.woff2",
+    "project": "https://github.com/productiontype/Newsreader",
+    "source": "npm @fontsource-variable/newsreader 5.3.0, files/newsreader-latin-standard-normal.woff2 (axes wght 200-800 et opsz 6-72)",
+    "sha256": "6e4f2958c3a7c4a80acde4e5a679abe7e01bc1e30b92be3c7a8b696ef401d101",
+    "bytes": 132000,
+    "version": "Fontsource 5.3.0"
+  },
+  {
+    "file": "newsreader-italic.woff2",
+    "project": "https://github.com/productiontype/Newsreader",
+    "source": "npm @fontsource-variable/newsreader 5.3.0, files/newsreader-latin-standard-italic.woff2 (axes wght 200-800 et opsz 6-72)",
+    "sha256": "5dfcd10d24af8c82927ba57f7983dd997f7b200594c09c35a1b1ed9fc4597506",
+    "bytes": 146872,
+    "version": "Fontsource 5.3.0"
   }
 ]

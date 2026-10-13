@@ -52,7 +52,7 @@ export function ArticleLayout({
 }
 export function H2({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="mt-9 text-xl font-semibold text-ink first:mt-0">
+    <h2 className="font-editorial mt-10 text-[26px] leading-snug text-ink first:mt-0">
       {children}
     </h2>
   );

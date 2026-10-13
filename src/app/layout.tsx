@@ -19,6 +19,19 @@ const dmSans = localFont({
   variable: "--font-dm-sans",
 });
 
+// Police des grands titres et des articles : Newsreader, dessinée à Paris par
+// Production Type. Variable (graisse 200 à 800, taille optique 6 à 72) : aux grandes
+// tailles, ses formes se resserrent d'elles-mêmes (font-optical-sizing).
+const newsreader = localFont({
+  src: [
+    { path: "./fonts/newsreader.woff2", style: "normal" },
+    { path: "./fonts/newsreader-italic.woff2", style: "italic" },
+  ],
+  weight: "200 800",
+  display: "swap",
+  variable: "--font-newsreader",
+});
+
 const caveat = localFont({
   src: "./fonts/caveat.woff2",
   weight: "500 700",
@@ -85,7 +98,7 @@ export default function RootLayout({
 }) {
   return (
     <ClerkProvider localization={frFR as any} appearance={clerkAppearance}>
-      <html lang="fr" className={`${dmSans.variable} ${caveat.variable}`}>
+      <html lang="fr" className={`${dmSans.variable} ${newsreader.variable} ${caveat.variable}`}>
         <body className={`${dmSans.className} antialiased`}>
           {children}
           <CookieConsent />

@@ -30,6 +30,15 @@ h3 {
   font-family: var(--font-handwriting), cursive;
 }
 
+/* Titres éditoriaux : Newsreader (grands titres du site, articles, accueil de l'application).
+   Graisse 500, approche légèrement resserrée ; la taille optique s'ajuste seule. */
+.font-editorial {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  font-optical-sizing: auto;
+}
+
 /* Gros titres : la police du site (DM Sans), en gras et resserrée,
    comme le haut de la page d'accueil. */
 .font-display {

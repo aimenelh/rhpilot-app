@@ -46,11 +46,11 @@
 }
 .title {
   margin: 0;
-  font-family: var(--font-dm-sans), system-ui, sans-serif;
-  font-weight: 700;
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-weight: 500;
   font-size: clamp(36px, 3.9vw, 56px);
   line-height: 1;
-  letter-spacing: -0.05em;
+  letter-spacing: -0.026em;
 }
 .accent {
   display: block;

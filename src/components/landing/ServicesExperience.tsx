@@ -276,7 +276,7 @@ export function ServicesExperience() {
         <div key={step} className="scene-in">
           {step === 0 && (
             <div className="text-center">
-              <h2 className="font-display text-2xl font-semibold text-ink sm:text-3xl">
+              <h2 className="font-editorial text-[28px] leading-tight text-ink sm:text-[34px]">
                 Les échéances RH d’un bureau
               </h2>
               <p className="mx-auto mt-3 max-w-md text-base text-ink-soft">
@@ -557,7 +557,7 @@ export function ServicesExperience() {
           {step === 6 && (
             <div className="text-center">
               <CircleCheck size={28} className="mx-auto text-accent-teal" />
-              <h2 className="font-display mt-3 text-2xl font-semibold text-ink">Fin de la démonstration</h2>
+              <h2 className="font-editorial mt-3 text-[28px] leading-tight text-ink">Fin de la démonstration</h2>
               <p className="mx-auto mt-2 max-w-md text-sm text-ink-soft">
                 Ces fonctions sont disponibles dans RH Pilot, avec les données de votre entreprise.
               </p>
