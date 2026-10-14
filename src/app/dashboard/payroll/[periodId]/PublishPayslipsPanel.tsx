@@ -43,6 +43,11 @@ export default function PublishPayslipsPanel({ data }: { data: PublishPanelData 
   const [pending, startTransition] = useTransition();
   const [result, setResult] = useState<PublishPayslipsResult | null>(null);
   const done = data.toPublish === 0 && data.published > 0;
+  const notInformed = data.notInformed.filter((employee) => !employee.availableFrom);
+  const waiting = data.notInformed.filter((employee) => employee.availableFrom);
+  const names = (list: typeof data.notInformed) => list.map((employee, index) => (
+    <span key={employee.id}>{index > 0 ? ", " : ""}<Link href={`/dashboard/employees/${employee.id}?onglet=espace`} className="font-medium text-ink hover:underline">{employee.name}</Link></span>
+  ));
 
   const publish = () => startTransition(async () => { setResult(await publishPayslipsAction(data.periodId)); });
 
@@ -63,7 +68,9 @@ export default function PublishPayslipsPanel({ data }: { data: PublishPanelData 
       </div>
 
       <ul className="mt-4 space-y-2 border-t border-surface-border pt-4 text-sm text-ink-soft">
-        <li>{plural(data.withSpace, "salarié a", "salariés ont")} un espace activé et {data.withSpace > 1 ? "seront prévenus" : "sera prévenu"} par e-mail.</li>
+        {data.withSpace > 0 || data.withoutSpace.length > 0 ? (
+          <li>{data.withSpace > 0 ? `${plural(data.withSpace, "salarié a", "salariés ont")} un espace activé et ${data.withSpace > 1 ? "seront prévenus" : "sera prévenu"} par e-mail.` : "Aucun des salariés prêts n'a encore activé son espace."}</li>
+        ) : null}
         {data.withoutSpace.length > 0 ? (
           <li>
             Sans espace activé : {data.withoutSpace.map((employee, index) => (
@@ -71,11 +78,16 @@ export default function PublishPayslipsPanel({ data }: { data: PublishPanelData 
             ))}. Leurs bulletins seront consultables dans leur espace une fois celui-ci activé. D’ici là, remettez-les par un autre moyen.
           </li>
         ) : null}
-        {data.notInformed.length > 0 ? (
+        {notInformed.length > 0 ? (
           <li>
-            Note d&apos;information pas encore remise, ou remise il y a moins d&apos;un mois : {data.notInformed.map((employee, index) => (
-              <span key={employee.id}>{index > 0 ? ", " : ""}<Link href={`/dashboard/employees/${employee.id}?onglet=espace`} className="font-medium text-ink hover:underline">{employee.name}</Link>{employee.availableFrom ? ` (en ligne à partir du ${dayLabel(employee.availableFrom)})` : ""}</span>
-            ))}. Le premier bulletin électronique suit d&apos;un mois la remise de la note (C. trav. art. D3243-7) : ce mois-ci, <a href={data.bundleUrl} className="font-semibold text-brand-primary hover:underline">remettez-le sur papier</a>.
+            Note d&apos;information à enregistrer pour {names(notInformed)}, depuis l&apos;onglet Espace salarié de la fiche. Avant le premier bulletin en ligne, le salarié doit être informé de son droit de le refuser (C. trav. art. D3243-7) : remise à l&apos;embauche, la note permet la mise en ligne tout de suite ; remise en cours de contrat, un mois après. D&apos;ici là, <a href={data.bundleUrl} className="font-semibold text-brand-primary hover:underline">remettez le bulletin sur papier</a>.
+          </li>
+        ) : null}
+        {waiting.length > 0 ? (
+          <li>
+            Note d&apos;information remise il y a moins d&apos;un mois : {waiting.map((employee, index) => (
+              <span key={employee.id}>{index > 0 ? ", " : ""}<Link href={`/dashboard/employees/${employee.id}?onglet=espace`} className="font-medium text-ink hover:underline">{employee.name}</Link> (en ligne à partir du {dayLabel(employee.availableFrom as string)})</span>
+            ))}. Ce mois-ci, <a href={data.bundleUrl} className="font-semibold text-brand-primary hover:underline">remettez le bulletin sur papier</a>.
           </li>
         ) : null}
         {data.paper.length > 0 ? (
