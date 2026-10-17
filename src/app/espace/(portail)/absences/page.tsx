@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { latestRuleDecisions } from "@/lib/hr-rules/server";
 import { requireEmployeeSession } from "@/lib/employee-space/session";
 import { ABSENCE_STATUS_LABELS, ABSENCE_TYPE_LABELS, REQUESTS_CLOSED_MESSAGES, calendarDays, canEmployeeCancelAbsence, formatDateRange, requestsClosedReason } from "@/lib/employee-space/labels";
 import { AbsenceRequestForm } from "./AbsenceRequestForm";
@@ -26,6 +28,10 @@ export default async function EspaceAbsencesPage() {
     where: { organizationId: account.organizationId, action: "absence.requested_by_employee", entityType: "Absence", entityId: { in: absences.map((absence) => absence.id) }, actorUserId: user.id, metadata: { path: ["employeeId"], equals: account.employeeId } },
     select: { entityId: true },
   })).map((row) => row.entityId));
+  const [ruleDecisions, activeRuleCount] = await Promise.all([
+    latestRuleDecisions(account.organizationId, absences.map((absence) => absence.id)).catch(() => new Map()),
+    prisma.hr_rules.count({ where: { organizationId: account.organizationId, status: "ACTIVE" } }).catch(() => 0),
+  ]);
   const todayIso = new Date().toISOString().slice(0, 10);
   const closed = requestsClosedReason(account);
   const ended = closed !== null;
@@ -35,6 +41,7 @@ export default async function EspaceAbsencesPage() {
       <div>
         <h1 className="text-[22px] font-semibold text-ink">Mes absences</h1>
         <p className="mt-1 text-sm text-ink-soft">Posez vos congés ou déclarez un arrêt. La réponse de {account.organizationName} s’affiche ici.</p>
+        {activeRuleCount > 0 ? <p className="mt-2 text-sm"><Link href="/espace/regles" className="font-medium text-ink underline decoration-surface-border underline-offset-4 hover:decoration-ink/40">Les règles de congés de l’entreprise</Link></p> : null}
       </div>
 
       {ended ? (
@@ -58,6 +65,7 @@ export default async function EspaceAbsencesPage() {
                     <p className="text-[13px] text-ink-soft">{formatDateRange(absence.startDate, absence.endDate)} · {count} jour{count > 1 ? "s" : ""}</p>
                     <p className={`mt-0.5 text-[13px] font-medium ${STATUS_TONE[absence.status] ?? "text-accent-amber"}`}>{ABSENCE_STATUS_LABELS[absence.status] ?? absence.status}</p>
                     {absence.status === "REJECTED" && absence.rejectedReason ? <p className="mt-1 text-[13px] leading-5 text-ink-soft">Motif : {absence.rejectedReason}</p> : null}
+                    {absence.status === "VALIDATED" && ruleDecisions.get(absence.id)?.employeeExplanation ? <p className="mt-1 text-[13px] leading-5 text-ink-soft">{ruleDecisions.get(absence.id)?.employeeExplanation}</p> : null}
                   </div>
                   {ownRequests.has(absence.id) && canEmployeeCancelAbsence(absence) ? <CancelRequestButton absenceId={absence.id} /> : null}
                 </div>

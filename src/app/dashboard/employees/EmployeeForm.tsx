@@ -29,6 +29,7 @@ type DefaultValues = {
   probationDurationUnit: string; // "" | "DAYS" | "WEEKS" | "MONTHS"
   nextMedicalVisitDate: string; // "" ou YYYY-MM-DD
   managerMembershipId: string;
+  dependentChildren: string; // "" = non renseigné
 };
 
 // Durées maximales légales de la période d'essai en CDI, article
@@ -640,6 +641,23 @@ export function EmployeeForm({
           <FieldHint>
             Seules les personnes ayant un compte RH Pilot dans votre organisation
             peuvent être désignées comme manager direct.
+          </FieldHint>
+        </div>
+
+        <div>
+          <Label htmlFor="dependentChildren">Enfants à charge</Label>
+          <Input
+            id="dependentChildren"
+            name="dependentChildren"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            max={20}
+            defaultValue={defaultValues.dependentChildren}
+            className="max-w-[8rem]"
+          />
+          <FieldHint>
+            Facultatif. Sert à départager les demandes de congés quand une règle maison tient compte de la situation de famille, comme le prévoit la loi pour l&apos;ordre des départs. Laissez vide si vous ne le savez pas.
           </FieldHint>
         </div>
 

@@ -94,7 +94,16 @@ function readEmployeeFields(formData: FormData) {
     weeklyScheduleRaw,
     workScheduleEffectiveFromRaw,
     managerMembershipId: parseOptionalManagerId(formData.get("managerMembershipId")),
+    dependentChildrenRaw: String(formData.get("dependentChildren") ?? "").trim(),
   };
+}
+
+/** Enfants à charge : vide = non renseigné (différent de 0). */
+function parseDependentChildren(raw: string): number | null | "invalid" {
+  if (raw === "") return null;
+  if (!/^\d{1,2}$/.test(raw)) return "invalid";
+  const value = Number(raw);
+  return value <= 20 ? value : "invalid";
 }
 
 function validateEmployeeFields(fields: ReturnType<typeof readEmployeeFields>): string | null {
@@ -122,6 +131,9 @@ function validateEmployeeFields(fields: ReturnType<typeof readEmployeeFields>): 
     !parseIsoDateOnly(fields.nextMedicalVisitDateRaw)
   ) {
     return "La date de prochaine visite médicale n'est pas valide.";
+  }
+  if (parseDependentChildren(fields.dependentChildrenRaw) === "invalid") {
+    return "Le nombre d'enfants à charge doit être un nombre entre 0 et 20, ou rester vide.";
   }
   if (!fields.weeklyHoursRaw) {
     return "La durée hebdomadaire contractuelle est obligatoire.";
@@ -214,6 +226,7 @@ export async function createEmployee(
         probationDurationUnit: fields.probationDurationUnit,
         nextMedicalVisitDate: fields.nextMedicalVisitDateRaw ? parseIsoDateOnly(fields.nextMedicalVisitDateRaw) : null,
         managerMembershipId: fields.managerMembershipId,
+        dependentChildren: parseDependentChildren(fields.dependentChildrenRaw) as number | null,
       },
     });
     await saveEmployeeWorkProfile(tx, {
@@ -297,6 +310,7 @@ export async function updateEmployee(
         probationDurationUnit: fields.probationDurationUnit,
         nextMedicalVisitDate: fields.nextMedicalVisitDateRaw ? parseIsoDateOnly(fields.nextMedicalVisitDateRaw) : null,
         managerMembershipId: fields.managerMembershipId,
+        dependentChildren: parseDependentChildren(fields.dependentChildrenRaw) as number | null,
       },
     });
     await saveEmployeeWorkProfile(tx, {
@@ -439,7 +453,7 @@ export async function anonymizeEmployee(employeeId: string) {
   if (!isOrganizationAdmin(membership)) throw new Error("Seuls les propriétaires et administrateurs peuvent anonymiser un salarié.");
 
   const organizationId = membership.organizationId;
-  const employee = await prisma.employee.findFirst({ where: { id: employeeId, organizationId, deletedAt: { not: null } }, select: { id: true } });
+  const employee = await prisma.employee.findFirst({ where: { id: employeeId, organizationId, deletedAt: { not: null } }, select: { id: true, firstName: true, lastName: true } });
   if (!employee) throw new Error("Seul un salarié archivé peut être anonymisé.");
   const activeAccount = await prisma.employee_accounts.findFirst({ where: { organizationId, employeeId, activatedAt: { not: null }, revokedAt: null }, select: { id: true } });
   if (activeAccount) {
@@ -450,8 +464,16 @@ export async function anonymizeEmployee(employeeId: string) {
   await prisma.$transaction(async (tx) => {
     await tx.employee.update({
       where: { id: employeeId },
-      data: { firstName: "Salarié", lastName: label, civility: null, position: null, personalEmail: null, managerMembershipId: null, nextMedicalVisitDate: null },
+      data: { firstName: "Salarié", lastName: label, civility: null, position: null, personalEmail: null, managerMembershipId: null, nextMedicalVisitDate: null, dependentChildren: null },
     });
+    // Les explications des règles maison citent les collègues en concurrence : le nom y est remplacé aussi.
+    const formerName = `${employee.firstName} ${employee.lastName}`.trim();
+    if (formerName && formerName !== `Salarié ${label}`) {
+      const newName = `Salarié ${label}`;
+      const formerJson = JSON.stringify(formerName).slice(1, -1);
+      const newJson = JSON.stringify(newName).slice(1, -1);
+      await tx.$executeRaw`UPDATE "hr_rule_decisions" SET "hrExplanation" = replace("hrExplanation", ${formerName}, ${newName}), "evaluation" = replace("evaluation"::text, ${formerJson}, ${newJson})::jsonb WHERE "organizationId" = ${organizationId} AND (strpos("hrExplanation", ${formerName}) > 0 OR strpos("evaluation"::text, ${formerJson}) > 0)`;
+    }
     const absences = await tx.absence.findMany({ where: { organizationId, employeeId }, select: { id: true } });
     const absenceIds = absences.map((absence) => absence.id);
     if (absenceIds.length > 0) {

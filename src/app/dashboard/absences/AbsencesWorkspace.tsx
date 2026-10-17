@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, ReactNode, useEffect, useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   CalendarDays,
@@ -21,6 +22,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { useAskDialog, type AskOptions } from "@/components/ui/AskDialog";
+import type { VerdictSummary } from "@/lib/hr-rules/server";
 import {
   createAbsence,
   deleteAbsence,
@@ -69,6 +71,10 @@ export type AbsenceWorkspaceItem = {
   workAccidentDate: string | null;
   returnDate: string | null;
   returnReasonCode: string | null;
+  /** Verdict des règles maison pour une demande en attente. */
+  ruleVerdict: VerdictSummary | null;
+  /** Dernière décision prise sur une demande gouvernée par une règle. */
+  ruleDecision: { decision: string; decidedBy: string; followedRules: boolean; hrExplanation: string; createdAt: string } | null;
   justification: Justification | null;
 };
 
@@ -274,7 +280,7 @@ export default function AbsencesWorkspace({ employees, absences, isAdmin, initia
       description: `Absence de ${absence.employeeName}. Le motif est visible par le salarié dans son espace.`,
       confirmLabel: "Refuser",
       danger: true,
-      input: { label: "Motif du refus", defaultValue: "Absence refusée après vérification RH.", required: true },
+      input: { label: "Motif du refus", defaultValue: absence.ruleVerdict?.outcome === "REFUSE" && absence.ruleVerdict.employeeExplanation ? absence.ruleVerdict.employeeExplanation : "Absence refusée après vérification RH.", required: true },
     }).then((reason) => {
       if (reason) runAction(() => rejectAbsence(absence.id, reason));
     });
@@ -516,7 +522,7 @@ function AbsenceTable({ absences, isAdmin, isPending, onOpen, onDelete, onValida
               <td className="px-4 py-4"><TypeLabel type={absence.type} /></td>
               <td className="px-4 py-4 text-sm text-ink-soft">{formatDate(absence.startDate)} → {formatDate(absence.endDate)}</td>
               <td className="px-4 py-4 text-sm text-ink-soft">{durationInDays(absence)} j</td>
-              <td className="px-4 py-4"><StatusPill value={absence.status} /></td>
+              <td className="px-4 py-4"><StatusPill value={absence.status} />{absence.ruleVerdict && <RuleVerdictLine verdict={absence.ruleVerdict} />}</td>
               <td className="px-4 py-4"><JustificationPill absence={absence} /></td>
               <td className="px-4 py-4"><PayrollPill value={absence.payrollImpactStatus} /></td>
               <td className="px-5 py-4"><div className="flex items-center justify-end gap-1">
@@ -667,6 +673,7 @@ function AbsenceDrawer({ mode, absence, employees, isAdmin, isPending, onClose, 
         </div>
 
         <div className="flex-1 overflow-y-auto">
+          {absence && (absence.ruleVerdict || absence.ruleDecision) && <HouseRulePanel absence={absence} />}
           <form id="absence-editor-form" onSubmit={submit} className="px-5 py-5">
             {integrated && <div className="mb-4 rounded-xl border border-surface-border bg-surface-subtle px-4 py-3 text-xs leading-relaxed text-ink-soft">Les données utilisées dans la paie sont figées et le dossier est conservé. Pour un arrêt de travail, une nouvelle reprise réelle peut être enregistrée dans la section dédiée ci-dessous.</div>}
             <div className="space-y-4">
@@ -743,6 +750,52 @@ function AbsenceDrawer({ mode, absence, employees, isAdmin, isPending, onClose, 
           </div>
         </div>
       </aside>
+    </div>
+  );
+}
+
+const VERDICT_META: Record<string, { short: string; title: string; tone: string; border: string }> = {
+  APPROVE: { short: "Conforme aux règles", title: "Conforme aux règles maison", tone: "text-accent-teal", border: "border-l-accent-teal" },
+  REFUSE: { short: "Refus proposé", title: "Les règles maison proposent de refuser", tone: "text-accent-rose", border: "border-l-accent-rose" },
+  REVIEW: { short: "À arbitrer", title: "À arbitrer par vous", tone: "text-accent-amber", border: "border-l-accent-amber" },
+};
+
+function RuleVerdictLine({ verdict }: { verdict: NonNullable<AbsenceWorkspaceItem["ruleVerdict"]> }) {
+  const meta = VERDICT_META[verdict.outcome];
+  if (!meta) return null;
+  return <p className={`mt-1 text-[11px] font-medium ${meta.tone}`}>{meta.short}</p>;
+}
+
+function HouseRulePanel({ absence }: { absence: AbsenceWorkspaceItem }) {
+  const pending = !["VALIDATED", "REJECTED"].includes(absence.status);
+  const verdict = pending ? absence.ruleVerdict : null;
+  const decision = absence.ruleDecision;
+  if (verdict) {
+    const meta = VERDICT_META[verdict.outcome];
+    if (!meta) return null;
+    return (
+      <div className="border-b border-surface-border px-5 py-4">
+        <div className={`rounded-r-lg border border-l-[3px] border-surface-border px-4 py-3 ${meta.border}`}>
+          <p className={`text-sm font-semibold ${meta.tone}`}>{meta.title}</p>
+          <p className="mt-1.5 text-xs leading-5 text-ink-soft">{verdict.hrDetails}</p>
+          {verdict.outcome === "REFUSE" && verdict.employeeExplanation && <p className="mt-2 text-xs leading-5 text-ink-faint">Si vous refusez, le motif proposé au salarié est déjà rédigé, sans le nom de ses collègues.</p>}
+          <p className="mt-2 text-[11px] text-ink-faint">{verdict.rules.map((rule) => `${rule.title}, version ${rule.version}`).join(" ; ")}. <Link href="/dashboard/regles" className="underline underline-offset-4 hover:text-ink">Voir les règles</Link></p>
+        </div>
+      </div>
+    );
+  }
+  if (!decision) return null;
+  const when = new Date(decision.createdAt).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  const text = decision.decidedBy === "RULE"
+    ? `Validée automatiquement le ${when}, selon les règles maison.`
+    : decision.followedRules
+      ? `${decision.decision === "VALIDATED" ? "Validée" : "Refusée"} le ${when}, comme le proposaient les règles maison.`
+      : `${decision.decision === "VALIDATED" ? "Validée" : "Refusée"} le ${when}, à l’encontre de la proposition des règles maison.`;
+  return (
+    <div className="border-b border-surface-border px-5 py-4">
+      <h3 className="text-sm font-semibold text-ink">Règles maison</h3>
+      <p className="mt-1.5 text-xs leading-5 text-ink-soft">{text}</p>
+      <p className="mt-1 text-xs leading-5 text-ink-faint">Au moment de la décision : {decision.hrExplanation}</p>
     </div>
   );
 }

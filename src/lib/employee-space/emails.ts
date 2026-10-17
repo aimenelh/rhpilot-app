@@ -47,7 +47,18 @@ export function documentAvailableEmail(input: { firstName: string; organizationN
   };
 }
 
-export function absenceRequestEmail(input: { employeeName: string; typeLabel: string; dates: string; url: string; withJustification: boolean }) {
+export function absenceRequestEmail(input: { employeeName: string; typeLabel: string; dates: string; url: string; withJustification: boolean; autoApprovedNote?: string | null }) {
+  if (input.autoApprovedNote) {
+    return {
+      subject: `Accordé selon vos règles : ${input.typeLabel.toLowerCase()} de ${input.employeeName}`,
+      html: layout(
+        `<p style="font-size: 15px; margin: 0;">Bonjour,</p>
+         ${p(`<strong>${escapeHtml(input.employeeName)}</strong> a fait une demande depuis son espace salarié : ${escapeHtml(input.typeLabel.toLowerCase())}, ${escapeHtml(input.dates)}.`)}
+         ${p(`${escapeHtml(input.autoApprovedNote)} Rien à faire de votre côté. Vous pouvez revenir sur cette décision depuis le module Absences.`)}`,
+        { label: "Voir la demande", url: input.url },
+      ),
+    };
+  }
   return {
     subject: `Nouvelle demande : ${input.typeLabel.toLowerCase()} de ${input.employeeName}`,
     html: layout(

@@ -53,6 +53,7 @@ export default async function NewEmployeePage() {
             probationDuration: "",
             probationDurationUnit: "",
             nextMedicalVisitDate: "",
+            dependentChildren: "",
             managerMembershipId: "",
           }}
         />

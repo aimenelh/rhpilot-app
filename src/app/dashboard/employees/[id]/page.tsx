@@ -499,6 +499,7 @@ export default async function EmployeeDetailPage({
                 ? employee.nextMedicalVisitDate.toISOString().slice(0, 10)
                 : "",
               managerMembershipId: employee.managerMembershipId ?? "",
+              dependentChildren: employee.dependentChildren == null ? "" : String(employee.dependentChildren),
             }}
           />
 

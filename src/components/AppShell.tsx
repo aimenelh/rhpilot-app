@@ -6,7 +6,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserButton } from "@clerk/nextjs";
 import { Signature } from "./Brand";
-import { Users, Route, CalendarDays, Settings, Bell, Menu, X, LayoutGrid, Leaf, FileText, Sparkles, ChevronDown, MessageCircle, WalletCards, type LucideIcon } from "lucide-react";
+import { Users, Route, CalendarDays, Settings, Bell, Menu, X, LayoutGrid, Leaf, FileText, Sparkles, ChevronDown, MessageCircle, WalletCards, ScrollText, type LucideIcon } from "lucide-react";
 import { FlashToast } from "./ui/FlashToast";
 import { GlobalSearch } from "./GlobalSearch";
 import { RhNewsToast } from "./RhNewsToast";
@@ -27,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: "/dashboard/events", label: "Parcours RH", icon: Route },
   { href: "/dashboard/calendar", label: "Calendrier", icon: CalendarDays },
   { href: "/dashboard/absences", label: "Congés & absences", icon: Leaf, adminOnly: true },
+  { href: "/dashboard/regles", label: "Règles maison", icon: ScrollText, adminOnly: true },
   { href: "/dashboard/documents", label: "Documents", icon: FileText, adminOnly: true },
   // Paie en accès anticipé : visible pour les seules organisations pilotes (lib/payrollAccess).
   { href: "/dashboard/payroll", label: "Paie", icon: WalletCards, adminOnly: true, payrollOnly: true },

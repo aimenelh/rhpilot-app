@@ -73,6 +73,8 @@ model Organization {
   employee_paid_leave_openings employee_paid_leave_openings[]
   employee_payroll_openings    employee_payroll_openings[]
   employees                    Employee[]
+  hr_rule_decisions            hr_rule_decisions[]
+  hr_rules                     hr_rules[]
   invitations                  Invitation[]
   memberships                  Membership[]
   notifications                Notification[]
@@ -170,6 +172,7 @@ model Employee {
   paperPayslipSource            String?
   electronicPayslipNoticeAt     DateTime?                      @db.Date
   electronicPayslipNoticeMethod String?
+  dependentChildren             Int?
   absences                      Absence[]
   dsn_employee_profiles         dsn_employee_profiles?
   employee_accounts             employee_accounts[]
@@ -1100,4 +1103,50 @@ model dsn_work_events {
   @@unique([organizationId, businessId], map: "dsn_work_events_business_key")
   @@unique([organizationId, requestKey], map: "dsn_work_events_request_key")
   @@index([organizationId, createdAt], map: "dsn_work_events_created_idx")
+}
+
+/// Règles maison : une ligne par version d'une règle de congés écrite par le RH.
+model hr_rules {
+  id               String       @id
+  organizationId   String
+  lineageId        String
+  version          Int
+  domain           String       @default("LEAVE")
+  title            String
+  sourceText       String?
+  spec             Json
+  legalReview      Json?
+  mode             String       @default("PROPOSE")
+  status           String       @default("ACTIVE")
+  effectiveFrom    DateTime     @db.Date
+  createdByUserId  String?
+  createdAt        DateTime     @default(now())
+  archivedAt       DateTime?
+  archivedByUserId String?
+  organizations    Organization @relation(fields: [organizationId], references: [id], map: "hr_rules_organization_fk")
+
+  @@unique([lineageId, version], map: "hr_rules_lineage_version_key")
+  @@index([organizationId, status], map: "hr_rules_organization_status_idx")
+}
+
+/// Décisions prises sur une demande gouvernée par une règle maison (preuve du critère objectif).
+model hr_rule_decisions {
+  id                  String       @id
+  organizationId      String
+  absenceId           String
+  employeeId          String
+  ruleIds             String[]
+  ruleOutcome         String
+  decision            String
+  decidedBy           String
+  followedRules       Boolean
+  hrExplanation       String
+  employeeExplanation String?
+  evaluation          Json
+  actorUserId         String?
+  createdAt           DateTime     @default(now())
+  organizations       Organization @relation(fields: [organizationId], references: [id], map: "hr_rule_decisions_organization_fk")
+
+  @@index([organizationId, absenceId], map: "hr_rule_decisions_absence_idx")
+  @@index([organizationId, createdAt], map: "hr_rule_decisions_created_idx")
 }

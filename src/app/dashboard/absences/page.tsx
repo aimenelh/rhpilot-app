@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentMembership } from "@/lib/auth";
 import { isOrganizationAdmin } from "@/lib/accessPolicy";
 import { prisma } from "@/lib/prisma";
+import { latestRuleDecisions, pendingVerdicts } from "@/lib/hr-rules/server";
 import AbsencesWorkspace, { type AbsenceWorkspaceItem } from "./AbsencesWorkspace";
 
 export const metadata = { title: "Absences" };
@@ -40,8 +41,15 @@ export default async function AbsencesPage() {
     }),
   ]);
 
+  // Les règles maison ne doivent jamais empêcher la page de s'afficher.
+  const [verdicts, decisions] = await Promise.all([
+    pendingVerdicts(membership.organizationId).catch(() => ({})),
+    latestRuleDecisions(membership.organizationId, absences.map((absence) => absence.id)).catch(() => new Map()),
+  ]);
+
   const normalized: AbsenceWorkspaceItem[] = absences.map((absence) => {
     const justification = absence.justifications[0] ?? null;
+    const decision = decisions.get(absence.id);
     return {
       id: absence.id,
       employeeId: absence.employeeId,
@@ -61,6 +69,10 @@ export default async function AbsencesPage() {
       workAccidentDate: absence.workAccidentDate?.toISOString() ?? null,
       returnDate: absence.returnDate?.toISOString() ?? null,
       returnReasonCode: absence.returnReasonCode,
+      ruleVerdict: (verdicts as Record<string, AbsenceWorkspaceItem["ruleVerdict"]>)[absence.id] ?? null,
+      ruleDecision: decision
+        ? { decision: decision.decision, decidedBy: decision.decidedBy, followedRules: decision.followedRules, hrExplanation: decision.hrExplanation, createdAt: decision.createdAt.toISOString() }
+        : null,
       justification: justification
         ? {
             id: justification.id,

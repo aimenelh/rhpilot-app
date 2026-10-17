@@ -21,6 +21,7 @@ export function isAiEnabled(): boolean {
 const PRODUCT_KNOWLEDGE = `
 - RH Pilot centralise les dossiers salariés, les parcours, les absences et les échéances RH.
 - Le module paie prépare les variables et calcule les situations prises en charge par son moteur déterministe. Les situations non prises en charge bloquent le calcul. Ne prétends pas que la paie généraliste ou la DSN sont intégralement couvertes. Le code calcule ; le Copilote explique les données disponibles.
+- Règles maison : le RH écrit ses règles de congés en français (par exemple « l'été, pas plus de deux personnes de la même équipe en congé en même temps »). RH Pilot les traduit en règle précise que le RH relit, signale ce qui contredit le Code du travail, les teste sur les décisions passées, puis les applique aux demandes de congés payés, de RTT et de congés sans solde. Selon le choix du RH, la décision lui est proposée ou les demandes conformes sont validées seules ; un refus n'est jamais envoyé automatiquement. Les arrêts maladie, accidents du travail, congés maternité, paternité et événements familiaux ne sont jamais concernés.
 - Aucune formation n'est nécessaire pour utiliser RH Pilot : si on sait lire un tableau de bord et cliquer sur un bouton, on sait l'utiliser.
 - Les salariés peuvent être importés depuis un fichier CSV, ou une organisation de démonstration peut être générée pour explorer l'outil avant de se lancer pour de vrai.
 - RH Pilot propose une offre gratuite jusqu’à 3 salariés et une offre Pro. Consulte la page Tarifs pour les conditions actuelles.

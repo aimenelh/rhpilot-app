@@ -8,7 +8,8 @@ import { storeAbsenceJustification } from "@/lib/absence-justification-storage";
 import { parseIsoDateOnly } from "@/lib/dateOnly";
 import { userFacingError } from "@/lib/userFacingError";
 import { recordWorkStoppageRecovery } from "@/lib/payroll/work-stoppage-recovery";
-import { assertAbsenceStartsAfterClosedPayroll, invalidateOpenPayrollFrom, lockPayrollAbsenceChanges } from "@/lib/payroll/period-absence-safety";
+import { validateAbsenceInTransaction } from "@/lib/absences/validation";
+import { recordRuleDecision, verdictForAbsence } from "@/lib/hr-rules/server";
 
 const ABSENCE_TYPES = ["PAID_LEAVE", "RTT", "SICK_LEAVE", "WORK_ACCIDENT", "UNPAID_LEAVE", "FAMILY_EVENT", "MATERNITY", "PATERNITY", "OTHER"] as const;
 type AbsenceTypeValue = (typeof ABSENCE_TYPES)[number];
@@ -21,6 +22,18 @@ function parseDate(value: FormDataEntryValue | null): Date | null {
 
 function isAdmin(role: string) {
   return role === "OWNER" || role === "ADMIN";
+}
+
+/** Verdict des règles maison sur une absence, ou null si aucune ne s'applique. Une erreur ne bloque jamais la décision du RH. */
+async function houseRuleVerdict(organizationId: string, absenceId: string) {
+  try {
+    const absence = await prisma.absence.findFirst({ where: { id: absenceId, organizationId }, select: { id: true, employeeId: true, type: true, startDate: true, endDate: true, createdAt: true } });
+    if (!absence) return null;
+    const result = await verdictForAbsence(organizationId, absence);
+    return result ? { employeeId: absence.employeeId, verdict: result.verdict } : null;
+  } catch {
+    return null;
+  }
 }
 
 function revalidateAbsenceViews() {
@@ -470,21 +483,16 @@ export async function validateAbsence(absenceId: string): Promise<AbsenceActionS
   const user = await getCurrentUser();
   if (!membership || !user) return { error: "Session expirée, veuillez recharger la page." };
   if (!isAdmin(membership.accessRole)) return { error: "Seuls les administrateurs peuvent valider une absence." };
+  // Ce que proposaient les règles maison au moment de la décision : la trace dit si on les a suivies.
+  const ruleContext = await houseRuleVerdict(membership.organizationId, absenceId);
   let invalidatedPeriods = 0;
   try {
     await prisma.$transaction(async (tx) => {
-      await lockPayrollAbsenceChanges(tx, membership.organizationId);
-      await tx.$queryRaw`SELECT "id" FROM "absences" WHERE "id" = ${absenceId} AND "organizationId" = ${membership.organizationId} FOR UPDATE`;
-      const absence = await tx.absence.findFirst({ where: { id: absenceId, organizationId: membership.organizationId }, include: { justifications: { orderBy: { createdAt: "desc" }, take: 1 } } });
-      if (!absence) throw new Error("Absence introuvable.");
-      if (absence.status === "VALIDATED" && ["READY", "INTEGRATED"].includes(absence.payrollImpactStatus)) return;
-      if (absence.payrollImpactStatus === "INTEGRATED") throw new Error("Cette absence est déjà intégrée à la paie.");
-      if (absence.justificationRequired && absence.justifications[0]?.status !== "VALIDATED") throw new Error("Le justificatif doit être vérifié avant de valider cette absence.");
-      await assertAbsenceStartsAfterClosedPayroll(tx, membership.organizationId, absence.employeeId, absence.startDate);
-      await tx.absence.update({ where: { id: absence.id }, data: { status: "VALIDATED", payrollImpactStatus: "READY", validatedByUserId: user.id, validatedAt: new Date(), rejectedReason: null } });
-      invalidatedPeriods = (await invalidateOpenPayrollFrom(tx, membership.organizationId, absence.employeeId, absence.startDate)).count;
-      await tx.auditLog.create({ data: { id: randomUUID(), organizationId: membership.organizationId, actorUserId: user.id, action: "absence.validated", entityType: "Absence", entityId: absence.id,
-        metadata: { payrollImpactStatus: "READY", invalidatedPeriods } } });
+      const outcome = await validateAbsenceInTransaction(tx, { organizationId: membership.organizationId, absenceId, actorUserId: user.id });
+      invalidatedPeriods = outcome.invalidatedPeriods;
+      if (!outcome.alreadyValidated && ruleContext) {
+        await recordRuleDecision(tx, { organizationId: membership.organizationId, absenceId, employeeId: ruleContext.employeeId, verdict: ruleContext.verdict, decision: "VALIDATED", decidedBy: "HR", actorUserId: user.id });
+      }
     }, { maxWait: 10000, timeout: 20000 });
   } catch (error) { return { error: userFacingError(error, "La validation de l'absence a échoué.") }; }
   revalidateAbsenceViews();
@@ -500,16 +508,20 @@ export async function rejectAbsence(absenceId: string, reason: string): Promise<
   if (!cleanReason) return { error: "Un motif est obligatoire pour refuser l'absence." };
   const absence = await prisma.absence.findFirst({
     where: { id: absenceId, organizationId: membership.organizationId },
-    select: { id: true, payrollImpactStatus: true },
+    select: { id: true, payrollImpactStatus: true, status: true },
   });
   if (!absence) return { error: "Absence introuvable." };
   if (absence.payrollImpactStatus === "INTEGRATED") return { error: "Cette absence est déjà intégrée à la paie." };
+  const ruleContext = absence.status === "REJECTED" ? null : await houseRuleVerdict(membership.organizationId, absence.id);
 
   await prisma.$transaction(async (tx) => {
     await tx.absence.update({
       where: { id: absence.id },
       data: { status: "REJECTED", payrollImpactStatus: "PENDING", validatedByUserId: user.id, validatedAt: new Date(), rejectedReason: cleanReason },
     });
+    if (ruleContext) {
+      await recordRuleDecision(tx, { organizationId: membership.organizationId, absenceId: absence.id, employeeId: ruleContext.employeeId, verdict: ruleContext.verdict, decision: "REJECTED", decidedBy: "HR", actorUserId: user.id, employeeExplanation: cleanReason });
+    }
     await tx.auditLog.create({
       data: {
         id: randomUUID(),

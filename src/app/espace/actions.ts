@@ -11,6 +11,7 @@ import { sendEmail } from "@/lib/email";
 import { getAppUrl } from "@/lib/appUrl";
 import { storeAbsenceJustification } from "@/lib/absence-justification-storage";
 import { absenceRequestEmail } from "@/lib/employee-space/emails";
+import { applyHouseRulesToNewRequest } from "@/lib/hr-rules/server";
 import { activateEmployeeAccount, findInvitationByToken, findPendingInvitationsForEmail, invitationProblem } from "@/lib/employee-space/invitations";
 import { ESPACE_ACCOUNT_COOKIE, NEW_ORGANIZATION_COOKIE, employeeSessionOrError, getEmployeeAccountsForUser } from "@/lib/employee-space/session";
 import { EMPLOYEE_REQUEST_TYPES, REQUESTS_CLOSED_MESSAGES, canEmployeeCancelAbsence, formatDateRange, isEmployeeRequestType, requestsClosedReason } from "@/lib/employee-space/labels";
@@ -127,13 +128,18 @@ export async function requestAbsence(_state: EspaceActionState, formData: FormDa
     await tx.auditLog.create({ data: { id: randomUUID(), organizationId: account.organizationId, actorUserId: user.id, action: "absence.requested_by_employee", entityType: "Absence", entityId: absenceId, metadata: { employeeId: account.employeeId, type, withJustification: Boolean(stored) } } });
   });
 
+  // Règles maison : une demande conforme à des règles en validation automatique est accordée tout de suite.
+  // Un problème ici ne bloque jamais la demande, qui reste alors au RH.
+  const houseRules = await applyHouseRulesToNewRequest(account.organizationId, absenceId).catch(() => ({ autoApproved: false, employeeExplanation: null }));
+
   // Les administrateurs sont prévenus ; un échec d'envoi ne bloque pas la demande.
   const admins = await prisma.membership.findMany({ where: { organizationId: account.organizationId, deletedAt: null, accessRole: { in: ["OWNER", "ADMIN"] }, notificationFrequency: { not: "OFF" }, user: { deletedAt: null } }, select: { user: { select: { email: true } } } });
-  const message = absenceRequestEmail({ employeeName: `${account.firstName} ${account.lastName}`.trim(), typeLabel: definition.label, dates: formatDateRange(startDate, endDate), url: `${getAppUrl()}/dashboard/absences`, withJustification: Boolean(stored) });
+  const message = absenceRequestEmail({ employeeName: `${account.firstName} ${account.lastName}`.trim(), typeLabel: definition.label, dates: formatDateRange(startDate, endDate), url: `${getAppUrl()}/dashboard/absences`, withJustification: Boolean(stored), autoApprovedNote: houseRules.autoApproved ? houseRules.employeeExplanation : null });
   await Promise.all(admins.map((admin) => sendEmail({ to: admin.user.email, subject: message.subject, html: message.html }).catch(() => undefined)));
 
   revalidatePath("/espace/absences");
   revalidatePath("/dashboard/absences");
+  if (houseRules.autoApproved) return { success: houseRules.employeeExplanation ?? "Demande accordée." };
   return { success: type === "SICK_LEAVE" ? "Arrêt déclaré. Votre employeur a reçu votre avis d'arrêt." : "Demande envoyée. Vous verrez ici la réponse de votre employeur." };
 }
 
