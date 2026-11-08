@@ -46,7 +46,7 @@
     "@types/node": "^20.14.11",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
-    "autoprefixer": "10.4.19",
+    "autoprefixer": "10.6.1",
     "esbuild": "0.28.1",
     "eslint": "^8.57.1",
     "eslint-config-next": "^14.2.35",
